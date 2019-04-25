@@ -217,15 +217,372 @@ preprocessing hacks.
 
 * Introduction ---The Proposal's “Story”      
 
-Importance of narrative
+In this chapter we aim to present the narrative that demonstrates the distinction between
+what can currently be accomplished and what is desired when working with composition of software
+units. We arrive at the observation that packaging concepts differ only in their use --for example,
+a typeclass and a record are both sequences of declarations that only differ in the former used
+for polymorphism with instance search whereas the latter is used as a structure grouping related items together.
+In turn, we are led to propose that the various packaging concepts ought to have a uniform syntax.
+Moreover, since records are a particular notion of packaging, the commitment to syntactic similarity
+gives rise to a [[https://en.wikipedia.org/wiki/Homoiconicity][homoiconic]] nature to the host language.
 
-The importance of the narrative is that it forces the remaining sections to tie into the
-ideas and questions posed here. Furthermore, it servers as a guide map for the remainder
-of the thesis proposal. Additionally, it serves as a writing prompt insisting each sentence
-of our proposal relates or contributes to our core mood:
-The disillusionment with computational organisation can be rectified by using dependent types
-to bring about a homogeneous treatment of structuring mechanisms.
+Within this work we refer to a /simple type theory/ as a language that contains typed lambda terms
+for terms and formuale; if in addition it contains typed lambda terms for ‘proofs’
+---which are members of types that could be interpreted as propositions---
+then we say it is
+a /dependently-typed language/, or ‘DTL’ for short. More precisely, if type formation is indexed,
+i.e., types may depend on a context, then we have a DTL.
+With the exception of declarations and ephemeral
+notions, nearly everything in a DTL is a typed  lambda term.
+Just as Lisp's homoiconic nature blurs data and code leaving it not as a language with primitives
+but rather a language with meta-primitives,
+so too the lack of distinction between term and type lends itself to generic and uniform concepts in DTLs
+thereby leaving no syntactic distinction between a constructive proof and an algorithm.
 
+:WK:
+Proofs are not a necessary ingredient for dependent types
+(and are anyways only a matter of intent, as you yourself also
+ emphasised in the last meeting).
+:End:
+
+The sections below explore our primary observation, which is discussed further
+later on in chapter 3 as preliminary research.
+Section 1 demonstrates the variety of languages present in a single system
+which are conflated in a DTL,
+section 2 discusses that such conflation should by necessity apply to notions of packaging,
+and section 3 concludes with proposed work to ensure that happens.
+
+:Armkeh:
+- In the introduction to section 1, you discuss "the variety of languages present in a single system". I feel this makes sense after reading "A coding language is actually many languages working together" below, but I found it confusing on first read. Maybe put languages in quotes and change system to language?
+:End:
+
+** A Language Has Many Tongues
+
+A programming language is actually many languages working together.
+
+The most basic of imperative languages comes with a notion of ‘statement’ that is executed
+by the computer to alter ‘state’ and a notion of ‘value’ that can be assigned to memory locations.
+Statements may be sequenced or looped, whereas values may be added or multiplied, for example.
+In general, the operations on one linguistic category cannot be applied to the other.
+Unfortunately, a rigid separation between the two sub-languages means that binary choice, for example,
+conventionally invites two notations with identical semantics ---e.g.; in ~C~ one writes ~if (cond) clause₁ else clause₂~
+for statements but must use the notation ~cond?term₁:term₂~ for values.
+Hence, there are value and statement languages.
+
+Let us continue using the ~C~ language for our examples since it is so ubiquitous
+and has influenced many languages. Such a choice has the benefit of referring to
+a concrete language, rather than speaking in vague generalities.
+Besides Agda --a language mentioned throughout the proposal--
+we shall also refer to Haskell as a representative of the functional
+side of programming. For example, in Haskell there is no distinction between values and statements
+---the latter being a particular instance of the former--- and so it uses the same notation ~if_then_else_~ for both.
+However, in practice, statements in Haskell are more pragmatically used as a body of a ~do~ block for which
+the rules of conditionals and local variables change --hence, Haskell is not as uniform as it initially appears.
+
+In ~C~, one declares an integer value by ~int x;~ but a value of a user-defined type ~T~
+is declared ~struct T x;~ since, for simplicity, one may think of ~C~ having an array named ~struct~
+that contains the definitions of user-defined types ~T~ and the notation ~struct T~ acts as an array access.
+Since this is a clunky notation, we can provide an alias using the declaration ~typedef existing-name new-name;~.
+Unfortunately, the existing name must necessarily be a type, such as ~struct T~ or ~int~, and cannot be an arbitrary
+term. One must use ~#define~ to produce term aliases, which are handled by the ~C~ preprocessor,
+which also provides ~#include~ to import existing libraries.
+Hence, the type language is distinct from the libraries language, which is part of the preprocessor language.
+
+In contrast, Haskell has a pragma language for enabling certain features of the compiler. Unlike ~C~, it
+has an interface language using ~typeclass~-es which differs from its ~module~ language
+\parencite{haskell_modules_formally, haskell_in_haskell, classic_haskell_genericity}
+since the former's names
+may be qualified by the names of the latter but not the other way around. In turn, ~typeclass~ names may be used
+as constraints on types, but not so with ~module~ names. It may be argued that this interface language is part
+of the type language, but it is sufficiently different that it could be thought of as its own language \parencite{modular_modules}
+---for example, it comes with keywords ~class, instance, =>~ that can only appear in special phrases.
+In addition, by default, variable declarations are the same for built-in and user-defined types --whereas ~C~ requires using ~typedef~ to mimic such behaviour.
+However, Haskell distinguishes between term and type aliases.
+In contrast, Agda treats aliasing as nothing more than a normal definition.
+
+Certain application domains require high degrees of confidence in the correctness of software.
+Such program verification settings may thus have an additional specification language.
+For ~C~, perhaps the most popular is the ANSI C Specification Language, ACSL \parencite{acsl}.
+Besides the ~C~ types, ACSL provides a type ~integer~ for specifications referring to unbounded integers
+as well as numerous other notions and notations not part of the ~C~ language. Hence, the specification language
+generally differs from the implementation language. In contrast, Haskell's specification are generally \parencite{programatica} in comments
+but its relative Agda allows specifications to occur at the type level.
+
+# When working with ACSL, or JML, or SPARK
+Whether programs actually meet their specifications ultimately requires a proof language.
+For example, using the Frama-C tool \parencite{frama_c}, ACSL specifications can be supported
+by Isabelle or Coq proofs. In contrast, being dependently-typed, Agda allows us to use the implementation
+language also as a proof language ---/the only distinction is a shift in our perspective; the syntax is the same./
+Tools such as Idris and Coq come with ‘tactics’ ---algorithms which one may invoke to produce proofs---
+and may combine them using specific operations that only act on tactics, whence yet another tongue.
+
+Hence, even the simplest of programming languages contain the first three of the following
+sub-languages --types may be treated at runtime.
+
+1. Expression language;
+  #   (Expressions are syntax; values are semantics (most of the time...).)
+2. Statement, or control flow, language;
+3. Type language;
+4. Specification language;
+5. Proof language;
+6. Module language;
+7. Meta-programming languages ---including Coq tactics, C preprocessor, Haskell pragmas, Template Haskell's various quotation brackets ~[x| ... ]~, Idris directives, etc.
+   
+As briefly discussed, the first five languages telescope down into one uniform language
+within the dependently-typed language Agda. So why not the module language?
+
+** Needless Distinctions for Containers
+
+Computing is compositionality.
+Large mind-bending software developments are formed by composing smaller,
+much more manageable, pieces together.
+How? In the previous section we outlined a number of languages
+equipped with term constructors, yet we did not indicate which were
+more primitive and which could be derived.
+# Indeed, as a ‘science’ we have yet to rigorously define the notion of compositionality.
+# The closest we have so far is to use categories ---which are not even industry mainstream.
+#
+# ``Indeed, as a `science' ... industry mainstream.''
+# These are invitations for attack. Reconsider.
+
+The methods currently utilised are ‘ad hoc’,
+e.g., “dump the contents of packages into a new \"uber package”.
+What about when the packages contain conflicting names?
+“Make an uber package with field names for each package's contents”.
+What about viewing the new uber package as a hierarchy of its packages?
+“Make conversion methods between the two representations.”
+─This /should be/ mechanically derivable.
+
+In general, there are special-purpose constructs specifically for working
+with packages of “usual”, or “day-to-day” expression- or statement-level code.
+That is, a language for working with containers whose contents live in another language.
+This forces the users to think of these constructs as rare notions that
+are rarely needed ---since they belong to an ephemeral language.
+They are only useful when connecting packages together
+and otherwise need not be learned.
+
+When working with mutually dependent modules, a simple workaround to cyclic
+typechecking and loading is to create an interface file containing the
+declarations that dependents require. To mitigate such error-prone duplication of
+declarations, one may utilise literate programming to tangle the declarations to
+multiple files ---the actual parent module and the interface module.
+This was the situation with Haskell before its recent module signature
+mechanism \parencite{haskell_backpack}.
+Being a purely functional language, it is unsurprising that Haskell treats
+nested record field updates awkwardly: Where a C-like language may have
+~a.b.c := d~, Haskell requires \newline ~a { b = b a {c = d}}~ which necessarily has
+field names ~b, c~ polluting the global function namespace as field projections.
+Since a record is a possibly deeply nested list of declarations,
+it is trivial to flatten such a list to mechanically generate the names
+~“a-b-c”~ ---since the dot is reserved--- unfortunately this is not possible
+in the core language thereby forcing users to employ ‘lenses’ to generate such
+accessors by compile-time meta-programming.
+In the setting of DTLs, records in the form of nested Σ-types 
+tend to have tremendously poor performance
+---in existing implementations of Coq \parencite{coq_cat_experiences} and Agda \parencite{perna},
+the culprit generally being projections.
+More generally,
+what if we wanted to do something with packages that the host language does not
+support? “Use a pre-processor, approximate packaging at a different language level,
+or simply settle with what you have.”
+
+*Main Observation* Packages, modules, theories, contexts, traits, typeclasses, interfaces, what have you 
+   all boil down to dependent records at the end of the day and /really differ/ in /how/
+   they are used or implemented. At the end of section 3 we demonstrate various distinct
+   presentations of such notions of packaging arising from a single package declaration.
+
+   # After discussing existing approach and foundations, along with the minimal
+   # requirements of a candidate solution, we then present our preliminary findings
+   # in §3. In particular, 
+
+** Proposed Contributions
+
+The proposed thesis investigates the current state of the art of grouping
+mechanisms \newline ---sometimes referred to as modules or packages---,
+their shortcomings, and a route to implementing candidate solutions 
+based upon a dependently-typed language.
+
+The introduction of first-class structuring mechanisms drastically changes the situation
+by allowing the composition and manipulation of structuring mechanisms within the language itself.
+Granted, languages providing combinators for structuring mechanisms are not new;
+e.g., such notions already exist for Full Maude \parencite{maude_module_algebra} 
+and B \parencite{B_reuse}. The former is closer in spirit to our work, but
+it differs from ours in that it is based on a /reflective logic/: A logic where
+certain aspects of its metatheory can be faithfully represented within the logic itself.
+It may well be that the meta-theory of our effort may involve reflection,
+yet our distinction is that our aim is to form powerful module system features
+for Dependently-Typed Languages (DTLs).
+
+To the uninitiated, the shift to DTLs may not appear useful, or at least would
+not differ much from existing approaches. We believe otherwise; indeed,
+in programming and, more generally, in mathematics,  there are three
+---below: 1, 2a, 2b--- essentially
+equivalent perspectives to understanding a concept. Even though they
+are equivalent, each
+perspective has prompted numerous programming languages; as such, the equivalence
+does not make the selection of a perspective irrelevant. The perspectives are
+as follows:
+
+1. “Point-wise” or “Constituent-Based”:
+   A concept is understood by studying the concepts it is “made out of”.
+   Common examples include:
+   - A mathematical set is determined by the elements it contains.
+   - A method is determined by the sequence
+     of statements or expressions it is composed from.
+   - A package ---such as a record or data declaration--- is determined by
+     its components, which may be /thought of/ as fields or constructors.
+     
+   Object-oriented programming is based on the notion of inheritance
+     which informs us of “has a” and “is a” relationships.
+
+2. “Point-free” or Relationship Based:
+   A concept is understood by its relationship to other concepts in the domain
+   of discourse. This approach comes into two sub-classifications:
+   1. “First Class Citizen” or “Concept as Data”: 
+      The concept is treated as a static entity and is 
+      identified by applying operations /onto it/ in order to observe its nature.
+      Common examples include:
+      - A singleton set is a set whose cardinality is 1.
+      - A method, in any coding language, is a value with the ability
+        to act on other values of a particular type.
+      - A renaming scheme to provide different names for a given package;
+        more generally, applicative modules.
+
+   2. “Second Class Citizen” or “Concept as Method”: 
+      The concept is treated as a dynamic entity that
+      is fed input stimuli and is understood by its emitted observational output.
+      Common examples include:
+      - A singleton set is a set for which there is a unique mapping to it
+        from any other set. Input any set, obtain a map from it to the singleton set.
+      - A method, in any coding language, is unique up to observational equality:
+        Feed it arguments, check its behaviour. Realistically, one may want to
+        also consider efficiency matters.
+      - Generative modules as in the ~new~ keyword from Object oriented programming:
+        Basic construction arguments are provided and a container object is produced.
+
+        # {{{remark(Generative, SML / CASL modules??)}}}     
+
+   Observing such a sub-classification as distinct led to traditional structural
+   programming languages, whereas blurring the distinction somewhat led to functional programming.
+
+A simple selection of equivalent perspectives leads to wholly distinct paradigms
+of thought. It is with this idea that we propose an implementation of 
+first-class grouping mechanisms in a dependently typed language
+---theories have been proposed, on paper, but as just discussed 
+actual design decisions may have challenging impacts on the overall
+system. Most importantly, this is a
+/requirements driven/ approach to coherent modularisation constructs in 
+dependently typed languages.
+
+Later on,
+we shall demonstrate that 
+with a sufficiently expressive type system, a number of 
+traditional programming notions regarding ‘packaging up data’ become conflated
+---in particular: Records and modules; which for the most
+part can all be thought of as ``dependent products with named components''.
+Languages without such expressive type systems necessitate certain constraints
+on these concepts according to their intended usage
+---e.g., no multiple inheritance for Java's classes and only one instance for
+Haskell's typeclasses.
+It is not clear whether such constraints have been brought to more expressive
+languages out of necessity, convention, or convenience.
+Hence we propose a systematic exploration of the structuring-mechanism 
+design space for DTLs as a starting point for the design of an appropriate 
+dependently-typed module system. Along the way, we intend to provide a set
+of atomic combinators that suffice as building blocks for generally desirable
+features of grouping mechanisms, and moreover we intend to provide an analyses
+of their interactions.
+
+That is, we want to look at the edge cases of the design space for structuring-mechanism
+/systems/, not only what is considered `convenient' or `conventional'.
+Along the way, we will undoubtedly encounter `useless' or non-feasible approaches.
+The systems we intend to consider would account for, say, module structures with intrinsic types
+---hence treating them as first class concepts--- so that
+our examination is based on sound principles.
+
+Understandably, some of the traditional constraints have to do with
+implementations. For example, a Haskell typeclass is generally implemented as a dictionary
+that can, for the most part, be inlined whereas a record is, in some languages, a contiguous memory
+block: They can be identified in a DTL, but their uses force different implementation
+methodologies and consequently they are segregated under different names.
+#
+# https://people.cs.kuleuven.be/~tom.schrijvers/Research/talks/lhug_s02e01.pdf
+
+In summary,
+the proposed research is to build upon the existing state of module
+systems \parencite{types_for_modules} in a dependently-typed setting \parencite{dtls_give_modules} which is substantiated by developing
+an extension to a compiler.
+The intended outcomes include:
+  1. A clean module system for DTLs that treats modules uniformly as any other value type.
+  2. A variety of use-cases contrasting the resulting system with previous
+     approaches.
+  3. A module system that enables rather than inhibits efficiency.
+  4. Demonstrate that module features traditionally handled using meta-programming can be brought
+     to the data-value level; thereby not actually requiring the
+     immense power and complexity of meta-programming.
+
+Most importantly, we intend to implement our theory to obtain
+validation that it ‘works’.
+** Overview of the Remaining Chapters
+
+The remainder of the thesis proposal is organised as follows.
+
++ Chapter II discusses what is expected of modularisation mechanisms,
+  how they could be simulated, their interdefinability in Agda, and
+  discuss a theoretical basis for modularisation.
+
++ Chapter III outlines missing features from current modularisation systems,
+  their use cases, and provides a checklist for a candidate module
+  system for DTLs.  
+
++ Chapter IV discusses issues regarding implementation matter and the next steps
+  in this research, along with a proposed timeline.
+
++ Chapter V outlines the intended outcomes of this research effort.
+
+Let us conclude by attempting to justify the title of this thesis proposal.
+
+Landin's /The Next 700 Programming Languages/ \parencite{seven_hundred_langs}
+inspired a number of works, including 
+\parencite{seven_hundred_tt_models,seven_hundred_provers, seven_hundred_hoas,seven_hundred_libraries, seven_hundred_data}
+and more.
+The intended aim of the thesis is a requirements driven approach to coherent
+modularisation constructs in DTLs. In particular, we wish to extend Agda
+to be powerful enough to implement the module system features, in the core language,
+that people actually want and currently mimic by-hand or using third-party preprocessors.
+An eager fix would be to provide metaprogramming features,
+but unless one is altering the syntax or producing efficient code, this is
+glorified pre-processing ---it is a means to fake missing abstraction features.
+Moreover, metaprogramming would be a hammer too big for the nail we are interested in;
+so big that its introduction might ruin the soundness of the DTLs
+---e.g., two terms may be ill-typed and ill-formed, such as ~x +~ and ~5 = 3~, but
+are meaningful when joined together, as in ~x + 5 = 3~.
+Our aim is to provide just the right level of abstraction so that, if anything,
+users can write a type of container or method upon it then derive ‘700’ simple
+alternate views of the same container and method.
+
+To be clear, consider a semi-ring ---or any simple record of 17 different kinds of
+data.
+A semi-ring consists of two monoids ---each consisting of a total of 7 items
+of data and proof matter--- where one of them is commutative and there are two
+distributivity axioms. Hence, a semi-ring consists of 17 items.
+If we wanted to expose, say, 3 such items ---for example, the shared carrier and the
+identities of each monoid--- then there are a total of $\binom{17}{3} = 680$ ways,
+and if we jump to 4 items we have $\binom{17}{4} = 2380$ possible forms.
+Of course these numbers are only upper bounds when record fields depend on earlier items.
+In section 3, we provide explicit examples of different structural presentations of
+packages.
+
+Usually, library designers provide one or two views, along with conversion functions,
+and commit to those; instead we want to liberate them to choose whatever presentation
+is convenient for the tasks at hand and to work comfortably with the guarantee that
+all the presentations are isomorphic. Humans should be left to tackle difficult and
+interesting problems; machines should derive the tedious and uninteresting
+---even if it's simple, it saves time, is less error-prone, and clearly communicates
+the underlying principle. 
+
+If anything, our aim is practical ---to save developers from ad hoc copy-paste
+preprocessing hacks.
 * Current Approaches
 
 Structuring mechanisms for proof assistants are seen as tools providing
@@ -3837,6 +4194,16 @@ isbn="978-3-540-47265-0"
 * Making README.md                                                 :noexport:
 
 # PhD research ;; What's the difference between a typeclass/trait and a # record/class/struct? Nothing really, or so I argue.
+
+:Importance-of-narrative:
+
+The importance of the narrative is that it forces the remaining sections to tie into the
+ideas and questions posed here. Furthermore, it servers as a guide map for the remainder
+of the thesis proposal. Additionally, it serves as a writing prompt insisting each sentence
+of our proposal relates or contributes to our core mood:
+The disillusionment with computational organisation can be rectified by using dependent types
+to bring about a homogeneous treatment of structuring mechanisms.
+:End:
 
 #+NAME: make-readme
 #+BEGIN_SRC emacs-lisp :results none
