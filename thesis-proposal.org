@@ -58,8 +58,9 @@
 #+LATEX_HEADER: \newunicodechar{Σ}{\ensuremath{\mathop{\Sigma}}}
 #+LATEX_HEADER: \newunicodechar{∘}{\ensuremath{\mathop{\circ}}}
 #+LATEX_HEADER: \newunicodechar{′}{'}
-#+LATEX_HEADER: \newunicodechar{⦃}{ \{\!\mid }}  % this is not correct 
-#+LATEX_HEADER: \newunicodechar{⦄}{ \mid\!\} }   % this is not correct 
+#+LATEX_HEADER: \newunicodechar{τ}{\ensuremath{\tau}} 
+#+LATEX_HEADER: \newunicodechar{⦃}{\ensuremath{ \{\{ }}  % this is not correct 
+#+LATEX_HEADER: \newunicodechar{⦄}{\ensuremath{ \}\} }}   % this is not correct 
 #+LATEX_HEADER: \newunicodechar{⊎}{\ensuremath{\cupdot}}  % should be in myunicode; go #regenerate# it!
 #+LATEX_HEADER: \def\with{\kern0.7em \withrule \kern0.7em }
 #+LATEX_HEADER: \def\withrule{\vrule height1.57ex depth0.43ex width0.12em}
@@ -3539,6 +3540,7 @@ we have been even more generic by defining ~decorated~.
 What are the limits of programming genericity provided by our scheme?
 It would unsurprising if this approach yields
 the next 700 module systems.
+
 * Approach and Timeline 
 
 Packages, modules, classes, (dependent) records, (named) contexts, telescopes, theories, specifications
@@ -3548,6 +3550,227 @@ Moreover there may be no semantic difference between them in a dependently-typed
 setting, as \parencite{theories_as_types} present a type theoretic calculus
 of a variant of record types that corresponds to theories.
 
+** Implementation Matter
+
+We will realise our proposal in an existing industrial-strength compiler 
+and so working with it necessitates our implementations to be more than
+just ‘research quality’ but actually ready for a broad audience.
+
+Which compiler and for which language?
+
+Since our attention is focused on dependently typed languages within the
+realm of @@latex: Martin-L\"{o}f's@@ Type Theory
+\parencite{lof_constructive_math}, Agda \parencite{agda_web} is a natural
+candidate.
+
+Agda is currently one of the most used tools for proof and program experimentation
+involving dependent types. With its support for mixfix Unicode lexemes, it has
+become a strong competitor to Coq \parencite{coq_website,coq_inductive_coc, coq_coc} for both proof construction \parencite{agda_fixpoints, agda_quantifier_elim, agda_nondeterministic, agda_mergesort, agda_type_Safety, agda_aop}
+and general program construction \parencite{agda_web, agda_trains, agda_bitcoin, agda_hardware}
+---Agda's lack of /syntactic/ distinction between
+programs and propositions, along with its pattern matching utilities in-place of
+‘tactic sledgehammers’ \parencite{tactics}, it has also become an attractive
+language for introducing dependent types and functional programming
+\parencite{agda_iowa_book, agda_plf, agda_teaching}. With its syntactic similarity to Haskell, many Agda users treat
+their Agda code as if it were lazy with the ~let~ and ~where~ clauses preserving sharing
+---which is not the case, since such clauses rewrite to top-level functions
+\parencite{agda_docs}.
+Instead, Agda's evaluation strategy is normal order: Function definitions
+are invoked before arguments are evaluated, but computations of arguments
+are /not/ shared. This is a prime location for efficiency issues since type-checking
+in a dependently typed language tends to involve evaluation of terms.
+Surprisingly this has not stopped users from producing large-scale software
+developments \parencite{RATH, agda_trains, agda_web}.
+
+# for agda's evluation strategy, see also
+# https://stackoverflow.com/questions/21210569/is-the-evaluation-strategy-of-agda-specified-anywhere
+
+Needless to say,
+a poor choice of elaboration strategy can lead to a loss of sharing,
+contain too many undesirable side-effects, hinder efficiency, or forgo compile-time optimisations.
+For example, 
+Agda, as currently implemented using the Glasgow Haskell Compiler (GHC), is a realisation
+of @@latex: Martin-L\"{o}f's@@ Type Theory (MLTT) that is heralded as
+both a programming language and proof assistant.
+Unfortunately MLTT, as many other dependent logics 
+---such as the Calculus of Constructions with inductive types, which underlies both
+the Coq and Lean proof assistants---
+does not account for modules, thereby leaving these as consistency-preserving hacks thrown onto the implementation.
+As mentioned earlier, Agda simply rewrites modules into top
+level functions with module parameters realised as parameters to the resulting functions.
+This is an implementation detail and has little impact on theory construction,
+however, code reuse becomes unreasonably slow
+due to the loss of sharing that happens when module arguments need to be 
+re-normalised in each function-counterpart.
+Consequently, only a minor subset of the Agda community actually /executes/ their
+programs. The rest of the community is generally content with type checking only; 
+which does not hinder
+the reliability of proof since dependent types tend to require computation so as
+to be determined.
+
+It is important to note that we employ Agda only as a proof-of-concept for
+our proposed exploration of first-class structuring-mechanisms in dependently typed languages.
+Admittedly Agda's support for Unicode mixfix lexemes makes it a pleasure to work
+in, with mechanised proofs being little work more than their LaTeX renditions.
+
+** Next Steps
+
+The approach we intend to follow consists of the following steps.
+Notice that feedback loop of practice into theory.
+
+:Weakness:
+1. Really study the other mechanisms that already exist.
+
+   *Exhibiting such a weakness may suggest insufficient preparatory work!*
+   *Possibly resulting in a fail!*
+   
+   - Survey module systems in theory, in existing DTLs, *and* in non-DTLs.
+
+   - As far as we can tell, besides the MTT \cite{mmt_main_paper, mmt_api}
+     group, no one else is working on actually implementing
+     solutions to the flaws we have identified, such as combination over
+     structures.
+
+   - This is promising in terms of novelty, if anything.
+
+   - Analyse why there are not multiple implementations of such seemingly
+     immensely useful concepts.
+
+:End:
+
+2. Distill the /true/ requirements for a solution;
+   ensure good /fit for purpose/ criteria exists.
+
+   - Understand the requirements of `modularity mechanisms' for DTLs.
+   - Narrow down a design by choosing a set of requirements.
+   - Identify necessary, and practical, trade-offs.
+     Conflicting feature sets? Usability?
+   - Ideally we want our implementations to avoid too much overhead,
+     such as creating an entire new language; this may necessitate the
+     weakening of other functionality.
+
+3. Deepen understanding of the opportunities given by DTL.
+
+   - Understand the relationships between 
+      modules, records, contexts, telescopes, and signatures.
+      * Do they have differing `types'?
+      * As types themselves, do they have differing `values'?
+      * In the setting of DTLs, are they essentially isomorphic?
+      * What are the intended uses? What intentions do particular choices communicate?
+        - E.g., “$x = y$” communicates an equality and nothing more, whereas
+          “$x\! \iff\! y$” communicates a Boolean equality: A redundant, particularised, equality
+          symbol serves to succinctly and elegantly communicate more information.
+
+4. Prototype some mechanisms; a combination of old, adapted, and novel ones
+   to demonstrate the power of the system.
+
+  + Implement the structuring mechanism combinators discussed earlier
+    ---such as combination over common-substructures.
+
+   + Possibly begin with reifying first class grouping mechanisms by
+     representing contexts ---i..e, sequences of declarations with optional definitions---
+     as records in Agda with the undefined declarations being fields and the rest being
+     derived or definitional.
+
+5. Evaluate the mechanisms ---using fit-for-criteria.
+
+ + Since the realisation would be in Agda, we would keep in touch with the community
+   to ensure that the additions contribute to program design.
+
+ + Evaluate the strength of the resulting additions in terms
+   of practical use for library designers as well as in terms of program speed.
+
+6. Make sure to have a denotational semantics for the mechanisms.
+
+ + Ensure that the additions are minimal, orthogonal, and construct a sound
+   type theory around them.
+
+7. Refine 2-6 until elegance, or deadline, is reached, whichever comes first.
+
+# More importantly, as our results will likely need to be re-proven for definitional adjustment,
+# we intend to /mechanise/ all of our proofs in Agda as well ---when possible.
+# Therefore, Agda plays multiple roles: A dependently-typed language to experiment
+# with, as well as a proof checker for our results.
+
+Our timeline will discuss how we will carry out this approach in multiple
+passes and will discuss the conditions of a successful pass.
+
+** Timeline
+
+We shall iterate through the `approach phase' three times,
+utilising a feedback loop of practice into theory. 
+The phases are discussed below.
+
+As our results will likely need to be re-proven for definitional adjustment,
+we intend to /mechanise/ all of our proofs in Agda as well ---when possible.
+Therefore, Agda plays multiple roles: A dependently-typed language to experiment
+with, as well as a proof checker for our results.
+
+*** The First Pass: May-October 2019
+This stage concludes successfully provided the following checkpoints are achieved.
+
++ A thorough understanding of what is being done by others, and how
+  our approach differs, is obtained /and/ documented.
+
++ Understand the Agda compilation ecosystem, provide a report on how to make
+  alterations to it, and actually implement at least one structuring mechanism
+  and provide use cases as well as preliminary efficiency analysis.
+
++ A publication covering existing mechanisms, their features and flaws,
+  and possibly an explanation of why there is theoretical work on these issues
+  but little to no implementation on them
+  ---with a focus on practical uses and possible hurdles to use.
+  
+  - A side-effect of this is to produce an evaluation strategy for the mechanisms.
+  - Moreover, this necessitates looking into the associated semantics,
+    evaluating them, and proposing semantics for the mechanism we have designed.
+
++ Thesis writing should have begun and nearing completion are sections
+  on introduction and background.
+
+*** The Middle Pass: November 2019 - February 2020
+This stage concluded successfully provided the following checkpoints are achieved.
+
++ The success of the previous stage ensures an understanding of the Agda compilation
+  ecosystem, as such it should take less time to implement the more mechanisms,
+  theory combinators. The goal is to have the remaining mechanisms implemented,
+  with a focus on the combination-over-a-structure mechanism.
+
+  - With each implementation, reach-out to the Agda community to solicit
+    feedback regarding improvements and possible use cases.
+
++ Extending the semantics for the newly implemented mechanisms.
+
+  - Evaluating which mechanisms are more primitive, which are derived, and
+    which can be used to /allow users to make their own *using* the concrete language itself/!
+
++ A publication of case studies utilising these combinators, as well as
+  a comparison of how these are an improvement over traditional methods.
+
+  - Analysing the interactions between features; does the addition of one
+    hinder another.
+
+  - Empirical tests for efficiency and utility.  
+
++ Thesis writing should have progressed with sections on 
+  use cases, semantics, and feature design,
+  having substantial matter if not nearing completion.
+
+*** The Final Pass: March - April 2020
+This stage concluded successfully provided the following checkpoints are achieved.
+
++ Ensure that our implementations are meeting our requirements for a solution.
+
++ Begin mechanisation of proofs authenticating that the denotational 
+  semantics has desired, expected, properties; such as soundness and safeness.
+  
+*** Concluding Phase
+Wrap up all proof matters and finish the thesis.
+
+Suffice to say life tends to be more hectic than a schedule may permit
+and as such some times may deviate from the above intentions.
+Regardless, the goal will be to complete the thesis within 2 years time;
+in particular before September 2020.
 * Conclusion
 
 As already discussed, 
