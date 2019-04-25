@@ -50,17 +50,18 @@
 #
 #+LATEX_HEADER: \setlength{\parskip}{1em}
 
+#+LATEX_HEADER: \usepackage[backend=biber,style=alphabetic]{biblatex}
+#+LATEX_HEADER: \addbibresource{MyReferences.bib}
+
 #+LATEX_HEADER: \usepackage{../MyUnicodeSymbols/MyUnicodeSymbols}
 #+LATEX_HEADER: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
+#+LATEX_HEADER: \newunicodechar{Σ}{\ensuremath{\mathop{\Sigma}}}
 #+LATEX_HEADER: \newunicodechar{∘}{\ensuremath{\mathop{\circ}}}
 #+LATEX_HEADER: \newunicodechar{′}{'}
 #+LATEX_HEADER: \newunicodechar{⊎}{\ensuremath{\cupdot}}  % should be in myunicode; go #regenerate# it!
 #+LATEX_HEADER: \def\with{\kern0.7em \withrule \kern0.7em }
 #+LATEX_HEADER: \def\withrule{\vrule height1.57ex depth0.43ex width0.12em}
 #+LATEX_HEADER: \newunicodechar{❙}{\ensuremath{\mathop{\with}}}
-
-#+LATEX_HEADER: \usepackage[backend=biber,style=alphabetic]{biblatex}
-#+LATEX_HEADER: \addbibresource{MyReferences.bib}
 
 #+LATEX_HEADER: \usepackage[dvipsnames]{xcolor} % named colours
 #+LATEX_HEADER: \usepackage{color}
@@ -583,7 +584,10 @@ the underlying principle.
 
 If anything, our aim is practical ---to save developers from ad hoc copy-paste
 preprocessing hacks.
+
 * Current Approaches
+
+** Intro                                                            :ignore:
 
 Structuring mechanisms for proof assistants are seen as tools providing
 administrative support for large mechanisation developments
@@ -595,6 +599,1417 @@ come at the cost of limiting expressiveness to the existing foundations;
 thereby possibly producing awkward or unusual uses of linguistic phrases
 of the ambient language.
 
+We may use the term ‘module’ below due to its familiarity, however some of the
+issues addressed also apply to other instances of grouping mechanisms
+---such as records, code blocks, methods, files, families of files, and namespaces.
+
+In section 2.1 we define modularisation; in section 2.2 we discuss how to 
+simulate it, and in section 2.3 we review what current systems can and cannot do;
+then in section 2.4 we provide legitimate examples of the interdefinability of 
+different grouping mechanisms within Agda. We conclude in section 2.5 by 
+taking a look at an implementation-agnostic representation of grouping mechanisms
+that is sufficiently abstract to ignore any differences between a record and
+an interface but is otherwise sufficiently useful to encapsulate what is expected of
+module systems.
+Moreover, besides looking at the current solutions, we also briefly discuss their flaws.
+
+** Expectations of Module Systems
+
+# JC: 2.1 is wonderful.  For your thesis, I will want this expanded (references, table of where the feature exists, etc), but this is enough for the proposal.
+
+Packaging systems are not so esoteric that we need to dwell on their uses;
+yet we recall primary use cases to set the stage for the rest of our discussions.
+
++ Namespacing :: Modules provide new unique local scopes for identifiers thereby permitting de-coupling.
+                 
+                 The ability to have multiple files contribute to the same namespace is also desirable
+                 for de-coupled developments. This necessitates an independence of module names from
+                 the names of physical files ---such de-conflation permits recursive modules.
+
++ Information Hiding :: Modules ought to provide the ability to enforce content /not/ to be accessible, 
+    or alterable, from outside of the module to enforce that users cannot depend on implementation design decisions.
+
++ Citizenship :: Grouping mechanisms need not be treated any more special than record types.
+                 As such, one ought to be able to operate on them and manipulate them
+                 like any first-class citizen.
+
+                 In particular, packages themselves have types which happen to be packages.
+                 This is the case with universal algebra, and OCaml, where
+                 ‘structures’ are typed by ‘signatures’
+                 ---note that OCaml's approach is within the same language, whereas, for example,
+                 Haskell's recent retrofitting \parencite{haskell_backpack},
+                 of its weak module system to allow such interfacing, is not
+                 entirely in the core language since, for example, instantiating happens
+                 by the package manager rather than by a core language declaration.
+
++ Polymorphism :: Grouping mechanisms should group all kinds of things without prejudice.
+                  
+                  This includes ‘nested datatypes’: Local types introduced for implementation
+                  purposes, where only certain functionality is exposed. E.g., in an Agda record
+                  declaration, it may be nice to declare a local type where the record fields refer to it.
+                  This approach naturally leads into hierarchical modules as well.
+                  
+                  Interestingly, such nesting is expressible in [[http://fsl.cs.illinois.edu/images/5/5e/Cayenne.pdf][Cayenne]], a long-gone predecessor
+                  of Agda. The language lived for about 7 years and it is unclear why it is no longer
+                  maintained. Speculation would be that dependent types were poorly understood by
+                  the academics let alone the coders ---moreover, it had essentially one maintainer
+                  who has since moved on to other projects.
+
+                  With the metaprogramming inspired approach we are proposing, it is only reasonable that, for example,
+                  one be able to mechanically transform a package with a local type declaration into
+                  a package with the local declaration removed and a new component added to abstract it.
+                  That is, a particular implementation is no longer static, but dynamic.
+
+It would not be unreasonable to consider adding to this enumeration:
++ Sharing :: The computation performed for a module parameter should be
+             shared across its constituents, rather than inefficiently being recomputed
+             for each constituent ---as is the case in the current implementation of Agda.
+
+It is however debatable whether the following is the ‘right’ way to incorporate
+object-oriented notions of encapsulation.
++ Generative modules :: A module, rather than being pure like a function, may have
+     some local state or initial setup that is unique to each ‘instantiation’ of
+     the module ---rather than being purely applying a module to parameters.
+
+     #  As I remember Leroy-1995, the point was that SML's generative system is replaced in OCaml with an applicative system.
+     SML supports such features.
+     Whereas Haskell, for example,
+     has its typeclass system essentially behave like an implicitly type-indexed record
+     for the ‘unnamed instance record’ declarations; thereby rendering useless
+     the interfaces supporting, say, only an integer constant.
++ Subtyping :: This gives rise to ‘heterogeneous equality’ where altering type annotations can suddenly
+                make a well-typed expression ill-typed. E.g., any two record values are equal /at/ the
+                subtype of the empty record, but may be unequal at any other type annotation.
+
+                Since a package could contain anything, such as notational declarations,
+                it is unclear how even homogeneous equality should be defined
+                ---assuming notations are not part of a package's type.
+
+There are many other concerns regarding packages ---such as deriving excerpts, decoration with
+higher-order utilities, literate programming support, and matters of compilation along altered constituents---
+but they serve to distract from our core discussions and are thus omitted.
+
+*** COMMENT ⟪ Originally lengthy & messy version ⟫ What's Expected of Module Systems?   
+
+**** Namespacing
+
+  Modules ought to provide new unique local scopes ---say, by hiding or exporting--- wherein names are considered unique.
+  Consequently, the same name declared in distinct modules ought to be considered
+  distinct names. This idea permits de-coupling: Implementations are independent
+  of one another, whence alterations can transpire in parallel, and development 
+  may proceed rapidly.
+  # Maintaibility!
+
+  Consider the case of de-coupled implementations that incidentally contain
+  the exact same datatype declaration ---for example, the modules were created
+  at different times by completely different people, and we cannot alter either code.
+  If we could alter the code, we might factor out the similarities; otherwise,
+  it would be fruitful to provide aliases to the datatype /and/ its constructors:
+  The latter is usually not possible in many languages, but it is in Haskell and Agda
+  for example, thereby permitting pattern matching on previously-identical constructor names.
+  
+{{{remark(WK: Interchangable? Really? Example!)}}}
+
+**** COMMENT Separate Compilation ---WK: Why is this important? What for?
+
+Module code is built /once/ in a while ---e..g, when it was last altered.  
+  As such, scripts that rely on pre-existing module code should not waste
+  time rebuilding the module library. For example, in Agda, files are
+  built once to produce ~agdai~ ---“interactive Agda”--- files, which are then
+  used speedily by other files. Our scripts, in Agda, go through the process
+  of parsing, typechecking, and producing the ~agdai~ files ---this process
+  needn't be repeated for pre-existing modules.
+
+  Alternatively, for example, if a file contains two code blocks each referring
+  to distinct namespaces and only one of them is altered, then the state of the
+  other namespace ought to remain the same ---even if it indirectly refers to the
+  former namespace--- and so should not require to be rebuilt.
+  With sufficient care, a similar argument could be presented for methods
+  and code blocks.
+  
+**** Grouping Mechanisms Should Group All Kinds Of Things!
+
+***** Genericity ---Parameters and State
+
+Module matter may be utilised in unimagined manners, so should be adaptable.
+
+  - To support such adaptability, varying degrees of polymorphic, generic, programming
+    should be supported ---to avoid duplicate code, if anything else.
+   
+     E.g., Agda provides a hierarchy of types which can be quantified over, yet
+     there are record and module constructs that are essentially the same but
+     this is inexpressible in Agda since these two grouping mechanisms have
+     distinct citizenship classification in Agda.
+ 
+  - Modules may require an initial communication to occur with an external
+   system ---such as setting up a network connection or initialising a global 
+   variable---.
+
+   To provide such support, consideration should be given to effectful module
+   invocations. The distinction between effectful and pure module operations is notable
+   within the OCaml and SML communities in the form of `functors', 
+   {{{remark(Both effectful and pure?)}}}
+   even though the concepts are widely popular
+   in stateful languages ---e.g., in the guise of a constructor method for a
+   class in an object oriented language.
+
+   Being total and pure, Agda currently does not support such effectful
+   modules. Utilising secondary options, such as pragmas, may be one
+   of the best possible approximations. In fact this is essentially what
+   the C preprocessor does when it includes header files ---the preprocessor copies and pastes
+   contents of other files into the current script.
+ 
+  - Modules may be parameterised ---such as which network to connect to, or
+    which file to read from.
+
+    The computation performed for a parameter should be shared across its
+    constituents, rather than inefficiently being recomputed by each constituent.
+    Haskell, for example, forms a ‘thunk’ of memory that refers to the result
+    of the /unevaluated/ computation such that each constituent refers to it.
+    Once any constituent actually makes use of it, then it is evaluated, and
+    all other constituents continue to point to the same memory location
+    which now has the resulting computed value. 
+    However, the current implementation of Agda forces each
+    constituent to re-compute the value of a parameter ---there is minimal
+    sharing.
+
+{{{remark()}}}
+
+***** Instance-Specific Variables in Pure Languages
+
+  Before even getting to nested type declarations, one desirable feature of any
+  grouping mechanism is to contain instance specific-variables.
+
+  For example, suppose I have a type ~t~ that is to implement an interface ~i~
+  containing an integer value ~rank~.
+  In Haskell, for example, ~i~ is a typeclass and its utilities are dispatched according
+  to the instances declared. Even if ~t~ is declared an instance of ~i~, the invocation ~rank~
+  makes no reference to ~t~ in its type and it might as well be referring to the rank
+  associated with any other type!
+  The problem is that the instance is unnamed and the instance dictionary is indexed by the
+  name ~t~, which is not referenced at all.
+  As such, one would need to produce
+  the following awkward workaround.
+  In ~i~, we declare ~rank :: a -> Int~, even though we do not /intend/ to make any use of the argument,
+  then at the invocation site we have ~rank (undefined :: t)~.
+  This is all terribly roundabout; no wonder the Haskell library does not have a 
+  ‘pointed carrier’ typeclass! ( It does have a [[http://hackage.haskell.org/package/pointed-5.0.1/docs/Data-Pointed.html][‘pointed type constructor’]] typeclass. )
+  In contrast, C# interfaces, for example, can only contain methods and constants 
+  ---not arbitrary properties--- and avoid Haskell's problem.
+  Incidentally, Scala, which can be thought of as a middle ground between Haskell and C#,
+  allows the C#-like trait declaration.
+  # https://gist.github.com/missingfaktor/2575397
+
+  Observe that Haskell's distinction of constructs results in distinct tools:
+  It needs both a type-class checker and a type-checker.
+  The former is unnecessary if typeclasses were syntactic sugar for canonical record types,
+  thereby having them as ordinary types.
+  Conveniently, the reduction of distinctions not only makes it easier to learn a language
+  but also demands less tooling on the compiler implementers.
+
+***** Nested Type Declarations
+
+  A grouping mechanism ought to provide support not only for amalgamating functionality
+  but also for assembling data structures.
+  Moreover the access to the two forms of data
+  should be uniform ---e.g., by using the popular dot notation for both.
+  #   Why? For example, a type of containers, say sets, exposes a certain functionality but
+  #   the implementation of the container may be altered
+
+  # https://stackoverflow.com/questions/2287267/alternatives-to-nested-interfaces-not-possible-in-c
+  Depending on /intended/ usage, some grouping mechanisms do not allow the introduction
+  of data structures. For example, C# does not allow this even for the case
+  of an interface containing a nested interface ---incidentally, its
+  close relative VB.NET does
+  support such a feature.
+  Unfortunately even Agda does not allow this; e.g., the following is invalid
+  {{{code(Agda does not permit ~data~ in ~record~)}}}
+  #+BEGIN_SRC agda org-agda
+  record TreeContainer (A : Set) : Set₁ where
+
+    data Rose : Set where Children : A → List Rose → Rose
+  
+    field
+      initial  : Rose
+      insert   : A → Rose → Rose
+  #+END_SRC
+
+  Note that the type ~Rose~ is not intended to be a field, but rather a local type that
+  need not exist elsewhere. Unfortunately this is not possible for Agda records,
+  but is only available at the module level ---which is not first class.
+  It seems there was a proposal to include such features into
+  Agda's older sibling, Haskell, some 6 years ago but the lack of dependent types
+  made some features awkward, or impossible, to express, thereby leading to the abandonment
+  of the project. @@latex: \iffalse ---this is merely speculation; but
+  possibly related, \fi @@
+  Interestingly, there is now currently
+  much effort exerted into bringing dependent-types into Haskell in a
+  harmonious fashion.
+
+  :GraphsAreDTs:
+  WK: What purpose does this remark serve at this location?
+
+  For example, the ubiquitous notion of graphs is inherently
+  a dependent type since the functions associating an edge with its source and target
+  vertices have types depending on which type the vertices are and which type the edges are.
+
+  {{{code(Graphs are Inherently a Dependent Type)}}}
+  #+BEGIN_SRC agda org-agda
+record Graph : Set₁ where
+  field
+    vertices : Set
+    edges    : Set
+    src tgt  : edges → vertices
+#+END_SRC
+:End:
+
+  That one works /over/ some given carrier type ---the fact that indexing by type is the only
+  way to distinguish instance ‘records’--- has led the Haskell community to produce
+  a number of isomorphic data types, using the ~newtype~ keyword, for the sole purpose of providing different typeclass
+  instances. For example, the Booleans have the isomorphic copies [[http://hackage.haskell.org/package/base-4.12.0.0/docs/Data-Monoid.html#t:All][~All~]] and [[http://hackage.haskell.org/package/base-4.12.0.0/docs/Data-Monoid.html#t:Any][~Any~]]
+  for which there are conjunctive and disjunctive monoid instances, respectively;
+  as well as conversions to the standard Booleans.
+  Besides the essential duplication, comments are the only way to communicate the desired
+  behaviour of the monoid typeclass ---in contrast, the Agda compiler can check such a specification.
+  Nonetheless, type classes provide for tremendously terse code and it would be nice to
+  declare which instance is to be used in a given scope \parencite{named_instances}
+  ---this is doable in Agda, Idris, and PureScript, to name a few, 
+  and there is a proposal to bring this to Haskell.
+
+  :WhyTCsNotEnought:
+    WK: What purpose does this remark serve at this location?
+
+  It is to be noted that a naive approach such as inserting Boolean terms expressing
+  the specification of a typeclass and having, say, QuickCheck ensure they hold on randomly
+  generated input does not scale. Such an approach would work for ensuring, say, that
+  the additive integers yield a monoid, but would fail to show that lists produce a functor
+  since the random generation of /functions/ for ~fmap~ would be rather costly, to say the least.
+  Another naive approach would be to reduce the Boolean terms to normal then checking for
+  reflexivity. This only works for basic concepts, but is tremendously brittle:
+  Ensuring the naturals under addition form a monoid would require an inductive proof,
+  thereby necessitating a proof term to begin with. As such, explicit proof is necessary
+  for the large scale verification of behavioural properties of data types.
+  :End:
+
+  :Cayenne:
+  WK: What purpose does this remark serve at this location?
+
+  Perhaps more realistically, consider a container type that supports certain
+  functionality yet the particular implementation, call it ~C,~ is chosen dynamically.
+  {{{code(Dynamic Containers)}}}
+  #+BEGIN_SRC agda org-agda
+record IntegerContainer : Set₁ where
+  field 
+    C      : Set   {- The container implementation. -}
+    empty  : C
+    insert : Int → C → C
+#+END_SRC
+
+  However, the ~TreeContainer~ record is expressible in Cayenne, a long-gone predecessor
+  of Agda. The language lived for about 7 years and it is unclear why it is no longer
+  maintained. Speculation would be that dependent types were poorly understood by
+  the academics let alone the coders ---a statement that remains true today as we have
+  already discussed.
+ # http://fsl.cs.illinois.edu/images/5/5e/Cayenne.pdf
+ :End:
+
+**** Excerpting ---Deriving Modules
+
+  There is a tendency to depend on a particular set of modules when forming
+  numerous scripts ---for example, requiring numeric, list, vector,
+  and a variety of equality and isomorphism notions when working on a problem of representing bags.
+  The common solution is to manually produce a module that re-exports the
+  desired utilities.
+
+  In the extreme case that we actually use one utility from each of /N/ modules,
+  then our scripts will not depend on /N/ utility functions but rather on
+  /N/ many modules ---which is not necessarily true. However, that is what appears
+  on the surface and so those files must be built. For the sake of efficiency,
+  it would be desirable to have a new module formed, say in the back-end,
+  that includes only the minimum setup, from each module, needed to have the
+  utility functions working. Ideally the system could be commanded to either
+  produce such an amalgamated module implicitly in some local directory,
+  or to weave it into the back-end ---either way, there would be side-effects.
+
+  Besides efficiency, if this module could be presented
+  by the system to the user, it would also make the resulting scripts more self-contained
+  and so more re-usable. Moreover, for presentation purposes, it is convenient
+  to have precisely only what is needed rather a hodge-podge of imports
+  from a variety of libraries which may not even be publicly accessible
+  ---as is the case with many personal libraries.
+
+  Emacs' Org major mode provides for the ability to make such `tangling'
+  happen. It has already been demonstrated that Agda code can be tangled from
+  literate programming \parencite{knuth_lp} with Org-mode documents, however the goal is to be
+  able to do so directly within Agda itself.
+
+**** Access Controls
+{{{remark(Difference between this section and the next?)}}}
+
+A key feature of grouping mechanisms is information hiding; the
+ability to encapsulate data representations so that data invariants
+may be maintained by the library utilities.
+Thus, modules should have access controls
+  ---the ability to enforce content /not/ to be accessible, or alterable, from
+  outside of the module.
+
+{{{remark(More general: To enfore that users cannot depend on implementation design decisions.)}}}
+
+  In particular, when the implementation of a concept leaks details divergent
+  from its intended interface, or if the implementation is likely to change, 
+  one should provide an interface and be able to make the definitions opaque
+  to the system so that its normalisation is not overly aggressive.
+  For example, suppose we implement bags using lists.
+  Using knowledge of the implementation, users could produce methods
+  that are undefinable for bags; e.g., any fold using a
+  non-commutative operator. This is an opportunity to
+  provide a definition and mark it as opaque.
+  Agda does this with the ~abstract~ keyword
+  ---which happens to be experimental since it's semantics are not
+  well-understood.
+  :PoorExample:
+  For example, suppose we want to implement an addition algorithm over the
+  natural numbers, but we have yet to settle on the implementation
+  ---e.g., whether it is recursive on the first or second argument, or if it
+  makes a translation to binary then back---, then this is an opportunity to
+  provide a definition and mark it as opaque.
+  #   Agda does this with the ~abstract~ keyword.
+  :End:
+
+  It is important to observe that many languages may hide method names, but
+  this feature of Agda goes further. It hides the method implementation altogether
+  from the user, so they cannot rely on it for reasoning purposes nor
+  efficiency hacks. The latter being common programming tricks; e.g.,
+  knowledge of ~gcc~ compiler implementations lets users favour certain constructs
+  or form expressions that are considered undefined by the C language specification.
+
+**** Representation Hiding
+
+{{{remark(Difference between this section and the previous?)}}}
+
+We've remarked that a module should serve multiple purposes, such as
+  namespacing, but it should also provide support for creating abstract
+  data types. 
+
+  For example, 
+  {{{remark(WK: What does this illustrate? DT? Context?)}}}
+  suppose a library is intended to provide an in implementation
+  for the notion of bags ---also known as multisets---, then the module would
+  contain the implementation but the exported data would hide the implementation
+  matter. Indeed, access to implementation matter could render dangerously incoherent
+  operations to be permissible; such as deriving an order on a type by considering
+  the hidden bag implementation.
+
+  Another example of where access to an implementation radically alters
+  the possibilities is in the relm of databases. A stack may be implemented
+  using a linked list, but providing only a restricted core functionality.
+  The latter can serve as a basic database, but the former cannot since one
+  cannot implement the general ~select~ database operation on stacks
+  to alter elements. {{{remark(WK: Insufficiant declaration of constraints!)}}}
+
+
+  Stacks are not functorial. {{{remark(---Musa: Yes they are!)}}}
+  #+begin_src haskell
+---  fmap using only stack interface.
+
+fmap f s | null s    = s
+         | otherwise = let (hd, tl) = pop s in push(f hd, fmap f tl)
+  #+end_src
+
+**** Operations on grouping mechanisms ---grouping mechanisms as first-class citizens!
+
+  A common experience is coding an algorithm along with print statements
+  to keep the user notified of the events taking place, or of coding an
+  algorithm and keeping track of a table of pre-computed values, i.e., memoiziation.
+  The core logic of the algorithm is polluted with an extra-desirable
+  functionality, which makes the core logic un-reusable when other functionality
+  is desired. The solution is a ‘decorator’, a higher-order function that
+  takes the core algorithm as a method and yields a method that adds the
+  extra-desirable functionalities. 
+
+  {{{remark(WK: “aspect-oriented”?)}}}
+  For matters of efficiency, it may be desirable to take a module of polymorphic
+  code and instantiate its variables to concrete types and values, possibly
+  eliminating recursion as well to produce static code that incurs less dynamic
+  penalty.
+
+  Another common operation, which happens to be supported in OCaml, is obtaining the
+  interface of a module. The manner in which code is grouped could be optimally
+  aimed at maintainability or at usability. These are different problems and
+  so should be decoupled.
+
+**** Physical Independence
+
+  In a zealous appeal to the principle of separation of concerns, some
+  systems insist on only one module per file; moreover, the module's name
+  must be the name of the physical file.
+  However, incessant appeal to that principle results in fragmented hierarchies.
+  It may be prudent to have multiple files contributing to the same module
+  namespace, as in C, thereby necessitating filenames be independent from the module names.
+
+{{{remark(WK: See also: ghc ---split-objs, ---split-sections)}}}
+
+**** Subtyping & (Type-directed) Equality
+
+  Subtyping is a controversial issue.
+  On the one hand, it permits re-use.
+  On the other hand, it makes type inference \parencite{type_inference_in_math} rather weak.
+  It's incorporation however does allow for using records for manifest fields.
+  Then again, type inference is already sufficiently weak in a dependently-typed language,
+  so this may not be too much of a burden.
+
+  Moreover this now gives rise to (heterogeneous!) equality issues:
+  If two records have only one common field with the same value, but otherwise have many
+  other distinct fields, then they are equal only /at/ the sub-record consisting of that field,
+  and are otherwise unequal /at/ any other type. Altering the type annotation can suddenly
+  make a well-typed expression ill-typed. 
+  # This is worrisome, to say the least.
+  #  This becomes more anxiety provoking when ‘proof irrelevance’ and term erasure enter
+  #  the scene.
+  #
+  # Altering the type annotation can suddenly make equal items unequal.
+
+  Powerful languages like Agda allow for the declaration of patterns, notation, and
+  precedence. Modelling a module by a record would suggest module equality is structural
+  record equality ---but do we really want to consider notational declarations?
+  If we do not, then we are considering equality /at/ the greatest common sub-record type?
+
+  Perhaps sub-typing should be in the background but not in the foreground?
+  This may lead to a divergent treatment of first-class versus second-class grouping mechanisms.
+
+{{{remark(WK: Look at OCaml singatures, module types, and modules. Similar in Coq?)}}}
+
+**** COMMENT ? Hierarchical Modules
+**** COMMENT ? Recursive Modules
+
+   One potential solution would be to deconflate the unit of namespacing from the 
+unit of compilation (from the unit of filesystem organization).)
+** Ad hoc Grouping Mechanisms
+
+# ad hoc ∷ created or done for a “particular” purpose as necessary.
+# Synonyms:	impromptu, improvised, rough and ready, makeshift, make-do, cobbled together, thrown together.
+
+Many popular coding languages do not provide top-level modularisation mechanisms,
+yet users have found ways to emulate some or all of their /requirements/.
+We shall emphasise a record-like embedding in this section, then illustrate it in
+Agda in the next section.
+
+*Namespacing:* Ubiquitous languages, such as C, Shell, and JavaScript, that do not
+have built-in support for namespaces mimic it by a consistent naming
+discipline as in \newline ~theModule_theComponent~. This way, it is clear where ~theComponent~
+comes from; namely, the `module' ~theModule~ which may have its interface expressed as a
+C header file or as a JSON literal. This is a variation of 
+Hungarian Notation \cite{hungarian_notation}.
+
+# https://docs.racket-lang.org/guide/macro-module.html
+Incidentally, a Racket source file, module, and `language' declaration
+are precisely the same.
+Consequently, Racket modules, like OCaml's, may contain top-level
+effectful expressions.
+In a similar fashion, Python packages
+are directories containing an  ~__init__.py~ file which is used for the the same
+purpose as Scala's ~package object~'s ---for package-wide definitions. 
+   
+*Objects:* An object can be simulated by having a record structure
+contain the properties of the class which are then instantiated
+by record instances. Public class methods are then normal
+methods whose first argument is a reference to the structure
+that contains the properties.
+
+# Records, Prefixes, & Record Consuming Operations
+
+#+LaTeX: \begin{tcolorbox}[title=\hfill Muliple Forms of the Template-Instantiation Duality]
+#+BEGIN_CENTER
+| *Template*            | $\qquad\text{has a}\qquad$ | *Instance*           |
+| ≈ class             |                            | ≈ object           |
+| ≈ type              |                            | ≈ value            |
+| ≈ theorem statement |                            | ≈ witnessing proof |
+| ≈ specification     |                            | ≈ implementation   |
+| ≈ interface         |                            | ≈ implementation   |
+| ≈ signature         |                            | ≈ algebra          |
+| ≈ logic             |                            | ≈ theory           |
+#+END_CENTER
+#+LaTeX: \end{tcolorbox}
+      
+*Modules:* Languages that do not support a module may mimic it 
+by placing ``module contents'' within a record.
+Keeping all contents within one massive record also solves the
+namespacing issue.
+
+In JavaScript, for example, a module is a JSON literal
+---i.e., a comma separated list of key-value pairs.
+Moreover, encapsulation is simulated by having the module be encoded
+as a function that yields a record which acts as the public contents
+of the module, while the non-returned matter is considered private.             
+Due to JavaScript's dynamic nature we can easily adjoin functionality to such `modules'
+at any later point; however, we cannot access any private members of the module.
+This inflexibility of private data is a heavy burden in an Object Oriented
+Paradigm. 
+
+*Sub-Modules:* If a module is encoded as a record, then a sub-module is a
+field in the record which itself happens to be a module encoding.
+
+*Parameterised Modules:* If a module can be considered as encoded as the returned record from
+a function, then the arguments to such a function are the parameters to the module.
+
+*Mixins:* A /mixin/ is the ability to extend a datatype /X/ with functionality /Y/
+long after, and far from, its definition.
+Mixins ‘mix in’ new functionality by permitting /X obtains traits Y/ 
+---unlike inheritance which declares /X is a Y/. Examples of this
+include Scala's traits, Java's inheritance, Haskell's typeclasses, and C#'s extension methods.
+
+Typescript \parencite{understanding_typescript}
+occupies an interesting position with regards to mixins: It is one of the few
+languages to provide union and intersection combinators for its ~interface~ grouping mechanism,
+thereby most easily supporting the little theories \parencite{little_theories}
+method and making theories a true lattice. Interestingly intersection of interfaces
+results in a type that contains the declarations of its arguments and if a field
+name has conflicting types then it is, recursively, assigned the intersection of the distinct types
+---the base cases of this recursive definition are primitive types, for which distinct types yield an empty intersection.
+In contrast, its union types are disjoint sums.
+#
+# https://codingblast.com/typescript-intersection-types/
+
+In the dependently-typed setting, one also obtains so-called ‘canonical structures’ \parencite{coq_canonical},
+which not only generalise the previously mentioned mixins but also facilitate a flexible
+style of logic programming by having user-defined algorithms executed during unification;
+thereby permitting one to omit many details \parencite{coq_canonical_tutorial} and have them inferred.
+As mentioned earlier regarding objects, we could simulate mixins by encoding a class
+as a record and a mixin as a record-consuming method.
+Incidentally languages admitting mixins give rise to an alternate method
+of module encoding: 
+A ‘module /of type M’ is encoded as an instantiation
+of the mixin trait M./
+
+# In the sequel,
+# when we discuss modules as contexts, it can be seen that the simplest form of
+# mixins is context prepending.
+
+These natural encodings only reinforce our idea that there is no real essential difference
+between grouping mechanisms: Whether one uses a closure, record, or module
+is a matter of preference the usage of which communicates particular intent.
+
+** Existing Systems
+
+:OldIntro:
+Is there any actual /need/ for the proposed research?
+Are the goals easily adaptable from the simply-typed settings?
+Is the declared arena of dependently-typed languages
+sufficiently intricate to warrant this much attention?
+
+In this section, we shall outline that DTLs constitute a difficult
+and poorly understood domain in comparison to conventional programming
+languages, such as the purely functional Haskell or the imperative Java.
+Then we outline the merits of including dependent types.
+Finally, we close with a comparison of some of the most popular DTLs.
+:End:
+
+We want to implement solutions in a dependently typed
+language. Let us discuss which are active and their capabilities.
+
+Dependent-types provide an immense level of expressivity thereby
+allowing varying degrees of precision to be embedded, or omitted,
+from the type of a declaration. This overwhelming degree of freedom
+comes at the cost of common albeit non-orthogonal styles of coding
+and compilation, which remain as open problems that are only mitigated
+by awkward workarounds such as Coq's distinction of types and
+propositions for compilation efficiency. 
+The difficulties presented by DTLs are outweighed by 
+the opportunities they provide \cite{dtl_why} ---of central importance is that they blur distinctions between
+usual programming constructs, which is in alignment with our thesis.
+
+To the best of our knowledge, as confirmed by Wikipedia in \parencite{wiki_proof_assistants, wiki_proof_assistants_dependent}, there are currently less than 15 /actively
+developed/ dependently-typed languages in-use /that are also used/ as
+proof-assistants ---which are intersting to us since we aim to
+mechanise all of our results: Algorithms as well as theorems.
+
+*Agda \parencite{agda_overview, agda_thesis}*: One of the more popular proof assistants around; possibly due to its syntactic
+inheritance from Haskell ---as is the case with Idris. Its Unicode mixfix
+lexemes permit somewhat faithful renditions of informal mathematics; e.g.,
+calculational proofs can be encoded to be read by those unfamiliar with the system.
+It also allows traditional functional programming with the ability to
+`escape under the hood' and write Haskell code. The language has not been
+designed solely with theorem proving in mind, as is the case for Coq, but rather
+has been designed with dependently-typed programming in mind
+\parencite{agda_web, agda_plf}.
+
+The current implementation of the Agda language has a notion of second-class modules which
+may contain sub-modules along with declarations and definitions of first-class citizens.
+The intimate relationship between records and modules is perhaps best exemplified here
+since the current implementation provides a declaration to construe a record as if it were
+a module. This change in perspective allows Agda records to act as Haskell typeclasses.
+However, the relationship with Haskell is only superficial: Agda's current implementation does
+not support sharing. In particular, a parameterised module is only syntactic sugar such that
+each member of the module actually obtains a new functional parameter; as such, a computationally
+expensive parameter provided to a module invocation may be intended to be computed only once,
+but is actually computed at each call site.
+
+*Coq \parencite{coq_implementation, coq_cat_experiences}:* Unquestionably one of, if not, the most popular proof assistant around.
+It has been used to produce mechanised proofs of the infamous Four Colour Theorem
+\parencite{coq_four_colour}, the Feit-Thompson Theorem \parencite{coq_feit},
+and an optimising compiler for the C language: CompCert \parencite{coq_compcert, compcert_paper}.
+
+Unlike Agda, Coq supports tactics \parencite{tacticstype} -a brute force approach
+that renders (hundredfold) case analysis as child's play:
+Just refine your tactics till all the subgoals are achieved.
+Ultimately the cost of utilising tactics is that a tactical proof
+can only be understood with the aid of the system, and may otherwise be
+un-insightful and so failing to meet most of the purposes of proof \parencite{purposes_of_proof}
+---which may well be a large barrier for mathematicians who value insightful proofs.
+ 
+The current implementation of Coq provides the base features expected of any module system.
+A notable difference from Agda is that it allows “copy and paste”
+contents of modules using the include keyword. Consequently it provides a number
+of module combinators, such as ~<+~ which is the infix form of module inclusion
+\parencite{coq_manual}. Since Coq module types are essentially contexts,
+the module type ~X <+ Y <+ Z~ is really the catenation of contexts, where later
+items may depend on former items. The Maude \parencite{maude, maude_module_algebra} framework
+contains a similar yet more comprehensive algebra of modules and how they
+work with Maude theories. An important aspect of the thesis work will be to
+actually investigate Maude further and attempt to reproduce and generalise
+some of the use cases in ‘the Maude book’ \parencite{maude} using a core
+set of packaging primitives for DTLs ---we will return to what such primitives may be
+in a later section, on preliminary research.
+The Common Algebraic Specification Language
+\parencite{casl_overview, casl_user_manual, casl_reference_manual}
+will also be investigated with the aim of extracting, and generalising, useful module combinators
+and their properties.
+#
+# Casl in general: http://www.cofi.info
+# Casl tools: http://hets.dfki.de
+# Casl libraries: http://www.cofi.info/Libraries
+# 
+# Coq <+ sutff:
+# See https://coq.inria.fr/distrib/V8.7.2/refman/gallina-ext.html#sec90
+
+:WK_maude:
+Maude is based on rewriting logic,
+which uses term rewrite rules in two roles:
++ as equations, for algebraic specification
++ as (labelled) transitions.
+
+In the resulting transition systems,
+a ``state'' is an equivalence class of value terms
+modulo the associated set of equations,
+and transitions are rewrites using the second class of rules.
+
+Theories (and functional modules fmod) can only 
+contain equations.
+:End:
+
+Incidentally, Coq modules are essentially
+Agda records ---which is unsurprising since our thesis states packaging containers
+are all essentially the same. In more detail, both notions coincide with
+that of a signature ---a sequence of pairs of name-type declarations.
+Where Agda users would speak of a record instance, Coq users would speak of
+a module implementation. To make matters worse, Coq has a notion of records
+which are far weaker than Agda's; e.g., by default all record
+field names are globally exposed and records are non-recursive.
+
+Coq's module system extends that of OCaml; a notable divergence is that Coq
+permits parameterised module types ---i.e., parameterised record types, in Agda
+parlance. Such module types are also known as ‘functors’ by Coq and OCaml users; which
+are “generative”: Invocations generate new datatypes. Perhaps an example will
+make this rather strange concept more apparent.
+{{{code(Example of Generative Functors)}}}
+#+begin_src haskell
+-- Coq                        -- Corresponding Agda
+
+Module Type Unit. End Unit.   -- record Unit : Set where 
+Module TT <: Unit. End TT.    -- tt : Unit; tt = record {}
+
+Module F (X : Unit).          -- module F (X : Unit) where
+  End F.                      --     data t : Set where C : t
+
+Module A := F TT.             -- module A = F tt
+Module B := F TT.             -- module B = F tt
+
+Fail Check eq_refl : A.t = B.t. --  ≠   eq : A.t ≡ B.t ; eq = refl
+#+end_src
+As seen, in Coq the inductive types are different yet in Agda they are the same.
+This is because Agda treats such parameterised records, or functors, as
+‘applicative’: They can only be applied, like functions.
+
+:Agda_code:
+record Unit : Set where
+
+tt : Unit
+tt = record {}
+
+module F (X : Unit) where
+  data t : Set where C : t
+
+module A = F tt
+
+module B = F tt
+
+open import Relation.Binary.PropositionalEquality
+
+it : A.t ≡ B.t
+it = refl
+:End:
+
+For simplicity, we may think of generative functor applications ~F X~ as actually
+~F X t~ where ~t~ is an implicit tag such as textual position or clock time.
+From an object-oriented programming perspective, 
+~F X~ for a generative functor ~F~ is like the
+~new~ keyword in Java/C#: A new instance is created
+which is distinct from all other instances even though
+the same class is utilised. So much for the esotericity of generative functors.
+
+Unlike Agda, which uses records to provide traditional record types, Haskell-like
+typeclasses, and even a module perspective of both, Coq utilises distinct
+mechanisms for typeclasses and canonical structures. In contrast, Agda allows
+named instances since all instances are named and can be provided where an
+implicit failed to be found. Moreover, Coq's approach demands greater familiarity
+with the unifer than Agda's approach.
+# Coq typeclasses are nearly the same as Haskell's.
+# https://softwarefoundations.cis.upenn.edu/qc-current/Typeclasses.html
+
+# Nifty slides: “Why Applicative Functors Matter”
+# https://www.cs.ox.ac.uk/ralf.hinze/WG2.8/24/slides/derek.pdf
+
+*Idris \parencite{idris_main}*: This is a general purpose, functional, programming language with dependent types; alongside ATS, below,
+it is perhaps the only language in this list that can truthfully boast to being
+general purpose and to have dependent types. It supports both equational
+and tactic based proof styles, like Agda and Coq respectively; unlike these two
+however, Idris erases unused proof-terms automatically rather than forcing
+the user to declare this far in advance as is the case with Agda and Coq.
+The only (negligible) downside, for us, is that the use of tactics creates
+a sort of distinction between the activities of proving and programming, which
+is mostly fictitious. 
+#
+# Can tactics in Idris be used for programming?
+# They can in Coq, but this is for good reasons strongly discouraged.
+ 
+:Irrelevant:
+Moreover, Idris compiles to C whereas Agda compiles
+to Haskell thereby opening the possibility to use GHC's many optimisations without
+too much translation from the source: In contrast, Idris programs must be first
+transformed to their imperative counterparts
+\parencite{idris_website, idris_tdd}.
+:End:
+
+Intended to be a more accessible and practical version of Agda, Idris
+implements the base module system features and includes interesting new ones.
+Until [[https://agda.readthedocs.io/en/v2.6.0/language/generalization-of-declared-variables.html][recently]], in Agda, one would write ~module _ (x : ℕ) where ⋯~ to parameterise every
+declaration in the block “⋯” by the name ~x~; whereas in Idris, one writes 
+~parameters (x : ℕ) ⋯~ to obtain the [[http://docs.idris-lang.org/en/latest/tutorial/modules.html][same behaviour]] 
+--which Agda has since improved upon it via ‘generalisation’:
+A declaration's type gets only the variables it actually uses, not
+every declared parameter.
+
+# http://docs.idris-lang.org/en/latest/tutorial/modules.html
+
+Other than such pleasantries, Idris does not add anything of note.
+However, it does provide new constraints.
+As noted earlier, the current implementation of Idris attempts to erase implicits
+aggressively therefore providing speedup over Agda.
+In particular, Idris modules and records can be parameterised but not indexed
+---a limitation not in Agda. 
+
+Unlike Coq, Idris has been designed to “emphasise general purpose programming 
+rather than theorem proving” \parencite{idris_faq, idris_tdd}.
+However, like Coq, Idris provides a Haskell-looking typeclasses mechanism; 
+but unlike Coq, it allows named instances.
+In contrast to Agda's record-instances, typeclasses result in backtracking to 
+resolve operator overloading thereby having a slower type checker. 
+
+# http://docs.idris-lang.org/en/latest/tutorial/interfaces.html
+
+# https://github.com/idris-lang/Idris-dev/wiki/Egg-%234:-Agda-style-records-and-modules
+
+# *Matita*
+# last publication was 2012
+# website hasn't been updated since 2016
+# http://matita.cs.unibo.it/index.shtml                 
+
+# Lean: lean_website, 
+*Lean \parencite{lean_system_desc, lean_formalizing_math}:* This is both a theorem prover and programming language; moreover it permits
+quotient types and so the usually-desired notion of extensional equality.
+It is primarily tactics-based, also permitting a ~calc~-ulational proof format
+not too dissimilar with the standard equational proof format utilised in Agda.
+
+# In our opinion, it is a nice language but we will remain with Agda since it
+# is a bit older, whence more stable, and it is also more syntactically pleasant.
+# \parencite{lean_website}
+
+Lean is based on a version of the Calculus of Inductive Constructions, like
+Coq. Lean is heavily aimed at metaprogramming for formal verification,
+thereby bridging the gap between interactive and automated theorem proving.
+Unfortunately, inspecting the language shows that its rapid development is
+not backwards-compatible
+---Lean 2 standard libraries have yet to be ported to Lean 3---,
+and unlike, for example, Coq and Isabelle which are backed by other complete
+languages, Lean is backed by Lean, which is unfortunately too young to program
+various tactics, for example.
+
+:Other_remarks_on_Lean:
+The lean prover [[https://leanprover.github.io/introduction_to_lean/][tutorial]] is not even complete!
+
+It does not seem to be well docmented; only 1 file in the docs!
+It's been difficult finding anything superficially; I may need to install and try things out?
+:End:
+
+# *NuPRL*                                                                    
+# https://github.com/jonsterling/JonPRL
+# last touched 2-3 years ago!
+
+# *PVS*                                                                    
+# not modified since 2014
+# http://pvs.csl.sri.com/
+
+# *Twelf* This is a logic programming language, similar to Prolog; it has been
+# used to formalise safety proofs for ‘real world’ programming languages such
+# as Standard ML. Seems like that 
+# Website hasn't been updated since 2009!
+# http://twelf.org/wiki/Main_Page
+
+*ATS, Applied Type System*: This language combines programming and proving, but is aimed at
+unifying programming with formal specification. With the focus being more
+on programming than on proving.
+\parencite{ats_website, ats_combining}
+
+ATS is intended as an approach to practical programming with theorem proving.
+Its module system is largely influenced by that of Modula-3, providing what
+would today be considered the bare bones of a module system.
+Advocating a programmer-centric approach to program verification that
+syntactically intertwines programming and theorem proving, ATS is a more
+mature relative of Idris ---whereas Idris is Haskell-based, ATS is OCaml-based.
+
+*F^**: This language supports dependent types, refinement types, 
+and a weakest precondition calculus \parencite{fstar_website}. 
+However it is primarily aimed 
+at program verification rather than general proof. 
+Even though this language is roughly 8 years in the making,
+it is not mature ---one encounters great difficult in doing anything
+past the initial language tutorial.
+# Language age ~ 8 years
+
+F^*'s module system is rather uninteresting, predominately acting as namespace
+management. It has very little to offer in comparison to Agda; e.g., within
+the last two years, it obtained a typeclass mechanism
+---regardless, typeclasses can be implemented as dependent records.
+
+# The offical tutorial, https://rise4fun.com/fstar/tutorial,
+# gives only one syntactic item to deal with modules:
+# Module       m ::= module M tl1 ... tln ;; e [end]
+
+# http://complogic.cs.mcgill.ca/beluga/index.html
+#
+*Beluga*: The distinctive feature and sole reason that we mention this language
+is its direct support for first-class contexts \parencite{beluga}.
+A term ~t(x)~ may have free
+variables and so whether it is well-formed or what its type could be depend on the
+types of its free variables, necessitating one to either declare them before hand
+or to write, in Beluga, ~[ x : T  |-  t(x) ]~ for example. As we have mentioned, and will
+reiterate a few times, contexts are behaviourally indistinguishable from
+dependent sums.
+
+# Unlike the previously mentioned languages, Beluga provides a
+# dependently-typed language that supports specfiying formal systems in the
+# logical framework LF.
+
+A displeasure of Beluga is that, while embracing the Curry-Howard Correspondence,
+it insists on two syntactic categories: Data and computation.
+This is similar to Coq's distinction of ~Prop~ and ~Type~.
+Another issue is that to a large degree the terms one uses in their type
+declarations are closed and so have an empty context therefore one sees
+expressions of the form ~[ |- t ]~ since ~t~ is a closed term needing only the empty
+context. At a first glance, this is only a minor aesthetic concern; yet after
+inspection of the language's webpage, tutorials, and publication matter, it is
+concerning that nearly all code makes use of empty contexts ---which are easily
+spotted visually. The tremendous amount of empty contexts suggests that the language
+is not actually making substantial use of the concept, or it is yet unclear what
+pragmatic utility is provided by contexts, and, in either way, 
+they might as well be relegated to a less intrusive notation.
+Finally, the language lacks any substantial standard libraries
+thereby rendering it more as a proof of concept rather than a serious system
+for considerable work.
+
+:Mizar_remarks:
+*Mizar*: Unlike the rest, it is based on (untyped) Tarski–Grothendieck set theory
+which in some-sense has a ‘hierarchy of sets’. Being based on set theory, it is non-constructive. It has a large library of formalised mathematics; like Coq.
+\parencite{mizar_website, mizar_overview, mizar_library}.
+
+Like Idris, it provide a ‘reservation’ mechanism to name parameters for a block
+of code. Mizar ~environ~-ments are generally difficult to work with due to
+multiple namespaces for articles and vocabularies.
+There is otherwise nothing interesting to say regarding its module system.
+:End:
+
+*Notable Mentions*: The following are not actively being developed, as far we can 
+tell from their websites or source repositories, 
+but are interesting or have made useful contributions.
+In contrast to Beluga, Isabelle is a full-featured language and logical framework that also provides
+support for named contexts in the form of ‘locales’ \parencite{locales, isabelle_locales};
+unfortunately it is not a dependently-typed language --though DTLs can be implemented in it.
+Mizar, unlike the above, is based on (untyped) Tarski–Grothendieck set theory
+which in some-sense has a hierarchy of sets. Like Coq, it has a large library of formalised mathematics
+\parencite{mizar_website, mizar_overview, mizar_library}.
+Developed in the early 1980s, Nuprl \parencite{prl_site} is constructive with a 
+refinement-style logic; besides being a mature language, it has been used to provide
+proofs of problems related to Girard's Paradox \parencite{girard_paradox}.
+PVS, Prototype Verification System \parencite{pvs_prover}, differs from other DTLs
+in its support for subset types; however, the language seems to be unmaintained as of 2014.
+Twelf \parencite{twelf_site} is a logic programming language 
+implementing Edinburgh's Logical Framework \parencite{lf_meta_mechanisation, lf_has_isabelle, lf_fast_proof_checking}
+and has been used to prove safety properties of ‘real languages’ such as SML. 
+A notable practical module system \parencite{lf_practical_modules} for Twelf has been implemented using signatures and signature morphisms.
+Matita \parencite{matita_main, matita_site} is a Coq-like system that is much lighter \parencite{matita_is_coq_light};
+it is been used for the verification of a complexity-preserving C compiler.
+# Matita home page last updated 2017! *Eek!*
+# Twelf home page last updated 2015! *Eek!*
+
+# https://github.com/jonsterling/JonPRL
+
+Dependent types are mostly visible within the functional community, however
+   this is a matter of taste and culture as they can also be found in imperative
+   settings, \parencite{dtl_imperative}, albeit less prominently.
+** Facets of Structuring Mechanisms: An Agda Rendition
+
+# JC: - 2.4 really helps situate things, and is in the proper place in the proposal
+# - ditto for 2.5
+
+In this section we provide a demonstration that with dependent-types we can show records, direct dependent types, and
+contexts ---which in Agda may be thought of as parameters to a module---
+are interdefinable.
+Consequently, we observe that the structuring mechanisms provided by the current
+implementation of Agda --and other DTLs-- have no real differences aside from those imposed by the language
+and how they are generally utilised.
+More importantly, this demonstration indicates our proposed direction of identifying
+notions of packages is on the right track.
+
+Our example will be implementing a monoidal interface in each format,
+then presenting /views/ between each format and that of the ~record~ format.
+Furthermore, we shall also construe each as a typeclass,
+thereby demonstrating that typeclasses are, essentially, not only a
+selected record but also a selected /value/ of a dependent type 
+---incidentally this follows from the previous claim that records 
+and direct dependent types are essentially the same.
+
+Recall that the signature of a monoid consists of
+a type ~Carrier~ with a method ~_⨾_~ that composes values 
+and an ~Id~-entity value.
+With Agda's lack of type-proof discrimination, i.e., its support for the
+Curry-Howard Correspondence, the “propositions as types” interpretation, we can encode the signature as well as the
+axioms of monoids to yield their theory presentation in the following two ways.
+Additionally, we have the derived result:
+~Id~-entity can be popped-in and out as desired.
+
+The following code blocks contain essentially the same content, but
+presented using different notions of packaging. Even though both
+use the ~record~ keyword, the latter is treated as a typeclass
+since the carrier of the monoid is given ‘statically’ and instance
+search is used to invoke such instances.
+{{{code(Monoids as Agda Records)}}}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+record Monoid-Record : Set₁ where
+  infixr 5 _⨾_
+  field
+    -- Interface
+    Carrier  : Set
+    Id       : Carrier
+    _⨾_      : Carrier → Carrier → Carrier
+
+    -- Constraints
+    lid   : ∀{x} → (Id ⨾ x) ≡ x
+    rid   : ∀{x} → (x ⨾ Id) ≡ x
+    assoc : ∀ x y z → (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+
+  -- derived result
+  pop-Idᵣ : ∀ x y  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
+  pop-Idᵣ x y = ≡.cong (x ⨾_) leftId
+
+open Monoid-Record {{...}} using (pop-Idᵣ)
+#+END_SRC
+
+{{{code(Monoids as Typeclasses)}}}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+record HasMonoid (Carrier : Set) : Set₁ where
+  infixr 5 _⨾_
+  field
+    Id    : Carrier
+    _⨾_   : Carrier → Carrier → Carrier
+    lid   : ∀{x} → (Id ⨾ x) ≡ x
+    rid   : ∀{x} → (x ⨾ Id) ≡ x
+    assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+  pop-Id-tc : ∀ x y →  x ⨾ Id ⨾ y  ≡  x ⨾ y
+  pop-Id-tc x y = ≡.cong (x ⨾_) leftId
+
+open HasMonoid {{...}} using (pop-Id-tc) 
+#+END_SRC
+
+The double curly-braces ~{{...}}~ serve to indicate that
+the given argument is to be found by instance resolution:
+The results for ~Monoid-Record~ and ~HasMonoid~ can be invoked without having to mention a monoid on
+a particular carrier, provided there exists one unique record value
+having it as carrier ---otherwise one must use named instances \parencite{named_instances}.
+Notice that the carrier argument in the typeclasses approach, “structure on a carrier”, is
+an (undeclared) implicit argument to the ~pop-Id-tc~ operation.
+
+Alternatively, in a DTL we may encode the monoidal interface using dependent products directly rather than use the syntactic sugar
+of records. The notation ~Σ x ∶ A • B x~ denotes the type of pairs ~(x , pf)~ where ~x : A~ and ~pf : B x~ ---i.e., a record consisting of two fields.
+It may be thought of as a constructive analogue to the classical set comprehension \newline ~{ x : A ❙ B x}~.
+
+{{{code(Monoids as Dependent Sums)}}}
+# ATTR_LATEX: :options fontsize={\fontsize{10}{11}\selectfont}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+-- Type alias
+Monoid-Σ  :  Set₁
+Monoid-Σ  =    Σ Carrier ∶ Set 
+             • Σ Id ∶ Carrier
+             • Σ _⨾_ ∶ (Carrier → Carrier → Carrier)
+             • Σ lid ∶ (∀{x} → Id ⨾ x ≡ x) 
+             • Σ rid ∶ (∀{x} → x ⨾ Id ≡ x)
+             • (∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))
+
+pop-Id-Σ : ∀{{M : Monoid-Σ}} 
+                       (let _⨾_ = proj₁ (proj₂ (proj₂ M)))
+                   →  ∀ (x y : proj₁ M)  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
+pop-Id-Σ {{M}} x y = ≡.cong (x ⨾_) (lid {y})
+                     where  _⨾_    = proj₁ (proj₂ (proj₂ M))
+                           lid    = proj₁ (proj₂ (proj₂ (proj₂ M)))
+#+END_SRC
+
+:Irrelevant:
+Like a Java ~class~, within the ~record~ we may include derived results 
+that are then available to all values, `instances', of the record type.
+Outside the ~record~, further properties may be added, though they now
+require an actual value, instance, to be given.
+:End:
+
+Instances and their use are as follows.
+{{{code(Instance Declarations)}}}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+instance
+   ℕ-record : Monoid-Record
+   ℕ-record = record { Carrier = ℕ; Id = 0; _⨾_ = _+_; ⋯ }
+
+   ℕ-tc : HasMonoid ℕ
+   ℕ-tc = record { Id = 0; _⨾_ = _+_; ⋯ }
+
+   ℕ-Σ : Monoid-Σ
+   ℕ-Σ = ℕ , 0 , _+_ , ⋯
+#+END_SRC
+{{{code(No Monoids Mentioned at Use Sites)}}}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+ℕ-pop-0ᵣ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
+ℕ-pop-0ᵣ = pop-Idᵣ
+
+ℕ-pop-0-tc : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
+ℕ-pop-0-tc = pop-Id-tc
+
+ℕ-pop-0ₜ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
+ℕ-pop-0ₜ = pop-Id-Σₜ
+#+END_SRC
+
+Interestingly, notice that the grouping in ~ℕ-Σ~ is just an unlabelled (dependent) product, 
+and so when it is used in ~pop-Id-Σₜ~ we project to the desired components.
+Whereas in the ~Monoid-Record~ case we could have projected the carrier by
+~Carrier M~, now we would write ~proj₁ M~.
+
+:Irrelevant:
+This is nearly identical to the previous implementation and possibly
+simpler due to the lack of the ~record { ⋯ }~ clutter required of /labelled products/.
+However, said clutter could have been removed by providing
+a ~constructor~ declaration in the definition of ~Monoid-Record~
+but we have decided not to do so, to make the labelling clear
+and distinct from the unlabelled product presentations.
+:End:
+
+Observe the lack of informational
+difference between the presentations, yet there is a
+/Utility Difference: Records give us the power to name our projections _*directly*_ with possibly meaningful names./
+Of course this could be achieved indirectly by declaring extra functions; e.g.,
+#+LaTeX: \def\mytitle{Agda}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+Carrierₜ : Monoid-Σ → Set
+Carrierₜ = proj₁
+#+END_SRC
+We will refrain from creating such boiler plate ---that is,
+/records allow us to omit such mechanical boilerplate./
+
+Finally, let us exhibit views between this form and the ~record~ form.
+#+LaTeX: \def\mytitle{Agda}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+-- Following proves: Monoid-Record  ≅  Σ Set HasMonoid.
+
+to-record-from-usual-type : Monoid-Σ → Monoid-Record
+to-record-from-usual-type (c , id , op , lid , rid , assoc)
+  = record { Carrier = c ; Id = id ; _⨾_ = op
+           ; leftId = lid ; rightId = rid ; assoc = assoc
+           } -- Term construed by ‘Agsy’,
+             -- the mechanical proof search.
+
+from-record-to-usual-type : Monoid-Record → Monoid-Σ
+from-record-to-usual-type M = -- syntatic data
+                              Carrier M , Id M , _⨾_ M ,
+                              -- semantic proofs
+                              leftId M , rightId M , assoc M
+  where open Monoid-Record 
+        -- Converting ‘Monoid-Record’ into a product
+#+END_SRC
+
+Furthermore, by definition chasing, ~refl~-exivity, these operations are seen to be inverse of
+each other. Hence we have two faithful non-lossy protocols for reshaping our grouped data.
+
+In our final presentation, we construe the grouping of the monoidal interface
+as a sequence of “variable : type” declarations ---i.e., a ‘context’ or ‘telescope’.
+Since these are not top level items by themselves, we position them in a ~module~
+declaration as follows.
+#+LaTeX: \def\mytitle{Agda}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+module Monoid-Telescope-User
+  (Carrier : Set) (Id : Carrier) (_⨾_ : Carrier → Carrier → Carrier)
+  (leftId  : ∀{x} → Id ⨾ x ≡ x) (rightId : ∀{x} → x ⨾ Id ≡ x)
+  (assoc   : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) 
+  where
+  
+  pop-Idₘ : ∀(x y : Carrier)  →  x ⨾ (Id ⨾ y)  ≡  x ⨾ y
+  pop-Idₘ x y = ≡.cong (x ⨾_) (leftId M {y})
+#+END_SRC
+
+Notice that this is nothing more than the named fields of ~Monoid-Record~
+squished into six lines. Additionally, if we insert a Σ before each name
+we essentially regain the ~Monoid-Σ~ formulation.
+It seems contexts, at least superficially, are a nice middle ground between
+the previous two formulations.
+
+As promised earlier, we can regard the above telescope as a record:
+#+LaTeX: \def\mytitle{Agda}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+  record-from-telescope : Monoid-Record
+  record-from-telescope
+    = record { Carrier = Carrier ; Id = Id ; _⨾_ = _⨾_
+             ; leftId = leftId ; rightId = rightId ; assoc = assoc }
+#+END_SRC
+
+The structuring mechanism ~module~ is not a first class citizen in Agda.
+As such, to obtain the converse view, we work in a parameterised module.
+#+LaTeX: \def\mytitle{Agda}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+module record-to-telescope (M : Monoid-Record) where
+
+  open Monoid-Record M
+  -- Treat record type as if it were a parameterised module type,
+  -- instantiated with M.
+
+  open Monoid-Telescope-User Carrier Id _⨾_ leftId rightId assoc
+#+END_SRC
+
+Notice that we just listed the components out ---rather reminiscent of the formulation
+~Monoid-Σ~. This observation only increases confidence in our thesis that there is no
+real distinctions of packaging mechanisms in DTLs.
+
+Undeniably instantiating the telescope approach to monoids for the natural number
+is nothing more than listing the required components.
+#+LaTeX: \def\mytitle{Agda}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
+#+END_SRC
+
+C.f., the definition of ~ℕ-Σ~: This is nearly the same instantiation with the primary
+syntactical difference being that this form had its arguments separated by spaces rather than commas!
+#+LaTeX: \def\mytitle{Agda}
+#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+ℕ-symmetryₘ : ∀ (x y : ℕ) → x + y  ≡  y + x
+ℕ-symmetryₘ = symmetryₘ
+#+END_SRC
+
+Notice how this presentation makes it explicitly clear why we cannot have multiple instances:
+There would be name clashes. Even if the data we used had distinct names, the derived result
+may utilise data having the same name thereby admitting name clashes elsewhere.
+---This could be avoided in Agda by qualifying names and/or renaming.
+
+It is interesting to note that this presentation is akin to that of ~class~-es in C#/Java languages:
+The interface is declared in one place, monolithic-ly, as well as all
+derived operations there; if we want additional operations, we create
+another module that  takes that given module as an argument in the
+same way we create a class that inherits from that given class.
+
+Demonstrating the interdefinablity of different notions
+of packaging cements our thesis that it is essentially utility
+that distinguishes packages more than anything else.
+In particular, explicit distinctions have lead
+to a duplication of work where the same structure is formalised
+using different notions of packaging. In chapter 3 we will show how to avoid
+duplication by coding against a particular ‘package former’ rather than a
+particular variation thereof.
+
+** Theory Presentations: A Structuring Mechanism
+
+What of the most closely related theoretical work?
+
+Our envisioned effort would support a “write one, obtain many” approach to package formation.
+We now turn to mentioning how package formers are currently treated 
+formally under the name of ‘theory presentations’. It is the aim of this section 
+to attest that the introduction's story is not completely on shaky foundations,
+thereby asserting that the aforementioned goals of the introduction are not
+unachievable ---and the problems that will be posed in chapter 3 are not trivial.
+
+As discussed, languages are usually designed with a bit more thought given to a first-class
+citizen notion of grouping than is given to second-class notions of
+packaging up defined content.
+Object-oriented languages, for example, comprise features of both views
+by treating classes as external structuring mechanisms even though they
+are normal types of the type system. This internalising of external grouping
+features has not received much attention with the notable mentions being
+\parencite{theories_as_types, focalize}.
+It is unclear whether there is any real distinction
+between these `internal, integrated' and `external, stratified' 
+forms of grouping, besides intended use.
+The two approaches have different advantages.
+Both approaches permit separation of concerns: The external point of view
+provides a high-level structuring of a development, the internal point of
+view provides essentially another type which can be the subject of the
+language's operations ---e.g., quantification or tactics--- thereby being
+more amicable to computing transformations.
+Essentially it comes down to whether we want a `module parameter' or a `record field'
+---why not write it the way you like and get the other form for free.
+
+Since external grouping mechanisms tend to allow for intra-language features
+---e.g., imports, definitions, notation, extra-logical declarations such as pragmas---
+their systematic internalisation necessitates expressive record types.
+As such, a labelled product type or /context/ 
+---being a list of name-type declarations with optional definitions---
+is a sufficiently generic rendition of what it means to group matter together.
+
+Below is a grammar, from \parencite{theories_as_types}, for a simple yet powerful
+module system based on theory (presentations) and theory morphisms --which are merely named contexts and named substitutions between contexts, respectively.
+Both may be formed modularly by using includes to copy over declarations of previously named objects.
+Unlike theories which may include arbitrary declarations, theory morphisms (~V : P → Q) := δ~
+are well-defined if for every ~P~-declaration ~x : T~, ~δ~ contains a declaration ~x = t~ where ~t~ may refer to all names declared in ~Q~.
+Observe that a context is, up to syntactical differences,
+essentially JavaScript object notation literal.
+Consequently, the notion of a mixin as described for JSON literals is here
+rendered as a theory morphism.
+{{{code(Syntax for Dependently Typed λ-calculus with Theories)}}}
+#+BEGIN_SRC haskell
+-- Contexts
+Γ  ::= ·                       -- empty context
+     | x : T [:= T], Γ         -- context with declaration, optional definition
+     | includes X, Γ           -- theory inclusion
+    
+-- Terms
+T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
+    | Π x : T' • T             -- dependent product
+    | [Γ] | ⟨Γ⟩ | T.x          -- record “[type]” and “⟨element⟩” formers, projections  
+    | Mod X                    -- contravariant “theory to record” internalisation
+
+-- Theory, external grouping, level
+Θ ::= .                        -- empty theory
+    | X := Γ, Θ                -- a theory can contain named contexts
+    | (X : (X₁ → X₂)) := Γ     -- a theory can be a first-class theory morphism
+
+-- Proviso: In record formers, Γ must be flat; i.e., does not contain includes.
+
+-- Example theory hierarchy of signatures, abbrevating “(Π x : A • B) = (A → B)”.
+, MagmaSig := Carrier : Set,  _⨾_ : Carrier → Carrier → Carrier, .
+, MonSig   := includes MagmaSig, Id : Carrier, .
+, .
+#+END_SRC
+
+#+LaTeX: \def\Mod{\mathsf{Mod}\,}
+
+This concept of packaging indeed captures much of what's expected of grouping mechanisms; e.g.,
+
++ Grouping mechanism should group all kinds of things and indeed there is no
+  constraint on what a theory presentation may contain.
++ Namespacing: Every module context can be construed as a record whose contents
+  can then be accessed by record field projection.
+
+  /Theories as Types/ \parencite{theories_as_types} presents the first formal
+  approach that systematically internalises theories into record types. 
+  Their central idea is to introduce a new operator ~Mod~ –read “models of”— 
+  that turns a theory $T$ into a type $\Mod T$ which /behaves/ like a record type.
+
++ Operations on grouping mechanisms \parencite{tpc}.
+
+As mentioned earlier, a theory morphism, also known as a ‘view’,
+is a map between contexts that implements the interface of the source
+using utilities of the target; whence results about specific structures can be 
+constructed by transport along views \parencite{little_theories}:
+A view ~V : P → Q~ gives rise to a term homomorphism ~𝒱~ from ~P~-terms to ~Q~-terms
+that is type-preserving in that whenever ~Θ, P ⊢ t : T~ then ~Θ, Q ⊢ 𝒱 t : 𝒱 T~.
+Thus, views preserve judgements and, via the propositions-as-types representations,
+also preserve truth.
+
+# Theory interpretations are also called translations, theory morphisms, immersions, and realisations.
+For example, a view $\Phi = (U, \beta) : \mathcal{S} \to \mathcal{T}$
+is essentially a predicate $U$, of the target theory, denoting a /universe of discourse/ 
+along with an  arity-preserving mapping $\beta$ of 𝒮-symbols, or declarations, to 𝒯-expressions. 
+It is lifted to terms as follows 
+--- notice translated variable-binders are relativised to the new domain.
+#+BEGIN_EXPORT latex
+\begin{tcolorbox}[title=\hfill $\Phi$ Extended to Terms]
+\vspace{-1em}
+\begin{align*}
+\Phi(x) &= x  & & \text{ Provided $x$ is an $\mathcal{S}$-variable symbol }
+\\
+\Phi\left( f(t_1, \ldots, t_n) \right)
+&= \beta(f) \left(\Phi\, t_1, \ldots, \Phi\, t_n\right)
+& & \text{ Provided $f$ is a $n$-ary $\mathcal{S}$-function symbol}
+\\
+\Phi\left(\mathcal{Q}\, x \;\bullet\; P\right)
+&= \left(\mathcal{Q}\, x \;❙\; U\, \;x \bullet\; \Phi(P) \right)
+& & \text{ Provided $\mathcal{Q}$ is a variable-binder $\forall, \exists, \lambda$ }
+\end{align*}
+\end{tcolorbox}
+#+END_EXPORT
+
+The /Standard Interpretation Theorem/ \parencite{theory_interpretations_farmer}
+provides sufficient conditions for a translation to be an ‘interpretation’
+which transports results between formalisations. It states:
+A translation is an interpretation provided 𝒮-axioms $P$ are lifted to
+theorems $\Phi(P)$, the universe of discourse is non-empty 
+$(\exists x \bullet U\, x)$, and the interpretation of the universe
+contains the interpretations of the symbols;
+i.e., for each 𝒮-symbol $f$ of arity $n$, \newline
+$\Phi(∀ x₁, …, xₙ • ∃ y \,•\, f\, x₁\, …\, x\,ₙ = \,y)$.
+
+# Standard interpreations are used to compare tthe strength of theories: 𝒯 is at least as strong as 𝒮 provided 𝓢 is interpretable in 𝒯 --indeed, that's why every model of the latter gives rise to a model of the former!
+# Also, standard interpretations have long been used in logic to prove meta-mathematical properties baout first-order theories, mainly rel;atoive consisitency, decidiabilkity, and undecidiability.
+By virtue of being a validity preserving homomorphism, 
+a standard interpretation syntactically and semantically 
+embeds its source theory in its target theory.
+The most important consequence of interpretability is the
+/Standard Relative Satisfiability/ \parencite{theory_interpretations_farmer}
+which says that a theory which is interpretable in a satisfiable theory is itself satisfiable;
+in programming terms this amount to: If $X$ is an implementation of `interface' 𝒯
+and 𝒮 is interpretable in 𝒯 then $X$ can be transformed into an implementation of 𝒮.
+Interestingly such ‘subtyping’ can be derived in a mechanical fashion, but it can leave
+the subtype relation to be cyclic.
+However, it is unclear under which conditions translations automatically
+give rise to interpretations: Can the issue be relegated to syntactic 
+manipulation only?
+
+Theory interpretation has been studied for first-order predicate logic 
+then extended to higher-order logic \cite{theory_interpretations_farmer}.
+The advent of dependent-types, in particular the blurring of operations and formulae
+\cite{wiki_curry_howard}, means that propositions of a language can be encoded into it as other
+sorts, dependent on existing sorts, thereby questioning
+/what it means to have a validity-preserving morphism/ when the axioms can be
+encoded as operations? As far as we can tell, it seems very little work
+regarding theory interpretations has been conducted in dependently-typed
+settings \parencite{mlt_partial, higher_order_interpretations, institution_interpretations, dtl_interpretations}.
+# {{{remark(WK: Then you should discuss it in more detail.)}}}
+
+:Irrelevant:
+Notice that records play dual roles. They not only serve as an internal form of grouping
+mechanisms, but inspired by the previous Agda renditions, also serve the purpose of
+forming dependent sum types.
+
+What about the presence of non-termination or inheritance
+---i.e., partial functions and subtypes? 
+The subject is only beginning to
+be seriously explored in higher-order logic and type theory.
+\cite{theory_interpretations_farmer}.
+Views associating base types with subtypes get complicated since functions must now
+deal with restricted domains, consequently necessitating that all predicates on functions
+also be relativised.
+:End:
 * Solution Requirements
 
 From the outset we have proposed a particular approach to resolving
