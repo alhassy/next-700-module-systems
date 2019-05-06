@@ -2602,10 +2602,28 @@ TermData = TermP data
 ≅  data TermData : Set where
      Var : Int → TermData
      Add : TermData → TermData → TermData
--}
+-}     
 #+end_src
 In the comment above, we indicate how our fictitious syntax is intended to be elaborated
-into Agda syntax.
+into Agda syntax. Besides syntax, induction principles are also derived:
+Our envisioned system would be able to derive simple, tedious, uninteresting concepts;
+leaving difficult, interesting, ones  for humans to solve.
+For this type, below is the dependently typed eliminator, which in a DTL, corresponds to an induction
+principle.
+{{{code(Free data types also come with an induction principle)}}}
+#+begin_src haskell
+{-
+   term-data-elim : ∀ {ℓ} {R : TermData → Set ℓ}
+                  → (base : (n : Int) → R (Var n))
+		  → (ind  : ∀ {s t} → R s → R t → R (Add s t))
+                  → (t : TermData) → R t
+		  
+   term-data-elim base ind (Var n)   = base n
+   term-data-elim base ind (Add s t) = ind rs rt
+      where rs = term-data-elim base ind s
+            rt = term-data-elim base ind t
+-}
+#+end_src
 
 The type of the package former, for now, could simply be ~Set~
 ---c.f., the commented out elaboration which declares ~TermData : Set~.
