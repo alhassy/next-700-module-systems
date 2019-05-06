@@ -3424,6 +3424,35 @@ In order to /replace a semantic constraint with a syntactic constraint/
 the user simply need to use a /variant/ on packaging. Furthermore, we
 are ensured \newline ~AGraph ≅ Σ V : Set • GraphOver V~.
 
+Dependently-typed graphs are an curious structure. With a bit of renaming, and adding a few laws,
+we obtain a ‘setoid’ --i.e., an undirected graph where every node has a self-loop, and paths
+correspond are essentially edges.
+{{{code(Setoid package former)}}}
+#+begin_src haskell
+PackageFormer SetoidP (v : Variation) : Set where
+  -- Graph structure
+  Carrier : Set
+  _≈_     : Carrier → Carrier → Set
+  -- Properties
+  refl  : ∀{e}     → e ≈ e
+  sym   : ∀{d e}   → e ≈ d → d ≈ e
+  trans : ∀{c d e} → c ≈ d → d ≈ e → c ≈ d
+#+end_src
+A non-dependently-typed ‘signature’ of a structure is generally obtained by discarding the relational operators
+and all properties. For ~SetoidP~ one would immediately think the signature consists of just ~Carrier~.
+However, if we view it instead as undirected graphs with self-loops at each node and edge-transitivity, then
+one would say the signature is the vertices ~Carrier~ and the edges ~_≈_~. It is thus not clear when an item,
+~_≈_~ or ~_⟶_~, forms constructive proofs or provides a type family. As such, signature extraction thus requires
+a parameter identifying which elements constitute ‘proof matter’ ---then one simply filters a pacakge-former
+against this criterion to obtain the associated signature. More generally, this allows us to take an ~X~ structure
+and obtain may of its the associated views about where knowledge is consolidated \parencite{realms}, including:
+#+BEGIN_SRC haskell
+X         = ⟨ Carrier; Operations; Properties ⟩     -- C.f., SetoidP
+XOver C   = ⟨ Operations; Properties ⟩
+IsX C Ops = ⟨ Properties ⟩
+XSig      = ⟨ Carrier; Operations⟩                  -- C.f., GraphP
+#+END_SRC
+
 It should be clear from these examples that package formers provide
 expectant generality, including the common uses one is mostly interested in.
 What about unexpected uses? What if a user wishes to utilise a representation
@@ -3899,6 +3928,19 @@ change and evolve multiple times as the research is carried out.
   isbn	       = 9783642313745,
   journal      = {Intelligent Computer Mathematics},
   publisher    = {Springer Berlin Heidelberg}
+}
+#+END_SRC
+** Realms: A Structure for Consolidating Knowledge about Mathematical Theories :realms:
+#+BEGIN_SRC latex :tangle MyReferences.bib  :exports none
+@Online{realms,
+  author       = {Jacques Carette AND William M. Farmer AND Michael
+                  Kohlhase},
+  title	       = {{Realms: A Structure for Consolidating Knowledge
+                  about Mathematical Theories}},
+  year	       = 2014,
+  archiveprefix= {arXiv},
+  eprint       = {1405.5956v1},
+  primaryclass = {cs.MS}
 }
 #+END_SRC
 ** programatica, haskell_modules_formally, haskell_in_haskell, classic_haskell_genericity
