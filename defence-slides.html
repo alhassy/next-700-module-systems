@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>The Next 700 Module Systems</title>
+<meta name="author" content="((link (:type mailto :path alhassm@mcmaster.ca :format bracket :raw-link mailto:alhassm@mcmaster.ca :application nil :search-option nil :begin 1 :end 46 :contents-begin 31 :contents-end 44 :post-blank 0 :parent #0) Musa Al-hassy))"/>
+<meta name="description" content="Thesis proposal for Musa Al-hassy; McMaster University 2019."/>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="http://cdn.jsdelivr.net/reveal.js/3.0.0/css/reveal.css"/>
+
+<link rel="stylesheet" href="http://cdn.jsdelivr.net/reveal.js/3.0.0/css/theme/moon.css" id="theme"/>
+
+<link rel="stylesheet" href="./local.css"/>
+
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'http://cdn.jsdelivr.net/reveal.js/3.0.0/css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+<meta name="description" content="Org-Reveal Introduction.">
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide"><h1 class="title">The Next 700 Module Systems</h1><h2 class="author"><a href="mailto:alhassm@mcmaster.ca">Musa Al-hassy</a></h2><p class="date">Created: 2019-05-07 Tue 15:06</p>
+</section>
+<section id="table-of-contents">
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#/slide-org9f63d36">Introduction &#x2014;The Proposal's “Story”</a></li>
+<li><a href="#/slide-orge05f4a9">Current Approaches</a></li>
+<li><a href="#/slide-orga1ab151">Solution Requirements</a></li>
+<li><a href="#/slide-org2f42034">Approach and Timeline</a></li>
+<li><a href="#/slide-org6185449">Conclusion</a></li>
+</ul>
+</div>
+</div>
+</section>
+
+<section>
+<section id="slide-org9f63d36">
+<h2 id="org9f63d36">Introduction &#x2014;The Proposal's “Story”</h2>
+<div class="outline-text-2" id="text-org9f63d36">
+</div>
+</section>
+<section id="slide-org6b8a077">
+<h3 id="org6b8a077">A Language Has Many Tongues</h3>
+<ol>
+<li>Expression language; e.g., <code>cond ? this : that</code>.</li>
+<li>Statement, or control flow, language; e.g., <code>if (cond) {this} {that}</code>.</li>
+<li>Type language; e.g., <code>Functor f =&gt; () → f ()</code>.</li>
+<li>Specification language; e.g., <code>\forall ℤ i; A[i] ≤ \old(A[i])</code>.</li>
+<li>Proof language; e.g., <code>begin ⋯ ≡⟨ ? ⟩ ⋯ ∎</code>.</li>
+<li>Module language; e.g., <code>module, class, interface</code>.</li>
+<li>Meta-programming languages; e.g., Coq tactics, C preprocessor, Haskell pragmas.</li>
+
+</ol>
+
+<p>
+The first five languages telescope down into one uniform language
+within the dependently-typed language Agda. <b>So why not the module language?</b>
+</p>
+
+</section>
+<section id="slide-org03821c8">
+<h3 id="org03821c8">Main Observation</h3>
+<dl>
+<dt> </dt><dd>Packages</dd>
+<dt>≈</dt><dd>modules</dd>
+<dt>≈</dt><dd>theories</dd>
+<dt>≈</dt><dd>contexts</dd>
+<dt>≈</dt><dd>traits, typeclasses</dd>
+<dt>≈</dt><dd>interfaces</dd>
+<dt>≈</dt><dd>⋯</dd>
+<dt>≈</dt><dd>dependent records</dd>
+
+</dl>
+
+<blockquote nil>
+<p>
+Differences  ⇒  Uses &amp; Implementations 
+</p>
+</blockquote>
+
+</section>
+<section id="slide-org73cc310">
+<h3 id="org73cc310">Proposed Contributions</h3>
+<ol>
+<li>Module system for DTLs: Modules are ordinary values.</li>
+
+<li>Use-cases contrasting resulting system with previous approaches.</li>
+
+<li>A module system that enables rather than inhibits efficiency.</li>
+
+<li>Replace metaprogramming processing with module primitives.</li>
+
+</ol>
+
+<blockquote nil>
+<p>
+An implementation to obtain validation that our system ‘works’
+</p>
+</blockquote>
+
+</section>
+</section>
+<section>
+<section id="slide-orge05f4a9">
+<h2 id="orge05f4a9">Current Approaches</h2>
+<div class="outline-text-2" id="text-orge05f4a9">
+</div>
+</section>
+<section id="slide-org519513a">
+<h3 id="org519513a">Expectations of Module Systems</h3>
+<dl>
+<dt>Namespacing</dt><dd>New unique local scopes ⇒ de-coupling.</dd>
+
+<dt>Information Hiding</dt><dd>Inaccessibility ⇒ Implementation independence.</dd>
+
+<dt>Citizenship</dt><dd>Grouping mechanisms should be treated like ordinary values.</dd>
+
+<dt>Polymorphism</dt><dd>Grouping mechanisms should group all kinds of things without prejudice.</dd>
+
+<dt>Sharing</dt><dd>Module parameter computations shared across constituents.</dd>
+
+</dl>
+
+<dl>
+<dt>OO</dt><dd>Generative modules &amp; Subtyping.</dd>
+
+</dl>
+
+</section>
+<section id="slide-orgf359f08">
+<h3 id="orgf359f08">Existing Systems</h3>
+<dl>
+<dt>Agda</dt><dd>Intimate relationship with records; no sharing; applicative modules; typeclasses.</dd>
+
+<dt>Coq </dt><dd>Copy-paste inclusion with combinator <code>&lt;+</code>; generative functors; typeclasses.
+<ul>
+<li>Canonical structures ⇒ familiarity with unifer.</li>
+
+</ul></dd>
+
+<dt>Idris</dt><dd>Aggressive proof erasure. Modules can be parameterised, not indexed.
+<ul>
+<li>Named instances for Haskell-like typeclasses.</li>
+
+</ul></dd>
+
+<dt>Lean</dt><dd>Quotient types &amp; extensional equality.
+<ul>
+<li>Rapid development with no backwards compatibility.</li>
+<li>Backed by Lean itself, which is not a full language.</li>
+
+</ul></dd>
+
+</dl>
+
+<p>
+ATS programmer-centric, F<sup>*</sup> refinement types, Beluga contexts,
+Isabelle locales, ⋯.
+</p>
+
+</section>
+<section id="slide-org9dcf1f8">
+<h3 id="org9dcf1f8">Facets of Structuring Mechanisms: An Agda Rendition</h3>
+<div class="outline-text-3" id="text-org9dcf1f8">
+</div>
+</section>
+<section id="slide-org44a5507">
+<h4 id="org44a5507">Monoids as Agda Records</h4>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #6c3163; font-weight: bold;">record</span> <span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Record</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
+  <span style="color: #3a81c3; font-weight: bold;">infixr</span> 5 <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span>
+  field
+    <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Interface</span>
+    <span style="color: #ba2f59; font-weight: bold;">Carrier</span>  <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
+    <span style="color: #ba2f59; font-weight: bold;">Id</span>       <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>
+    <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span>      <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>
+
+    <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Constraints</span>
+    lid   <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span><span style="color: #3a81c3;">{</span>x<span style="color: #3a81c3;">}</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#10814;</span> x<span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">&#8801;</span> x
+    rid   <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span><span style="color: #3a81c3;">{</span>x<span style="color: #3a81c3;">}</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #3a81c3;">(</span>x <span style="color: #715ab1;">&#10814;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span><span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">&#8801;</span> x
+    assoc <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x y z <span style="color: #715ab1;">&#8594;</span> <span style="color: #3a81c3;">(</span>x <span style="color: #715ab1;">&#10814;</span> y<span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">&#10814;</span> z  <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">&#10814;</span> <span style="color: #3a81c3;">(</span>y <span style="color: #715ab1;">&#10814;</span> z<span style="color: #3a81c3;">)</span>
+
+  <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">derived result</span>
+  pop<span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Id&#7523;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x y  <span style="color: #715ab1;">&#8594;</span>  x <span style="color: #715ab1;">&#10814;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#10814;</span> y  <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">&#10814;</span> y
+  pop<span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Id&#7523;</span> x y <span style="color: #715ab1;">=</span> <span style="color: #715ab1;">&#8801;.</span>cong <span style="color: #3a81c3;">(</span>x <span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #3a81c3;">)</span> leftId
+
+<span style="color: #6c3163; font-weight: bold;">open</span> <span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Record</span> <span style="color: #3a81c3;">{</span><span style="color: #6c3163;">{</span><span style="color: #715ab1;">...</span><span style="color: #6c3163;">}</span><span style="color: #3a81c3;">}</span> using <span style="color: #3a81c3;">(</span>pop<span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Id&#7523;</span><span style="color: #3a81c3;">)</span>
+</pre>
+</div>
+
+</section>
+<section id="slide-org82c44aa">
+<h4 id="org82c44aa">Monoids as Typeclasses</h4>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #6c3163; font-weight: bold;">record</span> <span style="color: #ba2f59; font-weight: bold;">HasMonoid</span> <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span><span style="color: #3a81c3;">)</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
+  <span style="color: #3a81c3; font-weight: bold;">infixr</span> 5 <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span>
+  field
+    <span style="color: #ba2f59; font-weight: bold;">Id</span>    <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>
+    <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span>   <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>
+    lid   <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span><span style="color: #3a81c3;">{</span>x<span style="color: #3a81c3;">}</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#10814;</span> x<span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">&#8801;</span> x
+    rid   <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span><span style="color: #3a81c3;">{</span>x<span style="color: #3a81c3;">}</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #3a81c3;">(</span>x <span style="color: #715ab1;">&#10814;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span><span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">&#8801;</span> x
+    assoc <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x y z <span style="color: #715ab1;">&#8594;</span> <span style="color: #3a81c3;">(</span>x <span style="color: #715ab1;">&#10814;</span> y<span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">&#10814;</span> z <span style="color: #715ab1;">&#8801;</span> x <span style="color: #715ab1;">&#10814;</span> <span style="color: #3a81c3;">(</span>y <span style="color: #715ab1;">&#10814;</span> z<span style="color: #3a81c3;">)</span>
+
+  pop<span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Id</span><span style="color: #715ab1;">-</span>tc <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x y <span style="color: #715ab1;">&#8594;</span>  x <span style="color: #715ab1;">&#10814;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#10814;</span> y  <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">&#10814;</span> y
+  pop<span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Id</span><span style="color: #715ab1;">-</span>tc x y <span style="color: #715ab1;">=</span> <span style="color: #715ab1;">&#8801;.</span>cong <span style="color: #3a81c3;">(</span>x <span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #3a81c3;">)</span> leftId
+
+<span style="color: #6c3163; font-weight: bold;">open</span> <span style="color: #ba2f59; font-weight: bold;">HasMonoid</span> <span style="color: #3a81c3;">{</span><span style="color: #6c3163;">{</span><span style="color: #715ab1;">...</span><span style="color: #6c3163;">}</span><span style="color: #3a81c3;">}</span> using <span style="color: #3a81c3;">(</span>pop<span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Id</span><span style="color: #715ab1;">-</span>tc<span style="color: #3a81c3;">)</span> 
+</pre>
+</div>
+
+</section>
+<section id="slide-org537343e">
+<h4 id="org537343e">Monoids as Direct Dependent Sums</h4>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Type alias</span>
+<span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #6c3163; font-weight: bold;">-</span><span style="color: #ba2f59; font-weight: bold;">&#931;</span>  <span style="color: #ba2f59; font-weight: bold;">:</span>  <span style="color: #ba2f59; font-weight: bold;">Set</span>&#8321;
+<span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #6c3163; font-weight: bold;">-</span><span style="color: #ba2f59; font-weight: bold;">&#931;</span>  <span style="color: #715ab1;">=</span>    <span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8758;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> 
+             <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#8758;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>
+             <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #715ab1;">&#8758;</span> <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span><span style="color: #3a81c3;">)</span>
+             <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> lid <span style="color: #715ab1;">&#8758;</span> <span style="color: #3a81c3;">(</span><span style="color: #715ab1;">&#8704;</span><span style="color: #6c3163;">{</span>x<span style="color: #6c3163;">}</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#10814;</span> x <span style="color: #715ab1;">&#8801;</span> x<span style="color: #3a81c3;">)</span> 
+             <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> rid <span style="color: #715ab1;">&#8758;</span> <span style="color: #3a81c3;">(</span><span style="color: #715ab1;">&#8704;</span><span style="color: #6c3163;">{</span>x<span style="color: #6c3163;">}</span> <span style="color: #715ab1;">&#8594;</span> x <span style="color: #715ab1;">&#10814;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#8801;</span> x<span style="color: #3a81c3;">)</span>
+             <span style="color: #715ab1;">&#8226;</span> <span style="color: #3a81c3;">(</span><span style="color: #715ab1;">&#8704;</span> x y z <span style="color: #715ab1;">&#8594;</span> <span style="color: #6c3163;">(</span>x <span style="color: #715ab1;">&#10814;</span> y<span style="color: #6c3163;">)</span> <span style="color: #715ab1;">&#10814;</span> z <span style="color: #715ab1;">&#8801;</span> x <span style="color: #715ab1;">&#10814;</span> <span style="color: #6c3163;">(</span>y <span style="color: #715ab1;">&#10814;</span> z<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+
+pop<span style="color: #6c3163; font-weight: bold;">-</span><span style="color: #ba2f59; font-weight: bold;">Id</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span><span style="color: #3a81c3;">{</span><span style="color: #6c3163;">{</span><span style="color: #ba2f59; font-weight: bold;">M</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">&#931;</span><span style="color: #6c3163;">}</span><span style="color: #3a81c3;">}</span> 
+                       <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #715ab1;">=</span> proj&#8321; <span style="color: #6c3163;">(</span>proj&#8322; <span style="color: #2d9574;">(</span>proj&#8322; <span style="color: #ba2f59; font-weight: bold;">M</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+                   <span style="color: #715ab1;">&#8594;</span>  <span style="color: #715ab1;">&#8704;</span> <span style="color: #3a81c3;">(</span>x y <span style="color: #ba2f59; font-weight: bold;">:</span> proj&#8321; <span style="color: #ba2f59; font-weight: bold;">M</span><span style="color: #3a81c3;">)</span>  <span style="color: #715ab1;">&#8594;</span>  x <span style="color: #715ab1;">&#10814;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#10814;</span> y  <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">&#10814;</span> y
+pop<span style="color: #6c3163; font-weight: bold;">-</span><span style="color: #ba2f59; font-weight: bold;">Id</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #3a81c3;">{</span><span style="color: #6c3163;">{</span><span style="color: #ba2f59; font-weight: bold;">M</span><span style="color: #6c3163;">}</span><span style="color: #3a81c3;">}</span> x y <span style="color: #715ab1;">=</span> <span style="color: #715ab1;">&#8801;.</span>cong <span style="color: #3a81c3;">(</span>x <span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>lid <span style="color: #6c3163;">{</span>y<span style="color: #6c3163;">}</span><span style="color: #3a81c3;">)</span>
+                     <span style="color: #3a81c3; font-weight: bold;">where</span>  <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span>    <span style="color: #715ab1;">=</span> proj&#8321; <span style="color: #3a81c3;">(</span>proj&#8322; <span style="color: #6c3163;">(</span>proj&#8322; <span style="color: #ba2f59; font-weight: bold;">M</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+                           lid    <span style="color: #715ab1;">=</span> proj&#8321; <span style="color: #3a81c3;">(</span>proj&#8322; <span style="color: #6c3163;">(</span>proj&#8322; <span style="color: #2d9574;">(</span>proj&#8322; <span style="color: #ba2f59; font-weight: bold;">M</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+</pre>
+</div>
+
+</section>
+<section id="slide-org1a287c9">
+<h4 id="org1a287c9">These are the ‘Same’</h4>
+<div class="org-src-container">
+
+<pre  class="src src-haskell">     <span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">&#931;</span>
+  <span style="color: #715ab1;">&#8773;</span>  <span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8758;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">HasMonoid</span> <span style="color: #ba2f59; font-weight: bold;">C</span>
+
+     <span style="color: #ba2f59; font-weight: bold;">HasMonoid</span>
+  <span style="color: #715ab1;">&#8773;</span>  &#955; <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #ba2f59; font-weight: bold;">M</span> <span style="color: #715ab1;">&#8758;</span> <span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Record</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">M.Carrier</span> <span style="color: #715ab1;">&#8801;</span> <span style="color: #ba2f59; font-weight: bold;">C</span>  
+</pre>
+</div>
+
+<blockquote nil>
+<p>
+Only utility difference!
+</p>
+
+<p>
+Fields vs Projections
+</p>
+</blockquote>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #ba2f59; font-weight: bold;">Carrier&#8348;</span> <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>   <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">boilerplate</span>
+<span style="color: #ba2f59; font-weight: bold;">Carrier&#8348;</span> <span style="color: #715ab1;">=</span> proj&#8321;
+</pre>
+</div>
+
+</section>
+<section id="slide-org38be8c6">
+<h4 id="org38be8c6">Instance Declarations</h4>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #3a81c3; font-weight: bold;">instance</span>
+   <span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>record <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Record</span>
+   <span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>record <span style="color: #715ab1;">=</span> record <span style="color: #3a81c3;">{</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">=</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span>; <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">=</span> 0; <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #715ab1;">=</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">+</span><span style="color: #3a81c3; font-weight: bold;">_</span>; <span style="color: #715ab1;">&#8943;</span> <span style="color: #3a81c3;">}</span>
+
+   <span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>tc <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">HasMonoid</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span>
+   <span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>tc <span style="color: #715ab1;">=</span> record <span style="color: #3a81c3;">{</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">=</span> 0; <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #715ab1;">=</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">+</span><span style="color: #3a81c3; font-weight: bold;">_</span>; <span style="color: #715ab1;">&#8943;</span> <span style="color: #3a81c3;">}</span>
+
+   <span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">&#931;</span>
+   <span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #715ab1;">=</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span> , 0 , <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">+</span><span style="color: #3a81c3; font-weight: bold;">_</span> , <span style="color: #715ab1;">&#8943;</span>
+</pre>
+</div>
+
+</section>
+<section id="slide-org707a004">
+<h4 id="org707a004">No Monoids Mentioned at Use Sites</h4>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>pop<span style="color: #715ab1;">-</span>0&#7523; <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> <span style="color: #3a81c3;">(</span>x y <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">&#8594;</span> x <span style="color: #715ab1;">+</span> 0 <span style="color: #715ab1;">+</span> y  <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">+</span> y
+<span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>pop<span style="color: #715ab1;">-</span>0&#7523; <span style="color: #715ab1;">=</span> pop<span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Id&#7523;</span>
+
+<span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>pop<span style="color: #715ab1;">-</span>0<span style="color: #715ab1;">-</span>tc <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> <span style="color: #3a81c3;">(</span>x y <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">&#8594;</span> x <span style="color: #715ab1;">+</span> 0 <span style="color: #715ab1;">+</span> y  <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">+</span> y
+<span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>pop<span style="color: #715ab1;">-</span>0<span style="color: #715ab1;">-</span>tc <span style="color: #715ab1;">=</span> pop<span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Id</span><span style="color: #715ab1;">-</span>tc
+
+<span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>pop<span style="color: #715ab1;">-</span>0&#8348; <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> <span style="color: #3a81c3;">(</span>x y <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">&#8594;</span> x <span style="color: #715ab1;">+</span> 0 <span style="color: #715ab1;">+</span> y  <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">+</span> y
+<span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>pop<span style="color: #715ab1;">-</span>0&#8348; <span style="color: #715ab1;">=</span> pop<span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Id</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">&#931;&#8348;</span>
+</pre>
+</div>
+
+</section>
+<section id="slide-orgbc881d6">
+<h4 id="orgbc881d6">Monoids as Telescopes</h4>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Telescope</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">User</span>
+  <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span><span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span><span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span><span style="color: #3a81c3;">)</span>
+  <span style="color: #3a81c3;">(</span>leftId  <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span><span style="color: #6c3163;">{</span>x<span style="color: #6c3163;">}</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#10814;</span> x <span style="color: #715ab1;">&#8801;</span> x<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>rightId <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span><span style="color: #6c3163;">{</span>x<span style="color: #6c3163;">}</span> <span style="color: #715ab1;">&#8594;</span> x <span style="color: #715ab1;">&#10814;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#8801;</span> x<span style="color: #3a81c3;">)</span>
+  <span style="color: #3a81c3;">(</span>assoc   <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x y z <span style="color: #715ab1;">&#8594;</span> <span style="color: #6c3163;">(</span>x <span style="color: #715ab1;">&#10814;</span> y<span style="color: #6c3163;">)</span> <span style="color: #715ab1;">&#10814;</span> z <span style="color: #715ab1;">&#8801;</span> x <span style="color: #715ab1;">&#10814;</span> <span style="color: #6c3163;">(</span>y <span style="color: #715ab1;">&#10814;</span> z<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span> 
+  <span style="color: #3a81c3; font-weight: bold;">where</span>
+  
+  pop<span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Id&#8344;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span><span style="color: #3a81c3;">(</span>x y <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span><span style="color: #3a81c3;">)</span>  <span style="color: #715ab1;">&#8594;</span>  x <span style="color: #715ab1;">&#10814;</span> <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#10814;</span> y<span style="color: #3a81c3;">)</span>  <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">&#10814;</span> y
+  pop<span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Id&#8344;</span> x y <span style="color: #715ab1;">=</span> <span style="color: #715ab1;">&#8801;.</span>cong <span style="color: #3a81c3;">(</span>x <span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>leftId <span style="color: #ba2f59; font-weight: bold;">M</span> <span style="color: #6c3163;">{</span>y<span style="color: #6c3163;">}</span><span style="color: #3a81c3;">)</span>
+</pre>
+</div>
+
+</section>
+<section id="slide-org5a816e5">
+<h4 id="org5a816e5">Telescope Use</h4>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #6c3163; font-weight: bold;">open</span> <span style="color: #ba2f59; font-weight: bold;">Monoid</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">Telescope</span><span style="color: #715ab1;">-</span><span style="color: #ba2f59; font-weight: bold;">User</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span> 0 <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">+</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #3a81c3;">(</span><span style="color: #715ab1;">+-</span>identity&#737; <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span><span style="color: #715ab1;">+-</span>identity&#691; <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">+-</span>assoc
+
+<span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>symmetry&#8344; <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> <span style="color: #3a81c3;">(</span>x y <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">&#8594;</span> x <span style="color: #715ab1;">+</span> y  <span style="color: #715ab1;">&#8801;</span>  y <span style="color: #715ab1;">+</span> x
+<span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">-</span>symmetry&#8344; <span style="color: #715ab1;">=</span> symmetry&#8344;
+</pre>
+</div>
+
+</section>
+<section id="slide-org5fcc5b3">
+<h4 id="org5fcc5b3">Interdefinablity</h4>
+<ul>
+<li>Different notions are thus interdefinable.</li>
+
+<li>Use-cases <i>distinguishes</i> packages.</li>
+
+<li>Distinctions ⇒ duplication of efforts.</li>
+
+</ul>
+
+<p>
+<b>Generalise!</b> Use a ‘package former’, rather than
+a particular variation.
+</p>
+
+</section>
+<section id="slide-orgf52a34e">
+<h3 id="orgf52a34e">Theory Presentations: A Structuring Mechanism</h3>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Contexts</span>
+<span style="color: #ba2f59; font-weight: bold;">&#915;</span>  <span style="color: #6c3163; font-weight: bold;">::=</span> <span style="color: #715ab1;">&#183;</span>                       <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">empty context</span>
+     <span style="color: #715ab1;">|</span> x <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">T</span> <span style="color: #3a81c3;">[</span><span style="color: #ba2f59; font-weight: bold;">:=</span> <span style="color: #ba2f59; font-weight: bold;">T</span><span style="color: #3a81c3;">]</span>, <span style="color: #ba2f59; font-weight: bold;">&#915;</span>         <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">context with declaration, optional definition</span>
+     <span style="color: #715ab1;">|</span> includes <span style="color: #ba2f59; font-weight: bold;">X</span>, <span style="color: #ba2f59; font-weight: bold;">&#915;</span>           <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">theory inclusion</span>
+    
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Terms</span>
+<span style="color: #ba2f59; font-weight: bold;">T</span> <span style="color: #6c3163; font-weight: bold;">::=</span> x <span style="color: #715ab1;">|</span> <span style="color: #ba2f59; font-weight: bold;">T</span>&#8321; <span style="color: #ba2f59; font-weight: bold;">T</span>&#8322; <span style="color: #715ab1;">|</span> &#955; x <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">T'</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">T</span> <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">variables, application, lambdas</span>
+    <span style="color: #715ab1;">|</span> <span style="color: #ba2f59; font-weight: bold;">&#928;</span> x <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">T'</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">T</span>             <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">dependent product</span>
+    <span style="color: #715ab1;">|</span> <span style="color: #3a81c3;">[</span><span style="color: #ba2f59; font-weight: bold;">&#915;</span><span style="color: #3a81c3;">]</span> <span style="color: #715ab1;">|</span> <span style="color: #3a81c3;">&#10216;</span><span style="color: #ba2f59; font-weight: bold;">&#915;</span><span style="color: #3a81c3;">&#10217;</span> <span style="color: #715ab1;">|</span> T.x          <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">record &#8220;[type]&#8221; and &#8220;&#10216;element&#10217;&#8221; formers, projections  </span>
+    <span style="color: #715ab1;">|</span> <span style="color: #ba2f59; font-weight: bold;">Mod</span> <span style="color: #ba2f59; font-weight: bold;">X</span>                    <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">contravariant &#8220;theory to record&#8221; internalisation</span>
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Theory, external grouping, level</span>
+<span style="color: #ba2f59; font-weight: bold;">&#920;</span> <span style="color: #6c3163; font-weight: bold;">::=</span> <span style="color: #715ab1;">.</span>                        <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">empty theory</span>
+    <span style="color: #715ab1;">|</span> <span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #ba2f59; font-weight: bold;">:=</span> <span style="color: #ba2f59; font-weight: bold;">&#915;</span>, <span style="color: #ba2f59; font-weight: bold;">&#920;</span>                <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">a theory can contain named contexts</span>
+    <span style="color: #715ab1;">|</span> <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #6c3163;">(</span><span style="color: #ba2f59; font-weight: bold;">X</span>&#8321; <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">X</span>&#8322;<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span> <span style="color: #ba2f59; font-weight: bold;">:=</span> <span style="color: #ba2f59; font-weight: bold;">&#915;</span>     <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">a theory can be a first-class theory morphism</span>
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Proviso: In record formers, &#915; must be flat; i.e., does not contain includes.</span>
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Example theory hierarchy of signatures, abbrevating &#8220;(&#928; x : A &#8226; B) = (A &#8594; B)&#8221;.</span>
+, <span style="color: #ba2f59; font-weight: bold;">MagmaSig</span> <span style="color: #ba2f59; font-weight: bold;">:=</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>,  <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>, <span style="color: #715ab1;">.</span>
+, <span style="color: #ba2f59; font-weight: bold;">MonSig</span>   <span style="color: #ba2f59; font-weight: bold;">:=</span> includes <span style="color: #ba2f59; font-weight: bold;">MagmaSig</span>, <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>, <span style="color: #715ab1;">.</span>
+, <span style="color: #715ab1;">.</span>
+</pre>
+</div>
+
+<blockquote nil>
+<p>
+No implementation that does anything. 
+</p>
+</blockquote>
+
+</section>
+</section>
+<section>
+<section id="slide-orga1ab151">
+<h2 id="orga1ab151">Solution Requirements</h2>
+<div class="outline-text-2" id="text-orga1ab151">
+</div>
+</section>
+<section id="slide-orgaafec98">
+<h3 id="orgaafec98">Missing Features</h3>
+<div class="outline-text-3" id="text-orgaafec98">
+</div>
+</section>
+<section id="slide-orgbd11b34">
+<h4 id="orgbd11b34">Expressivity</h4>
+<p>
+Be able to pick the level of bundling.
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #6c3163; font-weight: bold;">record</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup0</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span> <span style="color: #715ab1;">&#8943;</span> 
+
+<span style="color: #6c3163; font-weight: bold;">record</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup1</span> <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span><span style="color: #3a81c3;">)</span><span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span> <span style="color: #715ab1;">&#8943;</span>
+
+<span style="color: #6c3163; font-weight: bold;">record</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup2</span>
+ <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span><span style="color: #3a81c3;">)</span>
+ <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span>     <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span><span style="color: #3a81c3;">)</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #3a81c3; font-weight: bold;">where</span> <span style="color: #715ab1;">&#8943;</span>
+ 
+<span style="color: #6c3163; font-weight: bold;">record</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup3</span>
+ <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span><span style="color: #3a81c3;">)</span> 
+ <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span><span style="color: #3a81c3;">)</span>
+ <span style="color: #3a81c3;">(</span>assoc <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x y z <span style="color: #715ab1;">&#8594;</span> <span style="color: #6c3163;">(</span>x <span style="color: #715ab1;">&#10814;</span> y<span style="color: #6c3163;">)</span> <span style="color: #715ab1;">&#10814;</span> z <span style="color: #715ab1;">&#8801;</span> x <span style="color: #715ab1;">&#10814;</span> <span style="color: #6c3163;">(</span>y <span style="color: #715ab1;">&#10814;</span> z<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #3a81c3; font-weight: bold;">where</span>
+  <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">no fields</span>
+</pre>
+</div>
+
+<p>
+E.g., code along <code>Semigroup1</code>, use for <code>Semigroup0</code>.
+</p>
+<div class="org-src-container">
+
+<pre  class="src src-haskell">translate1 <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span><span style="color: #3a81c3;">{</span><span style="color: #ba2f59; font-weight: bold;">A</span> <span style="color: #ba2f59; font-weight: bold;">B</span><span style="color: #3a81c3;">}</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #3a81c3;">(</span>f <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">A</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">B</span><span style="color: #3a81c3;">)</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Bijection</span> f
+           <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup1</span> <span style="color: #ba2f59; font-weight: bold;">A</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup1</span> <span style="color: #ba2f59; font-weight: bold;">B</span>
+
+translate0 <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span><span style="color: #3a81c3;">{</span><span style="color: #ba2f59; font-weight: bold;">B</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span><span style="color: #3a81c3;">}</span> <span style="color: #3a81c3;">(</span><span style="color: #ba2f59; font-weight: bold;">AS</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup0</span><span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>f <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup0.Carrier</span> <span style="color: #ba2f59; font-weight: bold;">AS</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">B</span><span style="color: #3a81c3;">)</span>
+           <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Bijection</span> f
+           <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup0</span>
+</pre>
+</div>
+
+</section>
+<section id="slide-orgb09e001">
+<h4 id="orgb09e001">Excerption</h4>
+<p>
+<i>Instantiate</i> a deeply nested theory.
+</p>
+<div class="org-src-container">
+
+<pre  class="src src-haskell"><span style="color: #3a81c3; font-weight: bold;">instance</span> <span style="color: #ba2f59; font-weight: bold;">Monad</span> <span style="color: #ba2f59; font-weight: bold;">M</span>       <span style="color: #3a81c3; font-weight: bold;">where</span> <span style="color: #715ab1;">&#8943;</span>  <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(0) needs (1), which needs (2)</span>
+<span style="color: #3a81c3; font-weight: bold;">instance</span> <span style="color: #ba2f59; font-weight: bold;">Applicative</span> <span style="color: #ba2f59; font-weight: bold;">M</span> <span style="color: #3a81c3; font-weight: bold;">where</span> <span style="color: #715ab1;">&#8943;</span>  <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(1) redundant if (0) is given</span>
+<span style="color: #3a81c3; font-weight: bold;">instance</span> <span style="color: #ba2f59; font-weight: bold;">Functor</span> <span style="color: #ba2f59; font-weight: bold;">M</span>     <span style="color: #3a81c3; font-weight: bold;">where</span> <span style="color: #715ab1;">&#8943;</span>  <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(2)</span>
+</pre>
+</div>
+
+<p>
+Accessing deeply nested fields; e.g., <code>Monoid.Semigroup.Magma.Carrier M</code>.
+</p>
+
+<p>
+⇒ <i>flatten hierarchies!</i>
+</p>
+
+</section>
+<section id="slide-orgc6d42b8">
+<h3 id="orgc6d42b8">Desirable Features</h3>
+<dl>
+<dt>Uniformity</dt><dd>Treat different notions of packaging the same way.</dd>
+<dt>Genericity</dt><dd>Polymorphism along packages types / package formers.</dd>
+<dt>Extensiblity</dt><dd>Primitives to form new package combinators.</dd>
+
+</dl>
+
+
+</section>
+</section>
+<section>
+<section id="slide-org2f42034">
+<h2 id="org2f42034">Approach and Timeline</h2>
+<div class="outline-text-2" id="text-org2f42034">
+</div>
+</section>
+<section id="slide-org4ef7f3c">
+<h3 id="org4ef7f3c">Implementation Matter</h3>
+<ul>
+<li>More than ‘research quality’ ⇒ ready for a broad audience.</li>
+
+<li>Dependent types.</li>
+
+<li>Existing industrial-strength compiler?</li>
+
+<li>Reasoning and proofs?</li>
+
+</ul>
+
+<div class="org-center">
+<p>
+<b>Agda</b>  
+</p>
+
+<p>
+─Proof of concept language─
+</p>
+</div>
+
+</section>
+<section id="slide-org5b3b097">
+<h3 id="org5b3b097">Next Steps</h3>
+<ol>
+<li>Distill the <i>true</i> requirements for a solution</li>
+
+<li>Deepen understanding of the opportunities given by DTL.</li>
+
+<li>Demonstrate the power of the system.</li>
+
+<li>Evaluate the mechanisms.
+
+<ul>
+<li>Additions actually contribute to program design?</li>
+
+</ul></li>
+
+<li>Make sure to have a denotational semantics for the mechanisms.</li>
+
+<li>Refine above until elegance, or deadline, is reached, whichever comes first.</li>
+
+</ol>
+
+</section>
+<section id="slide-orge7764c4">
+<h3 id="orge7764c4">Timeline</h3>
+<dl>
+<dt>The First Pass: May-October 2019</dt><dd>Thorough familiarity with approaches, Agda ecosystem, begun thesis writing.</dd>
+
+</dl>
+<dl>
+<dt>The Middle Pass: November 2019 - February 2020</dt><dd>Implement module formation primitives
+from the thesis proposal, while forming &amp; extending
+semantics.</dd>
+
+<dt>The Final Pass: March - April 2020</dt><dd>Implementations meet requirements; mechanise proofs.</dd>
+
+</dl>
+
+</section>
+</section>
+<section>
+<section id="slide-org6185449">
+<h2 id="org6185449">Conclusion</h2>
+<p>
+Intended outcomes include:
+</p>
+
+<ol>
+<li>A clean module system for DTLs</li>
+
+<li><i>Utility Objectives</i>: A variety of use-cases contrasting the resulting system with previous
+approaches.</li>
+
+<li>A module system that enables rather than inhibits (or worse) efficiency.</li>
+
+<li>Demonstrate that module features usually requiring meta-programming can be brought
+to the data-value level.</li>
+
+</ol>
+
+<blockquote nil>
+<p>
+Implement our theory to obtain validation that it “works”!
+</p>
+</blockquote>
+</section>
+</section>
+</div>
+</div>
+<p> Created by yjwen. </p>
+<script src="http://cdn.jsdelivr.net/reveal.js/3.0.0/lib/js/head.min.js"></script>
+<script src="http://cdn.jsdelivr.net/reveal.js/3.0.0/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: false,
+center: true,
+slideNumber: 'c',
+rollingLinks: true,
+keyboard: true,
+overview: true,
+width: 1200,
+height: 800,
+margin: 0.10,
+minScale: 0.50,
+maxScale: 2.50,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'cube', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'default',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: 'http://cdn.jsdelivr.net/reveal.js/3.0.0/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'http://cdn.jsdelivr.net/reveal.js/3.0.0/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: 'http://cdn.jsdelivr.net/reveal.js/3.0.0/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
+});
+</script>
+</body>
+</html>
