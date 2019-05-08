@@ -3,7 +3,7 @@
 #+AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]]
 #+EMAIL: alhassy@gmail.com
 #+OPTIONS: toc:nil d:nil title:nil
-# PROPERTY: header-args :tangle nil :comments both
+#+PROPERTY: header-args :tangle no :comments link
 
 # At the end of a section, explain why the section is there,
 # and what the reader should take away from it.
@@ -2285,13 +2285,15 @@ translate0 {B} AS f surj inj = record { Carrier = B ; _⨾_ = _⨾_ ; assoc = as
        open Semigroup1 (translate1 f surj inj pack)
 #+end_src
 Observe that ~translate0~ repackages ~AS~ via ~pack~,
-then passes that as an argument to ~translate1~, which in turn unpacks it(!)
+then passes that as an argument to ~translate1~, which in turn unpacks it
 to form a new ~Semigroup0~, which is then unpacked in the
-last line above. Whereas ~translate1~ is the appropriate level of abstraction to pose
-and solve the problem, to re-use the result for a different representation
-requires a wasteful amount of packing and unpacking of records.
-It would be ideal to write the method at a sufficient level of generality such
-~translate0~ and ~translate1~ are, say, polymorphic instances thereof.
+last line above.
+Regardless of any possible wasteful amount of packing and unpacking of records
+--which may be mitigated via inlining--
+the way ~translate0~ is written is far from ideal;
+whereas ~translate1~ is the appropriate level of abstraction to pose the problem.
+Instead, it would be ideal to write the method at a sufficient level of generality
+such that ~translate0~ and ~translate1~ are, say, polymorphic instances thereof.
 This is what we shall propose in a later section.
 
 :Relocate_yoneda:
@@ -2329,7 +2331,7 @@ To be completed …
 
 *Excerption:* 
 
-In order to produce reusable componenets, theories ---i.e., packages--- are formed
+In order to produce reusable components, theories ---i.e., packages--- are formed
 from existing theories by adding only one new concept at a time. Such an approach
 reduces the possibility of missing a useful structure in the hierarchy, as well
 as provides tremendous generality ---operations can be rendered using the minimal
@@ -2373,10 +2375,17 @@ center footer  Example Hierarchy
 If we have the ingredients for a monoid in hand, we are unfortunately first
 required to produce a left or right unital semigroup, which requires us to produce
 a pointed semigroup first, and this regress continues to the base theory, ~Type~.
-Being the model of compositionality, monoids are ubiquitous, and so this scenario
+Building on semigroups, monoids are a ubiquitous model of compositionality,
+and so this scenario
 happens rather often, in one guise or another. The amount of syntactic noise
 required to produce a simple instantiation is unreasonable: One should not be forced
 to work through the hierarchy if it provides no immediate benefit.
+It is to be noted that this issue does not generally apply to implementations of
+object-oriented class supporting multiple interfaces.
+# or rephrasing the hierarchy to be horizontal and unrelated,
+# so each piece is a typeclass, and we then use multiple class constraints.
+#
+# What about OCaml, F#, F*?
 
 Even worse, pragmatically speaking, to access a field deep down in a nested structure
 results in overtly lengthy and verbose names. Indeed, in the above example, the monoid
@@ -2416,7 +2425,9 @@ designers with the freedom to alter it in the future.
 # be forced to ...
 
 These features are considered ‘missing’ since they are reasonably achievable
-in a dependently-typed system. Their absence may be due to logistic reasons,
+in a dependently-typed system ---e.g., the different forms of dependently-typed
+bundling suggest a form of polymorphism.
+Their absence may be due to logistic reasons,
 such as no effort expedited in their direction, or due to issues surrounding
 the logical frameworks of the systems. Which is to blame is an investigation
 matter left to the thesis research.
