@@ -2062,7 +2062,7 @@ also be relativised.
 
 From the outset we have proposed a particular approach to resolving
 the needless duplication present in current module systems that are
-utilised in non-dependent-typed languages. Up to this point, we have
+utilised in non-dependently-typed languages. Up to this point, we have
 only discussed how our approach could mitigate certain troubles;
 such as a difference of perspectives of modules, or of equivalent
 operations acting on different perspectives of modules.
@@ -2070,21 +2070,29 @@ We now turn to discussing, in the following subsections, what it is that
 is missing from existing module systems, what one actually wants to 
 do with modules, and conclude with a checklist of features that our
 proposed system should meet in order to be considered usable
-and adequate as a thesis level effort.
+and adequate as a thesis-level effort.
 
 ** Missing Features
 
-Certain mechanically derivable concepts, such as different perspectives, 
+Certain mechanically-derivable concepts, such as different perspectives, 
 are needlessly delegated to the user by pedestrian packaging systems.
-Besides being tedious and error-prone, the inexpressibility of derivatives
+Besides being tedious and error-prone, the inexpressibility of derivates
 obscures the corresponding general principles underlying them, thus foregoing
 any machine assistance in ensuring any correctness or safety-ness guarantees.
 The desire to pursue a more economical yet powerful packaging system
 follows from our research team's expedited efforts that could have been mechanised .
 We will only mention two such use cases.
 
+# [[https://www.google.com/search?ei=MeLSXLaTIuqN5wLSsaTwDw&q=derivate&oq=derivate&gs_l=psy-ab.3..0i67j0i10j0j0i10l7.27397.29434..29651...0.0..0.100.195.1j1......0....1..gws-wiz.......0i71j0i7i10i30.ZZBrC21FopE][define derivate]] :: something derived, especially a product obtained chemically from a raw material.
+#
+#
+#       derivates
+#  or   what could be considered as derived views
+
+\noindent
 *Expressivity:* 
 
+\noindent
 A common pattern that can be seen, for example, in the Agda standard library,
 is of a predicate ensuring desirable properties
 OF its inputs, then of a record containing the inputs as fields along
@@ -2093,12 +2101,13 @@ named ~IsSemi~ and the record is named ~Semi~; the predicate form allows us to
 quantify over inputs as in ~∀ x y → IsSemi x y → ⋯~, in contrast the latter
 approach is intrinsic in nature: ~∀ (s : Semi) → ⋯~
 ---contrast this with a mathematician naturally declaring “let ~s~ be a semigroup”,
-whereas almost never do mathematicians says “let ~x~ be a set and ~y~ be an operation on it that together constitute a semigroup”.
+whereas almost never do mathematicians say “let ~x~ be a set and ~y~ be an operation on it that together constitute a semigroup”.
 
 At a first glance, it does not seem too troublesome to produce the record
-presentation from the predicate presentation: Simply repeat /all/ the inputs
+presentation from the predicate presentation: Simply /repeat all/ the inputs
 under a record declaration along with a proof obligation. However, the
-adjective ‘all’ already suggests the problem. What if one desires to
+word ‘repeat’ already suggests a problem, and ‘all’ suggests another one. 
+What if one desires to
 utilise the record associated to the predicate by only packaging certain
 inputs but not others? This is akin to the problem of constructors
 in object-oriented languages: In Java, for example, one uses overloading
@@ -2107,25 +2116,28 @@ input invocations to construct an object; in contrast, Common Lisp permits
 optional named arguments, and so in one fell swoop, with one user-written,
 constructor, provides all possible combinations of constructor invocations
 ---we are aiming at this level of power and flexibility.
+#
+# WK: [OCaml] permits optional named arguments.
 
 Lest it's unclear, let's elaborate slightly on the idea.
 
-A semigroup is an algebraic structure that models compositionality:
+A semigroup is an algebraic structure that models (untyped) compositionality:
 It consists of a collection of objects of interests called the ~Carrier~ set,
-and an operation ~_⨾_~ to compose existing items to produce new items, and it is associative.
-Below is a spectrum of bundling-up such a structure
+and an operation ~_⨾_~ to compose existing items to produce new items, and the operation
+is associative.
+Below is a spectrum of ways to bundle up such a structure
 --starting from being completely bundled up all the way to being
 completely exposed.
 {{{code(A value of “Semigroup0” is an arbitrary semigroup.)}}}
 #+begin_src haskell
--- One extreme: Completely bundled up ==c.f., ‘Semi’ above.
+-- One extreme: Completely bundled up
 record Semigroup0 : Set₁ where
   field 
     Carrier : Set
     _⨾_     : Carrier → Carrier → Carrier
     assoc   : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 #+end_src
-{{{code(A value of “Semigroup C” is a semigroup “structure on” type “C.”)}}}
+{{{code(A value of “Semigroup1 C” is a semigroup “structure on” type “C.”)}}}
 #+begin_src haskell
 -- ‘Typeclass’ on a given Carrier
 -- Alternatively: Carrier is known as runtime.
@@ -2256,7 +2268,7 @@ It would be ideal to write the method at a sufficient level of generality such
 This is what we shall propose in a later section.
 
 :Full_Agda_code:
-#+BEGIN_SRC haskell
+#+BEGIN_SRC haskell :tangle translate_functions.agda
 open import Data.Product
 open import Relation.Binary.PropositionalEquality
 open ≡-Reasoning

@@ -12,4 +12,12 @@ under the supervision of Jacques Carette and Wolfram Kahl.
 -   A requirements driven approach to coherent modularisarion constructs in Dependently-typed languages.
 -   Main Question: *What are the module systems for Dependently-Typed Languages?*
 -   Goal: Extend Agda to be powerful enough to implement the module system features, in the core language, that people want to do.
+    
+    In user facing libraries, [redundancies are desirable](https://inf.ug.edu.pl/~schwarzw/papers/mkm2010.pdf)
+    since they may utilise a a variety of aliases for what user want, this is useful
+    flexibility.
+    
+    -   However, in the source file, each item should only exist once.
+    -   The front-end redundancy should be produced by machine generation,
+        rather than by hand.
 
