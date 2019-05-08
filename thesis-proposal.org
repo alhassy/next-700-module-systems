@@ -3698,13 +3698,13 @@ the next 700 module systems.
 Packages, modules, classes, (dependent) records, (named) contexts, telescopes, theories, specifications
 ---whatever you wish to call them are essential structuring principles that 
 enable modularity, encapsulation, inheritance, and reuse in formal libraries and programs. 
-Moreover there may be no semantic difference between them in a dependently-typed
-setting, as \parencite{theories_as_types} present a type theoretic calculus
+Moreover, as we have demonstrated, with the exception of use-cases,
+there are no significant differences between them in a dependently-typed setting, as \parencite{theories_as_types} present a type theoretic calculus
 of a variant of record types that corresponds to theories.
 
 ** Implementation Matter
 
-We will realise our proposal in an existing industrial-strength compiler 
+We will realise our proposal in an existing compiler 
 and so working with it necessitates our implementations to be more than
 just ‘research quality’ but actually ready for a broad audience.
 
@@ -3738,7 +3738,8 @@ developments \parencite{RATH, agda_trains, agda_web}.
 # https://stackoverflow.com/questions/21210569/is-the-evaluation-strategy-of-agda-specified-anywhere
 
 Needless to say,
-a poor choice of elaboration strategy can lead to a loss of sharing,
+a poor choice of elaboration strategy can lead to a loss of sharing
+---not that Agda has sharing to begin with---,
 contain too many undesirable side-effects, hinder efficiency, or forgo compile-time optimisations.
 For example, 
 Agda, as currently implemented using the Glasgow Haskell Compiler (GHC), is a realisation
@@ -3756,9 +3757,7 @@ due to the loss of sharing that happens when module arguments need to be
 re-normalised in each function-counterpart.
 Consequently, only a minor subset of the Agda community actually /executes/ their
 programs. The rest of the community is generally content with type checking only; 
-which does not hinder
-the reliability of proof since dependent types tend to require computation so as
-to be determined.
+which does not hinder the reliability of proof.
 
 It is important to note that we employ Agda only as a proof-of-concept for
 our proposed exploration of first-class structuring-mechanisms in dependently typed languages.
@@ -3790,7 +3789,7 @@ Notice that feedback loop of practice into theory.
 
 :End:
 
-2. Distill the /true/ requirements for a solution;
+1. Distill the /true/ requirements for a solution;
    ensure good /fit for purpose/ criteria exists.
 
    - Understand the requirements of `modularity mechanisms' for DTLs.
@@ -3800,42 +3799,51 @@ Notice that feedback loop of practice into theory.
    - Ideally we want our implementations to avoid too much overhead,
      such as creating an entire new language; this may necessitate the
      weakening of other functionality.
-
-3. Deepen understanding of the opportunities given by DTL.
+          
+2. Deepen understanding of the opportunities given by DTL.
 
    - Understand the relationships between 
       modules, records, contexts, telescopes, and signatures.
-      * Do they have differing `types'?
-      * As types themselves, do they have differing `values'?
-      * In the setting of DTLs, are they essentially isomorphic?
-      * What are the intended uses? What intentions do particular choices communicate?
-        - E.g., “$x = y$” communicates an equality and nothing more, whereas
-          “$x\! \iff\! y$” communicates a Boolean equality: A redundant, particularised, equality
-          symbol serves to succinctly and elegantly communicate more information.
+     * Do they have differing `types'?
+     * As types themselves, do they have differing `values'?
+     * In the setting of DTLs, are they essentially isomorphic?
+     * What are the intended uses? What intentions do particular choices communicate?
+       - E.g., “$x = y$” communicates an equality and nothing more, whereas
+         “$x\! \iff\! y$” communicates a Boolean equality: A redundant, particularised, equality
+         symbol serves to succinctly and elegantly communicate more information.
+
+3. Formulate basic, draft, semantics for a small set of DTL module primitives.
+
+   - What is the type of a package former?
+   - How does it fit into Agda's existing type hierarchy?
+   - What are the types of the primitives themselves?
+     + We wish to avoid metaprogramming
+       after all, and so wish to remain within the language rather than
+       in a metalanguage.
 
 4. Prototype some mechanisms; a combination of old, adapted, and novel ones
    to demonstrate the power of the system.
 
-  + Implement the structuring mechanism combinators discussed earlier
-    ---such as combination over common-substructures.
+   + Implement the structuring mechanism combinators discussed earlier
+     ---such as combination over common-substructures.
 
-   + Possibly begin with reifying first class grouping mechanisms by
-     representing contexts ---i..e, sequences of declarations with optional definitions---
-     as records in Agda with the undefined declarations being fields and the rest being
-     derived or definitional.
+     + Possibly begin with reifying first class grouping mechanisms by
+       representing contexts ---i..e, sequences of declarations with optional definitions---
+       as records in Agda with the undefined declarations being fields and the rest being
+       derived or definitional.
 
 5. Evaluate the mechanisms ---using fit-for-criteria.
 
- + Since the realisation would be in Agda, we would keep in touch with the community
-   to ensure that the additions contribute to program design.
+   + Since the realisation would be in Agda, we would keep in touch with the community
+     to ensure that the additions contribute to program design.
 
- + Evaluate the strength of the resulting additions in terms
-   of practical use for library designers as well as in terms of program speed.
+   + Evaluate the strength of the resulting additions in terms
+     of practical use for library designers as well as in terms of program speed.
 
 6. Make sure to have a denotational semantics for the mechanisms.
 
- + Ensure that the additions are minimal, orthogonal, and construct a sound
-   type theory around them.
+   + Ensure that the additions are minimal, orthogonal, and construct a sound
+     type theory around them.
 
 7. Refine 2-6 until elegance, or deadline, is reached, whichever comes first.
 
