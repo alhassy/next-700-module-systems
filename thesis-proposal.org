@@ -3,6 +3,7 @@
 #+AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]]
 #+EMAIL: alhassy@gmail.com
 #+OPTIONS: toc:nil d:nil title:nil
+# PROPERTY: header-args :tangle nil :comments both
 
 # At the end of a section, explain why the section is there,
 # and what the reader should take away from it.
@@ -2073,6 +2074,9 @@ proposed system should meet in order to be considered usable
 and adequate as a thesis-level effort.
 
 ** Missing Features
+   :PROPERTIES:
+   :header-args: :tangle translate_functions.agda :comments link
+   :END:
 
 Certain mechanically-derivable concepts, such as different perspectives, 
 are needlessly delegated to the user by pedestrian packaging systems.
@@ -2120,6 +2124,20 @@ constructor, provides all possible combinations of constructor invocations
 # WK: [OCaml] permits optional named arguments.
 
 Lest it's unclear, let's elaborate slightly on the idea.
+:Setup:
+#+begin_src haskell
+open import Relation.Binary.PropositionalEquality
+open ≡-Reasoning
+
+-- Z-notation for sums
+open import Level
+open import Data.Product using (Σ ; proj₁ ; proj₂ ; _×_ ; _,_)
+Σ∶• : {a b : Level} (A : Set a) (B : A → Set b) → Set (a ⊔ b)
+Σ∶• = Σ
+infix -666 Σ∶•
+syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
+#+end_src
+:End:
 
 A semigroup is an algebraic structure that models (untyped) compositionality:
 It consists of a collection of objects of interests called the ~Carrier~ set,
@@ -2180,59 +2198,68 @@ to formulate it an prove it using presentation ~Semigroup1~.
 {{{code(Elementary Properties of Functions)}}}
 #+begin_src haskell
 Surjection : ∀{A B : Set} → (A → B) → Set
-Surjection {A} {B} f = ∀ (b : B) → Σ a ∶ A  • b ≡ f a
+Surjection {A} {B} f = ∀ (b : B) → Σ a ∶ A • b ≡ f a
+-- (Σ a ∶ A • P a) ≈ { (a, proof) ❙ a ∈ A ∧ pf is a proof of P(a) }
 
 Injection : ∀{A B : Set} → (A → B) → Set
 Injection {A} {B} f = ∀ {x y} →  f x ≡ f y → x ≡ y
 #+end_src
 {{{code(An Involved Proof That We Would Like to Reuse)}}}
 #+begin_src haskell
-translate1 : ∀{A B} → (f : A → B) → Surjection f → Injection f
-           → Semigroup1 A → Semigroup1 B
+translate1 : ∀{A B} → (f : A → B) → Surjection f → Injection f → Semigroup1 A → Semigroup1 B
 translate1 f surj inj AS =
   let
     open Semigroup1 AS
 
-    _∘_ = λ x y → let a0 = proj₁ (surj x); a1 = proj₁ (surj y) in f (a0 ⨾ a1)
+    -- x ⨾′ y is obtained by applying f to the ⨾-composition of the pre-images of x and y.
+    infix 5 _⨾′_
+    _⨾′_ = λ x y → let a0 = proj₁ (surj x); a1 = proj₁ (surj y) in f (a0 ⨾ a1)
 
-    factor : ∀ {a a′} → f a ∘ f a′ ≡ f (a ⨾ a′)
+    -- f distributes over ⨾ turning it into ⨾′.
+    factor : ∀ {a a′} → f a ⨾′ f a′ ≡ f (a ⨾ a′)
     factor {a} {a′} =
                let 𝒶  , m  = surj (f a)
-                   𝒶′ , w = surj (f a′)
+                   𝒶′ , w  = surj (f a′)
                in    
                begin
-                 f a ∘ f a′
+                 f a ⨾′ f a′
                ≡⟨ refl ⟩
                  f (𝒶 ⨾ 𝒶′)
                ≡⟨ cong f (cong₂ _⨾_ (inj (sym m)) (inj (sym w)))  ⟩
                  f (a ⨾ a′)
                ∎
 
-    distribute : ∀ {a a′} → f (a ⨾ a′) ≡ f a ∘ f a′
+    distribute : ∀ {a a′} → f (a ⨾ a′) ≡ f a ⨾′ f a′
     distribute {a} {a′} = sym (factor {a} {a′})
-  in 
-    record { _⨾_ = _∘_; assoc = λ x y z → 
+    
+  in -- Bundle up ⨾′ along with a proof of associtivity 
+    record { _⨾_ = _⨾′_; assoc = λ x y z → 
      let
+        -- Obtain f-pre-images
         a₀ , x≈fa₀  =  surj x
         a₁ , y≈fa₁  =  surj y
         a₂ , z≈fa₂  =  surj z
-     in   
+     in
+      {- Tersely, we rewrite along the pre-images,
+         factor f, perform the associativity of ⨾,
+         then distribute f and rewrite along the pre-images.
+      -}
        begin
-         ((x ∘ y) ∘ z) 
-       ≡⟨ cong₂ _∘_ (cong₂ _∘_ x≈fa₀ y≈fa₁) z≈fa₂ ⟩
-         ( (f a₀ ∘ f a₁) ∘ f a₂)
-       ≡⟨ cong (_∘ f a₂) factor ⟩
-         (f (a₀ ⨾ a₁) ∘ f a₂)
+         (x ⨾′ y) ⨾′ z
+       ≡⟨ cong₂ _⨾′_ (cong₂ _⨾′_ x≈fa₀ y≈fa₁) z≈fa₂ ⟩
+         (f a₀ ⨾′ f a₁) ⨾′ f a₂
+       ≡⟨ cong (_⨾′ f a₂) factor ⟩
+         f (a₀ ⨾ a₁) ⨾′ f a₂
        ≡⟨ factor ⟩
          f ((a₀ ⨾ a₁) ⨾ a₂)
        ≡⟨ cong f (assoc _ _ _)  ⟩
          f (a₀ ⨾ (a₁ ⨾ a₂))
        ≡⟨ distribute ⟩
-         (f a₀ ∘ f (a₁ ⨾ a₂))
-       ≡⟨ cong (f a₀ ∘_) distribute ⟩
-         (f a₀ ∘ (f a₁ ∘ f a₂))
-       ≡⟨ sym (cong₂ _∘_ x≈fa₀ (cong₂ _∘_ y≈fa₁ z≈fa₂))  ⟩
-         (x ∘ (y ∘ z))
+         f a₀ ⨾′ f (a₁ ⨾ a₂)
+       ≡⟨ cong (f a₀ ⨾′_) distribute ⟩
+         f a₀ ⨾′ (f a₁ ⨾′ f a₂)
+       ≡⟨ sym (cong₂ _⨾′_ x≈fa₀ (cong₂ _⨾′_ y≈fa₁ z≈fa₂))  ⟩
+         x ⨾′ (y ⨾′ z)
        ∎
   }
 #+end_src
@@ -2266,99 +2293,6 @@ requires a wasteful amount of packing and unpacking of records.
 It would be ideal to write the method at a sufficient level of generality such
 ~translate0~ and ~translate1~ are, say, polymorphic instances thereof.
 This is what we shall propose in a later section.
-
-:Full_Agda_code:
-#+BEGIN_SRC haskell :tangle translate_functions.agda
-open import Data.Product
-open import Relation.Binary.PropositionalEquality
-open ≡-Reasoning
-
-record Semigroup1 (Carrier : Set): Set₁ where
-  constructor Mk1
-  field 
-    _⨾_ : Carrier → Carrier → Carrier
-    assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-
-Surjection : ∀{A B : Set} → (A → B) → Set
-Surjection {A} {B} f = ∀ (b : B) → Σ[ a ∈ A ] (b ≡ f a)
-
-Injection : ∀{A B : Set} → (A → B) → Set
-Injection {A} {B} f = ∀ {x y} →  f x ≡ f y → x ≡ y
-
-translate1 : ∀{A B} → (f : A → B) → Surjection f → Injection f → Semigroup1 A → Semigroup1 B
-translate1 f surj inj AS =
-  let
-    open Semigroup1 AS
-
-    _⨾B_ = λ x y → let a0 = proj₁ (surj x); a1 = proj₁ (surj y) in f (a0 ⨾ a1)
-
-    factor : ∀ {a a′} → f a ⨾B f a′ ≡ f (a ⨾ a′)
-    factor {a} {a′} =
-               let 𝒶  , m  = surj (f a)
-                   𝒶′ , w = surj (f a′)
-               in    
-               begin
-                 f a ⨾B f a′
-               ≡⟨ refl ⟩
-                 f (𝒶 ⨾ 𝒶′)
-               ≡⟨ cong f (cong₂ _⨾_ (inj (sym m)) (inj (sym w)))  ⟩
-                 f (a ⨾ a′)
-               ∎
-
-    distribute : ∀ {a a′} → f (a ⨾ a′) ≡ f a ⨾B f a′
-    distribute {a} {a′} = sym (factor {a} {a′})
-  in 
-    record { _⨾_ = _⨾B_; assoc = λ x y z → 
-     let
-        a₀ , x≈fa₀  =  surj x
-        a₁ , y≈fa₁  =  surj y
-        a₂ , z≈fa₂  =  surj z
-     in   
-       begin
-         ((x ⨾B y) ⨾B z) 
-       ≡⟨ cong₂ _⨾B_ (cong₂ _⨾B_ x≈fa₀ y≈fa₁) z≈fa₂ ⟩
-         ( (f a₀ ⨾B f a₁) ⨾B f a₂)
-       ≡⟨ cong (_⨾B f a₂) factor ⟩
-         (f (a₀ ⨾ a₁) ⨾B f a₂)
-       ≡⟨ factor ⟩
-         f ((a₀ ⨾ a₁) ⨾ a₂)
-       ≡⟨ cong f (assoc _ _ _)  ⟩
-         f (a₀ ⨾ (a₁ ⨾ a₂))
-       ≡⟨ distribute ⟩
-         (f a₀ ⨾B f (a₁ ⨾ a₂))
-       ≡⟨ cong (f a₀ ⨾B_) distribute ⟩
-         (f a₀ ⨾B (f a₁ ⨾B f a₂))
-       ≡⟨ sym (cong₂ _⨾B_ x≈fa₀ (cong₂ _⨾B_ y≈fa₁ z≈fa₂))  ⟩
-         (x ⨾B (y ⨾B z))
-       ∎
-  }
-
-record Semigroup0 : Set₁ where
-  constructor Mk0
-  field 
-    Carrier : Set
-    _⨾_ : Carrier → Carrier → Carrier
-    assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-
--- translate1 is a length proof, we could repeat it, or invoke it.
-
-translate0 : ∀{B : Set} (AS : Semigroup0) (f : Semigroup0.Carrier AS → B)
-           → Surjection f → Injection f
-           → Semigroup0
-translate0 {B} AS f surj inj = record { Carrier = B ; _⨾_ = _⨾_ ; assoc = assoc }
-  where
-
-       -- Repackage ‘AS’ from a ‘Semigroup0’ to a ‘Semigroup1’
-       -- only to immediatley unpack it, so that its contents
-       -- are available to be repacked above as a ‘Semigroup0’.
-      
-       pack : Semigroup1 (Semigroup0.Carrier AS)
-       pack = let open Semigroup0 AS
-               in record {_⨾_ = _⨾_; assoc = assoc }
-
-       open Semigroup1 (translate1 f surj inj pack)
-#+END_SRC
-:End:
 
 :Relocate_yoneda:
 Moreover, as a stylistic decision, implementers may prefer to view
