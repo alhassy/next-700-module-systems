@@ -59,7 +59,8 @@ Injection {A} {B} f = ∀ {x y} →  f x ≡ f y → x ≡ y
 -- Missing Features:6 ends here
 
 -- [[file:~/thesis-proposal/thesis-proposal.org::*Missing%20Features][Missing Features:7]]
-translate1 : ∀{A B} → (f : A → B) → Surjection f → Injection f → Semigroup1 A → Semigroup1 B
+translate1 : ∀{A B} → (f : A → B) → Surjection f → Injection f
+           → Semigroup1 A → Semigroup1 B
 translate1 f surj inj AS =
   let
     open Semigroup1 AS

@@ -64,6 +64,10 @@
 #+LATEX_HEADER: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
 #+LATEX_HEADER: \newunicodechar{Σ}{\ensuremath{\mathop{\Sigma}}}
 #+LATEX_HEADER: \newunicodechar{∘}{\ensuremath{\mathop{\circ}}}
+#+LATEX_HEADER: \newunicodechar{Γ}{\ensuremath{\Gamma}}
+#+LATEX_HEADER: \newunicodechar{Π}{\ensuremath{\Pi}}
+#+LATEX_HEADER: \newunicodechar{Θ}{\ensuremath{\theta}}
+#+LATEX_HEADER: \newunicodechar{∎}{\ensuremath{\qedsymbol}}
 #+LATEX_HEADER: \newunicodechar{′}{'}
 #+LATEX_HEADER: \newunicodechar{τ}{\ensuremath{\tau}} 
 #+LATEX_HEADER: \newunicodechar{⦃}{\ensuremath{ \{\{ }}  % this is not correct 
@@ -219,6 +223,11 @@ of this work will be an implementation, as an extension of the current Agda impl
 
 If anything, our aim is practical ---to save developers from ad hoc copy-paste
 preprocessing hacks.
+#+begin_center org
+#+begin_small
+---Source: https://github.com/alhassy/next-700-module-systems-proposal---
+#+end_small
+#+end_center
 #+end_abstract
 
 \newpage
@@ -1602,9 +1611,30 @@ Dependent types are mostly visible within the functional community, however
    this is a matter of taste and culture as they can also be found in imperative
    settings, \parencite{dtl_imperative}, albeit less prominently.
 ** Facets of Structuring Mechanisms: An Agda Rendition
-
+   :PROPERTIES:
+   :header-args: :tangle monoid_renditions.agda :comments link
+   :END:
+   
 # JC: - 2.4 really helps situate things, and is in the proper place in the proposal
 # - ditto for 2.5
+
+:Setup:
+#+begin_src haskell
+open import Relation.Binary.PropositionalEquality
+open ≡-Reasoning
+
+-- Z-notation for sums
+open import Level
+open import Data.Product using (Σ ; proj₁ ; proj₂ ; _×_ ; _,_)
+Σ∶• : {a b : Level} (A : Set a) (B : A → Set b) → Set (a ⊔ b)
+Σ∶• = Σ
+infix -666 Σ∶•
+syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
+
+open import Data.Nat
+open import Data.Nat.Properties
+#+end_src
+:End:
 
 In this section we provide a demonstration that with dependent-types we can show records, direct dependent types, and
 contexts ---which in Agda may be thought of as parameters to a module---
@@ -1638,9 +1668,9 @@ use the ~record~ keyword, the latter is treated as a typeclass
 since the carrier of the monoid is given ‘statically’ and instance
 search is used to invoke such instances.
 {{{code(Monoids as Agda Records)}}}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+#+BEGIN_SRC haskell
 record Monoid-Record : Set₁ where
-  infixr 5 _⨾_
+  infixl 5 _⨾_
   field
     -- Interface
     Carrier  : Set
@@ -1654,15 +1684,15 @@ record Monoid-Record : Set₁ where
 
   -- derived result
   pop-Idᵣ : ∀ x y  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
-  pop-Idᵣ x y = ≡.cong (x ⨾_) leftId
-
+  pop-Idᵣ x y = cong (_⨾ y) rid
+  
 open Monoid-Record {{...}} using (pop-Idᵣ)
 #+END_SRC
 
 {{{code(Monoids as Typeclasses)}}}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+#+BEGIN_SRC haskell
 record HasMonoid (Carrier : Set) : Set₁ where
-  infixr 5 _⨾_
+  infixl 5 _⨾_
   field
     Id    : Carrier
     _⨾_   : Carrier → Carrier → Carrier
@@ -1671,7 +1701,7 @@ record HasMonoid (Carrier : Set) : Set₁ where
     assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
   pop-Id-tc : ∀ x y →  x ⨾ Id ⨾ y  ≡  x ⨾ y
-  pop-Id-tc x y = ≡.cong (x ⨾_) leftId
+  pop-Id-tc x y = cong (_⨾ y) rid
 
 open HasMonoid {{...}} using (pop-Id-tc) 
 #+END_SRC
@@ -1692,7 +1722,7 @@ It may be thought of as a constructive analogue to the classical set comprehensi
 
 {{{code(Monoids as Dependent Sums)}}}
 # ATTR_LATEX: :options fontsize={\fontsize{10}{11}\selectfont}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+#+BEGIN_SRC haskell
 -- Type alias
 Monoid-Σ  :  Set₁
 Monoid-Σ  =    Σ Carrier ∶ Set 
@@ -1702,12 +1732,13 @@ Monoid-Σ  =    Σ Carrier ∶ Set
              • Σ rid ∶ (∀{x} → x ⨾ Id ≡ x)
              • (∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))
 
-pop-Id-Σ : ∀{{M : Monoid-Σ}} 
-                       (let _⨾_ = proj₁ (proj₂ (proj₂ M)))
-                   →  ∀ (x y : proj₁ M)  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
-pop-Id-Σ {{M}} x y = ≡.cong (x ⨾_) (lid {y})
+pop-Id-Σ : ∀{{M : Monoid-Σ}}
+                       (let Id  = proj₁ (proj₂ M))
+                       (let _⨾_ = proj₁ (proj₂ (proj₂ M)))                       
+                   →  ∀ (x y : proj₁ M)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
+pop-Id-Σ {{M}} x y = cong (_⨾ y) (rid {x})
                      where  _⨾_    = proj₁ (proj₂ (proj₂ M))
-                           lid    = proj₁ (proj₂ (proj₂ (proj₂ M)))
+                            rid    = proj₁ (proj₂ (proj₂ (proj₂ (proj₂ M))))
 #+END_SRC
 
 Of the renditions thus far, the ~Σ~ rendering makes it clear that a monoid could have
@@ -1733,19 +1764,20 @@ Instances and their use are as follows.
 One may realise that ~pop-0~ proofs as a form of polymorphism
 ---we will return to package former polymorphism when discussing preliminary research.
 {{{code(Instance Declarations)}}}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+#+BEGIN_SRC haskell
 instance
-   ℕ-record : Monoid-Record
-   ℕ-record = record { Carrier = ℕ; Id = 0; _⨾_ = _+_; ⋯ }
+   ℕ-record = record { Carrier = ℕ ; Id = 0 ; _⨾_ = _+_
+                     ; lid =  +-identityˡ _  ; rid = +-identityʳ _ ; assoc = +-assoc }
 
    ℕ-tc : HasMonoid ℕ
-   ℕ-tc = record { Id = 0; _⨾_ = _+_; ⋯ }
+   ℕ-tc = record { Id = 0; _⨾_ = _+_
+                 ; lid = +-identityˡ _ ; rid = +-identityʳ _ ; assoc = +-assoc }
 
    ℕ-Σ : Monoid-Σ
-   ℕ-Σ = ℕ , 0 , _+_ , ⋯
+   ℕ-Σ = ℕ , 0 , _+_ , +-identityˡ _ , +-identityʳ _ , +-assoc
 #+END_SRC
 {{{code(No Monoids Mentioned at Use Sites)}}}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+#+BEGIN_SRC haskell
 ℕ-pop-0ᵣ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
 ℕ-pop-0ᵣ = pop-Idᵣ
 
@@ -1753,7 +1785,7 @@ instance
 ℕ-pop-0-tc = pop-Id-tc
 
 ℕ-pop-0ₜ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
-ℕ-pop-0ₜ = pop-Id-Σₜ
+ℕ-pop-0ₜ = pop-Id-Σ
 #+END_SRC
 
 Interestingly, notice that the grouping in ~ℕ-Σ~ is just an unlabelled (dependent) product, 
@@ -1775,7 +1807,7 @@ difference between the presentations, yet there is a
 /Utility Difference: Records give us the power to name our projections _*directly*_ with possibly meaningful names./
 Of course this could be achieved indirectly by declaring extra functions; e.g.,
 #+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+#+BEGIN_SRC haskell :tangle no
 Carrierₜ : Monoid-Σ → Set
 Carrierₜ = proj₁
 #+END_SRC
@@ -1784,23 +1816,22 @@ We will refrain from creating such boiler plate ---that is,
 
 Finally, let us exhibit views between this form and the ~record~ form.
 #+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+#+BEGIN_SRC haskell
 -- Following proves: Monoid-Record  ≅  Σ Set HasMonoid.
 
 to-record-from-usual-type : Monoid-Σ → Monoid-Record
 to-record-from-usual-type (c , id , op , lid , rid , assoc)
   = record { Carrier = c ; Id = id ; _⨾_ = op
-           ; leftId = lid ; rightId = rid ; assoc = assoc
+           ; lid = lid ; rid = rid ; assoc = assoc
            } -- Term construed by ‘Agsy’,
-             -- the mechanical proof search.
+             -- Agda's mechanical proof search.
 
 from-record-to-usual-type : Monoid-Record → Monoid-Σ
-from-record-to-usual-type M = -- syntatic data
-                              Carrier M , Id M , _⨾_ M ,
-                              -- semantic proofs
-                              leftId M , rightId M , assoc M
-  where open Monoid-Record 
-        -- Converting ‘Monoid-Record’ into a product
+from-record-to-usual-type M =
+  let open Monoid-Record M
+  in Carrier , Id , _⨾_ , lid , rid , assoc
+
+  {- Essentially moved from record{⋯} to product listing -}
 #+END_SRC
 
 Furthermore, by definition chasing, ~refl~-exivity, these operations are seen to be inverse of
@@ -1812,15 +1843,15 @@ Since these are not top level items by themselves, in Agda, we take a purely syn
 by positioning them in a ~module~ declaration as follows.
 
 #+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+#+BEGIN_SRC haskell
 module Monoid-Telescope-User
   (Carrier : Set) (Id : Carrier) (_⨾_ : Carrier → Carrier → Carrier)
-  (leftId  : ∀{x} → Id ⨾ x ≡ x) (rightId : ∀{x} → x ⨾ Id ≡ x)
-  (assoc   : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) 
+  (lid   : ∀{x} → Id ⨾ x ≡ x) (rid : ∀{x} → x ⨾ Id ≡ x)
+  (assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) 
   where
-  
-  pop-Idₘ : ∀(x y : Carrier)  →  x ⨾ (Id ⨾ y)  ≡  x ⨾ y
-  pop-Idₘ x y = ≡.cong (x ⨾_) (leftId M {y})
+
+  pop-Idₘ : ∀(x y : Carrier)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
+  pop-Idₘ x y = cong (_⨾ y) (rid {x})
 #+END_SRC
 
 Notice that this is nothing more than the named fields of ~Monoid-Record~
@@ -1831,24 +1862,24 @@ the previous two formulations.
 
 As promised earlier, we can regard the above telescope as a record:
 #+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+#+BEGIN_SRC haskell
   record-from-telescope : Monoid-Record
   record-from-telescope
     = record { Carrier = Carrier ; Id = Id ; _⨾_ = _⨾_
-             ; leftId = leftId ; rightId = rightId ; assoc = assoc }
+             ; lid = lid ; rid = rid ; assoc = assoc }
 #+END_SRC
 
 The structuring mechanism ~module~ is not a first class citizen in Agda.
 As such, to obtain the converse view, we work in a parameterised module.
 #+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+#+BEGIN_SRC haskell
 module record-to-telescope (M : Monoid-Record) where
 
   open Monoid-Record M
   -- Treat record type as if it were a parameterised module type,
   -- instantiated with M.
 
-  open Monoid-Telescope-User Carrier Id _⨾_ leftId rightId assoc
+  open Monoid-Telescope-User Carrier Id _⨾_ lid rid assoc  
 #+END_SRC
 
 Notice that we just listed the components out ---rather reminiscent of the formulation
@@ -1858,16 +1889,16 @@ real distinctions of packaging mechanisms in DTLs.
 Undeniably instantiating the telescope approach to monoids for the natural number
 is nothing more than listing the required components.
 #+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+#+BEGIN_SRC haskell
 open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
 #+END_SRC
 
 C.f., the definition of ~ℕ-Σ~: This is nearly the same instantiation with the primary
 syntactical difference being that this form had its arguments separated by spaces rather than commas!
 #+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
-ℕ-symmetryₘ : ∀ (x y : ℕ) → x + y  ≡  y + x
-ℕ-symmetryₘ = symmetryₘ
+#+BEGIN_SRC haskell
+ℕ-popₘ  : ∀(x y : ℕ)  →  x + 0 + y  ≡  x + y
+ℕ-popₘ  =   pop-Idₘ 
 #+END_SRC
 
 Notice how this presentation makes it explicitly clear why we cannot have multiple instances:
