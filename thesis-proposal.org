@@ -404,7 +404,7 @@ or simply settle with what you have.”
 
    # After discussing existing approach and foundations, along with the minimal
    # requirements of a candidate solution, we then present our preliminary findings
-   # in §3. In particular, 
+   # in section 3. In particular, 
 
 ** Proposed Contributions
 
@@ -2764,19 +2764,19 @@ Let's show a more intricate yet desirable use.
 #+begin_src haskell
 PointedSemigroup = TermP record hiding (Var) renaming (Add to _⨾_)
                      field
-                       Id      : Carrier
-                       ⨾-assoc :  Carrier → Carrier → Carrier
+                       Id     : Carrier
+                       ⨾-assoc : ∀ x y z → x ⨾ (y ⨾ z) ≡ (x ⨾ y) ⨾ z
 {-
 ≅   record PointedSemigroup  : Set₁ where
       field
         Carrier : Set
         _⨾_     : Carrier → Carrier → Carrier
         Id      : Carrier
-        ⨾-assoc :  Carrier → Carrier → Carrier
+        ⨾-assoc : ∀ x y z → x ⨾ (y ⨾ z) ≡ (x ⨾ y) ⨾ z
 -}
 #+end_src
 
-**** Algorithmicly Obtaining Elaborated Types
+**** Algorithmically Obtaining Elaborated Types
 We have discussed how the generic package formers elaborate 
 ---each blue comment indicates a standalone isomorphic Agda rendition---,
 as such it should be unsurprising that the constituents of a package former
@@ -2808,14 +2808,20 @@ Var tuples     =  ∀{C} → TermFunctionsOn C → Int → C
 ⋯
 #+end_src
 
-An initial glance suggests that this is all ad-hoc, let us demonstrate that
+An initial glance suggests that this is all ad-hoc; let us demonstrate that
 this is not the case. Suppose there were a method ~𝒯~ to obtain the user-provided types of
 constituents; e.g., the given ~Var ∶ Int → TermP v~ is indistinguishable from \newline  ~Var ∶ 𝒯 “Var” (TermP v)~.
 {{{code( Obtaining User-Provided Types ---Under the hood )}}}
 #+begin_src haskell
 Constituent = String -- Draft idea, not ideal.
 
-𝒯 : Constituent → Set → Set
+-- “A ⟨n⟩→ B  ≈  A → ⋯ → A → B” with n-many A's.
+_⟨_⟩→_ : Set → ℕ → Set → Set
+A ⟨ zero   ⟩→ B  =  B
+A ⟨ succ n ⟩→ B  =  A → (A ⟨ n ⟩→ B)
+
+-- Constituents of package formers give rise to “Set ⟨n⟩→ Set” functions.
+𝒯 : {P : PackageFormer} → Constituent P → Set ⟨ arity P ⟩→ Set
 𝒯 “Var” X  =  Int → X
 𝒯 “Add” X  =  X → X → X
 #+end_src
@@ -2875,12 +2881,12 @@ These examples open a flurry of problems.
 
 At this stage, it is sufficient to have observed what could possibly
 be performed and that it is not without burden.
-We will not attempt to clarify any problem not propose any solution;
+We will not attempt to clarify any problem nor propose any solution;
 the thesis effort will contend with these matters further.
 
 **** The Generality of Package Formers ---Sums & Modules
 
-Thus far we have only discussed products, however
+Thus far we have only discussed products; however
 the proposed general notion of containers should also produce sum types
 and be used in modules ---which are just packages.
 {{{code(At “least one” of the operations is desired on a declared carrier type)}}}
@@ -3642,7 +3648,7 @@ Our brief examples demonstrate that the less design decisions about packaging
 made by language designers, the more general, applicable, and, most importantly, increased homogeneity
 in the resulting datatype language without becoming unityped but rather thanks to being dependently-typed.
 As mentioned in the previous section on existing approaches, one formalism for
-packages is that theories and theory combinators; below we thus draw on some problems from theory combinators
+packages is that of theories and theory combinators; below we thus draw on some problems from theory combinators
 rendered toward packaging systems.
 
 We have mentioned that the ~record~ and ~typeclass~ perspectives solve the common requirement of
@@ -3669,17 +3675,17 @@ renders representation hiding nearly moot.
 The proposed approach boarders on meta-programming.
 Can type erasure and other compiler-specific optimisations be brought into
 the homoiconic-like setting being pursued here?
-We have mentioned a few ‘built in’ variations for packaging, can such a feature
+We have mentioned a few ‘built in’ variations for packaging; can such a feature
 be liberated from the compiler and be bent to the users' will?
 We would need the ability to explain how a package elaborates.
 
 Tremendous flexibility is demanded from the back-end so as to ignore needless distinctions 
 at the users' level. Whereas the practicality is promising, the feasibility of an
 implementation for such ambiguous parsing \parencite{ambiguous_parsing} is unclear.
-What effects on, say, normalisation and propositional equality happen due to
-identifying syntactically distinct items.
+It is also unclear what effects identifying syntactically distinct items
+has on, say, normalisation and propositional equality.
 
-The numerous claims and associaited bookkeeping of details pushes us into using a proof assistant; Agda.
+The numerous claims and associaited bookkeeping of details pushes us into using a proof assistant, Agda.
 
 Our examples have been ‘variation’ polymorphic;
 we have been even more generic by defining ~decorated~.
