@@ -8,6 +8,9 @@
 # At the end of a section, explain why the section is there,
 # and what the reader should take away from it.
 
+# MA: LaTeX pads colons, :, with spacing.
+# For inline typing annotations, use ghost colon “\:” to avoid this issue.
+
 * Preamble & title page :ignore:
 
 # Top level editorial comments.
@@ -377,8 +380,8 @@ multiple files ---the actual parent module and the interface module.
 This was the situation with Haskell before its recent module signature
 mechanism \parencite{haskell_backpack}.
 Being a purely functional language, it is unsurprising that Haskell treats
-nested record field updates awkwardly: Where a C-like language may have
-~a.b.c := d~, Haskell requires \newline ~a { b = b a {c = d}}~ which necessarily has
+nested record field updates awkwardly: Where a C-like language may have \newline
+~a.b.c := d~, Haskell requires ~a { b = b a {c = d}}~ which necessarily has
 field names ~b, c~ polluting the global function namespace as field projections.
 Since a record is a possibly deeply nested list of declarations,
 it is trivial to flatten such a list to mechanically generate the names
@@ -1533,7 +1536,8 @@ is its direct support for first-class contexts \parencite{beluga}.
 A term ~t(x)~ may have free
 variables and so whether it is well-formed or what its type could be depend on the
 types of its free variables, necessitating one to either declare them before hand
-or to write, in Beluga, ~[ x : T  |-  t(x) ]~ for example. As we have mentioned, and will
+or to write, in Beluga, \newline ~[ x : T  |-  t(x) ]~ for example.
+As we have mentioned, and will
 reiterate a few times, contexts are behaviourally indistinguishable from
 dependent sums.
 
@@ -1682,9 +1686,9 @@ an (undeclared) implicit argument to the ~pop-Id-tc~ operation.
 
 Alternatively, in a DTL we may encode the monoidal interface using dependent products
 *directly* rather than use the syntactic sugar of records.
-The notation ~Σ x ∶ A • B x~ denotes the type of pairs ~(x , pf)~ where ~x : A~ and ~pf : B x~
+The notation ~Σ x ∶ A • B x~ denotes the type of pairs ~(x , pf)~ where ~x ∶ A~ and ~pf ∶ B x~
 ---i.e., a record consisting of two fields.
-It may be thought of as a constructive analogue to the classical set comprehension \newline ~{ x : A ❙ B x}~.
+It may be thought of as a constructive analogue to the classical set comprehension \newline ~{ x ∶ A❙B x}~.
 
 {{{code(Monoids as Dependent Sums)}}}
 # ATTR_LATEX: :options fontsize={\fontsize{10}{11}\selectfont}
@@ -1708,7 +1712,7 @@ pop-Id-Σ {{M}} x y = ≡.cong (x ⨾_) (lid {y})
 
 Of the renditions thus far, the ~Σ~ rendering makes it clear that a monoid could have
 any subpart as a record with the rest being dependent upon said record.
-For example, if we had a semigroup type, we could have declared
+For example, if we had a semigroup type, we could have declared \newline
 ~Monoid-Σ = Σ S ∶ Semigroup • Σ Id ∶ Semigroup.Carrier S~.
 There are a large number of such hyper-graphs, we have only presented a stratified view
 for brevity. In particular, ~Monoid-Σ~ is the extreme unbundled version, whereas
@@ -1927,8 +1931,8 @@ is a sufficiently generic rendition of what it means to group matter together.
 Below is a grammar, from \parencite{theories_as_types}, for a simple yet powerful
 module system based on theory (presentations) and theory morphisms --which are merely named contexts and named substitutions between contexts, respectively.
 Both may be formed modularly by using includes to copy over declarations of previously named objects.
-Unlike theories which may include arbitrary declarations, theory morphisms (~V : P → Q) := δ~
-are well-defined if for every ~P~-declaration ~x : T~, ~δ~ contains a declaration ~x = t~ where ~t~ may refer to all names declared in ~Q~.
+Unlike theories which may include arbitrary declarations, theory morphisms \texttt{(V : P → Q) := δ}
+are well-defined if for every ~P~-declaration ~x ∶ T~, ~δ~ contains a declaration ~x = t~ where ~t~ may refer to all names declared in ~Q~.
 Observe that a context is, up to syntactical differences,
 essentially JavaScript object notation literal.
 Consequently, the notion of a mixin as described for JSON literals is here
@@ -1937,13 +1941,13 @@ rendered as a theory morphism.
 #+BEGIN_SRC haskell
 -- Contexts
 Γ  ::= ·                       -- empty context
-     | x : T [:= T], Γ         -- context with declaration, optional definition
+     | x : τ [:= τ′], Γ         -- context with declaration, optional definition
      | includes X, Γ           -- theory inclusion
     
 -- Terms
-T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
-    | Π x : T' • T             -- dependent product
-    | [Γ] | ⟨Γ⟩ | T.x          -- record “[type]” and “⟨element⟩” formers, projections  
+τ ::= x | τ₁ τ₂ | λ x : τ′ • τ -- variables, application, lambdas
+    | Π x : τ′ • τ             -- dependent product
+    | [Γ] | ⟨Γ⟩ | τ.x          -- record “[type]” and “⟨element⟩” formers, projections  
     | Mod X                    -- contravariant “theory to record” internalisation
 
 -- Theory, external grouping, level
@@ -1979,8 +1983,8 @@ As mentioned earlier, a theory morphism, also known as a ‘view’,
 is a map between contexts that implements the interface of the source
 using utilities of the target; whence results about specific structures can be 
 constructed by transport along views \parencite{little_theories}:
-A view ~V : P → Q~ gives rise to a term homomorphism ~𝒱~ from ~P~-terms to ~Q~-terms
-that is type-preserving in that whenever ~Θ, P ⊢ t : T~ then ~Θ, Q ⊢ 𝒱 t : 𝒱 T~.
+A view \texttt{V : P → Q} gives rise to a term homomorphism ~𝒱~ from ~P~-terms to ~Q~-terms
+that is type-preserving in that whenever \texttt{Θ, P ⊢ t : T} then \texttt{Θ, Q ⊢ 𝒱 t : 𝒱 T}.
 Thus, views preserve judgements and, via the propositions-as-types representations,
 also preserve truth.
 
@@ -2103,7 +2107,7 @@ OF its inputs, then of a record containing the inputs as fields along
 with a proof of said predicate. More concretely, suppose we have a binary predicate
 named ~IsSemi~ and the record is named ~Semi~; the predicate form allows us to
 quantify over inputs as in ~∀ x y → IsSemi x y → ⋯~, in contrast the latter
-approach is intrinsic in nature: ~∀ (s : Semi) → ⋯~
+approach is intrinsic in nature: ~∀ (s ∶ Semi) → ⋯~
 ---contrast this with a mathematician naturally declaring “let ~s~ be a semigroup”,
 whereas almost never do mathematicians say “let ~x~ be a set and ~y~ be an operation on it that together constitute a semigroup”.
 
@@ -2206,7 +2210,8 @@ Injection {A} {B} f = ∀ {x y} →  f x ≡ f y → x ≡ y
 #+end_src
 {{{code(An Involved Proof That We Would Like to Reuse)}}}
 #+begin_src haskell
-translate1 : ∀{A B} → (f : A → B) → Surjection f → Injection f → Semigroup1 A → Semigroup1 B
+translate1 : ∀{A B} → (f : A → B) → Surjection f → Injection f
+           → Semigroup1 A → Semigroup1 B
 translate1 f surj inj AS =
   let
     open Semigroup1 AS
@@ -2454,7 +2459,7 @@ whence the ~t_i~ are constrained to be homogeneously all values or all types.
 In contrast, a dependently-typed languages makes no such limitation, thereby allowing
 the ~t_i~ to be heterogeneous. For example, in a simple type system, ~Maybe (A × List B)~
 is a term where all variables, $t_0, t_1 = A, B$, are of the same kind ---types.
-This is not so with the term ~Maybe (A × Vec B n)~ ---~A~ and ~B~ are types while ~n~ is a number.
+This is not so with the term \newline ~Maybe (A × Vec B n)~ ---~A~ and ~B~ are types while ~n~ is a number.
 Our aim is not to educate the reader on the power and utility of dependent types;
 we invite the reader to consult any of the existing material \parencite{dtl_why, agda_overview}.
 # This is akin to forming English sentences using only noun phrases,
@@ -2568,7 +2573,7 @@ We introduce fictitious syntax, mostly in red, with its intended Agda elaboratio
 The reader is advised to remember that the value of a prototype is in the guidance it provides,
 not the implementation itself nor any of its design decisions ---such as using strings in meta-programming
 scenarios. In other words, for the reader, portions of this section may serve as an exercise in foresight and patience.
-( A brief demonstration of the prototype may be viewed at https://www.youtube.com/watch?v=NYOOF9xKBz8 )
+( A brief demonstration of the prototype may be viewed at https://www.youtube.com/watch?v=NYOOF9xKBz8 .)
 
 :Minimality:
 A prime guiding design decision is
@@ -2597,6 +2602,10 @@ which are value terms, all, necessarily succeeding, notions of packaging
 ought to be treated uniformly as value types.
 Consequently, variations on packaging should only be signalled by necessary
 keywords, and otherwise should be syntactically indistinguishable.
+That is to say, a ‘variation’ is a tag identifying what particular
+form of module is desired, such as ~datatype~ for an algebraic data type
+with the declared fields as constructors, or as ~record~ to yield a record structure
+with constituents being the declared fields.
 
 For example, just as ~List~ is a type-former, we may declare a ‘package former’:
 {{{code(Our first package former)}}}
@@ -2625,7 +2634,7 @@ TermData = TermP data
 -}     
 #+end_src
 In the comment above, we indicate how our fictitious syntax is intended to be elaborated
-into Agda syntax. Besides syntax, induction principles are also derived:
+into current Agda syntax. Besides syntax, induction principles are also derived:
 Our envisioned system would be able to derive simple, tedious, uninteresting concepts;
 leaving difficult, interesting, ones  for humans to solve.
 For this type, below is the dependently typed eliminator, which in a DTL, corresponds to an induction
@@ -2646,11 +2655,11 @@ principle.
 #+end_src
 
 The type of the package former, for now, could simply be ~Set~
----c.f., the commented out elaboration which declares ~TermData : Set~.
+---c.f., the commented-out elaboration which declares ~TermData ∶ Set~.
 However, if we permit a sufficiently small subtyping system, we
 may find it desirable to have the type of a package former be itself
 a package former! Moreover, if package former ~t~ has type package former ~t′~,
-then the user should be able to use ~t~ at the levels ~t : s~
+then the user should be able to use ~t~ at the levels ~t ∶ s~
 without too much overhead, where ~s~ is any subtype of ~t~ with ~Set~ being a minimal
 such subtype. These thoughts are hurried and it is the purpose of the thesis
 to investigate what is the appropriate route.
@@ -2666,7 +2675,8 @@ The reader is invited to consult a reference \parencite{cats_logic_shulman}.
 
 We shall not discuss polymorphism along variations, the ~v~ components above,
 as it is orthogonal to our immediate goals. For example, ~TermP~ could have a field typed
-~TermP (f v) → TermP (g v) → TermP v~, where ~f~ and ~g~ are operations on variations.
+\newline \texttt{TermP (f v) → TermP (g v) → TermP v},
+where ~f~ and ~g~ are operations on variations.
 Nonetheless, this is a feature that one should be aware of.
 
 The remaining items instantiate package formers for the usual
@@ -2735,7 +2745,7 @@ TermOn = TermP typeclass
         Add     : Carrier → Carrier → Carrier
 -}
 #+end_src
-{{{code(A pair of functions “on” a declared carrier type)}}}
+{{{code(A pair of functions \emph{on} a declared carrier type)}}}
 #+begin_src haskell
 TermFunctionsOn = TermP tuples
 {-
@@ -2800,7 +2810,7 @@ Var tuples     =  ∀{C} → TermFunctionsOn C → Int → C
 
 An initial glance suggests that this is all ad-hoc, let us demonstrate that
 this is not the case. Suppose there were a method ~𝒯~ to obtain the user-provided types of
-constituents; e.g., the given ~Var : Int → TermP v~ is indistinguishable from ~Var : 𝒯 “Var” (TermP v)~.
+constituents; e.g., the given ~Var ∶ Int → TermP v~ is indistinguishable from \newline  ~Var ∶ 𝒯 “Var” (TermP v)~.
 {{{code( Obtaining User-Provided Types ---Under the hood )}}}
 #+begin_src haskell
 Constituent = String -- Draft idea, not ideal.
@@ -2821,9 +2831,9 @@ It is now trivial to reify the above prescription for ~Var~ in a uniformly fashi
 𝓉𝓎𝓅𝒆 c v@tuples    = ∀{C} → TermP v C → 𝒯 c C
 ⋯
 #+end_src
-For example, invoking this approach we find that ~Add~, on ~TermRecord~'s, is typed
-~𝓉𝓎𝓅𝒆 “Add” record~, which may be rewritten as
-~(τ : TermRecord) → TermRecord.Carrier τ → TermRecord.Carrier τ → TermRecord.Carrier τ~.
+For example, invoking this approach we find that ~Add~, on ~TermRecord~'s, is typed \newline
+~𝓉𝓎𝓅𝒆 “Add” record~, which may be rewritten as \newline
+~(τ ∶ TermRecord) → TermRecord.Carrier τ → TermRecord.Carrier τ → TermRecord.Carrier τ~.
 That is, as expected, ~Add~ on records consumes a record value then acts as a binary
 operation on the carrier of said record value. Likewise, we invite the reader
 to check that ~Add~ on algebraic datatype ~TermData~ is typed as a binary constructor.
@@ -2927,7 +2937,7 @@ however, this is not necessary, if the ~∀~ were replaced with ~λ~, then
 the result would be a term expression. This is yet another opportunity for investigation
 during the thesis effort. Moreover, there is the possibility of providing
 “implicit counterparts” to these variations,; e.g., for ~tuples~ one may want
-~∀{τ} {_ : TermP v τ} → f τ~ instead, which could be variation, say, ~tuples-imp~.
+~∀{τ} {_ ∶ TermP v τ} → f τ~ instead, which could be variation, say, ~tuples-imp~.
 Likewise, we may want notation ~do-Σ~ to replace \newline ~∀ ⋯ → ⋯~ with ~Σ ⋯ • ⋯~.
 
 Unsurprisingly, this approach subsumes our earlier typing elaboration: \newline
@@ -3074,7 +3084,8 @@ non-constant, computation.
 Anyhow, as mentioned earlier, bundling data
 is akin to currying or nesting quantifiers, yet is vastly more expensive
 since library designers generally commit early to one form or another;
-in this case \newline ~AMagma ≅ Σ C : Set • MagmaOn C~ and
+in this case \newline ~AMagma ≅ Σ C : Set • MagmaOn C~
+and \newline
 ~MagmaOn C ≅ Σ M : AMagma • M.Carrier ≡ C~.
 {{{code(Example Operation)}}}
 #+begin_src haskell
@@ -3388,8 +3399,8 @@ The two approaches are a matter of style, but can lead to awkward situations.
 More concretely, we consider the bread and buffer of coding: Graphs.
 Without dependent types we can only speak about graphs /over/ a given vertex type,
 with dependent types we can speak about /a/ graph, irrespective of vertex type.
-The former is tantamount to the context ~Vertex : Type ⊢ Edges : Vertex → Vertex  → Type~,
-and an empty assumption context ~⊢ Vertex : Set, Edges : Vertex → Vertex → Type~
+The former is tantamount to the context ~Vertex ∶ Type ⊢ Edges ∶ Vertex → Vertex  → Type~,
+and an empty assumption context ~⊢ Vertex ∶ Set, Edges ∶ Vertex → Vertex → Type~
 for the latter.
 However, the latter form sometimes leads us into contexts where we have two
 graphs ~G~ and ~H~ for which we make the tedious constraint \newline ~Vertex G ≡ Vertex H~.
@@ -3445,7 +3456,7 @@ such a transition is a cheap as possible.
 #+end_src
 In order to /replace a semantic constraint with a syntactic constraint/
 the user simply need to use a /variant/ on packaging. Furthermore, we
-are ensured \newline ~AGraph ≅ Σ V : Set • GraphOver V~.
+are ensured \newline ~AGraph ≅ Σ V ∶ Set • GraphOver V~.
 
 Dependently-typed graphs are an curious structure. With a bit of renaming, and adding a few laws,
 we obtain a ‘setoid’ --i.e., an undirected graph where every node has a self-loop, and paths
@@ -3573,7 +3584,7 @@ We are now in a position to provide the semantics for the keyword ~Declare~,
 from the previous section. It takes a ~PackageInfo~ and declares a ~PackageFormer~.
 There should be a compile-time warning if such declarations are meaningless, ill-formed.
 
-For example, the previous ~Declare PackageFormer TermRelP (v : Variation) decorated (λ x → x ++ "′")~
+For example, the previous \newline ~Declare PackageFormer TermRelP (v ∶ Variation) decorated (λ x → x ++ "′")~
 can thus be obtained by a user by defining ~decorated~ as an operation on packages!
 {{{code(User-defined composition scheme)}}}
 #+begin_src haskell
