@@ -1,12 +1,13 @@
 #+MACRO: code     #+LaTeX: \def\mytitle{$1}
 
 # f7 preview changes
-# (local-set-key (kbd "<f7>") (lambda () (interactive) (org-reveal-export-to-html-and-browse)))
+# (local-set-key (kbd "<f7>") (lambda () (interactive) (suspend-frame) (disable-theme 'spacemacs-light) (org-reveal-export-to-html-and-browse) (load-theme 'spacemacs-light)))
 
 #+TITLE: The Next 700 Module Systems
 #+DESCRIPTION: Thesis proposal for Musa Al-hassy; McMaster University 2019.
 #+AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]]
 #+EMAIL: alhassy@gmail.com
+#+OPTIONS: html-postamble:nil
 # OPTIONS: toc:nil d:nil title:nil
 
 # At the end of a section, explain why the section is there,
@@ -20,10 +21,10 @@
 #+REVEAL_MIN_SCALE: 0.5
 #+REVEAL_MAX_SCALE: 2.5
 #+REVEAL_TRANS: cube
-#+REVEAL_THEME: moon
+#+REVEAL_THEME: solarized
 #+REVEAL_HLEVEL: 1
-#+REVEAL_HEAD_PREAMBLE: <meta name="description" content="Org-Reveal Introduction.">
-#+REVEAL_POSTAMBLE: <p> Created by yjwen. </p>
+# REVEAL_HEAD_PREAMBLE: <meta name="description" content="Org-Reveal Introduction.">
+#+REVEAL_POSTAMBLE:
 #+REVEAL_PLUGINS: (markdown notes)
 #+REVEAL_EXTRA_CSS: ./local.css
 
@@ -840,9 +841,9 @@ preprocessing hacks.
 \tableofcontents
 \newpage
 
-* Introduction ---The Proposal's “Story”      
+* Introduction ---The Proposal's Story      
 
-** A Language Has Many Tongues
+** COMMENT A Language Has Many Tongues :unreadable:
 
 1. Expression language; e.g., ~cond ? this : that~. 
 2. Statement, or control flow, language; e.g., ~if (cond) {this} {that}~.
@@ -855,16 +856,29 @@ preprocessing hacks.
 The first five languages telescope down into one uniform language
 within the dependently-typed language Agda. *So why not the module language?*
 
+** A Language Has Many Tongues
+
+1. Expression
+2. Statement
+3. Type
+4. Specification
+5. Proof
+6. Module
+7. Meta-programming
+      
+The first five languages telescope down into one uniform language
+within the dependently-typed language Agda. *So why not the module language?*
+
 ** Main Observation
 
-   +   :: Packages
-   + ≈ :: modules
-   + ≈ :: theories
-   + ≈ :: contexts
-   + ≈ :: traits, typeclasses
-   + ≈ :: interfaces
-   + ≈ :: ⋯
-   + ≈ :: dependent records
+   |   | Packages            |
+   | ≈ | modules             |
+   | ≈ | theories            |
+   | ≈ | contexts            |
+   | ≈ | traits, typeclasses |
+   | ≈ | interfaces          |
+   | ≈ | ⋯                   |
+   | ≈ | dependent records   |
 
   #+begin_quote
 Differences  ⇒  Uses & Implementations 
@@ -886,6 +900,10 @@ Differences  ⇒  Uses & Implementations
 
 * Current Approaches
 
+** TODO What is a Module?
+
+   + Also, what is its purpose
+   
 ** Expectations of Module Systems
 
 + Namespacing :: New unique local scopes ⇒ de-coupling.
@@ -898,16 +916,19 @@ Differences  ⇒  Uses & Implementations
 
 + Sharing :: Module parameter computations shared across constituents.
 
-# Object-oriented notions of encapsulation
 + OO :: Generative modules & Subtyping.
-
+# Object-oriented notions of encapsulation
+	
 ** Existing Systems
 
+*** Main Choices
+    
 + Agda :: Intimate relationship with records; no sharing; applicative modules; typeclasses.
 
 + Coq  :: Copy-paste inclusion with combinator ~<+~; generative functors; typeclasses.
 	  - Canonical structures ⇒ familiarity with unifer.
 
+*** Strong Runner-ups
 + Idris :: Aggressive proof erasure. Modules can be parameterised, not indexed.
 	  - Named instances for Haskell-like typeclasses.
 
@@ -981,11 +1002,9 @@ pop-Id-Σ {{M}} x y = ≡.cong (x ⨾_) (lid {y})
 *** These are the ‘Same’
 
 #+BEGIN_SRC haskell
-     Monoid-Σ
-  ≅  Σ C ∶ Set • HasMonoid C
+     Monoid-Σ  ≅  Σ C ∶ Set • HasMonoid C
 
-     HasMonoid
-  ≅  λ C → Σ M ∶ Monoid-Record • M.Carrier ≡ C  
+     HasMonoid ≅  λ C → Σ M ∶ Monoid-Record • M.Carrier ≡ C
 #+END_SRC
 
 #+begin_quote
@@ -1072,13 +1091,6 @@ T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
 Θ ::= .                        -- empty theory
     | X := Γ, Θ                -- a theory can contain named contexts
     | (X : (X₁ → X₂)) := Γ     -- a theory can be a first-class theory morphism
-
--- Proviso: In record formers, Γ must be flat; i.e., does not contain includes.
-
--- Example theory hierarchy of signatures, abbrevating “(Π x : A • B) = (A → B)”.
-, MagmaSig := Carrier : Set,  _⨾_ : Carrier → Carrier → Carrier, .
-, MonSig   := includes MagmaSig, Id : Carrier, .
-, .
 #+END_SRC
 
 #+begin_quote org 
