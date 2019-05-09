@@ -8,15 +8,14 @@
 #+AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]]
 #+EMAIL: alhassy@gmail.com
 #+OPTIONS: html-postamble:nil
-#+OPTIONS: toc:nil d:nil title:nil
 
-# At the end of a section, explain why the section is there,
-# and what the reader should take away from it.
+#+OPTIONS: timestamp:nil
+#+OPTIONS: toc:1
 
 #+OPTIONS: reveal_center:t reveal_progress:t reveal_history:nil reveal_control:t
 #+OPTIONS: reveal_rolling_links:t reveal_keyboard:t reveal_overview:t num:nil
 #+OPTIONS: reveal_width:1200 reveal_height:800
-# OPTIONS: toc:1
+
 #+REVEAL_MARGIN: 0.1
 #+REVEAL_MIN_SCALE: 0.5
 #+REVEAL_MAX_SCALE: 2.5
@@ -841,7 +840,7 @@ preprocessing hacks.
 \tableofcontents
 \newpage
 
-* COMMENT Introduction ---The Proposal's Story      
+* Introduction ---The Proposal's Story      
 
 ** COMMENT A Language Has Many Tongues :unreadable:
 
@@ -898,12 +897,13 @@ Differences  ⇒  Uses & Implementations
   An implementation to obtain validation that our system ‘works’
 #+end_quote
 
-* COMMENT Current Approaches
+* Current Approaches
 
 ** What is a Module?
 
    *Definition:* A typed ‘module, context, telescope, package former, record, typeclass’
-   is a sequence of tuples ~name ∶ type ≔ optional-definition~.
+   is a sequence of tuples \\
+   ~name ∶ type := optional-definition~.
 
    Without types, we obtain essentially [[https://en.wikipedia.org/wiki/JSON][JSON Objects]].
    # Akin to a JSON Object, which is an untyped module.
@@ -947,9 +947,10 @@ Isabelle locales, ⋯.
 
 ** Facets of Structuring Mechanisms: An Agda Rendition
 
-**** Monoids as Agda Records
+*** Monoids as Agda Records
  #+BEGIN_SRC haskell
 record Monoid-Record : Set₁ where
+  infixl 5 _⨾_
   field
     -- Interface
     Carrier  : Set
@@ -964,11 +965,14 @@ record Monoid-Record : Set₁ where
   -- derived result
   pop-Idᵣ : ∀ x y  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
   pop-Idᵣ x y = cong (_⨾ y) rid
- #+END_SRC
 
-**** Monoids as Typeclasses
+open Monoid-Record {{...}} using (pop-Idᵣ)
+#+END_SRC
+
+*** Monoids as Typeclasses
  #+BEGIN_SRC haskell
 record HasMonoid (Carrier : Set) : Set₁ where
+  infixl 5 _⨾_
   field
     Id    : Carrier
     _⨾_   : Carrier → Carrier → Carrier
@@ -978,11 +982,12 @@ record HasMonoid (Carrier : Set) : Set₁ where
 
   pop-Id-tc : ∀ x y →  x ⨾ Id ⨾ y  ≡  x ⨾ y
   pop-Id-tc x y = cong (_⨾ y) rid
- #+END_SRC
 
-**** Monoids as Direct Dependent Sums
+open HasMonoid {{...}} using (pop-Id-tc)  
+#+END_SRC
+
+*** Monoids as Direct Dependent Sums
  #+BEGIN_SRC haskell
--- Type alias
 Monoid-Σ  :  Set₁
 Monoid-Σ  =    Σ Carrier ∶ Set 
              • Σ Id ∶ Carrier
@@ -1000,7 +1005,7 @@ pop-Id-Σ {{M}} x y = cong (_⨾ y) (rid {x})
                             rid    = proj₁ (proj₂ (proj₂ (proj₂ (proj₂ M))))
  #+END_SRC
 
-**** These are the ‘Same’
+*** These are the ‘Same’
 
  #+BEGIN_SRC haskell
      Monoid-Σ  ≅  Σ C ∶ Set • HasMonoid C
@@ -1018,7 +1023,7 @@ Carrier′  : Monoid-Σ → Set   -- boilerplate
 Carrier′ = proj₁
  #+END_SRC
 
-**** Instance Declarations
+*** Instance Declarations
  #+BEGIN_SRC haskell
 instance
    ℕ-record : Monoid-Record
@@ -1031,7 +1036,7 @@ instance
    ℕ-Σ = ℕ , 0 , _+_ , ⋯
  #+END_SRC
 
-**** No Monoids Mentioned at Use Sites
+*** No Monoids Mentioned at Use Sites
  #+BEGIN_SRC haskell
 ℕ-pop-0ᵣ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
 ℕ-pop-0ᵣ = pop-Idᵣ
@@ -1043,7 +1048,11 @@ instance
 ℕ-pop-0-Σ = pop-Id-Σ
  #+END_SRC
 
-**** Monoids as Telescopes
+#+begin_quote
+ This suggests a hidden polymorphism!
+#+end_quote
+ 
+*** Monoids as Telescopes
  #+BEGIN_SRC haskell
 module Monoid-Telescope-User
   (Carrier : Set) (Id : Carrier) (_⨾_ : Carrier → Carrier → Carrier)
@@ -1055,7 +1064,7 @@ module Monoid-Telescope-User
   pop-Id-tel x y = cong (_⨾ y) (rid {x})
  #+END_SRC
 
-**** Telescope Use
+*** Telescope Use
  #+BEGIN_SRC haskell
 open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
 
@@ -1063,7 +1072,7 @@ open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
 ℕ-pop-tel =   pop-Id-tel
  #+END_SRC
 
-**** Interdefinablity
+*** Interdefinablity
 
      + Different notions are thus interdefinable.
       
@@ -2324,22 +2333,22 @@ the next 700 module systems.
 
      Implementations meet requirements; mechanise proofs.
      
-* Conclusion
+* Conclusion ─Intended Outcomes 
 
-Intended outcomes include:
+# Intended outcomes include:
 
   1. A clean module system for DTLs
 
   2. /Utility Objectives/: A variety of use-cases contrasting the resulting system with previous
      approaches.
      
-  3. A module system that enables rather than inhibits (or worse) efficiency.
+  3. A module system that enables rather than inhibits efficiency.
 
   4. Demonstrate that module features usually requiring meta-programming can be brought
      to the data-value level.
 
 #+begin_quote org  
-Implement our theory to obtain validation that it “works”!
+Implement our theory to obtain validation that it works!
 #+end_quote
 
 * COMMENT a correspondence
