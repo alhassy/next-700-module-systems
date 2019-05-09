@@ -8,7 +8,7 @@
 #+AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]]
 #+EMAIL: alhassy@gmail.com
 #+OPTIONS: html-postamble:nil
-# OPTIONS: toc:nil d:nil title:nil
+#+OPTIONS: toc:nil d:nil title:nil
 
 # At the end of a section, explain why the section is there,
 # and what the reader should take away from it.
@@ -16,7 +16,7 @@
 #+OPTIONS: reveal_center:t reveal_progress:t reveal_history:nil reveal_control:t
 #+OPTIONS: reveal_rolling_links:t reveal_keyboard:t reveal_overview:t num:nil
 #+OPTIONS: reveal_width:1200 reveal_height:800
-#+OPTIONS: toc:1
+# OPTIONS: toc:1
 #+REVEAL_MARGIN: 0.1
 #+REVEAL_MIN_SCALE: 0.5
 #+REVEAL_MAX_SCALE: 2.5
@@ -841,7 +841,7 @@ preprocessing hacks.
 \tableofcontents
 \newpage
 
-* Introduction ---The Proposal's Story      
+* COMMENT Introduction ---The Proposal's Story      
 
 ** COMMENT A Language Has Many Tongues :unreadable:
 
@@ -898,11 +898,17 @@ Differences  ⇒  Uses & Implementations
   An implementation to obtain validation that our system ‘works’
 #+end_quote
 
-* Current Approaches
+* COMMENT Current Approaches
 
-** TODO What is a Module?
+** What is a Module?
 
-   + Also, what is its purpose
+   *Definition:* A typed ‘module, context, telescope, package former, record, typeclass’
+   is a sequence of tuples ~name ∶ type ≔ optional-definition~.
+
+   Without types, we obtain essentially [[https://en.wikipedia.org/wiki/JSON][JSON Objects]].
+   # Akin to a JSON Object, which is an untyped module.
+   
+   *Purpose:* Group related concepts together as single /semantic/ units.
    
 ** Expectations of Module Systems
 
@@ -916,7 +922,7 @@ Differences  ⇒  Uses & Implementations
 
 + Sharing :: Module parameter computations shared across constituents.
 
-+ OO :: Generative modules & Subtyping.
++ Object-Orientation :: Generative modules & Subtyping.
 # Object-oriented notions of encapsulation
 	
 ** Existing Systems
@@ -926,11 +932,11 @@ Differences  ⇒  Uses & Implementations
 + Agda :: Intimate relationship with records; no sharing; applicative modules; typeclasses.
 
 + Coq  :: Copy-paste inclusion with combinator ~<+~; generative functors; typeclasses.
-	  - Canonical structures ⇒ familiarity with unifer.
+	  Canonical structures ⇒ familiarity with unifer.
 
 *** Strong Runner-ups
 + Idris :: Aggressive proof erasure. Modules can be parameterised, not indexed.
-	  - Named instances for Haskell-like typeclasses.
+	  Named instances for Haskell-like typeclasses.
 
 + Lean :: Quotient types & extensional equality.
 	  - Rapid development with no backwards compatibility.
@@ -941,10 +947,9 @@ Isabelle locales, ⋯.
 
 ** Facets of Structuring Mechanisms: An Agda Rendition
 
-*** Monoids as Agda Records
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+**** Monoids as Agda Records
+ #+BEGIN_SRC haskell
 record Monoid-Record : Set₁ where
-  infixr 5 _⨾_
   field
     -- Interface
     Carrier  : Set
@@ -958,15 +963,12 @@ record Monoid-Record : Set₁ where
 
   -- derived result
   pop-Idᵣ : ∀ x y  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
-  pop-Idᵣ x y = ≡.cong (x ⨾_) leftId
+  pop-Idᵣ x y = cong (_⨾ y) rid
+ #+END_SRC
 
-open Monoid-Record {{...}} using (pop-Idᵣ)
-#+END_SRC
-
-*** Monoids as Typeclasses
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+**** Monoids as Typeclasses
+ #+BEGIN_SRC haskell
 record HasMonoid (Carrier : Set) : Set₁ where
-  infixr 5 _⨾_
   field
     Id    : Carrier
     _⨾_   : Carrier → Carrier → Carrier
@@ -975,13 +977,11 @@ record HasMonoid (Carrier : Set) : Set₁ where
     assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
   pop-Id-tc : ∀ x y →  x ⨾ Id ⨾ y  ≡  x ⨾ y
-  pop-Id-tc x y = ≡.cong (x ⨾_) leftId
+  pop-Id-tc x y = cong (_⨾ y) rid
+ #+END_SRC
 
-open HasMonoid {{...}} using (pop-Id-tc) 
-#+END_SRC
-
-*** Monoids as Direct Dependent Sums
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+**** Monoids as Direct Dependent Sums
+ #+BEGIN_SRC haskell
 -- Type alias
 Monoid-Σ  :  Set₁
 Monoid-Σ  =    Σ Carrier ∶ Set 
@@ -991,34 +991,35 @@ Monoid-Σ  =    Σ Carrier ∶ Set
              • Σ rid ∶ (∀{x} → x ⨾ Id ≡ x)
              • (∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))
 
-pop-Id-Σ : ∀{{M : Monoid-Σ}} 
-                       (let _⨾_ = proj₁ (proj₂ (proj₂ M)))
-                   →  ∀ (x y : proj₁ M)  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
-pop-Id-Σ {{M}} x y = ≡.cong (x ⨾_) (lid {y})
+pop-Id-Σ : ∀{{M : Monoid-Σ}}
+                       (let Id  = proj₁ (proj₂ M))
+                       (let _⨾_ = proj₁ (proj₂ (proj₂ M)))                       
+                   →  ∀ (x y : proj₁ M)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
+pop-Id-Σ {{M}} x y = cong (_⨾ y) (rid {x})
                      where  _⨾_    = proj₁ (proj₂ (proj₂ M))
-                           lid    = proj₁ (proj₂ (proj₂ (proj₂ M)))
-#+END_SRC
+                            rid    = proj₁ (proj₂ (proj₂ (proj₂ (proj₂ M))))
+ #+END_SRC
 
-*** These are the ‘Same’
+**** These are the ‘Same’
 
-#+BEGIN_SRC haskell
+ #+BEGIN_SRC haskell
      Monoid-Σ  ≅  Σ C ∶ Set • HasMonoid C
 
      HasMonoid ≅  λ C → Σ M ∶ Monoid-Record • M.Carrier ≡ C
-#+END_SRC
+ #+END_SRC
 
-#+begin_quote
-Only utility difference!
+ #+begin_quote
+ Only utility difference!
 
-Fields vs Projections
-#+end_quote
-#+BEGIN_SRC haskell
-Carrierₜ : Monoid-Σ → Set   -- boilerplate
-Carrierₜ = proj₁
-#+END_SRC
+ Fields vs Projections
+ #+end_quote
+ #+BEGIN_SRC haskell
+Carrier′  : Monoid-Σ → Set   -- boilerplate
+Carrier′ = proj₁
+ #+END_SRC
 
-*** Instance Declarations
-#+BEGIN_SRC haskell
+**** Instance Declarations
+ #+BEGIN_SRC haskell
 instance
    ℕ-record : Monoid-Record
    ℕ-record = record { Carrier = ℕ; Id = 0; _⨾_ = _+_; ⋯ }
@@ -1028,54 +1029,54 @@ instance
 
    ℕ-Σ : Monoid-Σ
    ℕ-Σ = ℕ , 0 , _+_ , ⋯
-#+END_SRC
+ #+END_SRC
 
-*** No Monoids Mentioned at Use Sites
-#+BEGIN_SRC haskell
+**** No Monoids Mentioned at Use Sites
+ #+BEGIN_SRC haskell
 ℕ-pop-0ᵣ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
 ℕ-pop-0ᵣ = pop-Idᵣ
 
 ℕ-pop-0-tc : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
 ℕ-pop-0-tc = pop-Id-tc
 
-ℕ-pop-0ₜ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
-ℕ-pop-0ₜ = pop-Id-Σₜ
-#+END_SRC
+ℕ-pop-0-Σ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
+ℕ-pop-0-Σ = pop-Id-Σ
+ #+END_SRC
 
-*** Monoids as Telescopes
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+**** Monoids as Telescopes
+ #+BEGIN_SRC haskell
 module Monoid-Telescope-User
   (Carrier : Set) (Id : Carrier) (_⨾_ : Carrier → Carrier → Carrier)
-  (leftId  : ∀{x} → Id ⨾ x ≡ x) (rightId : ∀{x} → x ⨾ Id ≡ x)
-  (assoc   : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) 
+  (lid   : ∀{x} → Id ⨾ x ≡ x) (rid : ∀{x} → x ⨾ Id ≡ x)
+  (assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) 
   where
-  
-  pop-Idₘ : ∀(x y : Carrier)  →  x ⨾ (Id ⨾ y)  ≡  x ⨾ y
-  pop-Idₘ x y = ≡.cong (x ⨾_) (leftId M {y})
-#+END_SRC
 
-*** Telescope Use
-#+BEGIN_SRC haskell :tangle thesis-proposal.agda :exports code
+  pop-Id-tel : ∀(x y : Carrier)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
+  pop-Id-tel x y = cong (_⨾ y) (rid {x})
+ #+END_SRC
+
+**** Telescope Use
+ #+BEGIN_SRC haskell
 open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
 
-ℕ-symmetryₘ : ∀ (x y : ℕ) → x + y  ≡  y + x
-ℕ-symmetryₘ = symmetryₘ
-#+END_SRC
+ℕ-pop-tel : ∀(x y : ℕ)  →  x + 0 + y  ≡  x + y
+ℕ-pop-tel =   pop-Id-tel
+ #+END_SRC
 
-*** Interdefinablity
+**** Interdefinablity
 
-    + Different notions are thus interdefinable.
+     + Different notions are thus interdefinable.
       
-    + Use-cases /distinguishes/ packages.
+     + Use-cases /distinguishes/ packages.
 
-    + Distinctions ⇒ duplication of efforts.
+     + Distinctions ⇒ duplication of efforts.
 
-    *Generalise!* Use a ‘package former’, rather than
-    a particular variation.
+     *Generalise!* Use a ‘package former’, rather than
+     a particular variation.
 
-** Theory Presentations: A Structuring Mechanism
+*** Theory Presentations: A Structuring Mechanism
 
-#+BEGIN_SRC haskell
+ #+BEGIN_SRC haskell
 -- Contexts
 Γ  ::= ·                       -- empty context
      | x : T [:= T], Γ         -- context with declaration, optional definition
@@ -1091,19 +1092,17 @@ T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
 Θ ::= .                        -- empty theory
     | X := Γ, Θ                -- a theory can contain named contexts
     | (X : (X₁ → X₂)) := Γ     -- a theory can be a first-class theory morphism
-#+END_SRC
+ #+END_SRC
 
-#+begin_quote org 
-No implementation that does anything. 
-#+end_quote
+ #+begin_quote org 
+ No implementation that does anything. 
+ #+end_quote
 
 * Solution Requirements
 
 ** Missing Features
 
-*** Expressivity
-
-  Be able to pick the level of bundling.
+*** Expressivity ─Select Bundling Level
 
 #+begin_src haskell
 record Semigroup0 : Set₁ where ⋯ 
@@ -1121,7 +1120,8 @@ record Semigroup3
   -- no fields
 #+end_src
 
-E.g., code along ~Semigroup1~, use for ~Semigroup0~.
+*** Expressivity ─Code along one type, use for another
+  # E.g., code along ~Semigroup1~, use for ~Semigroup0~.
 #+begin_src haskell
 translate1 : ∀{A B} → (f : A → B) → Bijection f
            → Semigroup1 A → Semigroup1 B
@@ -1131,19 +1131,20 @@ translate0 : ∀{B : Set} (AS : Semigroup0) (f : Semigroup0.Carrier AS → B)
            → Semigroup0
 #+end_src
 
-*** Excerption
+*** Excerption ─Instantiating Deeply Nested Theories
 
-/Instantiate/ a deeply nested theory.
 #+BEGIN_SRC haskell
 instance Monad M       where ⋯  -- (0) needs (1), which needs (2)
 instance Applicative M where ⋯  -- (1) redundant if (0) is given
 instance Functor M     where ⋯  -- (2)
 #+END_SRC
 
-Accessing deeply nested fields; e.g., ~Monoid.Semigroup.Magma.Carrier M~.
+*** Excerption ─Instantiating Deeply Nested Theories
 
-⇒ /flatten hierarchies!/
-
++ Accessing deeply nested fields;
++ e.g., ~Monoid.Semigroup.Magma.Carrier M~.
++ ⇒ /flatten hierarchies!/
+    
 ** Desirable Features
 
 + Uniformity :: Treat different notions of packaging the same way.
