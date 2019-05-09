@@ -21,3 +21,13 @@ under the supervision of Jacques Carette and Wolfram Kahl.
     -   The front-end redundancy should be produced by machine generation,
         rather than by hand.
 
+<div class="org-center">
+  [Website](https://alhassy.github.io/next-700-module-systems-proposal/)
+◈ [PDF](https://alhassy.github.io/next-700-module-systems-proposal/thesis-proposal.pdf) 
+◈ [Slides](https://alhassåy.github.io/next-700-module-systems-proposal/defence-slides.html) 
+◈ [`translate` code](https://alhassy.github.io/next-700-module-systems-proposal/translate_functions.agda) 
+◈ [`monoid` code](https://alhassy.github.io/next-700-module-systems-proposal/monoid_renditions.agda) 
+
+( For the slides, you may need to “allow unsafe scripts”. )    
+</div>
+
