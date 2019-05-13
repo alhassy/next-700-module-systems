@@ -21,4 +21,6 @@ under the supervision of Jacques Carette and Wolfram Kahl.
     -   The front-end redundancy should be produced by machine generation,
 	rather than by hand.
 
-[Website](https://alhassy.github.io/next-700-module-systems-proposal/) ◈ [PDF](https://alhassy.github.io/next-700-module-systems-proposal/thesis-proposal.pdf) ◈ [HTML](https://alhassy.github.io/next-700-module-systems-proposal/thesis-proposal.html) ◈ [Slides](https://alhassy.github.io/next-700-module-systems-proposal/defence-slides.html) ◈ [`translate` code](https://alhassy.github.io/next-700-module-systems-proposal/translate_functions.agda.html) ◈ [`monoid` code](https://alhassy.github.io/next-700-module-systems-proposal/monoid_renditions.agda.html)
+[Website](https://alhassy.github.io/next-700-module-systems-proposal/) ◈ [PDF](https://alhassy.github.io/next-700-module-systems-proposal/thesis-proposal.pdf) ◈ [HTML](https://alhassy.github.io/next-700-module-systems-proposal/thesis-proposal.html) ◈ [Slides](https://alhassy.github.io/next-700-module-systems-proposal/defence-slides.html) ◈ [`translate` code](https://alhassy.github.io/next-700-module-systems-proposal/translate_functions.agda.html) ◈ [`monoid` code](https://alhassy.github.io/next-700-module-systems-proposal/monoid_renditions.agda.html) ◆ [Demo](https://www.youtube.com/watch?v=NYOOF9xKBz8&feature=youtu.be)
+
+A super simple description of this work, for the layman, can be found [here](https://alhassy.github.io/three_minutes/).
