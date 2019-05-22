@@ -2,6 +2,7 @@
 
 # f7 preview changes
 # (local-set-key (kbd "<f7>") (lambda () (interactive) (suspend-frame) (disable-theme 'spacemacs-light) (org-reveal-export-to-html-and-browse) (load-theme 'spacemacs-light)))
+# (local-set-key (kbd "<f7>") (lambda () (interactive) (disable-theme 'spacemacs-light) (org-reveal-export-to-html-and-browse) (load-theme 'spacemacs-light)))
 
 #+TITLE: The Next 700 Module Systems
 #+DESCRIPTION: Thesis proposal for Musa Al-hassy; McMaster University 2019.
@@ -10,9 +11,9 @@
 #+OPTIONS: html-postamble:nil
 
 #+OPTIONS: timestamp:nil
-#+OPTIONS: toc:1
+#+OPTIONS: toc:1 d:nil
 
-#+OPTIONS: reveal_center:t reveal_progress:t reveal_history:nil reveal_control:t
+#+OPTIONS: reveal_center:t reveal_progress:t reveal_history:t reveal_control:t
 #+OPTIONS: reveal_rolling_links:t reveal_keyboard:t reveal_overview:t num:nil
 #+OPTIONS: reveal_width:1200 reveal_height:800
 
@@ -27,70 +28,82 @@
 #+REVEAL_PLUGINS: (markdown notes)
 #+REVEAL_EXTRA_CSS: ./local.css
 
-* COMMENT Reveal.js and Org-Reveal
+# (setq org-reveal-klipsify-src t)
 
-  - *Reveal.js* is a tool for creating good-looking HTML presentations,
-    authored by [[http://hakim.se/][Hakim El Hattab]]. \\
-    For an example of a reveal.js presentation, see [[http://lab.hakim.se/reveal-js/#/][here]].
-  - *Org-Reveal* exports your [[http://orgmode.org/][Org]] documents to reveal.js
-    presentations.\\
-    With Org-reveal, you can create beautiful presentations with 3D
-    effects from simple but powerful Org contents.
+#
+# See here for examples of how fragments look
+# https://revealjs.com/#/fragments
+#
+# Here for what themes look like
+# https://revealjs.com/#/themes
 
-* COMMENT Requirements and Installation
+#+MACRO: myfrag  #+ATTR_REVEAL: :frag (appear)
 
-  - Reveal.js.
-  - Org-mode.
-  - ox-reveal.el.
-  - htmlize.el (optional, for syntax highlighting).
-  - And, of course, emacs.
+:How_to_enable_PDF_print_capabiility:
 
-** Install Reveal.js
+1. Open your presentation with print-pdf included in the query string i.e. http://localhost:8000/?print-pdf. You can test this with revealjs.com?print-pdf.
+   - If you want to include speaker notes in your export, you can append showNotes=true to the query string: http://localhost:8000/?print-pdf&showNotes=true
+2. Open the in-browser print dialog (CTRL/CMD+P).
+3. Change the Destination setting to Save as PDF.
+4. Change the Layout to Landscape.
+5. Change the Margins to None.
+6. Enable the Background graphics option.
+7. Click Save.
 
-   Download Reveal.js packages from [[https://github.com/hakimel/reveal.js/][here]].
+:End:
 
-   Extract Reveal.js folders from the downloaded zip file.
+:FragmentStyles:
+The ATTR_REVEAL part must be immediately preceding the first item in a list, no new line;
+other items may be freely spaced.
 
-   If you do not wish to download reveal.js yourself and would rather get a copy from a CDN,
-   see the section [[https://github.com/yjwen/org-reveal#set-the-location-of-revealjs][Set the location of Reveal.js]]
+Available fragment styles are:
+#+ATTR_REVEAL: :frag t
+    * grow
+    * shrink
+    * roll-in
+    * fade-out
+    * highlight-red
+    * highlight-green
+    * highlight-blue
+    * appear
 
-** Install org-reveal from MELPA
+    Fragment sequence can be changed by assigning adding ~:frag_idx~
+    property to each fragmented element.
 
-   The easiest way to install org-reveal is to install package
-   ox-reveal from MELPA.
+#+ATTR_REVEAL: :frag t :frag_idx 3
+    And, this paragraph shows at last.
 
-   Please refer to [[http://melpa.org/#/getting-started]] for using MELPA.
+#+ATTR_REVEAL: :frag t :frag_idx 2
+    This paragraph shows secondly.
 
-   *Note*: It is suggested to use the [[http://orgmode.org/elpa.html][Org ELPA]] archive in pair
-   with the ox-reveal packages. Emacs builtin Org-mode package may be
-   out of date for MELPA's ox-reveal.
+#+ATTR_REVEAL: :frag t :frag_idx 1
+    This paragraph shows at first.
 
-** Install org-reveal from GitHub
+~#+ATTR_REVEAL: :frag frag-style~ above a list defines fragment style for the list as a whole.
+To define fragment styles for every list item, please enumerate each item's style in a lisp list.
 
-   You can also install the latest developing version of org-reveal directly
-   from GitHub.
+When there is :frag_idx specified, insufficient fragment style list will be extended by its last element. So a :frag (appear) assigns each item of a list the appear fragment style.
 
-   Please download the latest Org-reveal package from [[https://github.com/yjwen/org-reveal][the Org-reveal
-   GitHub page]]. Or clone the GitHub repository:
-   #+BEGIN_SRC sh
-   git clone https://github.com/yjwen/org-reveal.git
-   #+END_SRC
+#+BEGIN_SRC emacs-lisp
+#+ATTR_REVEAL: :frag (appear)
+   * I appear.
+   * I appear.
+   * I appear.
+#+END_SRC
 
-   Copy =ox-reveal.el= to one of your Emacs's ~load-path~, and add the
-   following statement to your =.emacs= file.
-   #+BEGIN_SRC lisp
-   (require 'ox-reveal)
-   #+END_SRC
+Nb: Org-reveal supports /editable code blocks/ using klipsify.
 
-   *Note*: It is suggested to use the Org-mode git repository in pair
-   with the GitHub org-reveal. Please get the Org-mode git repository
-   by:
-   #+BEGIN_SRC sh
-   $ git clone git://orgmode.org/org-mode.git
-   #+END_SRC
+  # :frag_idx (5 4 3 2 1)
+#+ATTR_REVEAL: :frag (grow shrink roll-in fade-out none)
++ I will grow.
++ I will shrink.
++ I rolled in.
++ I will fade out.
++ I don't fragment.
 
-   Follow the [[http://orgmode.org/worg/dev/org-build-system.html][online instruction]] for building and installing Org-mode.
-
+  EXPORT CURRENT SUBTREE
+Use menu entry " C-c C-e R S" to export only current subtree, without the title slide and the table of content, for a quick preview of your current edition.
+:End:
 * COMMENT Configuration
 
 ** Set the location of Reveal.js
@@ -318,11 +331,11 @@
    The scaling behavior can also be constrained by setting following
    options:
    * =#+REVEAL_MARGIN:= :: a float number, the factor of empty area
-        surrounding slide contents.
+	surrounding slide contents.
    * =#+REVEAL_MIN_SCALE:= :: a float number, the minimum scaling down
-        ratio.
+	ratio.
    * =#+REVEAL_MAX_SCALE:= :: a float number, the maximum scaling up
-        ratio.
+	ratio.
 
 ** Slide Numbering
 
@@ -353,6 +366,8 @@
     Make contents fragmented (show up one-by-one) by setting option
     =ATTR_REVEAL= with property ":frag frag-style", as illustrated
     below.
+
+    See here for examples of them: https://revealjs.com/#/fragments
 
 #+ATTR_REVEAL: :frag roll-in
     Paragraphs can be fragmented.
@@ -481,7 +496,7 @@
 ** Third-Party Plugins
 Reveal.js is also extensible through third-party plugins. Org-reveal now includes a mechanism to load these as well. It's a little more complicated, because we need to store the specific javascript loading code in a defcustom.
 
-Store the names and loading instructions for each plugin in the defcustom ~org-reveal-external-plugins~. This defcustom is an associative list. The first element of each Assoc cell is a symbol -- the name of the plugin -- and the second is a string that will be expanded by the ~format~ function when the plugin is loaded. So, this second element should have the form ~" {src: \"%srelative/path/toplugin/from/reveal/root.js\"}'.  If you need the async or callback parameters, include those too.  Ox-reveal will add the plugin to the dependencies parameter when Reveal is initialized.  
+Store the names and loading instructions for each plugin in the defcustom ~org-reveal-external-plugins~. This defcustom is an associative list. The first element of each Assoc cell is a symbol -- the name of the plugin -- and the second is a string that will be expanded by the ~format~ function when the plugin is loaded. So, this second element should have the form ~" {src: \"%srelative/path/toplugin/from/reveal/root.js\"}'.  If you need the async or callback parameters, include those too.  Ox-reveal will add the plugin to the dependencies parameter when Reveal is initialized.
 
 ** Highlight Source Code
 
@@ -522,7 +537,7 @@ It is now possible to embed code blocks in a codemirror instance in order to edi
 - ~org-reveal-klipsify-src~
 - ~org-reveal-klipse-css~
 - ~org-reveal-klipse-js~
-This feature is turned off by default and needs to be switched on with ~org-reveal-klipsify-src~.  At present code editing is supported in javacript, clojure, php, ruby, scheme, and python only.  
+This feature is turned off by default and needs to be switched on with ~org-reveal-klipsify-src~.  At present code editing is supported in javacript, clojure, php, ruby, scheme, and python only.
 
 ** MathJax
   :PROPERTIES:
@@ -745,7 +760,7 @@ This feature is turned off by default and needs to be switched on with ~org-reve
    custom variable ~org-reveal-init-script~.
 
 ** Executable Source Blocks
-To allow live execution of code in some languages, enable the klipse plugin by setting ~org-reveal-klipsify-src~ to non-nil.  Src blocks with the languages ~js~, ~clojure~, ~html~, ~python~, ~ruby~, ~scheme~, ~php~ will be executed with output shown in a console-like environment.  See the source code of ~org-reveal-src-block~ for more details.  
+To allow live execution of code in some languages, enable the klipse plugin by setting ~org-reveal-klipsify-src~ to non-nil.  Src blocks with the languages ~js~, ~clojure~, ~html~, ~python~, ~ruby~, ~scheme~, ~php~ will be executed with output shown in a console-like environment.  See the source code of ~org-reveal-src-block~ for more details.
 
 *** HTML Src Block
 #+BEGIN_SRC html
@@ -763,29 +778,18 @@ x
 #+BEGIN_SRC perl
 I don't know perl!
 #+END_SRC
-* COMMENT Thanks
-
-  Courtesy to:
-
-#+ATTR_REVEAL: :frag roll-in
-  The powerful Org-mode,
-#+ATTR_REVEAL: :frag roll-in
-  the impressive Reveal.js
-#+ATTR_REVEAL: :frag roll-in
-  and the precise MathJax
-
 * COMMENT Abstract and toc                                                   :ignore:
 
 # Use:  x vs.{{{null}}} ys
 # This informs LaTeX not to put the normal space necessary after a period.
-# 
+#
 #+MACRO: null  @@latex:\null{}@@
 
 #+begin_abstract
 
 Structuring-mechanisms, such as Java's ~package~ and Haskell's ~module~, are often
 afterthought secondary citizens whose primary purpose is to act as namespace delimiters,
-while relatively more effort is given to their abstraction encapsulation counterparts, 
+while relatively more effort is given to their abstraction encapsulation counterparts,
 e.g., Java's classes and Haskell's typeclasses.
 A /dependently-typed language/ (DTL) is a typed language
 where we can write /types/ that depend on /terms/; thereby blurring conventional
@@ -798,7 +802,7 @@ expressible within the type theory.
 
 \vspace{1em}
 
-# \parencite{ocaml_website, maude_module_algebra, B_reuse} 
+# \parencite{ocaml_website, maude_module_algebra, B_reuse}
 To our knowledge, relatively few languages ---such as OCaml, Maude, and the B Method---
 allow for the manipulation of
 external structuring-mechanisms as they do for internal ones.
@@ -808,11 +812,11 @@ thereby conflating a number of traditional programming notions.
 Since DTLs permit types that depend on terms, the types may require
 non-trivial term calculation in order to be determined.
 Languages without such expressive type systems necessitate certain constraints
-on its constructs according to their intended usage. 
+on its constructs according to their intended usage.
 It is not clear whether such constraints have been brought to more expressive
 languages out of necessity or out of convention.
-Hence we propose a systematic exploration of the structuring-mechanism 
-design space for dependently typed languages to understand 
+Hence we propose a systematic exploration of the structuring-mechanism
+design space for dependently typed languages to understand
 /what are the module systems for DTLs?/
 
 \vspace{1em}
@@ -840,23 +844,24 @@ preprocessing hacks.
 \tableofcontents
 \newpage
 
-* Introduction ---The Proposal's Story      
+* Introduction ---The Proposal's Story
 
 ** COMMENT A Language Has Many Tongues :unreadable:
 
-1. Expression language; e.g., ~cond ? this : that~. 
+1. Expression language; e.g., ~cond ? this : that~.
 2. Statement, or control flow, language; e.g., ~if (cond) {this} {that}~.
 3. Type language; e.g., ~Functor f => () → f ()~.
 4. Specification language; e.g., ~\forall ℤ i; A[i] ≤ \old(A[i])~.
 5. Proof language; e.g., ~begin ⋯ ≡⟨ ? ⟩ ⋯ ∎~.
 6. Module language; e.g., ~module, class, interface~.
 7. Meta-programming languages; e.g., Coq tactics, C preprocessor, Haskell pragmas.
-      
+
 The first five languages telescope down into one uniform language
 within the dependently-typed language Agda. *So why not the module language?*
 
 ** A Language Has Many Tongues
 
+#+ATTR_REVEAL: :frag (appear)
 1. Expression
 2. Statement
 3. Type
@@ -864,12 +869,14 @@ within the dependently-typed language Agda. *So why not the module language?*
 5. Proof
 6. Module
 7. Meta-programming
-      
+
+#+ATTR_REVEAL: :frag t
 The first five languages telescope down into one uniform language
 within the dependently-typed language Agda. *So why not the module language?*
 
 ** Main Observation
 
+{{{myfrag}}}
    |   | Packages            |
    | ≈ | modules             |
    | ≈ | theories            |
@@ -879,21 +886,24 @@ within the dependently-typed language Agda. *So why not the module language?*
    | ≈ | ⋯                   |
    | ≈ | dependent records   |
 
+#+ATTR_REVEAL: :frag t
   #+begin_quote
-Differences  ⇒  Uses & Implementations 
+Differences  ⇒  Uses & Implementations
 #+end_quote
 
 ** Proposed Contributions
 
+#+ATTR_REVEAL: :frag (appear)
   1. Module system for DTLs: Modules are ordinary values.
 
   2. Use-cases contrasting resulting system with previous approaches.
 
   3. A module system that enables rather than inhibits efficiency.
-     
+
   4. Replace metaprogramming processing with module primitives.
-     
-#+begin_quote 
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_quote
   An implementation to obtain validation that our system ‘works’
 #+end_quote
 
@@ -901,40 +911,46 @@ Differences  ⇒  Uses & Implementations
 
 ** What is a Module?
 
+#+ATTR_REVEAL: :frag (appear)
    *Definition:* A typed ‘module, context, telescope, package former, record, typeclass’
    is a sequence of tuples \\
    ~name ∶ type := optional-definition~.
 
+#+ATTR_REVEAL: :frag (appear)
    Without types, we obtain essentially [[https://en.wikipedia.org/wiki/JSON][JSON Objects]].
    # Akin to a JSON Object, which is an untyped module.
-   
+
+#+ATTR_REVEAL: :frag (appear)
    *Purpose:* Group related concepts together as single /semantic/ units.
-   
+
 ** Expectations of Module Systems
 
+#+ATTR_REVEAL: :frag (appear)
 + Namespacing :: New unique local scopes ⇒ de-coupling.
-                 
+
 + Information Hiding :: Inaccessibility ⇒ Implementation independence.
 
 + Citizenship :: Grouping mechanisms should be treated like ordinary values.
-		 
+
 + Polymorphism :: Grouping mechanisms should group all kinds of things without prejudice.
 
 + Sharing :: Module parameter computations shared across constituents.
 
 + Object-Orientation :: Generative modules & Subtyping.
 # Object-oriented notions of encapsulation
-	
+
 ** Existing Systems
 
 *** Main Choices
-    
+
+#+ATTR_REVEAL: :frag (appear)
 + Agda :: Intimate relationship with records; no sharing; applicative modules; typeclasses.
 
 + Coq  :: Copy-paste inclusion with combinator ~<+~; generative functors; typeclasses.
 	  Canonical structures ⇒ familiarity with unifer.
 
 *** Strong Runner-ups
+#+ATTR_REVEAL: :frag (appear)
 + Idris :: Aggressive proof erasure. Modules can be parameterised, not indexed.
 	  Named instances for Haskell-like typeclasses.
 
@@ -942,6 +958,7 @@ Differences  ⇒  Uses & Implementations
 	  - Rapid development with no backwards compatibility.
 	  - Backed by Lean itself, which is not a full language.
 
+#+ATTR_REVEAL: :frag (appear)
 ATS programmer-centric, F^* refinement types, Beluga contexts,
 Isabelle locales, ⋯.
 
@@ -983,26 +1000,26 @@ record HasMonoid (Carrier : Set) : Set₁ where
   pop-Id-tc : ∀ x y →  x ⨾ Id ⨾ y  ≡  x ⨾ y
   pop-Id-tc x y = cong (_⨾ y) rid
 
-open HasMonoid {{...}} using (pop-Id-tc)  
+open HasMonoid {{...}} using (pop-Id-tc)
 #+END_SRC
 
 *** Monoids as Direct Dependent Sums
  #+BEGIN_SRC haskell
 Monoid-Σ  :  Set₁
-Monoid-Σ  =    Σ Carrier ∶ Set 
-             • Σ Id ∶ Carrier
-             • Σ _⨾_ ∶ (Carrier → Carrier → Carrier)
-             • Σ lid ∶ (∀{x} → Id ⨾ x ≡ x) 
-             • Σ rid ∶ (∀{x} → x ⨾ Id ≡ x)
-             • (∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))
+Monoid-Σ  =    Σ Carrier ∶ Set
+	     • Σ Id ∶ Carrier
+	     • Σ _⨾_ ∶ (Carrier → Carrier → Carrier)
+	     • Σ lid ∶ (∀{x} → Id ⨾ x ≡ x)
+	     • Σ rid ∶ (∀{x} → x ⨾ Id ≡ x)
+	     • (∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))
 
 pop-Id-Σ : ∀{{M : Monoid-Σ}}
-                       (let Id  = proj₁ (proj₂ M))
-                       (let _⨾_ = proj₁ (proj₂ (proj₂ M)))                       
-                   →  ∀ (x y : proj₁ M)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
+		       (let Id  = proj₁ (proj₂ M))
+		       (let _⨾_ = proj₁ (proj₂ (proj₂ M)))
+		   →  ∀ (x y : proj₁ M)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
 pop-Id-Σ {{M}} x y = cong (_⨾ y) (rid {x})
-                     where  _⨾_    = proj₁ (proj₂ (proj₂ M))
-                            rid    = proj₁ (proj₂ (proj₂ (proj₂ (proj₂ M))))
+		     where  _⨾_    = proj₁ (proj₂ (proj₂ M))
+			    rid    = proj₁ (proj₂ (proj₂ (proj₂ (proj₂ M))))
  #+END_SRC
 
 *** These are the ‘Same’
@@ -1013,12 +1030,14 @@ pop-Id-Σ {{M}} x y = cong (_⨾ y) (rid {x})
      HasMonoid ≅  λ C → Σ M ∶ Monoid-Record • M.Carrier ≡ C
  #+END_SRC
 
+#+ATTR_REVEAL: :frag (grow)
  #+begin_quote
  Only utility difference!
 
  Fields vs Projections
  #+end_quote
- #+BEGIN_SRC haskell
+
+#+BEGIN_SRC haskell
 Carrier′  : Monoid-Σ → Set   -- boilerplate
 Carrier′ = proj₁
  #+END_SRC
@@ -1048,16 +1067,17 @@ instance
 ℕ-pop-0-Σ = pop-Id-Σ
  #+END_SRC
 
+#+ATTR_REVEAL: :frag (grow)
 #+begin_quote
  This suggests a hidden polymorphism!
 #+end_quote
- 
+
 *** Monoids as Telescopes
  #+BEGIN_SRC haskell
 module Monoid-Telescope-User
   (Carrier : Set) (Id : Carrier) (_⨾_ : Carrier → Carrier → Carrier)
   (lid   : ∀{x} → Id ⨾ x ≡ x) (rid : ∀{x} → x ⨾ Id ≡ x)
-  (assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) 
+  (assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))
   where
 
   pop-Id-tel : ∀(x y : Carrier)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
@@ -1075,11 +1095,12 @@ open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
 *** Interdefinablity
 
      + Different notions are thus interdefinable.
-      
+
      + Use-cases /distinguishes/ packages.
 
      + Distinctions ⇒ duplication of efforts.
 
+#+ATTR_REVEAL: :frag (appear)
      *Generalise!* Use a ‘package former’, rather than
      a particular variation.
 
@@ -1090,11 +1111,11 @@ open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
 Γ  ::= ·                       -- empty context
      | x : T [:= T], Γ         -- context with declaration, optional definition
      | includes X, Γ           -- theory inclusion
-    
+
 -- Terms
 T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
     | Π x : T' • T             -- dependent product
-    | [Γ] | ⟨Γ⟩ | T.x          -- record “[type]” and “⟨element⟩” formers, projections  
+    | [Γ] | ⟨Γ⟩ | T.x          -- record “[type]” and “⟨element⟩” formers, projections
     | Mod X                    -- contravariant “theory to record” internalisation
 
 -- Theory, external grouping, level
@@ -1103,8 +1124,9 @@ T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
     | (X : (X₁ → X₂)) := Γ     -- a theory can be a first-class theory morphism
  #+END_SRC
 
- #+begin_quote org 
- No implementation that does anything. 
+#+ATTR_REVEAL: :frag (appear)
+ #+begin_quote org
+ No implementation that does anything.
  #+end_quote
 
 * Solution Requirements
@@ -1114,16 +1136,16 @@ T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
 *** Expressivity ─Select Bundling Level
 
 #+begin_src haskell
-record Semigroup0 : Set₁ where ⋯ 
+record Semigroup0 : Set₁ where ⋯
 
 record Semigroup1 (Carrier : Set): Set₁ where ⋯
 
 record Semigroup2
  (Carrier : Set)
  (_⨾_     : Carrier → Carrier → Carrier) : Set where ⋯
- 
+
 record Semigroup3
- (Carrier : Set) 
+ (Carrier : Set)
  (_⨾_ : Carrier → Carrier → Carrier)
  (assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) : Set where
   -- no fields
@@ -1133,11 +1155,11 @@ record Semigroup3
   # E.g., code along ~Semigroup1~, use for ~Semigroup0~.
 #+begin_src haskell
 translate1 : ∀{A B} → (f : A → B) → Bijection f
-           → Semigroup1 A → Semigroup1 B
+	   → Semigroup1 A → Semigroup1 B
 
 translate0 : ∀{B : Set} (AS : Semigroup0) (f : Semigroup0.Carrier AS → B)
-           → Bijection f
-           → Semigroup0
+	   → Bijection f
+	   → Semigroup0
 #+end_src
 
 *** Excerption ─Instantiating Deeply Nested Theories
@@ -1153,1139 +1175,33 @@ instance Functor M     where ⋯  -- (2)
 + Accessing deeply nested fields;
 + e.g., ~Monoid.Semigroup.Magma.Carrier M~.
 + ⇒ /flatten hierarchies!/
-    
+
 ** Desirable Features
 
+#+ATTR_REVEAL: :frag (appear)
 + Uniformity :: Treat different notions of packaging the same way.
 + Genericity :: Polymorphism along packages types / package formers.
 + Extensiblity :: Primitives to form new package combinators.
 
+** Preliminary Research
 
-** COMMENT Preliminary Research
+We have a prototype (•̀ᴗ•́)و
+# REVEAL_HTML: <iframe width="420" height="315" src="https://www.youtube.com/embed/NYOOF9xKBz8" frameborder="0" allowfullscreen></iframe>
 
-The homogeneous treatment of structuring mechanisms is herein presented using a prototype
-developed using the user-friendly Emacs application framework by means of textual expansion,
-the details of which are largely uninteresting ---suffice it to say, the code is tremendously terse.
-In this section we demonstrates that packaging concepts differ only in their use, leading to a uniform
-syntax of which first-class records are an instance and so the resulting system is homoiconic in nature.
-We introduce fictitious syntax, mostly in red, with its intended Agda elaboration in blue
----the users write the red and expect it to behave like the blue; no “code generation” transpires.
+#+REVEAL_HTML: <iframe width="420" height="315" src="https://www.youtube.com/embed/NYOOF9xKBz8?version=3&autoplay=1&mute=1&loop=1" frameborder="0" allowfullscreen></iframe>
 
-The reader is advised to remember that the value of a prototype is in the guidance it provides,
-not the implementation itself nor any of its design decisions ---such as using strings in meta-programming
-scenarios. In other words, for the reader, portions of this section may serve as an exercise in foresight and patience.
-( A brief demonstration of the prototype may be viewed at https://www.youtube.com/watch?v=NYOOF9xKBz8 )
 
-:Minimality:
-A prime guiding design decision is
-/try to avoid making any decisions, including unconscious restrictions, unless deemed necessary!/
-:End:
-
-The initiated reader will quickly notice that our package formers are just theory presentations
----a list of name-type pairs. The chosen phrasing is due to the target audience, DTL programmers.
-We are not committed to the name, but unlike the overloaded ‘module’, ‘package former’ is a good
-new name without too many meanings. We have not provided full semantics for package formers, but
-we have provided concrete well-defined elaborations to communicate the intent: A package former
-is akin to a type former, it is ‘incomplete’ and does not define a concrete package until a certain
-tag is provided.
-It is part of the thesis effort to investigate which features of our proposed package formers
-break, or become limited, when considered with other language constructs.
-
-The uniformity in syntax reduces the variety of sub-languages in a dependently-typed language
-by eliminating needless distinctions for notions of containers. The first subsection below
-addresses syntactic similarity, whereas the second tackles computing similarity,
-and we conclude with a brief discussion on foundational concerns.
-
-*** First Observation: Syntactic Similarity for Containers
-
-Since the prototypical notion of packaging is that of records,
-which are value terms, all, necessarily succeeding, notions of packaging
-ought to be treated uniformly as value types.
-Consequently, variations on packaging should only be signalled by necessary
-keywords, and otherwise should be syntactically indistinguishable.
-
-For example, just as ~List~ is a type-former, we may declare a ‘package former’:
-{{{code(Our first package former)}}}
-#+begin_src haskell
- PackageFormer TermP (v : Variation) : Set where
-    Var : Int → TermP v
-    Add : TermP v → TermP v → TermP v
- #+end_src
-
-Note that a package former is just a sequence of names with types and,
-as will be demonstrated later, optional default types.
-It requires a particular “interpretation” ---possibly user-defined---,
-to produce some notion of package. This is signalled by the ~Variation~
-type, which for brevity contains ~data, record, typeclass~, and a few more
-that we will meet below.
-
-For example, the ~data~ variation of packaging gives us a
-free data type.     
-{{{code(Free data type: Terms are integer variables and addition of terms)}}}
-#+begin_src haskell
-TermData = TermP data
-{-
-≅  data TermData : Set where
-     Var : Int → TermData
-     Add : TermData → TermData → TermData
--}     
-#+end_src
-In the comment above, we indicate how our fictitious syntax is intended to be elaborated
-into Agda syntax. Besides syntax, induction principles are also derived:
-Our envisioned system would be able to derive simple, tedious, uninteresting concepts;
-leaving difficult, interesting, ones  for humans to solve.
-For this type, below is the dependently typed eliminator, which in a DTL, corresponds to an induction
-principle.
-{{{code(Free data types also come with an induction principle)}}}
-#+begin_src haskell
-{-
-   term-data-elim : ∀ {ℓ} {R : TermData → Set ℓ}
-                  → (base : (n : Int) → R (Var n))
-		  → (ind  : ∀ {s t} → R s → R t → R (Add s t))
-                  → (t : TermData) → R t
-		  
-   term-data-elim base ind (Var n)   = base n
-   term-data-elim base ind (Add s t) = ind rs rt
-      where rs = term-data-elim base ind s
-            rt = term-data-elim base ind t
--}
-#+end_src
-
-The type of the package former, for now, could simply be ~Set~
----c.f., the commented out elaboration which declares ~TermData : Set~.
-However, if we permit a sufficiently small subtyping system, we
-may find it desirable to have the type of a package former be itself
-a package former! Moreover, if package former ~t~ has type package former ~t′~,
-then the user should be able to use ~t~ at the levels ~t : s~
-without too much overhead, where ~s~ is any subtype of ~t~ with ~Set~ being a minimal
-such subtype. These thoughts are hurried and it is the purpose of the thesis
-to investigate what is the appropriate route.
-
-It is often the case that one begins working with a ~record~ of useful semantic
-data, but then, say, for proof automation, may want to use the associated ~datatype~
-for syntax. The latter should be mechanically derivable, and this is what we aim
-provide with our package formers.
-We will not delve into the relationship between free data types and how, for example,
-their associated catamorphism is necessarily also an interpreter
----in the programming languages sense.
-The reader is invited to consult a reference \parencite{cats_logic_shulman}.
-
-We shall not discuss polymorphism along variations, the ~v~ components above,
-as it is orthogonal to our immediate goals. For example, ~TermP~ could have a field typed
-~TermP (f v) → TermP (g v) → TermP v~, where ~f~ and ~g~ are operations on variations.
-Nonetheless, this is a feature that one should be aware of.
-
-The remaining items instantiate package formers for the usual
-common uses. Including notions of records in item 1;
-an algorithmic sketch underlying the examples of item 1 is presented in item2;
-union types and external, second-class, modules in item 3;
-package former polymorphism in item 4;
-operating on package formers and inheritance in items 5 and 6; then discuss
-how package formers handle the diamond problem in item 7.
-Finally, we close in item 8 by discussing a problem not generally found
-in pedestrian languages and how it is solved using package formers.
-
-**** The Generality of Package Formers ---Products
-
-To demonstrate the generality of the notion of package formers we shall demonstrate
-how other common forms could be ‘derived’ from the single declaration above.
-It is to be noted that for such a small example, such derived code may be taken for
-granted, however for much larger theories ---for example, a “field” comes with more than
-20 fields--- the ability to derive different perspectives in a consistent fashion
-is indispensable; especially when the package is refactored.
-More realistically, a symmetric rig groupoid uses about 212 coherence laws \parencite{rig_computation},
-for which case-splitting, to perform proofs, yields [[https://github.com/JacquesCarette/pi-dual][over 200 goals]] thereby making
-metaprogramming a tempting approach.
-
-:counting_field_componenets:
-field ≅ ablean group ⟶ Carrier, op, inv, unit, assoc, 2 unit-laws, 2 inverse-laws, comm-law ⟶ 10 laws
-          multiplicative monoid ⟶ Carrier, op, unit, assoc, 2 unit-laws ⟶ 6 laws
-          the above two carries are identical  ⟶ 1 law
-          distributively laws   ⟶ 2 laws
-          integrity & div-op & non-zero division ⟶ 3 laws
-
-Total ⟶ 22 laws
-:end:
-
-# {{{code(Records; a magma with the integers)}}}
-{{{code(Records)}}}
-#+begin_src haskell
--- An instance of  TermRecord should have a carrier type
--- containing the integers, ‘Var’, and supports some binary operation, ‘Add’.
-TermRecord = TermP record
-{-
-≅   record TermRecord  : Set where
-      field
-        Carrier : Set
-        Var     : Int → Carrier
-        Add     : Carrier → Carrier → Carrier
--}
-#+end_src
-In the previous  and following invocations, the name ~Carrier~ is a system internal, for now,
-and can easily be ~renamed~ ---as will be demonstrated later on.
-For now, we adhere to a single-sorted stance: Unless indicated otherwise, a ~Carrier~ will always
-be included. An example of a two-sorted algebraic structure, graphs, is demonstrated at the end of this subsection.
-
-Built-in names, such as ~Carrier~, are generally not ideal. For example, a machine may provide the
-names ~FourLeggedFeline~ and ~CommutativeIdempotentMonoid~ where a human may prefer ~Cat~ and ~JoinSemilattice~ instead.
-As such, the resulting system, would accept ‘renaming’ functions to generate names. For now, we mostly limit
-such an approach for brevity.
-
-{{{code(Haskell-style typeclasses ---or Scala-like traits)}}}
-#+begin_src haskell
-TermOn = TermP typeclass
-{-
-≅   record TermOn (Carrier : Set) : Set where       
-      field
-        Var     : Int → Carrier
-        Add     : Carrier → Carrier → Carrier
--}
-#+end_src
-{{{code(A pair of functions “on” a declared carrier type)}}}
-#+begin_src haskell
-TermFunctionsOn = TermP tuples
-{-
-TermFunctionsOn : Set → Set
-TermFunctionsOn C = (Int → C) × (C → C → C)
--}
-#+end_src
-{{{code(Or the carrier is existential)}}}
-#+begin_src haskell
-TermFunctions = TermP Σ
--- ≅  TermFunctions  =  Σ C ∶ Set  •  Σ Var : Int → C  •  (C → C → C)
-#+end_src
-
-Let's show a more intricate yet desirable use.
-{{{code(The interface of non-empty lists, with a dedicated list)}}}
-#+begin_src haskell
-PointedSemigroup = TermP record hiding (Var) renaming (Add to _⨾_)
-                     field
-                       Id      : Carrier
-                       ⨾-assoc :  Carrier → Carrier → Carrier
-{-
-≅   record PointedSemigroup  : Set₁ where
-      field
-        Carrier : Set
-        _⨾_     : Carrier → Carrier → Carrier
-        Id      : Carrier
-        ⨾-assoc :  Carrier → Carrier → Carrier
--}
-#+end_src
-
-**** Algorithmicly Obtaining Elaborated Types
-We have discussed how the generic package formers elaborate 
----each blue comment indicates a standalone isomorphic Agda rendition---,
-as such it should be unsurprising that the constituents of a package former
-are dependently typed functions /consuming/ each concrete variation in
-its traditional fashion. Let's clarify this idea further.
-
-{{{code(Our example package former)}}}
-#+begin_src haskell
-PackageFormer TermP (v : Variation) : Set where
-   Var : Int → TermP v
-   Add : TermP v → TermP v → TermP v
-#+end_src
-
-The ‘type’ of the first item, for example, is as follows
----where ~TermP v~ is rewritten using the above introduced names
-for the sake of clarity.
-{{{code(The types of a constituents of a package former)}}}
-#+begin_src haskell
-Var : (v : Variation) → Set
-
-{- Datatype constructor -}
-Var datatype   =  Int → TermData
-{- Dependent projection -}
-Var record     =  (τ : TermRecord) → Int → TermRecord.Carrier τ
-Var Σ          =  (τ : TermFunctions) → Int → proj₁ τ
-{- Parameter of a constraint -}
-Var typeclass  =  ∀{C} {{_ : TermOn C}} → Int → C
-Var tuples     =  ∀{C} → TermFunctionsOn C → Int → C
-⋯
-#+end_src
-
-An initial glance suggests that this is all ad-hoc, let us demonstrate that
-this is not the case. Suppose there were a method ~𝒯~ to obtain the user-provided types of
-constituents; e.g., the given ~Var : Int → TermP v~ is indistinguishable from ~Var : 𝒯 “Var” (TermP v)~.
-{{{code( Obtaining User-Provided Types ---Under the hood )}}}
-#+begin_src haskell
-Constituent = String -- Draft idea, not ideal.
-
-𝒯 : Constituent → Set → Set
-𝒯 “Var” X  =  Int → X
-𝒯 “Add” X  =  X → X → X
-#+end_src
-It is now trivial to reify the above prescription for ~Var~ in a uniformly fashion
----namely, ~Var = 𝓉𝓎𝓅𝒆 “Var”~.
-{{{code( Providing User-Facing Types ---Under the hood )}}}
-#+begin_src haskell
-𝓉𝓎𝓅𝒆 : Constituent → Variation → Set
-𝓉𝓎𝓅𝒆 c v@datatype  = 𝒯 c (TermP v)
-𝓉𝓎𝓅𝒆 c v@record    = (τ : TermP v) → 𝒯 c ((TermP v).Carrier τ)
-𝓉𝓎𝓅𝒆 c v@Σ         = (τ : TermP v) → 𝒯 c (proj₁ τ)
-𝓉𝓎𝓅𝒆 c v@typeclass = ∀{C} {{_ : TermP v C}} → 𝒯 c C
-𝓉𝓎𝓅𝒆 c v@tuples    = ∀{C} → TermP v C → 𝒯 c C
-⋯
-#+end_src
-For example, invoking this approach we find that ~Add~, on ~TermRecord~'s, is typed
-~𝓉𝓎𝓅𝒆 “Add” record~, which may be rewritten as
-~(τ : TermRecord) → TermRecord.Carrier τ → TermRecord.Carrier τ → TermRecord.Carrier τ~.
-That is, as expected, ~Add~ on records consumes a record value then acts as a binary
-operation on the carrier of said record value. Likewise, we invite the reader
-to check that ~Add~ on algebraic datatype ~TermData~ is typed as a binary constructor.
-
-Users have access to the elaborated types.
-{{{code(Providing User-Facing Types)}}}
-#+begin_src haskell
- TermP.Var : ∀{v} → 𝓉𝓎𝓅𝒆 “Var” v
- TermP.Add : ∀{v} → 𝓉𝓎𝓅𝒆 “Add” v
-#+end_src
-This is particularly useful when one wants to extract such types for re-use elsewhere.
-{{{code(Extracting a single ---possibly complicated--- signature)}}}
-#+begin_src haskell
-ListBop = TermP.Add datatype ∘ List
-{-
-≅  ListBop : Set → Set
-   ListBop C = (List C → List C → List C)
--}
-
-ConstrainedBop : (Set → Set) → Set
-ConstrainedBop constraint  = TermP.Add typeclass using constraint
-{-
-≅ ConstrainedBop constraint  =  ∀{C} → constraint C → C → C → C
-
--- N.B., this would not elaborate without the “using”.
--- Semantically, “P.x y using z = (P.x y)[P v ≔ z]”
--- ─the “v” appears from “∀{v}” above.
--}
-
-SetoidBop = TermP.Add record using Setoid
-{-
-≅ SetoidBop : Setoid ℓ₀ ℓ₀ → Set
-  SetoidBop S = Setoid.Carrier C → Setoid.Carrier C → Setoid.Carrier C
-
--- N.B., this would not elaborate if “Sectoid.Carrier” were undefiend.  
--}
-#+end_src
-These examples open a flurry of problems.
-
-At this stage, it is sufficient to have observed what could possibly
-be performed and that it is not without burden.
-We will not attempt to clarify any problem not propose any solution;
-the thesis effort will contend with these matters further.
-
-**** The Generality of Package Formers ---Sums & Modules
-
-Thus far we have only discussed products, however
-the proposed general notion of containers should also produce sum types
-and be used in modules ---which are just packages.
-{{{code(At “least one” of the operations is desired on a declared carrier type)}}}
-#+begin_src haskell
-TermFunctionsSumOn = TermP sum
--- ≅  TermFunctionsSumOn C  =  (Int → C) ⊎ (C → C → C)
-#+end_src
-
-In general, this yields a disjoint collection of declarations
-where each declaration is itself a Σ consisting of the context necessary
-to ensure that the operations are well-defined.
-
-For modules,
-{{{code(Using our package former \emph{within} another package)}}}
-#+begin_src haskell
-  PackageFormer MyDriver (t : TermP record renaming (Carrier to C)) : Set where ⋯
--- ≅ module MyDriver (t : TermRecord[Carrier ≔ C]) where ⋯ 
--- ≅ module MyDriver (C : Set) (Var : Int → C) (Add : C → C → C) where ⋯ 
-#+end_src
-At least two ‘free’ invocation notations ought to be supplied:
-1. ~MyDriver t~
-2. ~MyDriver type varOp addOp~
-
-Multifaceted invocations provide a common use case: No overhead to pack or unpack
-the constituents of a type former so the sole purpose of an invocation.
-However, the pragmatic feasibility of such an approach is unclear at this stage.
-
-**** Novel Genericity: ‘Package Polymorphism’
-
-We have a sufficient number of elaborations thus far to demonstrate
-that the notion of package formers is not without merit.
-It is now an appropriate moment to address an elephant in the room:
-/The phrase ~TermP v~ semantically refers to which type?/
-
-If ~v = datatype~ then ~TermP v~
-refers to the associated algebraic datatype.
-If ~v = record~, then there are at least two ways to interpret ~TermP v~:
-As either the record type or as the carrier of a record value.
-Likewise for other variations. For now, we settle with a monadic-like interpretation:
-We write ~do τ ← TermP v; ⋯~ whenever we wish to refer to the underlying carrier of a concrete
-package former. Loosely put,
-{{{code(Syntax ---Under the hood )}}}
-#+begin_src haskell
-do τ ← TermP v; b  ≈  v ╱ (λ τ → b)
-
-v@datatype  ╱ f  =  f (TermP v)
-v@record    ╱ f  =  ∀(τ : TermP v) → f ((TermP v).Carrier τ)
-v@Σ         ╱ f  =  ∀(τ : TermP v) → f (proj₁ τ)
-v@typeclass ╱ f  =  ∀{τ} {{_ : TermP v τ}} → f τ
-v@tuples    ╱ f  =  ∀{τ} → TermP v τ → f τ
-#+end_src
-The ‘over’ notation, ~_╱_~, assumes ~f~ is a function acting on types;
-however, this is not necessary, if the ~∀~ were replaced with ~λ~, then
-the result would be a term expression. This is yet another opportunity for investigation
-during the thesis effort. Moreover, there is the possibility of providing
-“implicit counterparts” to these variations,; e.g., for ~tuples~ one may want
-~∀{τ} {_ : TermP v τ} → f τ~ instead, which could be variation, say, ~tuples-imp~.
-Likewise, we may want notation ~do-Σ~ to replace \newline ~∀ ⋯ → ⋯~ with ~Σ ⋯ • ⋯~.
-
-Unsurprisingly, this approach subsumes our earlier typing elaboration: \newline
-~𝓉𝓎𝓅𝒆 c v  = do τ ← TermP v; 𝒯 c τ~.
-More concretely, for example, a notion of ‘depth’ for terms may have type
-~∀ {v} →  do τ ← TermP v; (τ → ℕ)~ ---a function
-that takes a package and yields a number.
-In the case of ~v = record~, such a function actually takes /two/
-items: The first being a record value, the second being an element of
-the carrier of that record value. In the case of ~v = typeclass~,
-the function takes an argument found by instance search. Likewise,
-for the remaining variations.
-
-Let us now turn to an example of a function operating on the above many, and all, variations of such packages.
-This example may appear contrived, yet the power of this form of polymorphism
-appears at the end of this subsection where one programs towards a /particular/
-interface and has the result /generalised/ to other variations
----a prime use case is to code against a typeclass representation and use the
-same methods on bundled records.
-{{{code(“Times Loop”: Iterate an action $n$ times. )}}}
-#+begin_src haskell
--- Suppose I have the following syntactic construction.
-repeat : TermData → ℕ → TermData
-repeat t Zero      =  Var 0
-repeat t (Succ n)  =  Add t (repeat t n)
-
--- Here is its semantic counterpart.
-run : (τ : TermRecord) → TermRecord.Carrier τ → ℕ → TermRecord.Carrier τ
-run τ t Zero      =  TermRecord.Var τ 0
-run τ t (Succ n)  =  TermRecord.Add τ t (run τ t n)
-
--- Which is merely multiplication for the naturals.
-_×_ : ℕ → ℕ → ℕ
-t × Zero     = Zero
-t × (Succ n) = t + (t × n)
-#+end_src
-
-The first two are instances of a package former, and it is not diffcult to construe the naturals as the carrier of a package former.
-After which, we should be able to write one generic function, by writing according to the pacakge former as the interface.
-{{{code(“Times Loop”: Iterate an action $n$ times. )}}}
-#+begin_src haskell
-instance
-  ℕTerms : TermOn ℕ
-  ℕTerms = record {Var = λ n → 0; Add = _+_}
-
-{- IsConsumer is defined below; ignore for now. -}
-exp : ∀{v} {{_ : IsConsumer v}}  →  do τ ← TermP v; τ → ℕ → τ
-exp t Zero     = Var 0
-exp t (Succ n) = Add t (exp t n)
-#+end_src
-For example, we immediately obtain an instance for strings.
-{{{code(“Times Loop”: Iterate an action $n$ times. )}}}
-#+begin_src haskell
-instance 
-  STerms : TermOn (List Char)
-  STerms = record {Var = λ n → []; Add = _++_}
-
-repeat-s = exp {v = typeclass}
-{- Yields a whole family, which includes:
-
-   repeat-s0 : {{TermOn (List Char)}} → List Char → ℕ → List Char
-   repeat-s0 c Zero = []
-   repeat-s0 c (Succ n) = c ++ repeat c n
--} 
-#+end_src
-
-Now that's re-use! One function for many semantically distinct types.
-Notice that invoking ~exp~ on ~ListBop~ or ~TermFunctionsSumOn~ values is ill-typed
-since the mechanically verifiable constraint ~IsConsumer~ fails for those variations.
-Indeed, we may utilise a number of constraints on our package variations, such as
-the following.
-{{{code(Under the hood constraints)}}}
-#+begin_src haskell
-data IsConsumer : Variation → Set where
-  Prod    : IsConsumer tuples
-  DepProd : IsConsumer Σ
-  Data    : IsConsumer datatype
-  Rec     : IsConsumer record
-#+end_src
-When a user defines a variation, they can signal whether it is a consumer or not.
-Likewise, one can indicate whether a variation should have ~Set~-valued operations
-on not. Note that a default mechanism could be implemented, but the user should
-continue to have the ability to enforce a particular discipline
----c.f., how ~C#~ allows the user to enforce the subtyping variance of a type former.
-{{{code(Under the hood constraints)}}}
-#+begin_src haskell
-data HasConstructiveRelations : Variation → Set where
-  Prod    : HasConstructiveRelations tuples
-  DepProd : HasConstructiveRelations Σ
-  Rec     : HasConstructiveRelations record
-#+end_src
-For example, ~data~ declarations cannot contain proofs of an arbitrary, but fixed, constructive relation
-without declaring it as a parameter to the type. Nonetheless, a user may want to be
-able to express syntactic statements about such proof terms 
----say for proof automation--- and they should have the ability to toggle such
-a feature.
-
-A more important concern is the type of ~exp~: The phrase ~do τ ← TermP v; τ → ℕ → τ~
-elaborates to different types according to the value of ~v~, whence to define ~exp~
-it seems necessary to actually pattern match on it to obtain a concrete type, which,
-for example, may contain more arguments. Case analysis on the possible packaging variations
-is far from ideal ---one might as well re-implement the definition only on the cases they
-want rather than all cases. The aim ---to be pursued further in the full thesis effort---
-is to invert the process: /Avoid case analysis in favour of a particularly convenient view./
-
-This is clarified best by referring to the current prototype language: Lisp.
-Since all data and methods in a lisp are essentially lists, when one prescribes
-how to project a value from a possibly nested datatype, then the same prescription
-essentially directs how to get to the location of that value and so we obtain
-/generic setters/. The following tiny example demonstrates this idea.
-{{{code(Generic Setters in Lisp)}}}
-#+begin_src emacs-lisp
-(setq xs '("a" nil (x y z) 12))  ;; Heterogenous list of 4 items.
-(cadar (cdaddr xs))              ;; ⇒ y
-(setf (cadar (cdaddr xs)) 'woah) ;; xs ⇒ '("a" nil (x woah z) 12))
-#+end_src
-It is this flexibility that we aim to provide to users.
-They code not against a generic variation, but rather along one that
-is the most appropriate task at hand. We would hope that it would not
-be unrealistic to then mechanically derive the other forms from it.
-For example, suppose we wish to define retracts on magmas; rather than
-define the concept for each possible view, we define it once and obtain it
-for other views.
-{{{code(Example Algebra)}}}
-#+begin_src haskell
-PackageFormer MagmaP (v : Variation) : Set where
-  _⨾_ : MagmaP v → MagmaP v → MagmaP v
-
-MagmaOn = MagmaP typeclass
-AMagma  = MagmaP record
-#+end_src
-
-The ubiquity of magmas ---literally everywhere--- lends itself to recall that
-working with structure, possibly needless structure, may usurp the goals of
-proof \parencite{purposes_of_proof}: No mathematician would naturally say
-/let M be an algebra on set C/ when it suffices to say /let M be an algebra/;
-yet it may be /convenient/ to phrase problems more elegantly when the carrier
-set is mentioned explicitly \parencite{packaging_mathematical_structures}.
-On the other hand, 
-having the carrier explicit for the sake of typeclass resolution
-relies on decidable type (non)equality; which may be resonable for a simplly
-typed language but for a DTL type normalisation generally requires non-trivial,
-non-constant, computation.
-Anyhow, as mentioned earlier, bundling data
-is akin to currying or nesting quantifiers, yet is vastly more expensive
-since library designers generally commit early to one form or another;
-in this case \newline ~AMagma ≅ Σ C : Set • MagmaOn C~ and
-~MagmaOn C ≅ Σ M : AMagma • M.Carrier ≡ C~.
-{{{code(Example Operation)}}}
-#+begin_src haskell
-retract : ∀{S T} → (f : S → T) → MagmaOn T → MagmaOn S
-retract f Tgt = record {_⨾_ = λ x y → f x ⨾ f y} where open MagmaOn Tgt
-#+end_src
-Since ~MagmaOn = MagmaP v~ where ~v = typeclass~, we would ideally be able
-to derive the generic form ---possibly via case analysis.
-{{{code(Variation Generalisation)}}}
-#+begin_src haskell
-retract-v : ∀{v}
-          → ∀ {S T} (f : S → T)
-          →  do   tgt ← MagmaP v; tgt ≡ T  -- Intentionally no parens.
-          → (do-Σ src ← MagmaP v; src ≡ S)
-retract-v = ⋯ -- Unclear at this stage.          
-#+end_src
-#  {{_ : HasCarrier v}}
-The record case could, semi-algorithmically, yield:
-{{{code(Verbose Record Case)}}}
-#+begin_src haskell
-retract-v {record}  :  ∀ {S T} (f : S → T)
-                    →  ∀ (Tgt : AMagma) → AMagma.Carrier Tgt ≡ T
-                    →  Σ (Src : AMagma) • AMagma.Carrier Src ≡ S
-retract-v {record} {S} {T} f Tgt refl =  record { Carrier = S
-                                                ;  _⨾_ = λ x y → f x ⨾ f y }
-                                       , refl
-                                       where open AMagma Tgt
-#+end_src
-From a usability perspective the trivial proofs should not be present
-and so we need to algorithmically rewrite the above type to omit them, as follows.
-We would like to preserve the argument syntax, ~retract f Tgt~, that was originally declared.
-Unfortunately, for the record case, the type of ~f~ must refer to the types of the other magamas
-if we eliminate the trivial equalities. One possible workaround, as follows, is thus to simply provide
-a omit the tedious equality proofs since they can be found by instance search.
-{{{code(Usable Record Case)}}}
-#+begin_src haskell
-retract-v {record}  :  ∀ {S T} (f : S → T)
-                    →  ∀ (Tgt : AMagma) ⦃_ : AMagma.Carrier Tgt ≡ T ⦄
-                    →  proj₁ (⦃Σ⦄ Src : AMagma • AMagma.Carrier Src ≡ S)
-retract-v {record} f Tgt  = ⋯
-
--- “⦃Σ⦄ (x : A) • B x” consists of a pair
--- where the second is found by instance search.
-#+end_src
-Notice that we also project at the end since we do not care about the tedious proof;
-nor should its existence be forced upon the user.
-
-Before we move on, there is particular reason we have deviated from our ~TermP~ example
-to the ~MagmaP~ concept. The ~datatype~ variation for ~MagmaP~ does not provide a way
-to speak of variables of the data type ---indeed ~MagmaP datatype~ has no closed terms,
-whence no terms at all. It is thus appropriate to now introduce a variation for
-syntactic terms /over/ some variable set which is then utilised by a mechanically
-derivable semantic function that is freely homomorphic.
-
-{{{code(From Syntax to Semantics)}}}
-#+begin_src haskell
-MagmaTermsOn = MagmaP term-typeclass
-{-
-≅ data MagmaTermsOn (Vars : Set) : Set where
-    Var : Vars → MagmaTermsOn Vars 
-    _⨾_  : MagmaTermsOn Vars → MagmaTermsOn Vars → MagmaTermsOn Vars
-
-MagmaTermsOn-sem : ∀ {v} {A}  →  do τ ← MagmaP v;
-                                 (f : A → τ) → MagmaTermsOn A → τ
-MagmaTermsOn-sem {record} S f (Var x) = f x
-MagmaTermsOn-sem {record} S f (l ⨾ r)  = ll s⨾ rr
-  where _⨾s_ = AMagma._⨾_ S
-        ll = MagmaTermsOn-sem {record} S f l
-        rr = MagmaTermsOn-sem {record} S f r
-⋯         
--}
-#+end_src
-
-We will return to homomorphisms later on, for now it is important to notice
-that some variations may be useless ---as in the empty datatypes.
-There is also the opportunity to explore co-inductive datatypes.
-**** Common Operations on Package Formers
-It is rather common in the record variation to have multiple instances being
-mentioned and it is desirable to refer to them with syntactically distinct yet appealing
-names ---such as using subscripts, primes, or other decoration. Moreover, a notion of
-homomorphism, structure-preservation, can usually be automatically inferred.
-
-Here we show what such declarations looks like, later we show that such things
-could be /user defined/.
-
-{{{code(An example package former)}}}
-#+begin_src haskell
-PackageFormer TermRelP (v : Variation) : Set where
-   Var : Int → TermRelP v
-   Add : TermRelP v → TermRelP v → TermRelP v
-   Rel : TermRelP v → TermRelP v → Set  -- This time we have a relation as well.
-#+end_src
-{{{code(A prime-decorated package former)}}}
-#+begin_src haskell
-Declare PackageFormer TermRelP (v : Variation) decorated (λ x → x ++ "′")
-{-
-≅ PackageFormer TermRelP′ (v : Variation) : Set where
-   Var′ : Int → TermRelP′ v
-   Add′ : TermRelP′ v → TermRelP′ v → TermRelP′ v
-   Rel′ : TermRelP′ v → TermRelP′ v → Set
-
--- Coherence Meta-property: ∀ v, d  •  TermRelP v decorated d  ≅  TermRelP v
--}
-#+end_src
-{{{code(Structure preserving operations)}}}
-#+begin_src haskell
-Declare Homomorphism TermRelP (v : Variation)
-{-
-≅ PackageFormer TermRelP-Homomorphism (v : Variation) : Set where
-
-    Src : TermRelP v   decorated  (λ x → x ++ "₁")
-    Tgt : TermRelP v   decorated  (λ x → x ++ "₂")
-
-    map : Src → Tgt  
-    -- Elaborates to “Carrier Src → Carrier Tgt” in “record” variation.
-    
-    var_preservation : ∀ n   → map (Var₁ n) ≡ Var₂ n
-    add_preservation : ∀ x y → map (Add₁ x y) ≡ Add₂ (map x) (map y)
-    rel_preservation : ∀ x y → Rel₁ x y → Rel₂ (map x) (map y)
-
-NB: The “decorated” annotations are local to the package.
--}
-#+end_src
-
-**** Inheritance & Defaults for Package Formers
-
-Things get a bit more interesting with multiple packaging,
-fields making use of dependent types, and of (multiple) default implementations.
-Besides defaults, a desirable feature of our envisioned system is the ability to lift definitional extensions
-into fields of the package, say for more efficient implementations.
-
-{{{code(Recall our example package former)}}}
-#+begin_src haskell
-PackageFormer TermP (v : Variation) : Set where
-   Var : Int → TermP v
-   Add : TermP v → TermP v → TermP v
-#+end_src
-
-{{{code(All the pieces of \texttt{TermP} but now with additionall new pieces)}}}
-#+begin_src haskell
-PackageFormer PreOrderedTermP (v : Variation) : Set  inherits-from (TermP v) where
-   Ord   : OrderedTermP v → OrderedTermP v → Set
-   Refl  : ∀ x → Ord x x
-   Trans : ∀ x y z → Ord x y → Ord y z → Ord x z
-
-   -- Two default ‘implementations’
-
-   default₁ Ord x y                =  x ≡ y
-   default₁ Refl  x                =  refl
-   default₁ Trans _ _ _ refl refl  =  refl
-
-   default₂ Ord x y                =  ⊤
-   default₂ Refl  x                =  tt
-   default₂ Trans _ _ _ _ _        =  tt
-#+end_src
-
-Notice how “free type” formation incorporates this new open-ended
-construct, ~Ord~, as a two-value holder. An alternative interpretation would
-be to eliminate it altogether from the elaborated data declaration.
-Anyhow, since we elaborate a relation as a pair former, proofs for
-such a relation cannot be included ---otherwise it's not a “free” type!
-{{{code(Derivied ADT from a package former with constructive relations)}}}
-#+begin_src haskell
-PreOrderedTermData = PreOrderedTermP data
-{-
-≅  data PreOrderedTermData : Set where
-     Var : Int → OrderedTermData
-     Add : PreOrderedTermData → PreOrderedTermData → PreOrderedTermData
-     Ord : PreOrderedTermData → PreOrderedTermData → PreOrderedTermData
-
-     -- No reflexitivity axiom on ‘Ord’, nor transitivity!
--}
-#+end_src
-{{{code(Using a ~default~ implementation)}}}
-#+begin_src haskell
-PreOrderedTermData = PreOrderedTermP data with-default₁
-{-
-≅  data PreOrderedTermData : Set where
-     Var : Int → OrderedTermData
-     Add : PreOrderedTermData → PreOrderedTermData → PreOrderedTermData
-
-     -- No ‘Ord’ construction, but instead a constructive relation and properties:
-
-     Ord : PreOrderedTermData → PreOrderedTermData → Set
-     Ord x y  =  x ≡ y
-
-     Refl  : ∀ x → Ord x x
-     Refl  x  =  refl
-
-     Trans : ∀ x y z → Ord x y → Ord y z → Ord x z
-     Trans _ _ _ refl refl  =  refl
--}
-#+end_src
-The naming ~Ord, Refl, Trans~ could have been altered to refer to the newly declared data
-type, for simplicity we have avoided such a transformation.
-Moreover, we could reserve ~with-default₀~ to simply omit constructive relations from
-being reified as data constructors.
-
-{{{code(Keeping the axioms by using a record)}}}
-#+begin_src haskell
-PreOrderedTermRecord = PreOrderedTermP record
-{-
-≅   record PreOrderedTermRecord : Set where
-      field
-        Carrier : Set
-        Var     : Int → Carrier
-        Add     : Carrier → Carrier → Carrier
-        Ord     : Carrier → Carrier → Set
-        Refl    : ∀ x → Ord x x
-        Trans   : ∀ x y z → Ord x y → Ord y z → Ord x z
-
-     -- Notice that the reflexitivity & transitivity axioms are kept!
--}
-#+end_src
-Moreover, the default implementations means we also have the following
-declaration, where distinctions are made by the occurenace, or absence, of fields.
-{{{code(Defaults yield additional elaborations)}}}
-#+begin_src haskell
-{-     
-    record PreOrderedTermRecord : Set where
-      field
-        Carrier : Set
-        Var     : Int → Carrier
-        Add     : Carrier → Carrier → Carrier
-        
-      Ord     : Carrier → Carrier → Set
-      Ord x y =  x ≡ y
-
-      Refl    : ∀ x → Ord x x
-      Refl _ = refl
-
-      Trans   : ∀ x y z → Ord x y → Ord y z → Ord x z
-      Trans _ _ _ refl refl = refl
--}
-#+end_src
-Here is our first observation of a uniform presentation of packaging,
-where the “intended use” differs: Whether we want axioms or not?
-
-Not only is the use amicable, but utilities written for the first elaboration
-effortlessly apply to instances of the second elaboration. Unfortunately,
-the relationship is not symmetric
----e.g., using the additional information provided by the default implementations,
- ~∀ x y → Ord x y → Add x y ≡ Add y x~ is provable for the latter but
-not the former. As such, there is need to be able to mark results applying
-to a subtype of a package former, or to eliminate such a desirable feature
-that reduces needless distinctions when applying utilties of the former to the
-latter. The thesis will provide a solution with a discussion of the alternatives
-and why they were not adopted.
-
-**** Package Formers Dispense with The Diamond Problem
-
-Let's consider combining multiple containers.
-{{{code(A package former for unital magmas)}}}
-#+begin_src haskell
-Package UnitalTermP (v : Variation) : Set inherits-from (TermP v) where
-   unit : UnitalTermP v
-   lid  : ∀ x → Add unit x ≡ x
-   rid  : ∀ x → Add x unit ≡ x
-#+end_src
-# -- NB: Using “Maybe”, every “TermP record” can be converted into a “UnitalTermP record”.
-{{{code(Inheriting from multiple pacakage formers)}}}
-#+begin_src haskell
-Package PreOrderedMonoid (v : Variation) : Set 
-      inherits-from (UnitalTermP v; PreOrderedTermP v) 
-  where
-   associative : ∀ x y z → (Add x y) z ≡ Add x (Add y z)
-   monotone    : ∀ x x' y y' → Ord x x' → Ord y y' → Ord (Add x y) (Add x' y')
-#+end_src
-This package ought to be indistinguishable from the following, whence allowing tremendously flexible
-declarations and uses. In particular, there is no longer a need to distinguish between a hierarchical
-and a flattened perspective, since they are considered identical.
-{{{code(Equivalent backend representation)}}}
-#+begin_src haskell
-Package PreOrderedMonoid (v : Variation) : Set where
-
-   unitaltermp : UnitalTermP v
-   preorderedtermp : PreOrderedTermP v
-
-   associative : ∀ x y z → (Add x y) z ≡ Add x (Add y z)
-   monotone    : ∀ x x' y y' → Ord x x' → Ord y y' → Ord (Add x y) (Add x' y')
-
-   -- From which sub-structure does the above “Add” arise?
-   --
-   -- The “record” and “typeclass” variations elaborate with axioms declaring
-   -- that identical names are indeed identical operations:
-   carrier_coherence : unitaltermp.Carrier ≡ preorderedtermp.Carrier
-   var_coherence     : unitaltermp.Var     ≡ preorderedtermp.Var
-   add_coherence     : unitaltermp.Add     ≡ preorderedtermp.Add
-   --
-   -- They also elaborate with default tedious implementations:
-   carrier_coherence = refl; var_coherence = refl; add_coherence = refl
-
-   -- Moreover, we can continue the ‘default’ implementation.
-   default₁ monotone _ _ _ _ refl refl = refl
-   default₂ monotone _ _ _ _ _ _       = tt
-#+end_src  
-
-**** Package Formers & Representational Shifts
-
-Let us close this section by demonstrating how this genericity can aid in
-ubiquitous representational shifts that appear rather often in dependently typed programming.
-In pedestrian languages, there are usually less ways to accomplish a task in
-dependently typed languages and so programming style is not of great concern.
-In contrast, in a DTL, a user could, for example, work over an abstract data type
-where a particular argument is fixed or where it is allowed to vary.
-The two approaches are a matter of style, but can lead to awkward situations.
-# The downside of the former is that we cannot vary, whereas in the latter
-
-# context shifting; λ-introduction; ⇒-theorem.
+# Note that “embed” in the url! ─no “?v=”, instead insert “?version=3”.
+# Note autoplay, loop, etc settings are seperated by &'s.
+# Other options: "controls=0" and "showinfo=0"
 #
-More concretely, we consider the bread and buffer of coding: Graphs.
-Without dependent types we can only speak about graphs /over/ a given vertex type,
-with dependent types we can speak about /a/ graph, irrespective of vertex type.
-The former is tantamount to the context ~Vertex : Type ⊢ Edges : Vertex → Vertex  → Type~,
-and an empty assumption context ~⊢ Vertex : Set, Edges : Vertex → Vertex → Type~
-for the latter.
-However, the latter form sometimes leads us into contexts where we have two
-graphs ~G~ and ~H~ for which we make the tedious constraint \newline ~Vertex G ≡ Vertex H~.
-It would be less clumsy to explicitly declare the two graphs to be /over/ the
-same vertex type.
+# See here for more: https://developers.google.com/youtube/player_parameters#autoplay
 
-The previous paragraph mentioned a terse dependently-typed presentation of graphs,
-let us use the classic presentation as it may be more familiar to readers.
-{{{code(Graph package former)}}}
-#+begin_src haskell
-PackageFormer GraphP (v : Variation) : Set where
-  Vertex, Edges : Set
-  src, tgt      : Edges → Vertex
-
-  -- The dependently typed notion of edges.
-  derivied
-    _⟶_ : Vertex → Vertex → Set
-    x ⟶ y  =  Σ e : Edges  •  src e ≡ x  ∧  tgt e ≡ y
-#+end_src
-
-{{{code(Graphs as records)}}}
-#+begin_src haskell
-AGraph = GraphP record renaming (Carrier to “Vertex”)
-{-
-≅   record AGraph : Set where
-      field
-        Vertex Edges : Set
-        src    tgt   : Edges → Vertex
--}
-
--- NB. The implicitly generated name “Carrier” has been identified with
--- the *declared* name “Vertex”. This is acceptable since they have the same type.
--- Without the identification, the record elaboration would have provided a
--- third type field named “Carrier”.
-#+end_src
-{{{code(Parameterised graphs as typeclasses)}}}
-#+begin_src haskell
-GraphOver = TermP typeclass renaming (Carrier to “Vertex”)
-{-
-≅   record GraphOver (Vertex : Set) : Set where
-       field
-          Edges   : Set
-          src tgt : Edges → Vertex
--}
-#+end_src
-With these in hand, our goal is to replace the following first line with the second.
-However, since both types ~GraphOver~ and ~AGraph~ are declared as one liners,
-such a transition is a cheap as possible.
-#+begin_src haskell
-(G H : AGraph) → Vertex G ≡ Vertex H → ⋯
-
-(V : Set) → (G H : GraphOver V) → ⋯
-#+end_src
-In order to /replace a semantic constraint with a syntactic constraint/
-the user simply need to use a /variant/ on packaging. Furthermore, we
-are ensured \newline ~AGraph ≅ Σ V : Set • GraphOver V~.
-
-Dependently-typed graphs are an curious structure. With a bit of renaming, and adding a few laws,
-we obtain a ‘setoid’ --i.e., an undirected graph where every node has a self-loop, and paths
-correspond are essentially edges.
-{{{code(Setoid package former)}}}
-#+begin_src haskell
-PackageFormer SetoidP (v : Variation) : Set where
-  -- Graph structure
-  Carrier : Set
-  _≈_     : Carrier → Carrier → Set
-  -- Properties
-  refl  : ∀{e}     → e ≈ e
-  sym   : ∀{d e}   → e ≈ d → d ≈ e
-  trans : ∀{c d e} → c ≈ d → d ≈ e → c ≈ d
-#+end_src
-A non-dependently-typed ‘signature’ of a structure is generally obtained by discarding the relational operators
-and all properties. For ~SetoidP~ one would immediately think the signature consists of just ~Carrier~.
-However, if we view it instead as undirected graphs with self-loops at each node and edge-transitivity, then
-one would say the signature is the vertices ~Carrier~ and the edges ~_≈_~. It is thus not clear when an item,
-~_≈_~ or ~_⟶_~, forms constructive proofs or provides a type family. As such, signature extraction thus requires
-a parameter identifying which elements constitute ‘proof matter’ ---then one simply filters a pacakge-former
-against this criterion to obtain the associated signature. More generally, this allows us to take an ~X~ structure
-and obtain may of its the associated views about where knowledge is consolidated \parencite{realms}, including:
-#+BEGIN_SRC haskell
-X         = ⟨ Carrier; Operations; Properties ⟩     -- C.f., SetoidP
-XOver C   = ⟨ Operations; Properties ⟩
-IsX C Ops = ⟨ Properties ⟩
-XSig      = ⟨ Carrier; Operations⟩                  -- C.f., GraphP
-#+END_SRC
-Having the signature in hand, one can easily and mechanically generate many derivied concepts.
-For example, a ‘homomorphism’ is a family of functions of the underlying sorts such that
-the given operations are preserved. Likewise, equality of homomorphisms is extensional equality of
-the underlying maps. One can then generate closed and open terms and their interpretation functions.
-With this approach to signature extraction, we can use the same algorithms
-for the production of, say homomorphisms or other constructs, on completely
-different algebraic structures, whether they be monoids or graphs.
-Moreover, this implies that concepts generally not considered for a class
-of algebras can easily be derived and experimented with; likewise for exploring
-new algebraic theories.
-These matters are an application, rather than a goal, of our envisioned system.
-
-:Neat_but_irrelevant:
-Sometimes constraints on an item can be derived, leaked by a signature.
-
-E.g., the signature of sets, on a carrier, leaks that the carrier necessary
-has decidable equality. 
-:End:
-
-The curiosity of graphs is that they are one of the simplest /two-sorted/ structures
-and one of the most common in computing. Counter to intuition, existing packaging
-systems, namely canonical structures and typeclasses, are oriented toward having
-a distinct parameter: They cannot work well with multi-parameters; like classical
-single-sorted algebra. However, the both /aim to solve a usability problem:/
-/Having to spell out everything is too tedious./ Typeclasses are essentially dictionary look-up,
-having unicity as an issue. Whereas canonical structures require familiarity with how unifer works
---we provide enough information to the unifer to find the desired structure-- but, in general,
-canonical structures do not scale. It is one of the thesis efforts to ensure the the unionised
-approach scales by a complex example with clear avenues of extension.
-
-It should be clear from these examples that package formers provide
-expectant generality, including the common uses one is mostly interested in.
-What about unexpected uses? What if a user wishes to utilise a representation
-we did not conceive of? They should be able to use the existing language to
-form it.
-*** Second Observation: Computing Similarity for Containers
-   
-By necessity of the first corollary, we are forced to utilise a uniform language
-between the varying notions of packaging thereby relegating their treatment
-to be a normal aspect of a language's core vernacular, rather than an extra-linguistic feature.
-The previous examples hint at possible issues regarding well-definedness of certain constructs.
-Moreover, we only elaborated on a few compositional operations,
-~inherits-from, renaming, decorated~, yet users
-may well wish to utilise their own compositional schemes and so it is imperative that we allow
-them such a flexibility.
-Consequently, users ought to be able to define their own compositional mechanisms, thereby
-necessitating that they be able to manipulate package declarations themselves
-which in-turn forces the language to be somewhat homoiconic. Moreover, to avoid a hierarchy
-of languages, the facility for manipulating package declarations must itself be a part of
-the core language, rather than an extra-linguistic feature ---c.f., Coq's Ltac.
-
-In our envisioned setup, every ~PackageFormer~ declaration adds a clause to a special
-function,
-{{{code(Under the hood)}}}
-#+begin_src haskell
-packageInfo : PackageFormer → PackageInfo
-packageInfo = ⟪compiler defined⟫ 
-#+end_src
-Where a ~PackageInfo~ consists of ~Name~, which is a list of parameter names and types, along with the name of the package former;
-and ~Declarations~, a list of name-type pairs whose last element is the target type.
-{{{code(PackageInfo: Just another package ---for “signatures”)}}}
-#+begin_src haskell
-{- Draft: Lots of string manipulation, not ideal. -}
-record PackageInfo : Set where
-  field
-    Name         : List (String × String) × String
-    Declarations : List (String × List String)
---
--- This is just another package,
--- it incidentally happens to be the representation of packages!
-#+end_src
-
-It is to be noted that there is no commitment to a string-based representation.
-It is only a prototype and the thesis will likely move to a better typed
-representation ---otherwise, we may run into too many problems of ill-formed
-package formers.
-
-{{{code(Recall our example package former)}}}
-#+begin_src haskell
-PackageFormer TermP (v : Variation) : Set where
-  Var : Int → TermP v
-  Add : TermP v → TermP v → TermP v
-#+end_src
-The above declaration provides, under the hood, the following clause to ~packageInfo~.
-{{{code(Under the hood)}}}
-#+begin_src haskell
-packageInfo TermP = record { Name         = ["v", Variation] , "TermP"
-                           ; Declarations = [ ("Var", ["Int", "TermP v"])
-                                            , ("Add", ["TermP v", "TermP v", "TermP v"])
-                                            ]
-                           }
-#+end_src
-# Note the ‘v’, whence String not Set in the defn of PackageInfo.
-
-We are now in a position to provide the semantics for the keyword ~Declare~, 
-from the previous section. It takes a ~PackageInfo~ and declares a ~PackageFormer~.
-There should be a compile-time warning if such declarations are meaningless, ill-formed.
-
-For example, the previous ~Declare PackageFormer TermRelP (v : Variation) decorated (λ x → x ++ "′")~
-can thus be obtained by a user by defining ~decorated~ as an operation on packages!
-{{{code(User-defined composition scheme)}}}
-#+begin_src haskell
-_decorated_ : PackageInfo → (String → String) → PackageInfo
-pk decorated f = record { Name         = bimap id f pk.Name
-                        ; Declarations = fmap (bimap f id) pk.Declarations
-                        }
-#+end_src
-
-To rectify the seemingly wild mixfix notions, we request from the compiler
-the following suitably general syntactic sugar.
-An operation, call it, ~altered-by~ of the type ~PackageInfo → List PackageInfo → List X → PackageInfo~
-automatically obtains the syntactic sugar ~p altered-by (q0; …; qk) with (f0; ...; fN)~ ---c.f., the ~inherits-from~ syntax above.
-
-# Woah! Look at how easy that was, no need to build it in!
-
-With such terse functional programs for forming composition schemes,
-there is no need to build much into the compiler.
-
-Users can define other similar operations, such as ~decorated-rounded~
-which replaces the first two binary relations' names with ~⊆~ and ~⊂~;
-or ~decorated-square~ to make the renamings ~⊑~ and ~⊏~.
-Additionally, such renames would propagate into any axioms or derived laws.
-Moreover, the flexibility to invoke such operations in complex ways allows for
-intricate renamings to be generated at tremendous scale without worry that
-future renames would need to be made if the orginal packages included new items.
-Numerous examples of such renaming transpire manually in the impressive
-RATH \parencite{RATH} development, as well as in Agda's standard library.
-
-When working with multiple values of the same record type, for example,
-one encounters a usability problem: Refereeing to the constituents without being verbose.
-The simplest solution is to qualify each invocation, as in ~instance.field~, however this
-is rather cumbersome, inelegant, and is awkward for mixfix names. An alternative is to
-locally rename the fields according to a scheme reflecting their use. For example, in
-a produce construction of 5 items, the field names would be renamed to have a subscript number.
-In a setting of two instances, a user may instead prefer a primed and an undecorated version
-of field names. Thus far, by hand we have created these tedious subscript and primed renamings,
-with our envisioned systems, we need no longer worry about such boilerplate.
-
-In nearly the same fashion, a user could have defined the ~inherits-from~ compositional scheme.
-Such a scheme may assume that all identically named items have the same types, and crash otherwise.
-A user could define a better scheme that takes a renaming function, or another function to handle
-the crash, or simply omitt conflicting names altogether.
-The examples suggest that many commonly occurring compositional mechanisms \parencite{tpc}
-can be directly provided by a library, rather than by a particular compiler
----this includes the ability to hide fragments, expose the largest well-defined fragment,
-and to combine packages along a given substructure.
-
-Rather than select what we think is best, we can simply provide the general mechanism to the
-library designer and allow them the freedom to provide their own schemes.
-
-*** Next Steps
-
-Our brief examples demonstrate that the less design decisions about packaging
-made by language designers, the more general, applicable, and, most importantly, increased homogeneity
-in the resulting datatype language without becoming unityped but rather thanks to being dependently-typed.
-As mentioned in the previous section on existing approaches, one formalism for
-packages is that theories and theory combinators; below we thus draw on some problems from theory combinators
-rendered toward packaging systems.
-
-We have mentioned that the ~record~ and ~typeclass~ perspectives solve the common requirement of
-structures sharing an identical field. Other than that, we have essentially only
-outlined a general mechanism for declaring packages and compositional schemes, but have not
-discussed which are the most common and most useful packaging combinators.
-It is also desirable to discuss the formal properties of such combinators
----if anything, to ensure they are sensible and behave as expected.
-Moreover, which combinators act as a basis for all packaging combinators?
-Whence their use ensures the resulting composition is well-formed
-and they could be targeted for optimisations.
-#  Soundness & Completeness proofs?
-
-To make our approach accessible, the generic package operations are brought to the user
-rather than baked into the compiler ---too great a distance for most users.
-The ~Declare~ syntax reifies ~PackageInfo~'s into package declarations, but we have not mentioned
-under what constraints it can actually provide compiler-time, or typechecking-time,
-errors of ill-formedness. Moreover, how (in)efficient is this process?
-Could it be extended to work on variable, runtime provided, declarations
-for refying packages? Perhaps there is a constraint that suffices for the most common cases?
-Moreover, having observable ~PackageInfo~'s being automatically generated for every package declaration
-renders representation hiding nearly moot.
-
-The proposed approach boarders on meta-programming.
-Can type erasure and other compiler-specific optimisations be brought into
-the homoiconic-like setting being pursued here?
-We have mentioned a few ‘built in’ variations for packaging, can such a feature
-be liberated from the compiler and be bent to the users' will?
-We would need the ability to explain how a package elaborates.
-
-Tremendous flexibility is demanded from the back-end so as to ignore needless distinctions 
-at the users' level. Whereas the practicality is promising, the feasibility of an
-implementation for such ambiguous parsing \parencite{ambiguous_parsing} is unclear.
-What effects on, say, normalisation and propositional equality happen due to
-identifying syntactically distinct items.
-
-The numerous claims and associaited bookkeeping of details pushes us into using a proof assistant; Agda.
-
-Our examples have been ‘variation’ polymorphic;
-we have been even more generic by defining ~decorated~.
-What are the limits of programming genericity provided by our scheme?
-It would unsurprising if this approach yields
-the next 700 module systems.
-
-* Approach and Timeline 
+* Approach and Timeline
 
 ** Implementation Matter
 
+#+ATTR_REVEAL: :frag (appear)
 + More than ‘research quality’ ⇒ ready for a broad audience.
 
 + Dependent types.
@@ -2294,60 +1210,65 @@ the next 700 module systems.
 
 + Reasoning and proofs?
 
-#+begin_center
- *Agda*  
+   #+begin_center
+ *Agda*
 
  ─Proof of concept language─
 #+end_center
 
 ** Next Steps
 
+#+ATTR_REVEAL: :frag (appear)
+1. Distill the /true/ requirements for a solution
 
-2. Distill the /true/ requirements for a solution
+2. Deepen understanding of the opportunities given by DTL.
 
-3. Deepen understanding of the opportunities given by DTL.
+3. Demonstrate the power of the system.
 
-4. Demonstrate the power of the system.
-
-5. Evaluate the mechanisms.
+4. Evaluate the mechanisms.
 
    - Additions actually contribute to program design?
 
-6. Make sure to have a denotational semantics for the mechanisms.
+5. Make sure to have a denotational semantics for the mechanisms.
 
-7. Refine above until elegance, or deadline, is reached, whichever comes first.
+6. Refine above until elegance, or deadline, is reached, whichever comes first.
 
 ** Timeline
 
+#+ATTR_REVEAL: :frag (appear)
  + The First Pass: May-October 2019 ::
 
    Thorough familiarity with approaches, Agda ecosystem, begun thesis writing.
 
+#+ATTR_REVEAL: :frag (appear)
 + The Middle Pass: November 2019 - February 2020 ::
-     
+
    Implement module formation primitives
    from the thesis proposal, while forming & extending
-   semantics. 
-   
+   semantics.
+
+#+ATTR_REVEAL: :frag (appear)
 + The Final Pass: March - April 2020 ::
 
      Implementations meet requirements; mechanise proofs.
-     
-* Conclusion ─Intended Outcomes 
+
+* Conclusion ─Intended Outcomes
 
 # Intended outcomes include:
 
+#+ATTR_REVEAL: :frag (appear)
   1. A clean module system for DTLs
 
   2. /Utility Objectives/: A variety of use-cases contrasting the resulting system with previous
      approaches.
-     
+
   3. A module system that enables rather than inhibits efficiency.
 
   4. Demonstrate that module features usually requiring meta-programming can be brought
      to the data-value level.
 
-#+begin_quote org  
+#+ATTR_REVEAL: :frag (appear)
+#+begin_quote org
 Implement our theory to obtain validation that it works!
 #+end_quote
 
@@ -2373,7 +1294,3 @@ Implement our theory to obtain validation that it works!
 # eval: (progn (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1))
 # compile-command: (progn (org-babel-tangle) (org-latex-export-to-pdf) (async-shell-command "open thesis-proposal.pdf"))
 # End:
-
-
-
-
