@@ -1101,7 +1101,7 @@ within the dependently-typed language Agda.
 
  #+ATTR_REVEAL: :frag t
    #+begin_quote
- Differences  ⇒?⇒  Uses & Implementations
+ Differences  ≈?⇒  Uses & Implementations
  #+end_quote
 
 ** Facets of Structuring Mechanisms: An Agda Rendition
@@ -1327,9 +1327,9 @@ open Monoid-Telescope-User ℕ 0 _+_ …
 {{{break-columns}}}
 #+REVEAL_HTML: <br>
 
-| ⇨ | Carrier sets, functions, and axioms /all/ are parameters. |
+| ◈ | Carrier sets, functions, and axioms /all/ are parameters. |
 |   |                                                         |
-| ⇨ | This parameter listing constitutes a ‘telescope’.       |
+| ◈ | This parameter listing constitutes a ‘telescope’.       |
 
 {{{end-columns}}}
 
@@ -1437,6 +1437,7 @@ T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
 *** Expressivity ─Select Bundling Level
 
 {{{begin-center}}}
+Which aspects of a structure should be exposed?
 #+begin_src haskell
 record Semigroup0 : Set₁ where …
 
@@ -1461,9 +1462,8 @@ record Semigroup3
 *** Expressivity ─Code along one type, use for another
 
 {{{begin-center}}}
+We want to code along Semigroup1 and use for ~Semigroup0~.
 #+begin_src haskell
-{- We want to code along Semigroup1 and use for Semigroup0 -}
-
 {- Recall -}
 record Semigroup0 : Set₁ where …
 record Semigroup1 (Carrier : Set) : Set₁ where …
@@ -1481,11 +1481,13 @@ translate0 : ∀{B : Set} (AS : Semigroup0)
 
 *** Excerption ─Instantiating Deeply Nested Theories
 
+Can we /please/ just declare a ~Monad~ without having to declare
+/redundant/ ~Applicative~ and ~Functor~ instances.
 #+REVEAL_HTML: <br><br>
 #+BEGIN_SRC haskell
-{- (0) -} instance Monad M       where ⋯  -- (0) needs (1), which needs (2)
-{- (1) -} instance Applicative M where ⋯  -- (1) redundant if (0) is given
-{- (2) -} instance Functor M     where ⋯
+{- (0) -} instance Monad M       where …  -- (0) needs (1), which needs (2)
+{- (1) -} instance Applicative M where …  -- (1, 2) redundant if (0) is given
+ {- (2) -} instance Functor M     where …
 #+END_SRC
 
 #+BEGIN_NOTES
@@ -1502,37 +1504,26 @@ Accessing deeply nested fields; e.g., ~Monoid.Semigroup.Magma.Carrier M~.
 
 {{{begin-columns}}}
 
-+ Blub :: Records, JSON modules ─everything is explicit
++ C-family :: Records, JSON modules ─everything is explicit
 
 + Haskell :: Single instance typeclasses ─an ‘inference’ mechanism.
 
 + OCaml :: First-class modules are essentially glorified parameters;
 	   enforces a “functor vs. function” dichotomy
 
-+ Agda :: Dependently-typed typeclasses ─solves Diamond Problem
++ [Shields, Peyton Jones 2016] ::
+     [[https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/first_class_modules.pdf][First-Class Modules for Haskell]] \\
+     Slightly beyond OCaml, but not far enough.
 
 {{{break-columns}}}
+
++ Agda :: Dependently-typed typeclasses ─solves diamond problem
 
 + Coq   :: Typeclasses with unification;
 	   canonical stuctures triggered by projections
 
-+ Category Theory :: Pullbacks! Declared coercisions are found
++ Category Theory :: Pullbacks! Declared coercions are found
      by inference then used in seemingly ill-typed expressions.
-
-    #+BEGIN_NOTES org
-#+BEGIN_SRC haskell
-   x * (y + z) well-typed
-⇐  Group._*_ ?G x (Monoid._+_ ?M y z) well-typed
-⇐  Group.Carrier ?G  ≡ Monoid.Carrier ?M
-⇐  ?G = Ring.Group ?R)  ∧ ?M ≡ Ring.Monoid ?R
-#+END_SRC
-#+END_NOTES
-
-+ Competing works? ::
-
-     /There are none!/
-
-{{{end-columns}}}
 
 #+BEGIN_NOTES org
 Random notes:
@@ -1580,6 +1571,23 @@ Random notes:
 
 #+END_NOTES
 
+    #+BEGIN_NOTES org
+#+BEGIN_SRC haskell
+   x * (y + z) well-typed
+⇐  Group._*_ ?G x (Monoid._+_ ?M y z) well-typed
+⇐  Group.Carrier ?G  ≡ Monoid.Carrier ?M
+⇐  ?G = Ring.Group ?R)  ∧ ?M ≡ Ring.Monoid ?R
+#+END_SRC
+#+END_NOTES
+{{{end-columns}}}
+
+** Competing works?
+
+#+REVEAL_HTML: <h3>
+     #+ATTR_REVEAL: :frag (appear)
+     /There are none!/
+#+REVEAL_HTML: </h3>
+
 ** Visualisation of Parts of the Proposed “Package Polymorphism”
 
 # REVEAL_HTML: <iframe width="420" height="315" src="https://www.youtube.com/embed/NYOOF9xKBz8" frameborder="0" allowfullscreen></iframe>
@@ -1611,6 +1619,11 @@ Random notes:
 | ⇨ | Unclear semantics of package formers                          |
 | ⇨ | Unclear whether semantics don't break other language features  |
 
+#+BEGIN_NOTES
+The language, Agda, currently does not possess the sufficient abstraction
+mechanisms to make this endeavour feasible within the core language.
+#+END_NOTES
+
 * Approach  :ignore:
 ** Proposed Contributions
 
@@ -1623,12 +1636,9 @@ Random notes:
 
      3. Replace metaprogramming processing with module primitives
 
-   #+ATTR_REVEAL: :frag (appear)
-   #+begin_quote
-     An implementation to obtain validation that our system ‘works’
-   #+end_quote
+     4. An implementation to obtain validation that our system ‘works’
 
-** Choice of Language
+** COMMENT Choice of Language
 
 #   *TODO* Look at the good readon why using agda, see proposal.pdf.
 
