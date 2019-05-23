@@ -33,9 +33,6 @@
 #+REVEAL_POSTAMBLE:
 #+REVEAL_PLUGINS: (markdown notes)
 #+REVEAL_EXTRA_CSS: ./local.css
-
-# (setq org-reveal-klipsify-src t)
-
 #
 # See here for examples of how fragments look
 # https://revealjs.com/#/fragments
@@ -55,44 +52,8 @@
 #+MACRO: begin-center #+REVEAL_HTML: <center><table width="50%" border="0""><tr><td>
 #+MACRO: end-center  #+REVEAL_HTML: </td><tr></table></center>
 
-:WK:
-
-+ stretch vertical and horizontal space.
-
-+ do not say /will be generated!/ Rather will behave.
-
-+ ensure page numebrs show up
-
-+ before preliminary reasearch, or earlier:
-     + mention related works.
-       - Ocaml, Coq, Lean, Haskell Extensions (existing and proposed)
-
-     + competing work.
-       - There are none.
-
-+ Problem summary immediately just before /solution requirements/!
-
-+ Make code, font, size larger.
-
-+ Use whole page, not just the middle.
-
----
-
-Say: OCaml's first-class functors are not as first class as one might except.
-They're essentially glorified parameters.
-
-What can OCaml's first-class modules do?
-
-How close are other systems to us, if there are none.
-
-:End:
-
-:Noel:
+:Remarks:
 + live demo instead of video, quality was poor. ლ(ಠ益ಠ)
-
-+ Show monoid record and typeclass side by side
-  in the “these are hte same slide”
-  - then show observation slides.
 
 + Give concrete examples.
 
@@ -102,32 +63,14 @@ How close are other systems to us, if there are none.
 
     Give a background on the problem, quickly.
 
-+ Dark slides with light colour, so that
-  there is no need to flick the lights on and
-  off.
-
 + Don't stand in front of the slides. ─use the laser pointer‼
 
 + Use the NOTES to make speaker notes.
 
-+ Mention that there are difficulties in extending the Agda compiler;
-  such as the weakeness of Agda's reflection mechanism and the need to
-  work on the GHC backend. Also about the semantics.
-
-  Metaprogramming and compiler extension.
-
-  Mention the solution pieces.
-
 + Say what is the approach I'm using to ensure that the problem is feasible.
   - Communicate that its doable and that I can do it.
 
-+ Be explicit about the problem statment and theoritical foundations
-  ­-were not inventing from the ground up­- but want a concrete system.
-
-+ Thicker font, so the people in the back can see.
-  - Maybe just make the page number larger.
-
-+ ---------------------------------------------------------------------------------------
++ Dicuss how even going to attempt doing this, the research
 
 1. catchy subtitle: reptition means we're doing something wrong.
 
@@ -138,16 +81,10 @@ How close are other systems to us, if there are none.
    five pieces together. ;-)
    Show the problem.
 
-+ Dicuss how even going to attempt doing this, the research
-
 + make it clear what I'm doing in 2 sentences:
-  Providing primitives that minimise reptition
-  for manipulaiting grouping mechansims. ???
-  without Metaprogramming.
-
-+ relocate main observation slide to after
-  the monoids, and alongside the table
-  maybe habe the isos ≅.
+  Providing primitives that minimise repetition
+  for manipulaiting grouping mechanisms,
+  without the end-user utilising preprocessing.
 
 :End:
 :How_to_enable_PDF_print_capabiility:
@@ -1053,18 +990,23 @@ Enable toc-org, then whenever you save, this toc is updated.
 
 - Introduction ---The Proposal's Story
     1. A Programming Language Has Many Tongues
-    2. Defining Modules
-    3. Facets of Structuring Mechanisms: An Agda Rendition
+    2. Exploring Grouping Mechanisms
+    3. Problem Statement
 
 - Solution Requirements
     1. Desirable Features
+    2. Related Works
     2. Visualisation of Parts of the Proposed “Package Polymorphism”
 
 - Approach
-
 - Timeline
-
 - Conclusion
+
+#+BEGIN_NOTES
+*Goal* ::   Provide primitives that minimise repetition
+  for manipulating grouping mechanisms,
+  without the end-user utilising any preprocessing.
+#+END_NOTES
 
 * Introduction ---The Proposal's Story  :ignore:
 
@@ -1168,11 +1110,11 @@ within the dependently-typed language Agda.
     Different ways one would encode monoid definitions in their
     code for different purposes
 
-    | ⇒ | Monoids as records     |
-    | ⇒ | Monoids as typeclasses |
-    | ⇒ | Monoids as tuples      |
-    | ⇒ | Monoids as telescopes  |
-    | ⇄ | Derived operations     |
+    | ⇒ | Monoids with a dynamically known carrier  |
+    | ⇒ | Monoids with a statically known carrier  |
+    | ⇒ | Monoids as raw tuples                   |
+    | ⇒ | Monoids as telescopes                   |
+    | ⇄ | Derived operations                      |
 
     #+BEGIN_NOTES
     Give idea of what's coming up, so we have a mental strucutre of
@@ -1428,6 +1370,9 @@ T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
 #+end_quote
 
 #+BEGIN_NOTES org
++ Theoretical foundations;
+  we're not inventing from the ground up but want a concrete system.
+
 + It is not that it doesn't do what we want,
   rather it captures knowledge similar to Wikipedia.
 
@@ -1438,6 +1383,39 @@ T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
 + It's a theoretical foundation, we intend
   to provide concrete tool.
 #+END_NOTES
+
+** Problem Summary
+
+# Variation on {{{begin-center}}}
+#+REVEAL_HTML: <center><table width="80%" border="0""><tr><td>
+
+#+ATTR_REVEAL: :frag (appear)
+   😧 :: Coders have to copy-paste-modify packaging structures to obtain
+   different perspectives.
+   #+ATTR_REVEAL: :frag (appear)
+   - E.g., lifting fields to parameters to
+      ensure correct-by-construction invariants.
+   - Infrastructure is either rewritten for the new perspective,
+     or conversion functions are used.
+
+   #+BEGIN_NOTES
+   Conversely, one may want to demote parameters to fields so as to be
+   able to treat a structure heterogeneously.
+
+   E.g., One may speak of “graphs on” a fixed type, but to speak of
+   graphs in general, the type cannot be fixed and must be allowed to
+   vary. One instance of this is constructing a category of graphs.
+   #+END_NOTEs
+
+#+ATTR_REVEAL: :frag (appear)
+  😄 :: A package should be written /once/.
+#+ATTR_REVEAL: :frag (appear)
+   - Desired perspectives are declared on demand.
+   - Code is written polymorphically along the package, not
+     a particular perspective.
+
+#+REVEAL_HTML: </td><tr></table></center>
+
 
 * Solution Requirements  :ignore:
 
@@ -1520,6 +1498,88 @@ Accessing deeply nested fields; e.g., ~Monoid.Semigroup.Magma.Carrier M~.
 
 #+HTML: <a href="example_hierarchy.png"><img src="example_hierarchy.png" alt="Example Hierarchy" width="900" height="580"></a> <br> ⇒ flatten hierarchies!
 
+** Related Works
+
+{{{begin-columns}}}
+
++ Blub :: Records, JSON modules ─everything is explicit
+
++ Haskell :: Single instance typeclasses ─an ‘inference’ mechanism.
+
++ OCaml :: First-class modules are essentially glorified parameters;
+	   enforces a “functor vs. function” dichotomy
+
++ Agda :: Dependently-typed typeclasses ─solves Diamond Problem
+
+{{{break-columns}}}
+
++ Coq   :: Typeclasses with unification;
+	   canonical stuctures triggered by projections
+
++ Category Theory :: Pullbacks! Declared coercisions are found
+     by inference then used in seemingly ill-typed expressions.
+
+    #+BEGIN_NOTES org
+#+BEGIN_SRC haskell
+   x * (y + z) well-typed
+⇐  Group._*_ ?G x (Monoid._+_ ?M y z) well-typed
+⇐  Group.Carrier ?G  ≡ Monoid.Carrier ?M
+⇐  ?G = Ring.Group ?R)  ∧ ?M ≡ Ring.Monoid ?R
+#+END_SRC
+#+END_NOTES
+
++ Competing works? ::
+
+     /There are none!/
+
+{{{end-columns}}}
+
+#+BEGIN_NOTES org
+Random notes:
+
++ A canonical structure is a declaration of a particular
+  instance of a record to be used by the type checker
+  to solve unification problems.
+
++ OCaml functors are more or less functions on records in Agda.
+
++ Typeclasses are tremendously helpful for having derived constructions
+  be inferrable, e.g., in Haskell ~instance f a => f (a ,a)~ to
+  produce Cartesian products for some structure ~f~ on ~a~ provided
+  there is such a structure on ~a~.
+
+  One now uses ~f~ methods, that act on a homogeneously-typed pair,
+  and it is inferred that an instance of ~f a~ is what is desired
+  --even though no explicit instance for such a pair type was declared!
+  Neato ^_^
+
++ Coq's unification is essentially Prolog in disguise.
+
++ In some sense, I intend to produce Agda package combinators that
+  are essentially Lisp in disguise.
+
++ Solve Diamond Problem using dependent types as follows:
+  #+BEGIN_SRC haskell
+  record X : Set where field doit : Set
+  record Y : Set where field x : X
+  record Z : Set where field x : X
+
+  record Ω : Set where filed y : Y, z : Z
+  {- We now can refer to two X's, possibly different -}
+
+  {- Instead, using typeclasses -}
+  record X         : Set where field doit : Set
+  record Y (x : X) : Set where
+  record Z (x : X) : Set where
+
+  record Ω : Set where filed x : X, y : Y x, z : Z x
+  #+END_SRC
+
+  With dependent types, ~X~ can be lifted to be any telescope of functions
+  that cold conflict ^_^
+
+#+END_NOTES
+
 ** Visualisation of Parts of the Proposed “Package Polymorphism”
 
 # REVEAL_HTML: <iframe width="420" height="315" src="https://www.youtube.com/embed/NYOOF9xKBz8" frameborder="0" allowfullscreen></iframe>
@@ -1532,6 +1592,24 @@ Accessing deeply nested fields; e.g., ~Monoid.Semigroup.Magma.Carrier M~.
 # Other options: "controls=0" and "showinfo=0"
 #
 # See here for more: https://developers.google.com/youtube/player_parameters#autoplay
+
+#+BEGIN_NOTES
+
++ One writes the ‘red’ code with the intent that it will
+  /behave/ like the ‘blue’ code.
+
++ Unless requested, no code is ‘generated’.
+
++ This' akin to ~deriving~ in Haskell.
+
+#+END_NOTES
+
+** Why can't this be done now?
+
+| ⇨ | Agda has a tremendously weak reflection mechanism             |
+| ⇨ | Package formers need to be introduced into the back-end       |
+| ⇨ | Unclear semantics of package formers                          |
+| ⇨ | Unclear whether semantics don't break other language features  |
 
 * Approach  :ignore:
 ** Proposed Contributions
