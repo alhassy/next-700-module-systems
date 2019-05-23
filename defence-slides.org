@@ -6,7 +6,7 @@
 
 #+TITLE: The Next 700 Module Systems
 #+DESCRIPTION: Thesis proposal for Musa Al-hassy; McMaster University 2019.
-#+AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]]
+#+AUTHOR: [[https://alhassy.github.io/next-700-module-systems-proposal][Musa Al-hassy]]
 #+EMAIL: alhassy@gmail.com
 #+OPTIONS: html-postamble:nil
 
@@ -52,7 +52,7 @@
 # Place item in a 1×1 table then center the table.
 # This works nicely for preformatted code whose indentation is important.
 #
-#+MACRO: begin-center #+REVEAL_HTML: <center><table width="50%"><tr><td>
+#+MACRO: begin-center #+REVEAL_HTML: <center><table width="50%" border="0""><tr><td>
 #+MACRO: end-center  #+REVEAL_HTML: </td><tr></table></center>
 
 :WK:
@@ -249,7 +249,17 @@ Use menu entry " C-c C-e R S" to export only current subtree, without the title 
   min-height: 770px !important;
   position: relative !important;
 }
+
+.reveal table th, .reveal table td {
+    text-align: left;
+    border: none;
+    border-left: 1px solid transparent;
+    border-right: 1px solid transparent;
+}
 #+END_EXPORT
+# Last one above is so that tables have no border; c.f. {{{begin-center}}}
+# border:none ⇒ no bottom, top, inner borders
+# border-left/right transparent ⇒ no “edge” borders
 
 # Increase vertical spacing between reveal's unnumbered & ordered listings; also definition listings, “p”aragraphs, and “pre”formatted code blocks.
 # Also the preformatted code blocks needn't have a border.
@@ -281,6 +291,7 @@ Use menu entry " C-c C-e R S" to export only current subtree, without the title 
 #
 # !important everywhere forces my suggestions.
 #
+
 
 * COMMENT Columns test
 
@@ -1033,8 +1044,27 @@ preprocessing hacks.
 \newpage
 
 * Overview
+:PROPERTIES:
+# (use-package toc-org :after org :demand t)
+# (use-package toc-org)
 
- ....
+Enable toc-org, then whenever you save, this toc is updated.
+:END:
+
+- Introduction ---The Proposal's Story
+    1. A Programming Language Has Many Tongues
+    2. Defining Modules
+    3. Facets of Structuring Mechanisms: An Agda Rendition
+
+- Solution Requirements
+    1. Desirable Features
+    2. Visualisation of Parts of the Proposed “Package Polymorphism”
+
+- Approach
+
+- Timeline
+
+- Conclusion
 
 * Introduction ---The Proposal's Story  :ignore:
 
@@ -1084,10 +1114,12 @@ within the dependently-typed language Agda.
 #+ATTR_REVEAL: :frag (appear)
    *Definition:* A typed /module, context, telescope, package former, record, typeclass/
    is a sequence of tuples:
+{{{begin-center}}}
 #+ATTR_REVEAL: :frag appear
 #+BEGIN_SRC haskell
    Name  :  Type  :=  Optional_Definition
 #+END_SRC
+{{{end-center}}}
 
 #+ATTR_REVEAL: :frag appear
    Without types, we obtain essentially JSON Objects.
@@ -1136,10 +1168,16 @@ within the dependently-typed language Agda.
     Different ways one would encode monoid definitions in their
     code for different purposes
 
-    *TODO*
+    | ⇒ | Monoids as records     |
+    | ⇒ | Monoids as typeclasses |
+    | ⇒ | Monoids as tuples      |
+    | ⇒ | Monoids as telescopes  |
+    | ⇄ | Derived operations     |
 
-    give idea of what's coming up: so we have a mental strucutre of
+    #+BEGIN_NOTES
+    Give idea of what's coming up, so we have a mental strucutre of
     where to put things, what holes fill what expectations.
+    #+END_NOTES
 
 *** Monoids as Agda Records
 
@@ -1163,7 +1201,7 @@ record Monoid-Record : Set₁ where
   pop-Idᵣ : ∀ x y  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
   pop-Idᵣ x y = cong (_⨾ y) rid
 #+END_SRC
-Carrier sets, functions, and axioms /all/ are record fields.
+⇨ Carrier sets, functions, and axioms /all/ are record fields.
 {{{end-center}}}
 #+REVEAL_HTML: </div>
 
@@ -1188,7 +1226,7 @@ record HasMonoid (Carrier : Set) : Set₁ where
 open HasMonoid {{...}} using (pop-Id-tc)
 #+END_SRC
 
-Only functions and axioms are record fields ---the carrier set is a /parameter/.
+⇨ Only functions and axioms are record fields ---the carrier set is a /parameter/.
 {{{end-center}}}
 #+REVEAL_HTML: </div>
 
@@ -1197,7 +1235,7 @@ Only functions and axioms are record fields ---the carrier set is a /parameter/.
 #+REVEAL_HTML: <div style="font-size: 70%;">
 {{{begin-columns}}}
 
-Monoids as Agda Records
+⇨ Monoids as Agda Records
  #+BEGIN_SRC haskell
 record Monoid-Record : Set₁ where
   field
@@ -1220,7 +1258,7 @@ record Monoid-Record : Set₁ where
 
 {{{break-columns}}}
 
-Monoids as Typeclasses
+⇨ Monoids as Typeclasses
  #+BEGIN_SRC haskell
 record HasMonoid (Carrier : Set) : Set₁ where
   field
@@ -1269,7 +1307,7 @@ pop-Id-Σ {{M}} x y = cong (_⨾ y) (rid {x})
 {{{break-columns}}}
 
 #+ATTR_REVEAL: :frag (appear)
-The navigational feature of record fields is /replaced/ by projections
+⇨ The navigational feature of record fields is /replaced/ by projections
 ---i.e., it's just a different encoding.
 
 #+REVEAL_HTML: <div style="font-size: 80%;">
@@ -1312,12 +1350,13 @@ instance
 
 #+REVEAL_HTML: <br> <br> <br> <br> <br>
 #+ATTR_REVEAL: :frag (appear)
- One would expect these ~pop-0~ programs to be instances of /one/ polymorphic function.
+⇨ One would expect these ~pop-0~ programs \\
+to be instances of /one/ polymorphic function.
 
-#+REVEAL_HTML: <br> <br>
+#+REVEAL_HTML: <br>
 #+ATTR_REVEAL: :frag (appear)
- Instead, we currently have three programs that are instances of /three/ different
- polymorphic functions.
+⇨ Instead, we currently have three programs that are \\
+instances of /three/ different polymorphic functions.
 
 {{{end-columns}}}
 
@@ -1344,20 +1383,19 @@ open Monoid-Telescope-User ℕ 0 _+_ …
  #+END_SRC
 
 {{{break-columns}}}
-#+REVEAL_HTML: <br> <br> <br> <br> <br>
+#+REVEAL_HTML: <br>
 
-Carrier sets, functions, and axioms /all/ are parameters.
+| ⇨ | Carrier sets, functions, and axioms /all/ are parameters. |
+|   |                                                         |
+| ⇨ | This parameter listing constitutes a ‘telescope’.       |
 
-This parameter listing constitutes a ‘telescope’.
 {{{end-columns}}}
 
 *** Interdefinability
 
-     + Different notions are thus interdefinable
-
-     + Use-cases /distinguish/ packages
-
-     + Distinctions ⇒ duplication of efforts
+     | ⇨ | Different notions are thus interdefinable |
+     | ⇨ | Use-cases /distinguish/ packages |
+     | ⇨ | Distinctions ⇒ duplication of efforts |
 
 #+ATTR_REVEAL: :frag (appear)
      *Generalise!* Use a ‘package former’, rather than
@@ -1413,13 +1451,14 @@ T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
 
 ** We can then have better …
 
-   #+ATTR_REVEAL: :frag (appear)
    + Expressivity
-     - “Package Polymorphism”
+     ⇒ “Package Polymorphism”
    + Excerption
+     ⇒ “flattening”
 
 *** Expressivity ─Select Bundling Level
 
+{{{begin-center}}}
 #+begin_src haskell
 record Semigroup0 : Set₁ where …
 
@@ -1435,14 +1474,18 @@ record Semigroup3
  (assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) : Set where
   -- no fields
 #+end_src
+{{{end-center}}}
 
 #+BEGIN_NOTES
 + Haskell /with/ existential types extension allows Semigroup0.
 #+END_NOTES
 
 *** Expressivity ─Code along one type, use for another
-  # E.g., code along ~Semigroup1~, use for ~Semigroup0~.
+
+{{{begin-center}}}
 #+begin_src haskell
+{- We want to code along Semigroup1 and use for Semigroup0 -}
+
 {- Recall -}
 record Semigroup0 : Set₁ where …
 record Semigroup1 (Carrier : Set) : Set₁ where …
@@ -1452,13 +1495,15 @@ translate1 : ∀{A B} → (f : A → B) → Bijection f
 	   → Semigroup1 A → Semigroup1 B
 
 {- Be able to use the previous for Semigroup0 -}
-translate0 : ∀{B : Set} (AS : Semigroup0) (f : Semigroup0.Carrier AS → B)
-	   → Bijection f
-	   → Semigroup0
+translate0 : ∀{B : Set} (AS : Semigroup0)
+	     (f : Semigroup0.Carrier AS → B)
+	   → Bijection f → Semigroup0
 #+end_src
+{{{end-center}}}
 
 *** Excerption ─Instantiating Deeply Nested Theories
 
+#+REVEAL_HTML: <br><br>
 #+BEGIN_SRC haskell
 {- (0) -} instance Monad M       where ⋯  -- (0) needs (1), which needs (2)
 {- (1) -} instance Applicative M where ⋯  -- (1) redundant if (0) is given
@@ -1534,7 +1579,7 @@ Accessing deeply nested fields; e.g., ~Monoid.Semigroup.Magma.Carrier M~.
 
    - Additions actually contribute to program design?
 
-5. Make sure to have a denotational semantics for the mechanisms.
+5. Ensure a denotational semantics for the mechanisms
 
 6. Refine above until elegance, or deadline, is reached, whichever comes first
 
@@ -1570,9 +1615,11 @@ Accessing deeply nested fields; e.g., ~Monoid.Semigroup.Magma.Carrier M~.
 
   3. Demonstrate that module features usually requiring meta-programming can be brought
      to the data-value level
-     #+begin_quote
-     /No more preprocessing for the end-user!/
-     #+end_quote
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_quote
+/No more preprocessing for the end-user!/
+#+end_quote
 
 * Thank-you
 
