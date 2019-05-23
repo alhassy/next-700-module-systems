@@ -11,17 +11,23 @@
 #+OPTIONS: html-postamble:nil
 
 #+OPTIONS: timestamp:nil
-#+OPTIONS: toc:1 d:nil
+#+OPTIONS: toc:nil d:nil
 
 #+OPTIONS: reveal_center:t reveal_progress:t reveal_history:t reveal_control:t
 #+OPTIONS: reveal_rolling_links:t reveal_keyboard:t reveal_overview:t num:nil
-#+OPTIONS: reveal_width:1200 reveal_height:800
+# OPTIONS: reveal_width:1200 reveal_height:800
+#+OPTIONS: reveal_height:800
 
 #+REVEAL_MARGIN: 0.1
 #+REVEAL_MIN_SCALE: 0.5
 #+REVEAL_MAX_SCALE: 2.5
-#+REVEAL_TRANS: cube
-#+REVEAL_THEME: solarized
+
+# Available transitions are: default|cube|page|concave|zoom|linear|fade|none.
+#+REVEAL_TRANS: fade
+# Available transitions are: default(black)|white|league|sky|beige|simple|serif|blood|night|moon|solarized
+#+REVEAL_THEME: sky
+# REVEAL_THEME: blood
+
 #+REVEAL_HLEVEL: 2
 # REVEAL_HEAD_PREAMBLE: <meta name="description" content="Org-Reveal Introduction.">
 #+REVEAL_POSTAMBLE:
@@ -39,6 +45,111 @@
 
 #+MACRO: myfrag  #+ATTR_REVEAL: :frag (appear)
 
+#+MACRO: begin-columns  #+REVEAL_HTML: <div style="width:50%;float:left">
+#+MACRO: break-columns  #+REVEAL_HTML: </div> <div style="width:50%;float: left">
+#+MACRO: end-columns #+REVEAL_HTML: </div>
+
+# Place item in a 1×1 table then center the table.
+# This works nicely for preformatted code whose indentation is important.
+#
+#+MACRO: begin-center #+REVEAL_HTML: <center><table width="50%"><tr><td>
+#+MACRO: end-center  #+REVEAL_HTML: </td><tr></table></center>
+
+:WK:
+
++ stretch vertical and horizontal space.
+
++ do not say /will be generated!/ Rather will behave.
+
++ ensure page numebrs show up
+
++ before preliminary reasearch, or earlier:
+     + mention related works.
+       - Ocaml, Coq, Lean, Haskell Extensions (existing and proposed)
+
+     + competing work.
+       - There are none.
+
++ Problem summary immediately just before /solution requirements/!
+
++ Make code, font, size larger.
+
++ Use whole page, not just the middle.
+
+---
+
+Say: OCaml's first-class functors are not as first class as one might except.
+They're essentially glorified parameters.
+
+What can OCaml's first-class modules do?
+
+How close are other systems to us, if there are none.
+
+:End:
+
+:Noel:
++ live demo instead of video, quality was poor. ლ(ಠ益ಠ)
+
++ Show monoid record and typeclass side by side
+  in the “these are hte same slide”
+  - then show observation slides.
+
++ Give concrete examples.
+
++ Skip slides like toc and slides you ignore.
+  - or, during the toc slide, set the stage
+    for what's coming up.
+
+    Give a background on the problem, quickly.
+
++ Dark slides with light colour, so that
+  there is no need to flick the lights on and
+  off.
+
++ Don't stand in front of the slides. ─use the laser pointer‼
+
++ Use the NOTES to make speaker notes.
+
++ Mention that there are difficulties in extending the Agda compiler;
+  such as the weakeness of Agda's reflection mechanism and the need to
+  work on the GHC backend. Also about the semantics.
+
+  Metaprogramming and compiler extension.
+
+  Mention the solution pieces.
+
++ Say what is the approach I'm using to ensure that the problem is feasible.
+  - Communicate that its doable and that I can do it.
+
++ Be explicit about the problem statment and theoritical foundations
+  ­-were not inventing from the ground up­- but want a concrete system.
+
++ Thicker font, so the people in the back can see.
+  - Maybe just make the page number larger.
+
++ ---------------------------------------------------------------------------------------
+
+1. catchy subtitle: reptition means we're doing something wrong.
+
+   A language has many languages, whence repetitive.
+
+   Maybe show a proof or something that
+   shows a DTL making use of the first
+   five pieces together. ;-)
+   Show the problem.
+
++ Dicuss how even going to attempt doing this, the research
+
++ make it clear what I'm doing in 2 sentences:
+  Providing primitives that minimise reptition
+  for manipulaiting grouping mechansims. ???
+  without Metaprogramming.
+
++ relocate main observation slide to after
+  the monoids, and alongside the table
+  maybe habe the isos ≅.
+
+:End:
 :How_to_enable_PDF_print_capabiility:
 
 1. Open your presentation with print-pdf included in the query string i.e. http://localhost:8000/?print-pdf. You can test this with revealjs.com?print-pdf.
@@ -51,7 +162,6 @@
 7. Click Save.
 
 :End:
-
 :FragmentStyles:
 The ATTR_REVEAL part must be immediately preceding the first item in a list, no new line;
 other items may be freely spaced.
@@ -104,6 +214,84 @@ Nb: Org-reveal supports /editable code blocks/ using klipsify.
   EXPORT CURRENT SUBTREE
 Use menu entry " C-c C-e R S" to export only current subtree, without the title slide and the table of content, for a quick preview of your current edition.
 :End:
+
+* css :ignore:
+
+# For the most part, I “view page source” to inspect what div or whatever it is I want
+# to alter, then I lookup the css to do so and that gives me the following ^_^
+
+# Bigger & redish (ff2d00) page numbers; max vertical and  horizontal size
+# Also reasonable ?print-pdf url extension ^_^
+#+BEGIN_EXPORT html
+<style>
+
+.reveal .slide-number {
+  font-size: 34pt;
+  color: #ff2D00; }
+
+.reveal .slides {
+  height: 100%;
+  width: 100% !important ;
+  top: 0;
+  margin-top: 0;
+}
+
+.reveal .slides>section {
+  min-height: 90%;
+  min-width:  90%;
+}
+
+.reveal .slides>section>section {
+  min-height: 100%;
+}
+
+.print-pdf .reveal .slides > section.present, .print-pdf .reveal .slides > section > section.present {
+  min-height: 770px !important;
+  position: relative !important;
+}
+#+END_EXPORT
+
+# Increase vertical spacing between reveal's unnumbered & ordered listings; also definition listings, “p”aragraphs, and “pre”formatted code blocks.
+# Also the preformatted code blocks needn't have a border.
+#+BEGIN_EXPORT html
+.reveal ul {
+    line-height: 200%
+}
+
+.reveal ol {
+    line-height: 200%
+}
+
+.reveal dl {
+    line-height: 200%
+}
+
+.reveal p {
+    line-height: 200%
+}
+
+.reveal pre {
+    font-size: 1em;
+    box-shadow:none;
+}
+
+</style>
+#+END_EXPORT
+
+#
+# !important everywhere forces my suggestions.
+#
+
+* COMMENT Columns test
+
+{{{begin-columns}}}
+hello
+
+{{{break-columns}}}
+
+nice
+{{{end-columns}}}
+
 * COMMENT Configuration
 
 ** Set the location of Reveal.js
@@ -844,7 +1032,11 @@ preprocessing hacks.
 \tableofcontents
 \newpage
 
-* Introduction ---The Proposal's Story
+* Overview
+
+ ....
+
+* Introduction ---The Proposal's Story  :ignore:
 
 ** COMMENT A Language Has Many Tongues :unreadable:
 
@@ -859,7 +1051,7 @@ preprocessing hacks.
 The first five languages telescope down into one uniform language
 within the dependently-typed language Agda. *So why not the module language?*
 
-** A Language Has Many Tongues
+** A Programming Language Has Many Tongues
 
 #+ATTR_REVEAL: :frag (appear)
 1. Expression
@@ -871,53 +1063,34 @@ within the dependently-typed language Agda. *So why not the module language?*
 7. Meta-programming
 
 #+ATTR_REVEAL: :frag t
-The first five languages telescope down into one uniform language
-within the dependently-typed language Agda. *So why not the module language?*
-
-** Main Observation
-
-{{{myfrag}}}
-   |   | Packages            |
-   | ≈ | modules             |
-   | ≈ | theories            |
-   | ≈ | contexts            |
-   | ≈ | traits, typeclasses |
-   | ≈ | interfaces          |
-   | ≈ | ⋯                   |
-   | ≈ | dependent records   |
+The first five collapse into one uniform language
+within the dependently-typed language Agda.
+ #
+# Not so, e.g., with Coq where proofs are via Ltac.
 
 #+ATTR_REVEAL: :frag t
-  #+begin_quote
-Differences  ⇒  Uses & Implementations
-#+end_quote
+*So why not the module language?*
 
-** Proposed Contributions
+#+BEGIN_NOTES
++ Let's set the stage for what's coming up.
 
-#+ATTR_REVEAL: :frag (appear)
-  1. Module system for DTLs: Modules are ordinary values.
++ Can modules be treated the same way as the others?
 
-  2. Use-cases contrasting resulting system with previous approaches.
-
-  3. A module system that enables rather than inhibits efficiency.
-
-  4. Replace metaprogramming processing with module primitives.
-
-#+ATTR_REVEAL: :frag (appear)
-#+begin_quote
-  An implementation to obtain validation that our system ‘works’
-#+end_quote
-
-* Current Approaches
++ First question then is what is a module?
+#+END_NOTES
 
 ** What is a Module?
 
 #+ATTR_REVEAL: :frag (appear)
-   *Definition:* A typed ‘module, context, telescope, package former, record, typeclass’
-   is a sequence of tuples \\
-   ~name ∶ type := optional-definition~.
+   *Definition:* A typed /module, context, telescope, package former, record, typeclass/
+   is a sequence of tuples:
+#+ATTR_REVEAL: :frag appear
+#+BEGIN_SRC haskell
+   Name  :  Type  :=  Optional_Definition
+#+END_SRC
 
-#+ATTR_REVEAL: :frag (appear)
-   Without types, we obtain essentially [[https://en.wikipedia.org/wiki/JSON][JSON Objects]].
+#+ATTR_REVEAL: :frag appear
+   Without types, we obtain essentially JSON Objects.
    # Akin to a JSON Object, which is an untyped module.
 
 #+ATTR_REVEAL: :frag (appear)
@@ -926,45 +1099,52 @@ Differences  ⇒  Uses & Implementations
 ** Expectations of Module Systems
 
 #+ATTR_REVEAL: :frag (appear)
-+ Namespacing :: New unique local scopes ⇒ de-coupling.
++ Namespacing :: New unique local scopes ⇒ de-coupling
 
-+ Information Hiding :: Inaccessibility ⇒ Implementation independence.
++ Information Hiding :: Inaccessibility ⇒ Implementation independence
 
-+ Citizenship :: Grouping mechanisms should be treated like ordinary values.
++ Citizenship :: Grouping mechanisms should be treated like ordinary values
 
-+ Polymorphism :: Grouping mechanisms should group all kinds of things without prejudice.
++ Polymorphism :: Grouping mechanisms should group all kinds of things without prejudice
 
-+ Sharing :: Module parameter computations shared across constituents.
-
-+ Object-Orientation :: Generative modules & Subtyping.
++ Object-Orientation :: Generative modules & Subtyping
 # Object-oriented notions of encapsulation
 
-** Existing Systems
+# Implementation aspect, unrelated to the others. Relocate.
+#
+# + Sharing :: Module parameter computations shared across constituents.
 
-*** Main Choices
+** What about ⋯
 
-#+ATTR_REVEAL: :frag (appear)
-+ Agda :: Intimate relationship with records; no sharing; applicative modules; typeclasses.
+ {{{myfrag}}}
+    |    | Packages          |
+    | ≈? | modules           |
+    | ≈? | theories          |
+    | ≈? | contexts          |
+    | ≈? | typeclasses       |
+    | ≈? | ⋯                 |
+    | ≈? | dependent records |
 
-+ Coq  :: Copy-paste inclusion with combinator ~<+~; generative functors; typeclasses.
-	  Canonical structures ⇒ familiarity with unifer.
-
-*** Strong Runner-ups
-#+ATTR_REVEAL: :frag (appear)
-+ Idris :: Aggressive proof erasure. Modules can be parameterised, not indexed.
-	  Named instances for Haskell-like typeclasses.
-
-+ Lean :: Quotient types & extensional equality.
-	  - Rapid development with no backwards compatibility.
-	  - Backed by Lean itself, which is not a full language.
-
-#+ATTR_REVEAL: :frag (appear)
-ATS programmer-centric, F^* refinement types, Beluga contexts,
-Isabelle locales, ⋯.
+ #+ATTR_REVEAL: :frag t
+   #+begin_quote
+ Differences  ⇒?⇒  Uses & Implementations
+ #+end_quote
 
 ** Facets of Structuring Mechanisms: An Agda Rendition
+    # Look at the good readon why using agda, see proposal.pdf.
+
+    Different ways one would encode monoid definitions in their
+    code for different purposes
+
+    *TODO*
+
+    give idea of what's coming up: so we have a mental strucutre of
+    where to put things, what holes fill what expectations.
 
 *** Monoids as Agda Records
+
+#+REVEAL_HTML: <div style="font-size: 95%;">
+{{{begin-center}}}
  #+BEGIN_SRC haskell
 record Monoid-Record : Set₁ where
   infixl 5 _⨾_
@@ -982,11 +1162,14 @@ record Monoid-Record : Set₁ where
   -- derived result
   pop-Idᵣ : ∀ x y  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
   pop-Idᵣ x y = cong (_⨾ y) rid
-
-open Monoid-Record {{...}} using (pop-Idᵣ)
 #+END_SRC
+Carrier sets, functions, and axioms /all/ are record fields.
+{{{end-center}}}
+#+REVEAL_HTML: </div>
 
 *** Monoids as Typeclasses
+#+REVEAL_HTML: <div style="font-size: 95%;">
+{{{begin-center}}}
  #+BEGIN_SRC haskell
 record HasMonoid (Carrier : Set) : Set₁ where
   infixl 5 _⨾_
@@ -1000,10 +1183,71 @@ record HasMonoid (Carrier : Set) : Set₁ where
   pop-Id-tc : ∀ x y →  x ⨾ Id ⨾ y  ≡  x ⨾ y
   pop-Id-tc x y = cong (_⨾ y) rid
 
+{- We make this record type available
+   to instance search, “typeclass”. -}
 open HasMonoid {{...}} using (pop-Id-tc)
 #+END_SRC
 
+Only functions and axioms are record fields ---the carrier set is a /parameter/.
+{{{end-center}}}
+#+REVEAL_HTML: </div>
+
+*** These are the ‘Same’
+
+#+REVEAL_HTML: <div style="font-size: 70%;">
+{{{begin-columns}}}
+
+Monoids as Agda Records
+ #+BEGIN_SRC haskell
+record Monoid-Record : Set₁ where
+  field
+    -- Interface
+    Carrier  : Set
+    Id       : Carrier
+    _⨾_      : Carrier → Carrier → Carrier
+
+    -- Constraints
+    lid   : ∀{x} → (Id ⨾ x) ≡ x
+    rid   : ∀{x} → (x ⨾ Id) ≡ x
+    assoc : ∀ x y z → (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+
+  -- derived result
+  pop-Idᵣ : ∀ x y  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
+  pop-Idᵣ x y = cong (_⨾ y) rid
+
+{-  Monoid-Record  ≅  Σ C ∶ Set • HasMonoid C  -}
+#+END_SRC
+
+{{{break-columns}}}
+
+Monoids as Typeclasses
+ #+BEGIN_SRC haskell
+record HasMonoid (Carrier : Set) : Set₁ where
+  field
+    -- Interface
+    {- Notice that “Carrier” is a parameter. -}
+    Id    : Carrier
+    _⨾_   : Carrier → Carrier → Carrier
+
+    -- Constraints
+    lid   : ∀{x} → (Id ⨾ x) ≡ x
+    rid   : ∀{x} → (x ⨾ Id) ≡ x
+    assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+  -- derived result
+  pop-Id-tc : ∀ x y →  x ⨾ Id ⨾ y  ≡  x ⨾ y
+  pop-Id-tc x y = cong (_⨾ y) rid
+
+{-  HasMonoid  ≅  λ C → Σ M ∶ Monoid-Record • M.Carrier ≡ C  -}
+#+END_SRC
+
+{{{end-columns}}}
+#+REVEAL_HTML: </div>
+
 *** Monoids as Direct Dependent Sums
+
+{{{begin-columns}}}
+
  #+BEGIN_SRC haskell
 Monoid-Σ  :  Set₁
 Monoid-Σ  =    Σ Carrier ∶ Set
@@ -1022,43 +1266,40 @@ pop-Id-Σ {{M}} x y = cong (_⨾ y) (rid {x})
 			    rid    = proj₁ (proj₂ (proj₂ (proj₂ (proj₂ M))))
  #+END_SRC
 
-*** These are the ‘Same’
+{{{break-columns}}}
 
- #+BEGIN_SRC haskell
-     Monoid-Σ  ≅  Σ C ∶ Set • HasMonoid C
+#+ATTR_REVEAL: :frag (appear)
+The navigational feature of record fields is /replaced/ by projections
+---i.e., it's just a different encoding.
 
-     HasMonoid ≅  λ C → Σ M ∶ Monoid-Record • M.Carrier ≡ C
- #+END_SRC
-
-#+ATTR_REVEAL: :frag (grow)
- #+begin_quote
- Only utility difference!
-
- Fields vs Projections
- #+end_quote
-
+#+REVEAL_HTML: <div style="font-size: 80%;">
+#+ATTR_REVEAL: :frag (appear)
 #+BEGIN_SRC haskell
-Carrier′  : Monoid-Σ → Set   -- boilerplate
-Carrier′ = proj₁
- #+END_SRC
+		   {- Boilerplate -}
+		   Carrier′  : Monoid-Σ → Set
+		   Carrier′ = proj₁
+#+END_SRC
+#+REVEAL_HTML: </div>
 
-*** Instance Declarations
- #+BEGIN_SRC haskell
+{{{end-columns}}}
+
+*** A Missing Polymorphism
+
+#+REVEAL_HTML: <div style="font-size: 90%;">
+{{{begin-columns}}}
+     #+BEGIN_SRC haskell
+ℕ-record : Monoid-Record
+ℕ-record = record { Carrier = ℕ; Id = 0; _⨾_ = _+_; ⋯ }
+
 instance
-   ℕ-record : Monoid-Record
-   ℕ-record = record { Carrier = ℕ; Id = 0; _⨾_ = _+_; ⋯ }
-
    ℕ-tc : HasMonoid ℕ
    ℕ-tc = record { Id = 0; _⨾_ = _+_; ⋯ }
 
    ℕ-Σ : Monoid-Σ
    ℕ-Σ = ℕ , 0 , _+_ , ⋯
- #+END_SRC
 
-*** No Monoids Mentioned at Use Sites
- #+BEGIN_SRC haskell
 ℕ-pop-0ᵣ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
-ℕ-pop-0ᵣ = pop-Idᵣ
+ℕ-pop-0ᵣ = pop-Idᵣ ℕ-record
 
 ℕ-pop-0-tc : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
 ℕ-pop-0-tc = pop-Id-tc
@@ -1066,45 +1307,63 @@ instance
 ℕ-pop-0-Σ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
 ℕ-pop-0-Σ = pop-Id-Σ
  #+END_SRC
+{{{break-columns}}}
+#+REVEAL_HTML: </div>
 
-#+ATTR_REVEAL: :frag (grow)
-#+begin_quote
- This suggests a hidden polymorphism!
-#+end_quote
+#+REVEAL_HTML: <br> <br> <br> <br> <br>
+#+ATTR_REVEAL: :frag (appear)
+ One would expect these ~pop-0~ programs to be instances of /one/ polymorphic function.
+
+#+REVEAL_HTML: <br> <br>
+#+ATTR_REVEAL: :frag (appear)
+ Instead, we currently have three programs that are instances of /three/ different
+ polymorphic functions.
+
+{{{end-columns}}}
 
 *** Monoids as Telescopes
+
+{{{begin-columns}}}
  #+BEGIN_SRC haskell
 module Monoid-Telescope-User
-  (Carrier : Set) (Id : Carrier) (_⨾_ : Carrier → Carrier → Carrier)
-  (lid   : ∀{x} → Id ⨾ x ≡ x) (rid : ∀{x} → x ⨾ Id ≡ x)
-  (assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))
+     (Carrier : Set			 )
+     (Id    : Carrier			 )
+     (_⨾_   : Carrier → Carrier → Carrier )
+     (lid   : ∀ {x}    →  Id ⨾ x  ≡  x	 )
+     (rid   : ∀ {x}    →  x ⨾ Id  ≡  x	 )
+     (assoc : ∀ x y z  →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z))
   where
 
   pop-Id-tel : ∀(x y : Carrier)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
   pop-Id-tel x y = cong (_⨾ y) (rid {x})
- #+END_SRC
 
-*** Telescope Use
- #+BEGIN_SRC haskell
-open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
+open Monoid-Telescope-User ℕ 0 _+_ …
 
 ℕ-pop-tel : ∀(x y : ℕ)  →  x + 0 + y  ≡  x + y
 ℕ-pop-tel =   pop-Id-tel
  #+END_SRC
 
-*** Interdefinablity
+{{{break-columns}}}
+#+REVEAL_HTML: <br> <br> <br> <br> <br>
 
-     + Different notions are thus interdefinable.
+Carrier sets, functions, and axioms /all/ are parameters.
 
-     + Use-cases /distinguishes/ packages.
+This parameter listing constitutes a ‘telescope’.
+{{{end-columns}}}
 
-     + Distinctions ⇒ duplication of efforts.
+*** Interdefinability
+
+     + Different notions are thus interdefinable
+
+     + Use-cases /distinguish/ packages
+
+     + Distinctions ⇒ duplication of efforts
 
 #+ATTR_REVEAL: :frag (appear)
      *Generalise!* Use a ‘package former’, rather than
      a particular variation.
 
-*** Theory Presentations: A Structuring Mechanism
+*** Foundational Basis: MMT-Style Theory Presentations
 
  #+BEGIN_SRC haskell
 -- Contexts
@@ -1125,24 +1384,50 @@ T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
  #+END_SRC
 
 #+ATTR_REVEAL: :frag (appear)
- #+begin_quote org
- No implementation that does anything.
- #+end_quote
+#+begin_quote org
+ A knowledge-capture mechanism
+ ─not a programming environment.
+#+end_quote
 
-* Solution Requirements
+#+BEGIN_NOTES org
++ It is not that it doesn't do what we want,
+  rather it captures knowledge similar to Wikipedia.
 
-** Missing Features
++ Their setting is more generic than DTLs
+  and so what we're doing may not even be
+  feasible there.
+
++ It's a theoretical foundation, we intend
+  to provide concrete tool.
+#+END_NOTES
+
+* Solution Requirements  :ignore:
+
+** Desirable Features
+
+#+ATTR_REVEAL: :frag (appear)
++ Uniformity :: Treat different notions of packaging the same way.
++ Genericity :: Polymorphism along packages types / package formers.
++ First-class Extensiblity :: Primitives to form new package combinators
+     /using/ the host language.
+
+** We can then have better …
+
+   #+ATTR_REVEAL: :frag (appear)
+   + Expressivity
+     - “Package Polymorphism”
+   + Excerption
 
 *** Expressivity ─Select Bundling Level
 
 #+begin_src haskell
-record Semigroup0 : Set₁ where ⋯
+record Semigroup0 : Set₁ where …
 
-record Semigroup1 (Carrier : Set): Set₁ where ⋯
+record Semigroup1 (Carrier : Set) : Set₁ where …
 
 record Semigroup2
  (Carrier : Set)
- (_⨾_     : Carrier → Carrier → Carrier) : Set where ⋯
+ (_⨾_     : Carrier → Carrier → Carrier) : Set where …
 
 record Semigroup3
  (Carrier : Set)
@@ -1151,12 +1436,22 @@ record Semigroup3
   -- no fields
 #+end_src
 
+#+BEGIN_NOTES
++ Haskell /with/ existential types extension allows Semigroup0.
+#+END_NOTES
+
 *** Expressivity ─Code along one type, use for another
   # E.g., code along ~Semigroup1~, use for ~Semigroup0~.
 #+begin_src haskell
+{- Recall -}
+record Semigroup0 : Set₁ where …
+record Semigroup1 (Carrier : Set) : Set₁ where …
+
+{- Write elegantly along Semigroup1 -}
 translate1 : ∀{A B} → (f : A → B) → Bijection f
 	   → Semigroup1 A → Semigroup1 B
 
+{- Be able to use the previous for Semigroup0 -}
 translate0 : ∀{B : Set} (AS : Semigroup0) (f : Semigroup0.Carrier AS → B)
 	   → Bijection f
 	   → Semigroup0
@@ -1165,30 +1460,26 @@ translate0 : ∀{B : Set} (AS : Semigroup0) (f : Semigroup0.Carrier AS → B)
 *** Excerption ─Instantiating Deeply Nested Theories
 
 #+BEGIN_SRC haskell
-instance Monad M       where ⋯  -- (0) needs (1), which needs (2)
-instance Applicative M where ⋯  -- (1) redundant if (0) is given
-instance Functor M     where ⋯  -- (2)
+{- (0) -} instance Monad M       where ⋯  -- (0) needs (1), which needs (2)
+{- (1) -} instance Applicative M where ⋯  -- (1) redundant if (0) is given
+{- (2) -} instance Functor M     where ⋯
 #+END_SRC
+
+#+BEGIN_NOTES
+Monad′ ≔ Monad flattenedAlong Applicative
+#+END_NOTES
 
 *** Excerption ─Instantiating Deeply Nested Theories
 
-+ Accessing deeply nested fields;
-+ e.g., ~Monoid.Semigroup.Magma.Carrier M~.
-+ ⇒ /flatten hierarchies!/
+Accessing deeply nested fields; e.g., ~Monoid.Semigroup.Magma.Carrier M~.
 
-** Desirable Features
+#+HTML: <a href="example_hierarchy.png"><img src="example_hierarchy.png" alt="Example Hierarchy" width="900" height="580"></a> <br> ⇒ flatten hierarchies!
 
-#+ATTR_REVEAL: :frag (appear)
-+ Uniformity :: Treat different notions of packaging the same way.
-+ Genericity :: Polymorphism along packages types / package formers.
-+ Extensiblity :: Primitives to form new package combinators.
+** Visualisation of Parts of the Proposed “Package Polymorphism”
 
-** Preliminary Research
-
-We have a prototype (•̀ᴗ•́)و
 # REVEAL_HTML: <iframe width="420" height="315" src="https://www.youtube.com/embed/NYOOF9xKBz8" frameborder="0" allowfullscreen></iframe>
 
-#+REVEAL_HTML: <iframe width="420" height="315" src="https://www.youtube.com/embed/NYOOF9xKBz8?version=3&autoplay=1&mute=1&loop=1" frameborder="0" allowfullscreen></iframe>
+#+REVEAL_HTML: <iframe width="1000" height="700" src="https://www.youtube.com/embed/NYOOF9xKBz8?version=3&autoplay=1&mute=1&loop=1" frameborder="0" allowfullscreen></iframe>
 
 
 # Note that “embed” in the url! ─no “?v=”, instead insert “?version=3”.
@@ -1197,80 +1488,95 @@ We have a prototype (•̀ᴗ•́)و
 #
 # See here for more: https://developers.google.com/youtube/player_parameters#autoplay
 
-* Approach and Timeline
+* Approach  :ignore:
+** Proposed Contributions
 
-** Implementation Matter
+   #+ATTR_REVEAL: :frag (appear)
+     1. Module system for DTLs: Modules are ordinary values
+	- Enables rather than inhibits efficiency
+	- Well-defined denotational semantics
+
+     2. Use-cases contrasting resulting system with previous approaches
+
+     3. Replace metaprogramming processing with module primitives
+
+   #+ATTR_REVEAL: :frag (appear)
+   #+begin_quote
+     An implementation to obtain validation that our system ‘works’
+   #+end_quote
+
+** Choice of Language
+
+#   *TODO* Look at the good readon why using agda, see proposal.pdf.
 
 #+ATTR_REVEAL: :frag (appear)
-+ More than ‘research quality’ ⇒ ready for a broad audience.
-
-+ Dependent types.
-
++ More than ‘research quality’ ⇒ ready for a broad audience
++ Dependent types
 + Existing industrial-strength compiler?
-
 + Reasoning and proofs?
 
-   #+begin_center
- *Agda*
-
- ─Proof of concept language─
+#+begin_center org
+#+ATTR_REVEAL: :frag (appear)
+ *Agda* as the proof-of-concept language
 #+end_center
 
+* Timeline :ignore:
 ** Next Steps
 
 #+ATTR_REVEAL: :frag (appear)
 1. Distill the /true/ requirements for a solution
 
-2. Deepen understanding of the opportunities given by DTL.
+2. Deepen understanding of the opportunities given by DTL
 
-3. Demonstrate the power of the system.
+3. Demonstrate the power of the system
 
-4. Evaluate the mechanisms.
+4. Evaluate the mechanisms
 
    - Additions actually contribute to program design?
 
 5. Make sure to have a denotational semantics for the mechanisms.
 
-6. Refine above until elegance, or deadline, is reached, whichever comes first.
+6. Refine above until elegance, or deadline, is reached, whichever comes first
 
 ** Timeline
 
-#+ATTR_REVEAL: :frag (appear)
- + The First Pass: May-October 2019 ::
+#+ATTR_REVEAL: :frag (appear appear appear)
++ The First Pass: May-October 2019 :: Thorough familiarity with
+      approaches, Agda internals, begun thesis writing
 
-   Thorough familiarity with approaches, Agda ecosystem, begun thesis writing.
-
-#+ATTR_REVEAL: :frag (appear)
 + The Middle Pass: November 2019 - February 2020 ::
-
    Implement module formation primitives
    from the thesis proposal, while forming & extending
-   semantics.
+   semantics
 
-#+ATTR_REVEAL: :frag (appear)
 + The Final Pass: March - April 2020 ::
-
-     Implementations meet requirements; mechanise proofs.
+   Implementations meet requirements; mechanise proofs
 
 * Conclusion ─Intended Outcomes
 
 # Intended outcomes include:
 
+#+begin_quote org
+/Copy-paste-modify is almost always a mistake!/
+
+--- Wolfram Kahl (•̀ᴗ•́)و
+#+end_quote
+
 #+ATTR_REVEAL: :frag (appear)
   1. A clean module system for DTLs
 
-  2. /Utility Objectives/: A variety of use-cases contrasting the resulting system with previous
-     approaches.
+  2. Utility Objectives: A variety of use-cases contrasting the resulting system with previous
+     approaches
 
-  3. A module system that enables rather than inhibits efficiency.
+  3. Demonstrate that module features usually requiring meta-programming can be brought
+     to the data-value level
+     #+begin_quote
+     /No more preprocessing for the end-user!/
+     #+end_quote
 
-  4. Demonstrate that module features usually requiring meta-programming can be brought
-     to the data-value level.
+* Thank-you
 
-#+ATTR_REVEAL: :frag (appear)
-#+begin_quote org
-Implement our theory to obtain validation that it works!
-#+end_quote
+  /Questions?/
 
 * COMMENT a correspondence
 
