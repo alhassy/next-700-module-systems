@@ -1,0 +1,299 @@
+#+TITLE: Package Formers
+#+DESCRIPTION: Generalising ADTS, records, typeclasses to “package formers”.
+#+AUTHOR: Musa Al-hassy
+#+EMAIL: alhassy@gmail.com
+#+STARTUP: indent
+# PROPERTY: header-args :tangle tangled.agda :comments link
+
+#+CATEGORIES: Agda MetaProgramming Lisp
+#+OPTIONS: html-postamble:nil toc:nil d:nil tag:nil
+# IMAGE: ../assets/img/org_logo.png
+# SOURCE: https://raw.githubusercontent.com/alhassy/org-agda-mode/master/literate.lagda
+
+# INCLUDE: ~/Dropbox/MyUnicodeSymbols.org
+
+* COMMENT Abstract       :ignore:
+#+BEGIN_CENTER org
+*Abstract*
+#+END_CENTER
+
+Editor extension for supporting “the next 700 module systems”.
+
+Everything here works with Agda version 2.6.0.
+
+#+TOC: headlines 2
+
+* Getting Started
+
+We're going to write a compiler in Lisp that is going to compile
+fictitious Agda code ---henceforth referred to as “700 code”---
+into currently legitimate Agda code.
+
+For example, something like:
+#+BEGIN_Example org-agda
+PackageFormer Semigroup (v : Variation) : Set where
+  field
+    _⨾_ : Semigroup v → Semigroup v → Semigroup v
+    Id  : Semigroup v
+    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+SemigroupR = Semigroup record
+SemigroupD = Semigroup data
+SemigroupT = Semigroup typeclass
+#+END_Example
+Will behave as if:
+#+BEGIN_Example org-agda
+record SemigroupR  : Set where
+  field
+    Carrier : Set
+    _⨾_ : Carrier → Carrier → Carrier
+    Id  : Carrier
+    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+data SemigroupD : Set where
+    _⨾_ : SemigroupD → SemigroupD → SemigroupD
+    Id  : SemigroupD
+
+record SemigroupT (Carrier : Set) : Set where
+  field
+    _⨾_ : Carrier → Carrier → Carrier
+    Id  : Carrier
+    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+#+END_Example
+This is a nearly 200% increase in size; that is, our fictitious code will
+save us a lot of repetition.
+
+* Textual manipulation
+Global preconditions:
+1. All package formers have exactly one explicit ~Variation~ parameter.
+2. The ~where~ keyword appears on the same line as the ~PackageFormer~ key-phrase.
+3. The name of the PackageFormer should not contain ~PackageFormer~ as a sub-identifier.
+4. The first child of the package former is the ~field~ declaration, on its own line.
+
+#+BEGIN_SRC emacs-lisp
+(defvar test
+ "
+PackageFormer Semigroup (v : Variation) : Set where
+  field
+    _⨾_ : Semigroup v → Semigroup v → Semigroup v
+    Id  : Semigroup v
+    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+SemigroupR = Semigroup record
+SemigroupD = Semigroup data
+SemigroupT = Semigroup typeclass
+")
+#+END_SRC
+
+#+RESULTS:
+: test
+
+#+BEGIN_SRC emacs-lisp
+(defun get-indentation (string)
+  "How many spaces are there at the front of ‘string’?
+
+  Property: The resulting number is ‘≤ length string’.
+  "
+  (length (s-shared-start string (s-repeat (length string) " ")))
+)
+
+(defun get-children (parent the-wild)
+  "Go into ‘the-wild’ seeking out the first occurence of ‘parent’,
+   who once found, ought to have a minimal indentation for its children.
+
+   “Minimal” in that if there are items with a greater indentation,
+    then they are children of children and should be kept.
+
+   Result is the parent followed by its children, as a list of lines.
+
+   Implementation: Look at the indentation of the
+   first child, then use that as a lower bound to find the indentation
+   of the remaining children.
+  "
+
+  (let ( (lines (s-lines the-wild)) (indentation -1) (parent-line nil) )
+    ;; Ensure: lines ≈ (parent-here . more-lines)
+    (while (not (s-contains? parent (car lines)))
+      (setq lines (cdr lines))
+      )
+
+    ;; Throw away parent, but keep its contextual line.
+    (setq parent-line (car lines))
+    (setq lines (cdr lines))
+
+    ;; How far is the first child indented?
+    (setq indentation (get-indentation (car lines)))
+
+    ;; Keep only the children that have this level of indentation.
+    (setq lines (remove-if-not (lambda (x) (<= indentation (get-indentation x))) lines))
+
+    ;; Yield the parent line along with the children lines.
+    (cons parent-line lines)
+  )
+)
+
+(defun package-former-name (declaration)
+  "Given a declaration of the form
+   “PackageFormer Semigroup (v : Variation) : Set where”
+   return the name “Semigroup”.
+  "
+  (s-chop-prefix "PackageFormer "
+    (s-chop-suffix " ("
+      (car (s-match "PackageFormer .* (" declaration))))
+)
+
+
+(defun variation-symbol (declaration)
+  "Given a declaration of the form
+   “PackageFormer Semigroup (v : Variation) : Set where”
+   return the name “v”.
+  "
+  (s-chop-prefix "("
+    (s-chop-suffix " : Variation)"
+      (car (s-match "(.*)" declaration))))
+)
+
+(defun erase-parameters (declaration)
+  "Given a declaration of the form
+   “PackageFormer Semigroup (existing-params) : Set ℓ where”
+   return
+   “PackageFormer Semigroup : Set ℓ where”
+  "
+  (s-replace
+      (car (s-match "(.*)" declaration))
+      ""
+      declaration)
+)
+
+(defun insert-parameter (param declaration)
+  "Given a declaration of the form
+   “PackageFormer Semigroup (existing-params) : Set ℓ where”
+   return
+   “PackageFormer Semigroup (existing-params) ‘param’ : Set ℓ where”
+
+   Precondition: ‘param’ is a string.
+  "
+  (let ((rest-of-line (car (s-match ": Set.*" declaration))))
+  (s-replace
+      rest-of-line
+      (concat param " " rest-of-line)
+      declaration)
+  )
+)
+
+(get-children "PackageFormer" test) ;; Includes "field"
+(package-former-name "PackageFormer Semigroup (v : Variation) : Set where") ;; ⇒ "Semigroup"
+(variation-symbol "PackageFormer Semigroup (v : Variation) : Set where") ;; ⇒ "v"
+(erase-parameters "PackageFormer Semigroup (v : Variation) : Set where") ;; no "v"
+
+(insert-parameter "(Carrier : Set)"
+  (erase-parameters "PackageFormer Semigroup (v : Variation) : Set where"))
+#+END_SRC
+
+#+RESULTS:
+: PackageFormer Semigroup  (Carrier : Set) : Set where
+
+#+BEGIN_SRC emacs-lisp
+(defun make-typeclass (decls new-name)
+
+  (let* ((pf (get-children "PackageFormer" decls))
+         (header     (car pf))
+           (pf-name (package-former-name header))
+           (pf-variation (variation-symbol header))
+         (field-decl (cadr pf)) ;; In order to maintain user-provided indentation.
+         (fields     (cddr pf))
+           (tc nil)
+         )
+
+  ;; Replace "(? : Variation)" with "(Carrier : Set)".
+  (setq header (insert-parameter "(Carrier : Set)" (erase-parameters header)))
+
+  ;; Replace "PackageFormer" with "record"
+  (setq header (s-replace "PackageFormer" "record" header))
+
+  ;; Stick all the pieces together.
+  (setq tc (s-join "\n" (cons header (cons field-decl fields))))
+
+  ;; Replace all occurences of “package-former-name followed by variation”
+  ;; with ‘Carrier’.
+  (setq tc (s-replace (concat pf-name " " pf-variation) "Carrier" tc))
+ )
+)
+
+(make-typeclass test "SemigroupT")
+
+#+END_SRC
+
+#+RESULTS:
+: record Semigroup  (Carrier : Set) : Set where
+:   field
+:     _⨾_ : Carrier → Carrier → Carrier
+:     Id  : Carrier
+:     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+#+BEGIN_SRC emacs-lisp
+(defun insert-generated-import ()
+  "In the current file, find the top-most module declaration
+   then insert an import of the generated file.
+  "
+  (interactive)
+
+  ;; TODO: Remember current location ─this' an excursion.
+
+  (beginning-of-buffer)
+
+  (condition-case nil
+    ;; attemptClause
+    (re-search-forward "open import Generated")
+    ;; recoveryBody
+    (error
+       (re-search-forward "\\(module.*\\)")
+       (replace-match "\\1\nopen import Generated")
+    )
+  )
+)
+#+END_SRC
+
+#+RESULTS:
+: insert-generated-import
+
+#+BEGIN_SRC emacs-lisp
+(defun reify-package-formers (orig-fun &rest args)
+  (interactive)
+
+  (message "Reifying package formers...")
+
+  ;; FIX: should not be needed
+  (async-shell-command "rm Generated.*")
+
+(with-temp-buffer
+    (insert
+"
+{- This file is generated ;; do not alter. -}
+open import Relation.Binary.PropositionalEquality using (_≡_)
+module Generated where \n"
+(make-typeclass test "SemigroupT")
+)
+    (write-file "Generated.agda")
+    (kill-buffer)
+)
+
+  (insert-generated-import)
+  (agda2-restart)
+  ;; call agda2-load
+  (apply orig-fun args)
+
+  "All the best coding! (•̀ᴗ•́)و)"
+)
+
+(advice-add 'agda2-load :around #'reify-package-formers)
+#+END_SRC
+
+#+RESULTS:
+
+* COMMENT footer
+
+# Local Variables:
+# eval: (visual-line-mode t)
+# compile-command: (progn (org-babel-tangle) (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1))
+# End:
