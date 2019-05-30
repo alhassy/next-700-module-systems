@@ -1,3 +1,5 @@
+# C-c C-v C-b to execute all code blocks in buffer.
+
 #+TITLE: Package Formers
 #+DESCRIPTION: Generalising ADTS, records, typeclasses to “package formers”.
 #+AUTHOR: Musa Al-hassy
@@ -12,7 +14,7 @@
 
 # INCLUDE: ~/Dropbox/MyUnicodeSymbols.org
 
-* COMMENT Abstract       :ignore:
+* Abstract       :ignore:
 #+BEGIN_CENTER org
 *Abstract*
 #+END_CENTER
@@ -194,7 +196,7 @@ SemigroupT = Semigroup typeclass
 : PackageFormer Semigroup  (Carrier : Set) : Set where
 
 #+BEGIN_SRC emacs-lisp
-(defun make-typeclass (decls new-name)
+(cl-defun make-typeclass (decls &optional new-name)
 
   (let* ((pf (get-children "PackageFormer" decls))
          (header     (car pf))
@@ -208,8 +210,12 @@ SemigroupT = Semigroup typeclass
   ;; Replace "(? : Variation)" with "(Carrier : Set)".
   (setq header (insert-parameter "(Carrier : Set)" (erase-parameters header)))
 
-  ;; Replace "PackageFormer" with "record"
-  (setq header (s-replace "PackageFormer" "record" header))
+;; Replace "PackageFormer" with "record"
+(setq header (s-replace "PackageFormer" "record" header))
+
+;; Replace PackageFormer's name with provided typeclass name.
+(unless new-name (setq new-name (concat pf-name "-typeclass")))
+(setq header (s-replace pf-name new-name header))
 
   ;; Stick all the pieces together.
   (setq tc (s-join "\n" (cons header (cons field-decl fields))))
@@ -217,39 +223,45 @@ SemigroupT = Semigroup typeclass
   ;; Replace all occurences of “package-former-name followed by variation”
   ;; with ‘Carrier’.
   (setq tc (s-replace (concat pf-name " " pf-variation) "Carrier" tc))
+
+  ;; Declare generation source matter.
+  (concat
+   "\n{- This was generated from the PackageFormer " pf-name " -}\n"
+    tc)
  )
 )
 
 (make-typeclass test "SemigroupT")
-
+(make-typeclass test)
 #+END_SRC
 
 #+RESULTS:
-: record Semigroup  (Carrier : Set) : Set where
+: record SemigroupT  (Carrier : Set) : Set where
 :   field
 :     _⨾_ : Carrier → Carrier → Carrier
 :     Id  : Carrier
 :     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
+line-move-1
+
 #+BEGIN_SRC emacs-lisp
-(defun insert-generated-import ()
+(defun insert-generated-import (name-of-generated-file)
   "In the current file, find the top-most module declaration
    then insert an import of the generated file.
   "
   (interactive)
 
   ;; TODO: Remember current location ─this' an excursion.
-
   (beginning-of-buffer)
-
-  (condition-case nil
+  (condition-case the-err
     ;; attemptClause
-    (re-search-forward "open import Generated")
-    ;; recoveryBody
+    (re-search-forward (concat "open import " name-of-generated-file))
+     ;; recoveryBody
     (error
+     ;; (message-box (format "%s" the-err))
        (re-search-forward "\\(module.*\\)")
-       (replace-match "\\1\nopen import Generated")
-    )
+       (replace-match (concat "\\1\nopen import " name-of-generated-file))
+      )
   )
 )
 #+END_SRC
@@ -258,38 +270,230 @@ SemigroupT = Semigroup typeclass
 : insert-generated-import
 
 #+BEGIN_SRC emacs-lisp
+
+(cl-defun buffer-substring-delimited-whole-buffer (start end)
+  "Return a list of all substrings in the current buffer that
+   are delimited by regexp tokesn ‘start’ and ‘end’, exclusively.
+
+  TODO: Save current position
+  "
+
+  (save-excursion
+  (let ((l nil) (continue t))
+   (beginning-of-buffer)
+
+   (while continue
+     (condition-case nil
+       ;; attemptClause
+       (setq l (cons (buffer-substring-delimited start end) l))
+       ;; recoveryBody
+       (error (setq continue nil))))
+
+   ;; We've collected items as we saw them, so ‘l’ is reverse.
+  (reverse l)
+  )
+))
+
+(cl-defun buffer-substring-delimited (start end &optional (highlight nil))
+  "
+  Get the current buffer's /next/ available substring that is delimited
+  between the regexp tokens ‘start’ up to ‘end’, exclusively.
+
+  If no tokens are found, an error is thrown.
+
+  I anticipate non-interactive use primarily and so the ‘highlight’ option
+  is off. This option simply highlights the selected region ---visual feedback
+  for the user.
+  "
+  (interactive)
+  (let (p1 p2)
+    (re-search-forward start)
+    (setq p1 (point))
+
+    (re-search-forward end)
+    (backward-word)
+    (setq p2 (point))
+
+    (when highlight ;; do we want to highlight the region?
+      (goto-char p1)
+      (push-mark p2)
+      (setq mark-active t)
+    )
+
+    ;; (copy-region-as-kill p1 p2)
+    (buffer-substring-no-properties p1 p2)
+))
+
+;; Get text delimited by quotes
+;; (buffer-substring-delimited "^\"" "^\"")
+
+;; Get text delimited by quotes
+;; (buffer-substring-delimited "^\{-" "^-\}")
+
+;; (setq it (buffer-substring-delimited-whole-buffer "^\{-700" "^-\}"))
+#+END_SRC
+
+#+RESULTS:
+: buffer-substring-delimited
+
+#+BEGIN_SRC emacs-lisp
+(cl-defun reify-instances (decls)
+ "
+ Look for the next instance of a simple PackageFormer instantation and reify it.
+ For example, “MagmaR = Magma record” finds the Magma package former and instantiates
+ it to the record variation.
+
+ TODO: This doesn't actually happen yet, for now we emit a typeclass variation
+ having the name of the variation declared.
+ "
+ (let* ( ;;(decls (s-join "\n" (buffer-substring-delimited-whole-buffer "^\{-700" "^-\}")))
+        (pf (get-children "PackageFormer" decls))
+         (header     (car pf))
+           (pf-name (package-former-name header))
+           (pf-variation (variation-symbol header))
+         (field-decl (cadr pf)) ;; In order to maintain user-provided indentation.
+         (fields     (cddr pf))
+           (tc nil)
+         (variation nil)
+           ll
+         )
+
+  ;; Buffer-centric: Refiy next single instance
+  ;;
+  ;; (re-search-forward (concat "= " pf-name))
+  ;; (forward-word)
+  ;; (setq variation (thing-at-point 'word 'no-properties))
+
+  ;; The variation instantiation declarations, top level.
+  (setq decls-vars-shush (remove-if-not (lambda (x) (s-contains?
+        (concat "= " pf-name) x)) (s-split "\n" decls)))
+
+  ;; Keep this around since we may want to produce variations wholesale with
+  ;; names: packageformer-variation; e.g., Magma-typeclass.
+  ;;
+  ;;
+  ;; the variations
+;;  (setq the-vars-shush (--map (car it) (--map (-take-last 1 it) (--map (s-split " " it) decls-vars-shush))))
+  ;;
+  ;; (dolist (variation the-vars-shush ll)
+  ;;  (setq ll (cons (make-typeclass decls (concat pf-name "-" variation)) ll)))
+
+  ;; instantation := “MagmaR = Magma record” ⇒ 4 pieces.
+  (dolist (instantation (--map (s-split " " it) decls-vars-shush) ll)
+    (setq ll (cons
+               (make-typeclass decls (-first-item instantation))
+               ll)))
+
+  (s-join "\n" ll)
+))
+
+(reify-instances test)
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+
+{- This was generated from the PackageFormer Semigroup -}
+record SemigroupT  (Carrier : Set) : Set where
+  field
+    _⨾_ : Carrier → Carrier → Carrier
+    Id  : Carrier
+    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+{- This was generated from the PackageFormer Semigroup -}
+record SemigroupD  (Carrier : Set) : Set where
+  field
+    _⨾_ : Carrier → Carrier → Carrier
+    Id  : Carrier
+    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+{- This was generated from the PackageFormer Semigroup -}
+record SemigroupR  (Carrier : Set) : Set where
+  field
+    _⨾_ : Carrier → Carrier → Carrier
+    Id  : Carrier
+    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+#+end_example
+
+
+#+BEGIN_SRC emacs-lisp
 (defun reify-package-formers (orig-fun &rest args)
   (interactive)
 
   (message "Reifying package formers...")
 
-  ;; FIX: should not be needed
-  (async-shell-command "rm Generated.*")
+  (setq in-buf-pf (s-join "\n" (buffer-substring-delimited-whole-buffer "^\{-700" "^-\}")))
+
+  (setq generated-file-name (concat(file-name-sans-extension (buffer-name))
+                  "_Generated"))
 
 (with-temp-buffer
-    (insert
-"
-{- This file is generated ;; do not alter. -}
+    (beginning-of-buffer)
+    (insert (format
+"{- This file is generated ;; do not alter. -} \n
 open import Relation.Binary.PropositionalEquality using (_≡_)
-module Generated where \n"
-(make-typeclass test "SemigroupT")
-)
-    (write-file "Generated.agda")
-    (kill-buffer)
+module %s where \n" generated-file-name))
+
+    ;; reify all instantiations of package formers
+    (insert "\n" (reify-instances in-buf-pf))
+    ;; (make-typeclass in-buf-pf) ;; TODO: Use optional ‘new-name’ to provide names.
+
+
+    ;; (mark-whole-buffer)
+    (write-region (beginning-of-buffer) (end-of-buffer)
+                  (concat generated-file-name ".agda"))
+
+    ;; MA: Using ‘(write-file "Generated.agda")’ means we make a file
+    ;; then the temporary buffer /vistis/ the agda file, which loads the
+    ;; agda process therein, which is undesirable since it could leave
+    ;; agda working on the buffer even after it has been killed!
+    ;; This would necessiate calling (agda2-restart) afterwards.
+    ;;
+    ;; Instead we write the whole region, without visiting the resuting file.
 )
 
-  (insert-generated-import)
-  (agda2-restart)
+  (insert-generated-import generated-file-name)
+
   ;; call agda2-load
   (apply orig-fun args)
-
-  "All the best coding! (•̀ᴗ•́)و)"
+  (message "700 ∷ All the best coding! (•̀ᴗ•́)و")
 )
 
 (advice-add 'agda2-load :around #'reify-package-formers)
+
 #+END_SRC
 
-#+RESULTS:
+Menu matter.
+#+BEGIN_SRC emacs-lisp
+
+(defvar 700-menu-bar-menu (make-sparse-keymap "700 PackageFormers"))
+(define-key global-map [menu-bar my-menu] (cons "700PackageFormers" 700-menu-bar-menu))
+
+(defun enable-package-formers ()
+ (interactive)
+ (advice-add 'agda2-load :around #'reify-package-formers)
+ ;; place notification in modeline
+ (setq global-mode-string
+      (cond ((consp global-mode-string)
+             (add-to-list 'global-mode-string "700 (•̀ᴗ•́)و"))
+            ((not global-mode-string)
+             (list "700 (•̀ᴗ•́)و"))
+            ((stringp global-mode-string)
+             (list "700 (•̀ᴗ•́)و" global-mode-string))))
+)
+
+(defun disable-package-formers ()
+ (interactive)
+ (advice-remove 'agda2-load #'reify-package-formers)
+ (setq global-mode-string (remove "700 (•̀ᴗ•́)و" global-mode-string))
+)
+
+(define-key 700-menu-bar-menu [enable-package-formers]
+  '(menu-item "Enable PackageFormer Generation" enable-package-formers))
+
+(define-key 700-menu-bar-menu [disable-package-formers]
+  '(menu-item "Disable PackageFormer Generation" disable-package-formers))
+#+END_SRC
 
 * COMMENT footer
 
