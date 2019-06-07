@@ -112,6 +112,12 @@ Whereas ~item 2~ has a single child and ~item 3~ is barren.
   (if string (length (s-shared-start string (s-repeat (length string) " "))) 0)
 )
 
+(stringp "nice")
+(stringp '(nice))
+
+(listp "nice")
+(listp '(nice))
+
 (cl-defun get-children (parent the-wild &key (then #'identity))
   "Go into ‘the-wild’ seeking out the first occurence of ‘parent’,
    who once found, ought to have a minimal indentation for its children.
@@ -119,20 +125,31 @@ Whereas ~item 2~ has a single child and ~item 3~ is barren.
    “Minimal” in that if there are items with a greater indentation,
     then they are children of children and should be kept.
 
+   The first input argument is of type ‘string’,
+   the second argument may be of type ‘string’ or ‘list’ of strings
+   ---if it's a string, we split along new lines---,
+   the optional ‘then’ is a function acting on children strings.
+
    Result is the parent followed by its children, as a list of lines,
    where each child has been altered using the optional ‘then’ function.
+   Moreover, we also return the rest of the unconsidered portion of ‘the-wild’:
+   Result: ( (cons parent-line children-lines) . unconsidered-remaining-lines )
 
-   The first two input arguments are of type ‘string’, the optional ‘then’ is a
-   function acting on children strings.
+   Warning: We do /not/ return the unconsidered prefix of ‘the-wild’; i.e,
+   the porition that does not contain an occurence of ‘parent’.
+   Why? I currently have no need for it, so I throw it away.
 
    Implementation: Look at the indentation of the
    first child, then use that as a lower bound to find the indentation
    of the remaining children.
   "
 
-  (let ( (lines (s-lines the-wild)) (indentation -1) (parent-line nil) )
+  (let ( (lines (if (stringp the-wild) (s-lines the-wild) the-wild))
+         (indentation -1)
+         (parent-line nil) )
     ;; Ensure: lines ≈ (parent-here . more-lines)
-    (while (not (s-contains? parent (car lines)))
+    (while (and (car lines) (not (s-contains? parent (car lines))))
+      ;; ‘and’ in-case parent is not even in the list, and so we reach nil.
       (setq lines (cdr lines))
       )
 
@@ -146,12 +163,13 @@ Whereas ~item 2~ has a single child and ~item 3~ is barren.
     ;; Keep only the children that have at least this level of indentation.
     (setq lines&more (--split-with (<= indentation (get-indentation it)) lines))
     (setq lines (car lines&more))
+    (setq unconsidered (cadr lines&more))
 
     ;; Alter the children according to the given function.
     (setq lines (mapcar then lines))
 
     ;; Yield the parent line along with the children lines.
-    (cons parent-line lines)
+    `( ,(cons parent-line lines) . ,unconsidered )
   )
 )
 #+END_SRC
@@ -161,7 +179,7 @@ Whereas ~item 2~ has a single child and ~item 3~ is barren.
 
 Let's try this out on our example hierarchy, ~eh~, from earlier.
 #+BEGIN_SRC emacs-lisp :var eh = children-example :exports both
-(get-children "+ item 1" eh)
+(car (get-children "+ item 1" eh))
 #+END_SRC
 
 #+RESULTS:
@@ -173,7 +191,11 @@ Excellent! Let's looks at the other parents.
 #+END_SRC
 
 #+RESULTS:
-| + item 2 | - subitem 1.2 |
+| (+ item 2   - subitem 1.2) | + item 3 |
+
+Notice that we found the parent ~+ item 2~ and its only child ~- subitem 1.2~, and
+we dropped the prefix of ~eh~ that did not contain the parent but have kept
+the remaining unconsidered portion of ~eh~.
 
 Finally, the barren parent.
 #+BEGIN_SRC emacs-lisp :var eh = children-example :exports both
@@ -188,8 +210,8 @@ Yay :smile:
 Before we move on, let's try altering a child clause; e.g., I'd like
 ~* subitem 1.1.1~ to be renamed to ~* subitem that is super deep~.
 #+BEGIN_SRC emacs-lisp :var eh = children-example :exports both
-(get-children "+ item 1" eh
- :then (lambda (x) (s-replace "1.1.1" "that is super deep" x)))
+(car (get-children "+ item 1" eh
+ :then (lambda (x) (s-replace "1.1.1" "that is super deep" x))))
 #+END_SRC
 
 #+RESULTS:
@@ -199,7 +221,15 @@ Nice :grin:
 
 Now the moment of truth, let's try this out on our example.
 #+BEGIN_SRC emacs-lisp :var test = test :exports both
-(get-children "PackageFormer" test) ;; Includes "field"
+(car (get-children "PackageFormer" test))
+#+END_SRC
+
+#+RESULTS:
+| PackageFormer Semigroup (v : Variation) : Set where | field | _⨾_ : Semigroup v → Semigroup v → Semigroup v | Id  : Semigroup v | assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z) |
+
+Also, does the list variant work:
+#+BEGIN_SRC emacs-lisp :var test = test :exports both
+(car (get-children "PackageFormer" (s-lines test)))
 #+END_SRC
 
 #+RESULTS:
@@ -213,6 +243,11 @@ A PackageFormer is generally declared as
 #+BEGIN_SRC haskell :tangle no
 PackageFormer Semigroup (v : Variation) : Set where …
 #+END_SRC
+
+#+RESULTS:
+: Prelude>
+: <interactive>:2:47-51: error: parse error on input ‘where’
+
 The body of such a declaration mentions ~Semigroup v~, which we would like to rewrite
 with other names when the package is instantiated. As such, we form a method for
 obtaining the name, the variation symbol, and a method to rewrite substrings of the
@@ -244,6 +279,9 @@ keyword.
 )
 #+END_SRC
 
+#+RESULTS:
+: variation-symbol
+
 Let's test these two out.
 #+BEGIN_SRC emacs-lisp
 (package-former-name "PackageFormer Semigroup (v : Variation) : Set where")
@@ -253,6 +291,9 @@ Let's test these two out.
 ;; ⇒ "v"
 #+END_SRC
 
+#+RESULTS:
+: v
+
 * Parameter Erasure & Insertion
 
 When a PackageFormer such as the following is instantiated, say, to a typeclass
@@ -261,6 +302,9 @@ variation, we must erase the variation parameter and insert a new type parameter
    PackageFormer Semigroup (v : Variation) : Set where …
 ↦  record Semigroup (Carrier : Set) : Set  where ⋯
 #+END_SRC
+
+#+RESULTS:
+: <interactive>:5:1: error: parse error on input ‘↦’
 
 #+BEGIN_SRC emacs-lisp
 ;; The following only work on headers of PackageFormer declarations.
@@ -273,8 +317,8 @@ variation, we must erase the variation parameter and insert a new type parameter
   "
   (s-collapse-whitespace ;; Convert all adjacent whitespace chars to a single space.
    (s-replace
-      (car (s-match "(.*)" declaration))
-      ""
+      (car (s-match "(.*) : Set" declaration))
+      ": Set"
       declaration))
 )
 
@@ -332,6 +376,72 @@ erase said parameter, then insert it; then we have essentially done nothing.
 
 Excellent 😎
 
+* package-formers list
+#+BEGIN_SRC emacs-lisp
+;; TODO: The global variables package-formers & instance-declaration should be /buffer/ specfic.
+
+(defvar package-formers nil
+  "The list of PackageFormer's declarations in the current Agda buffer.")
+
+(defstruct package-former-declaration
+  "Record of componenets that form a PackageFormer."
+  name variation-symbol level fields
+  )
+;; TODO: For now, PackageFormer's have no other parameters besides the variation symbol.
+
+(cl-defmethod show ((p package-former-declaration))
+  "Pretty print a package-former-declaration record value"
+
+  (concat
+    (format "PackageFormer %s (%s : Variation) : Set %s where \n"
+            (package-former-declaration-name p)
+              (package-former-declaration-variation-symbol p)
+              (package-former-declaration-level p))
+    (s-join "\n" (package-former-declaration-fields p))
+  )
+)
+
+;; nice
+;; (show (car package-formers))
+
+(defun load-package-former-declaration (lines)
+  "The input ‘lines’ mut be a list of lines forming a full PackageFormer declaration;
+   e.g., obtained by calling ‘get-children’.
+
+   It is parsed and added to the list of ‘package-formers’.
+  "
+
+  ;; Precondition Example, with intentionally strange whitespacing:
+  ;; header ≈ “PackageFormer Semigroup   (v : Variation) : Set  ( ℓexpr)   where”
+
+  (-let [header (car lines)]
+    (add-to-list 'package-formers
+               (make-package-former-declaration
+                   :name             (substring-delimited-$ "PackageFormer $here (" header)
+                   :variation-symbol (substring-delimited-$ "($here : Variation"    header)
+                     ;; ‘level’ may be “”, that's okay.
+                   :level            (substring-delimited-$ "Set $here where"       header)
+                   :fields           (cdr lines))) ;; maybe skip line with “fields” header?
+  )
+)
+#+END_SRC
+
+#+RESULTS:
+: load-package-former-declaration
+
+testing
+#+BEGIN_SRC emacs-lisp :var test = test
+(setq package-formers nil)
+
+(load-package-former-declaration
+ (car (get-children "PackageFormer" test)))
+
+; test
+(substring-delimited-$ "Set $here where" (caar (get-children "PackageFormer" test)))
+#+END_SRC
+
+#+RESULTS:
+
 * ~instantiate~ ---the /backend/ core utility
 Let's put the pieces together.
 #+BEGIN_SRC emacs-lisp
@@ -348,6 +458,9 @@ Let's put the pieces together.
   "Given a PackageFormer declaration, instantiate it into a concrete Agda type.
 
    Remarks or example values:
+
+   - ‘decls’ is immediately provided to ‘get-children’, so it may be a string
+      or a list.
 
    - ‘type’: The replacement for “PackageFormer”; default is “record”.
 
@@ -382,7 +495,7 @@ Let's put the pieces together.
      This is the identity function by default.
   "
 
-  (let* ((pf (get-children "PackageFormer" decls))
+  (let* ((pf (car (get-children "PackageFormer" decls)))
          (header     (car pf))
          (pf-name (package-former-name header))
          (pf-variation (variation-symbol header))
@@ -445,10 +558,35 @@ Let's instantiate our test example from earlier to produce a typeclass.
 #+RESULTS:
 :
 : {- This was generated from the PackageFormer Semigroup -}
-: record Semigroup-typeclass (Carrier : Set) : Set where
+: record Semigroup-typeclass-g105 (Carrier : Set) : Set where
 :   field
 :     _⨾_ : Carrier → Carrier → Carrier
 :     Id  : Carrier
+:     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+#+BEGIN_SRC emacs-lisp :var test = test :exports both
+;; (instantiate test)
+
+(setq _test (show (car package-formers)))
+
+(instantiate _test :variation-replacement "noice")
+
+;; (erase-parameters _test)
+; (insert-parameter "(nn : ?)" (erase-parameters _test)))
+
+;; (instantiate-as-typeclass (show (car package-formers)))
+;; (instantiate (show (car package-formers)))
+;; -as-typeclass (show (car package-formers)))
+;; (stringp (show (car package-formers)))
+#+END_SRC
+
+#+RESULTS:
+:
+: {- This was generated from the PackageFormer Semigroup -}
+: record Semigroup-nil-g106 noice : Set where
+:   field
+:     _⨾_ : Semigroup-nil-g106 → Semigroup-nil-g106 → Semigroup-nil-g106
+:     Id  : Semigroup-nil-g106
 :     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
 What about a bundled up record declaration?
@@ -464,7 +602,7 @@ What about a bundled up record declaration?
 #+RESULTS:
 :
 : {- This was generated from the PackageFormer Semigroup -}
-: record Semigroup-record-g6  : Set where
+: record Semigroup-semantics-g107  : Set where
 :   field
 :     Carrier : Set
 :     _⨾_ : Carrier → Carrier → Carrier
@@ -482,6 +620,9 @@ First, a helper function.
   (car (-take-last 1 (s-split "→" field)))
 )
 #+END_SRC
+
+#+RESULTS:
+: field-target
 
 Let's test it out:
 #+BEGIN_SRC emacs-lisp :var test = test :exports both
@@ -541,6 +682,9 @@ Let's package these particular toggle configurations into their own functions.
 )
 #+END_SRC
 
+#+RESULTS:
+: instantiate-as-typeclass
+
 #+BEGIN_SRC emacs-lisp :var test = test :exports both
 (cl-defun instantiate-as-record (decls &key new-name (carrier "Carrier"))
 
@@ -562,6 +706,9 @@ Let's package these particular toggle configurations into their own functions.
 
 #+END_SRC
 
+#+RESULTS:
+: instantiate-as-record
+
 #+BEGIN_SRC emacs-lisp :var test = test :exports both
 (cl-defun instantiate-as-data (decls &key new-name (carrier "Carrier"))
 
@@ -573,12 +720,12 @@ Let's package these particular toggle configurations into their own functions.
    - ‘carrier’: What is the carrier of this new instance? Default is “Carrier”.
 
   "
-  (let* ((pf (get-children "PackageFormer" decls))
+  (let* ((pf (car (get-children "PackageFormer" decls)))
          (header     (car pf))
          (pf-name (package-former-name header)))
 
     (instantiate test  :new-name new-name
-                         :name-suffix "syntax"
+                       :name-suffix "syntax"
                        :type "data"
                        :omit-field-header t
                        :keep-fields (lambda (f) (s-contains? pf-name (field-target f)))
@@ -602,14 +749,14 @@ Let's package these particular toggle configurations into their own functions.
 #+begin_example
 
 {- This was generated from the PackageFormer Semigroup -}
-record Semigroup-typeclass-g23 (Carrier : Set) : Set where
+record Semigroup-typeclass-g108 (Carrier : Set) : Set where
   field
     _⨾_ : Carrier → Carrier → Carrier
     Id  : Carrier
     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
 {- This was generated from the PackageFormer Semigroup -}
-record Semigroup-record-g24  : Set where
+record Semigroup-record-g109  : Set where
   field
     Carrier : Set
     _⨾_ : Carrier → Carrier → Carrier
@@ -617,9 +764,9 @@ record Semigroup-record-g24  : Set where
     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
 {- This was generated from the PackageFormer Semigroup -}
-data Semigroup-syntax-g25  : Set where
-    _⨾_ : Semigroup-syntax-g25 → Semigroup-syntax-g25 → Semigroup-syntax-g25
-    Id  : Semigroup-syntax-g25
+data Semigroup-syntax-g110  : Set where
+    _⨾_ : Semigroup-syntax-g110 → Semigroup-syntax-g110 → Semigroup-syntax-g110
+    Id  : Semigroup-syntax-g110
 #+end_example
 
 Notice that the results contained generated names since no names were provided.
@@ -630,6 +777,7 @@ The aim is to process test enclosed in ~{-700 ⋯ -}~ comments,
 produce legitimate Agda from that, and ensure the generated Agda is accessible to the
 current buffer automatically.
 
+** TODO substring-delimited and friends
 First, the function to get everything in these special “700-comments”.
 #+BEGIN_SRC emacs-lisp
 (cl-defun buffer-substring-delimited (start end &optional (highlight nil))
@@ -639,11 +787,9 @@ First, the function to get everything in these special “700-comments”.
 
   If no tokens are found, an error is thrown.
 
-  I anticipate non-interactive use primarily and so the ‘highlight’ option
-  is off. This option simply highlights the selected region ---visual feedback
+  The ‘highlight’ option simply highlights the selected region ---visual feedback
   for the user.
   "
-  (interactive)
   (let (p1 p2)
     (re-search-forward start)
     (setq p1 (point))
@@ -672,7 +818,6 @@ Let's obtain the contents of /all/ 700-comments.
   "Return a list of all substrings in the current buffer that
    are delimited by regexp tokens ‘start’ and ‘end’, exclusively.
   "
-
   (save-excursion
     (let ((l nil) (continue t))
      (beginning-of-buffer)
@@ -694,6 +839,63 @@ Let's obtain the contents of /all/ 700-comments.
 #+RESULTS:
 : buffer-substring-delimited-whole-buffer
 
+#+BEGIN_SRC emacs-lisp
+(cl-defun substring-delimited
+    (prefix suffix string &key preserve-spaces longest-substring)
+  "Assuming ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle
+   by default, unless ‘longest-substring’ is true, in which case yield /longest/
+   such needle.
+
+  Unless ‘preserve-spaces’ is true, we convert all adjacent whitespace
+  characters to a single space in the input ‘string’ and trim any surrounding
+  whitespace from the resulting output needle string.
+  "
+
+  (let (longest-needle context first-ending result)
+
+    (unless preserve-spaces (setq string (s-collapse-whitespace string)))
+    (setq context (concat prefix ".*" suffix))
+    (setq longest-needle (s-chop-prefix prefix
+                           (s-chop-suffix suffix
+                             (car (s-match context string)))))
+
+    (setq first-ending (s-index-of suffix longest-needle))
+    (setq result (if (and (not longest-substring) first-ending)
+                       (substring longest-needle 0 (1- first-ending))
+                       longest-needle))
+    (if preserve-spaces result (s-trim result))
+  )
+)
+
+(cl-defun substring-delimited-$
+    (context string &key preserve-spaces longest-substring)
+  "Assuming ‘context’ = “⟪prefix⟫ $here ⟪suffix⟫”
+   and ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle
+   by default, unless ‘longest-substring’ is true, in which case yield /longest/
+   such needle.
+
+  Unless ‘preserve-spaces’ is true, we convert all adjacent whitespace
+  characters to a single space in the input ‘string’ and trim any surrounding
+  whitespace from the resulting output needle string.
+  "
+
+  (-let [pre-post (s-split "$here" context)]
+    (substring-delimited (car pre-post) (s-trim (cadr pre-post)) string
+     :preserve-spaces preserve-spaces :longest-substring longest-substring)
+  )
+)
+
+;; testing
+(setq _header "PackageFormer  Semigroup   (  v : Variation) : Set (  ℓexpr)   where")
+(substring-delimited "PackageFormer " "(" _header :preserve-spaces t :longest-substring t)
+(substring-delimited "PackageFormer " "(" _header :preserve-spaces t)
+(substring-delimited "PackageFormer " "(" _header)
+(substring-delimited-$ "PackageFormer $here (" _header) ;; nice!
+#+END_SRC
+
+#+RESULTS:
+: Semigroup
+
 :RndmTests:
 #+BEGIN_SRC emacs-lisp :tangle no
 ;; Get text delimited by quotes
@@ -704,8 +906,11 @@ Let's obtain the contents of /all/ 700-comments.
 
 ;; (setq it (buffer-substring-delimited-whole-buffer "^\{-700" "^-\}"))
 #+END_SRC
-:End:
 
+#+RESULTS:
+
+:End:
+** insert-generated-import
 Let's give the current buffer access to the location of the generated file.
 #+BEGIN_SRC emacs-lisp
 (defun insert-generated-import (name-of-generated-file)
@@ -730,103 +935,128 @@ Let's give the current buffer access to the location of the generated file.
 )
 #+END_SRC
 
-Now for the /frontend/ core utility.
+#+RESULTS:
+: insert-generated-import
+
+** instantiations-remaining list
 #+BEGIN_SRC emacs-lisp
-(defvar package-formers nil "The list of PackageFormer's declarations in the current Agda buffer.")
-(defvar instantiations-remaining nil "The PackageFormer instantiations that need to be performed.")
+(defvar instantiations-remaining nil
+  "The PackageFormer instantiations that need to be performed.")
 
-(cl-defun parse-700-comments ()  ;; TODO
+(defstruct instance-declaration
+  "Record of componenets for an PackageFormer instance declaration:
+   ⟪name⟫ = ⟪package-former⟫ ⟪variation⟫.
   "
-    0. Catenate all 700-comments into a single string.
-    1. Traverse the string:
-    2. If we view a PackageFormer declaration, add to global ‘package-formers’ list.
-    3. If we view a “lhs = rhs” equation, add to global ‘instantiations-remaining’ list.
+  name package-former variation
+) ;; TODO: Add consideration for ‘renaming’ clauses!
+  ;; Need to alter load-instance-declaration and maybe no other methods.
+
+(defun load-instance-declaration (line)
+  "If the current ‘line’ string is an instance declaration,
+   then parse and add it to the list of ‘instantiations-remaining’;
+   else do nothing.
+
+   Returns t if an instance-declaration was loaded, otherwise nil.
   "
+
+  ;; Example instance declaration: “MagmaR = Magma record”
+  ;; ⇒ 4 pieces, sepearted by spaces, where second item must be an equality.
+
+  (let ( (pieces (s-split " " line)) )
+   (when (and (<= 4 (length pieces)) (equal (nth 1 pieces) "="))
+     (add-to-list 'instantiations-remaining
+                  (make-instance-declaration :name           (nth 0 pieces)
+                                             :package-former (nth 2 pieces)
+                                             :variation      (nth 3 pieces)
+                                             ))
+     t ;; Indicate that an instance was loaded.
+   )
   )
-
-(cl-defun reify-instances (decls)
- "
- Look for the /next/ instance of a simple PackageFormer instantation and reify it.
- For example, “MagmaR = Magma record” finds the Magma package former and instantiates
- it to the record variation.
-
- TODO: This doesn't actually happen yet, for now we emit a typeclass variation
- having the name of the variation declared.
- "
- (let* ( ;;(decls (s-join "\n" (buffer-substring-delimited-whole-buffer "^\{-700" "^-\}"))) ;; testing
-        (pf (get-children "PackageFormer" decls))
-        (header     (car pf))
-        (pf-name (package-former-name header))
-        (variation nil)
-        ll
-        )
-
-  ;; Buffer-centric: Refiy next single instance
-  ;;
-  ;; (re-search-forward (concat "= " pf-name))
-  ;; (forward-word)
-  ;; (setq variation (thing-at-point 'word 'no-properties))
-
-  ;; TODO: Step 0: Load all PackageFormers into a global list, ‘package-formers’.
-
-  ;; The variation instantiation declarations, top level.
-  (setq decls-vars-shush (remove-if-not (lambda (x) (s-contains?
-        (concat "= " pf-name) x)) (s-split "\n" decls)))
-
-  ;; Keep this around since we may want to produce variations wholesale with
-  ;; names: packageformer-variation; e.g., Magma-typeclass.
-  ;;
-  ;;
-  ;; the variations
-;;  (setq the-vars-shush (--map (car it) (--map (-take-last 1 it) (--map (s-split " " it) decls-vars-shush))))
-  ;;
-  ;; (dolist (variation the-vars-shush ll)
-  ;;  (setq ll (cons (make-typeclass decls (concat pf-name "-" variation)) ll)))
-
-  ;; instantation := “MagmaR = Magma record” ⇒ 4 pieces.
-  (dolist (instantation (--map (s-split " " it) decls-vars-shush) ll)
-    (setq ll (cons
-               (make-typeclass decls (-first-item instantation))
-               ll)))
-
-  (s-join "\n" ll)
-))
-
-(reify-instances test)
+)
 #+END_SRC
 
 #+RESULTS:
-#+begin_example
-{- This was generated from the PackageFormer Semigroup -}
-record SemigroupT  (Carrier : Set) : Set where
-  field
-    _⨾_ : Carrier → Carrier → Carrier
-    Id  : Carrier
-    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+: load-instance-declaration
 
-{- This was generated from the PackageFormer Semigroup -}
-record SemigroupD  (Carrier : Set) : Set where
-  field
-    _⨾_ : Carrier → Carrier → Carrier
-    Id  : Carrier
-    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+** parse-700-comments
+#+BEGIN_SRC emacs-lisp
+(defvar 700-comments nil
+  "The contents of the 700-comments.
 
-{- This was generated from the PackageFormer Semigroup -}
-record SemigroupR  (Carrier : Set) : Set where
-  field
-    _⨾_ : Carrier → Carrier → Carrier
-    Id  : Carrier
-    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-#+end_example
+   If this variable does not change, we short-circut all processing.
+  ") ;; TODO
 
+(cl-defun parse-700-comments ()
+  "
+   Parse comments of the form “{-700 ⋯ -}” and add all PackageFormer declarations
+   to the ‘package-formers’ list and all instantations to the ‘instantiations-remaining’ list.
+  "
+  (interactive)
+
+  (let (item lines) ;; ‘item’ is either a PackageFormer or instantiation declaration.
+
+  ;; Step 0: Catenate all 700-comments into a single string.
+  (setq 700-comments (s-join "\n" (buffer-substring-delimited-whole-buffer "^\{-700" "^-\}")))
+  ;; TODO: Assign to a local var, check equality against global 700-comments,
+  ;; if identical, no more processing since everything already generated.
+
+  ;; View comments as a sequence of lines, ignore empty lines ---which are not in our grammar.
+  (setq lines (--remove (s-blank? (s-collapse-whitespace it)) (s-lines 700-comments)))
+
+  ;; Traverse the 700-comments:
+  ;; If we view a “lhs = rhs” equation, add to global ‘instantiations-remaining’ list.
+  ;; If we view a PackageFormer declaration, add to global ‘package-formers’ list.
+  (while lines
+   (setq item (car lines))
+   (if (load-instance-declaration item) (setq lines (cdr lines))
+     ;; Else we have a PackageFormer declaration:
+     ;; Get it along with the remaining 700-comments.
+     (setq item (get-children "PackageFormer" lines))
+     (load-package-former-declaration (car item))
+     (setq lines (cdr item))))
+
+  (message "Finished parsing 700-comments.")
+  )
+)
+#+END_SRC
+
+#+RESULTS:
+: parse-700-comments
+
+* Now for the /frontend/ core utility
+
+#+BEGIN_SRC emacs-lisp
+(cl-defun reify-instances ()
+ " Instantiate all items in ‘instantiations-remaining’.
+ "
+ (interactive)
+ (let* (result name pf-type pf variation reify)
+
+   (dolist (inst instantiations-remaining)
+        (setq name (instance-declaration-name inst))
+          (setq variation (instance-declaration-variation inst))
+        (setq pf-type (instance-declaration-package-former inst))
+        (setq pf (car (--filter (equal pf-type (package-former-declaration-name it)) package-formers)))
+        (setq reify (pcase (instance-declaration-variation inst)
+                      ("typeclass" (instantiate-as-typeclass (show pf) :new-name name))
+                      ("record" (instantiate-as-record (show pf) :new-name name))
+                      ("data" (instantiate-as-data (show pf) :new-name name))
+                    (otherwise  (message-box "Error: Variation %s not supported yet." variation))
+              ))
+        (setq result (-cons* reify result)))
+
+   (s-join "\n" result)
+))
+
+(global-set-key (kbd "<f7>") 'reify-instances)
+#+END_SRC
+
+#+RESULTS:
+: reify-instances
 
 #+BEGIN_SRC emacs-lisp
 (defun reify-package-formers (orig-fun &rest args)
   (interactive)
-
-  (message "Reifying package formers...")
-
-  (setq in-buf-pf (s-join "\n" (buffer-substring-delimited-whole-buffer "^\{-700" "^-\}")))
 
   ;; Sometimes we may want the full name due to files being in a nested
   ;; directory hierarchy:
@@ -834,22 +1064,25 @@ record SemigroupR  (Carrier : Set) : Set where
   (setq generated-file-name (concat(file-name-sans-extension (buffer-name))
                   "_Generated"))
 
-(with-temp-buffer
+  ;; This’ inefficent.
+  (setq package-formers nil)
+  (setq instantiations-remaining nil)
+  (parse-700-comments)
+
+  (with-temp-buffer
     (beginning-of-buffer)
-    (insert (format
-"{- This file is generated ;; do not alter. -} \n
-open import Relation.Binary.PropositionalEquality using (_≡_)
-module %s where \n" generated-file-name))
 
-    ;; reify all instantiations of package formers
-    (insert "\n" (reify-instances in-buf-pf))
-    ;; (make-typeclass in-buf-pf) ;; TODO: Use optional ‘new-name’ to provide names.
-
+    (insert (s-join "\n" `(
+             "{- This file is generated ;; do not alter. -}"
+             "open import Relation.Binary.PropositionalEquality using (_≡_)"
+               "open import Level as ℓ"
+             ,(format "module %s where " generated-file-name)
+             ,(reify-instances))))
 
     ;; (mark-whole-buffer)
     (write-region (beginning-of-buffer) (end-of-buffer)
                   (concat generated-file-name ".agda"))
-
+    )
     ;; MA: Using ‘(write-file "Generated.agda")’ means we make a file
     ;; then the temporary buffer /vistis/ the agda file, which loads the
     ;; agda process therein, which is undesirable since it could leave
@@ -857,22 +1090,19 @@ module %s where \n" generated-file-name))
     ;; This would necessiate calling (agda2-restart) afterwards.
     ;;
     ;; Instead we write the whole region, without visiting the resuting file.
-)
 
   (insert-generated-import generated-file-name)
-
   ;; call agda2-load
   (apply orig-fun args)
   (message "700 ∷ All the best coding! (•̀ᴗ•́)و")
 )
 
 (advice-add 'agda2-load :around #'reify-package-formers)
-
 #+END_SRC
 
 #+RESULTS:
 
-Menu matter.
+* TODO Minor mode ---Menu matter
 #+BEGIN_SRC emacs-lisp
 
 (defvar 700-menu-bar-menu (make-sparse-keymap "700 PackageFormers"))
@@ -908,10 +1138,45 @@ Menu matter.
 | menu-item | Disable PackageFormer Generation | disable-package-formers |
 
 * TODO missing features
++ [A] Generated.agda needs to inherit all open/import declarations from parent.
 + [A] Lifting a field to the parameter level.
   - [A] “pf typeclass lifting N” lifts the first N fields to the parameter level.
 + [A] Explain how generative modules can be emulated.
 + [B] Renaming?
+
+  #+BEGIN_SRC emacs-lisp
+(defun generate-all-instances () ;; TODO
+  "For each PackageFormer ‘pf’, produce the default instances:
+   ‘pf-record’, ‘pf-typeclass’, ‘pf-data’.
+
+   Use: You want a particular instance in rapid developement and don't want
+   to be bothered to give it a name. Or experimenting and unsure which instance
+   is most desirable, so have access to all of them.
+
+   Possible extensions:
+   0. Introduce concrete syntax “GenerateDefaultInstances pf” to invoke this command.
+   1. Have a global list of default instances.
+  "
+
+  (interactive)
+
+    ;; Keep this around since we may want to produce variations wholesale with
+  ;; names: packageformer-variation; e.g., Magma-typeclass.
+  ;;
+  ;;
+  ;; the variations
+;;  (setq the-vars-shush (--map (car it) (--map (-take-last 1 it) (--map (s-split " " it) decls-vars-shush))))
+  ;;
+  ;; (dolist (variation the-vars-shush ll)
+  ;;  (setq ll (cons (make-typeclass decls (concat pf-name "-" variation)) ll)))
+
+  )
+#+END_SRC
+
+#+RESULTS:
+: generate-all-instances
+
+
 * COMMENT footer
 
 # Local Variables:
