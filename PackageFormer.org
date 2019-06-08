@@ -6,6 +6,7 @@
 #+EMAIL: alhassy@gmail.com
 #+STARTUP: indent
 # PROPERTY: header-args :tangle tangled.agda :comments link
+#+PROPERTY: header-args :results none :tangle no
 
 #+CATEGORIES: Agda MetaProgramming Lisp
 #+OPTIONS: html-postamble:nil toc:nil d:nil tag:nil
@@ -14,64 +15,195 @@
 
 # INCLUDE: ~/Dropbox/MyUnicodeSymbols.org
 
+* COMMENT org/ob-agda setup :load_me:
+
+Just C-c C-c this block (•̀ᴗ•́)و
+#+begin_src emacs-lisp
+;; No code execution on export
+;; ⟪ For a particular block, we use “:eval never-export” ⟫
+;;
+(setq org-export-use-babel nil)
+
+(progn "Set up some colours *before* loading org-agda-mode"
+
+  (setq org-agda-extra-word-colours nil)
+(add-to-list 'org-agda-extra-word-colours '("typeclass" 0 'agda2-highlight-keyword-face))
+(add-to-list 'org-agda-extra-word-colours '("PackageFormer" 0 'font-lock-type-face))
+(add-to-list 'org-agda-extra-word-colours '("_⨾_" 0 'font-lock-type-face))
+(add-to-list 'org-agda-extra-word-colours '("assoc" 0 'font-lock-type-face))
+
+;; Treat the following words as if they were ‘types’; i.e., bold red.
+(dolist (word (s-split " " "PackageFormer _⨾_ assoc Semigroup-semantics Semigroup-syntax SemigroupOn") org-agda-extra-word-colours)
+  (add-to-list 'org-agda-extra-word-colours `(,word 0 'font-lock-type-face))
+  )
+
+  (load-file "~/org-agda-mode/org-agda-mode.el")
+)
+
+;; org-agda-mode.el has now deviated as follows:
+;;
+; (defvar org-agda-extra-word-colours nil "other words that user of org-mode wants coloured, along with their specified font-lock-type-face")
+;
+; (define-generic-mode
+;     'org-agda-mode                      ;; name of the mode
+;     (list '("{-" . "-}"))               ;; comments delimiter
+;     org-agda-keywords
+;     ;; font lock list: Order of colouring matters;
+;     ;; the numbers refer to the subpart, or the whole(0), that should be coloured.
+;     (-concat  ;; ★★★★★★★★★★★★★★ org-agda-extra-word-colours is a free variable, user should define it /before/ loading org-agda-mode ★★★★★★★★★★★★★★
+               (if (boundp (quote org-agda-extra-word-colours)) org-agda-extra-word-colours nil)
+;     (list ⋯) ⋯))
+
+;; Also this so people use “agda” instead of being forced to use “org-agda”
+;;
+;;  If an Emacs major-mode named <lang>-mode exists, where <lang> is the language identifier from code block’s header line, then the edit buffer uses that major-mode. Use this variable to arbitrarily map language identifiers to major modes.
+;;
+(add-to-list 'org-src-lang-modes '("agda" . org-agda))
+
+;; The following allows me to do “C-c C-c” on agda org-src blocks.
+;; The result is just the src body parroted to us, no “evaluation” performed.
+;;
+;;
+;; (async-shell-command "cp  ~/.emacs.d/elpa/org-9.2.3/ob-C.el ~/org-agda-mode/ob-agda.el")
+(async-shell-command "ln -s ~/org-agda-mode/ob-agda.el ~/.emacs.d/elpa/org-plus-contrib-20190408/ob-agda.el")
+; (load-file "~/org-agda-mode/ob-agda.el")
+;;
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((agda . t)))
+#+end_src
+
+#+RESULTS:
+
+* HTML Stuffs :ignore:
+# super brief intro to tables: https://www.w3schools.com/html/html_tables.asp
+# See here for a nice intro to tables: https://www.w3.org/TR/CSS2/tables.html
+# Here for borders: https://www.w3schools.com/css/css_border.asp
+#
+#
+#+begin_export html
+<style>
+
+/* inline code; see here for other colours: https://www.w3schools.com/colors/colors_names.asp */
+code { background: LightGray;
+       border-radius: 5px; /* How curvy the borders should be. */
+}
+
+table {
+    background: pink;
+    border-radius: 10px; /* How curvy the borders should be. */
+    /* width:90% */
+
+    border-bottom: hidden;
+    border-top: hidden;
+
+    /* Put table in the center of the page, horizontally. */
+    margin-left:auto;margin-right:auto;
+}
+
+/* table ‘d’ata elements */
+td {
+    border: 1px solid red; padding: 1em;
+    /* border: none;
+    border-left: 1px solid transparent;
+    border-right: 1px solid transparent; */
+
+
+}
+
+/* Alter visible labels of source blocks */
+pre.src-agda:before { content: 'Agda'; }
+pre.src-haskell:before { content: 'Agda'; }
+pre.src-org:before { content: 'Text'; }
+
+</style>
+#+end_export
+# Org-mode Templates --A reason I “generate” templates ;):1 ends here
+
+# [[file:~/.emacs.d/init.org::*Org-mode%20Templates%20--A%20reason%20I%20%E2%80%9Cgenerate%E2%80%9D%20templates%20;)][Org-mode Templates --A reason I “generate” templates ;):6]]
+
+* Macro: fold                                                        :ignore:
+# Folding up some code blocks in the resulting html.
+#
+# Usage: {{{fold(title here)}}} contents {{{end-fold}}}
+#
+#+MACRO: end-fold  #+HTML: </details>
+#+MACRO: fold      #+HTML: <details class="code-details"> <summary> <strong> <font face="Courier" size="3" color="green"> $1 </font> </strong> </summary>
+
 * Abstract       :ignore:
 #+BEGIN_CENTER org
 *Abstract*
 #+END_CENTER
 
-Editor extension for supporting “the next 700 module systems”.
+Editor extension for supporting [[https://alhassy.github.io/next-700-module-systems-proposal/][“the next 700 module systems” proposal]].
 
-Everything here works with Agda version 2.6.0.
+#+BEGIN_CENTER org
+/Everything here works with Agda version 2.6.0./
+#+END_CENTER
 
 #+TOC: headlines 2
 
-* Getting Started
+* Aim: /Scrap the Repetition/
 
-We're going to write a compiler in Lisp that is going to compile
+We're going to write a code generator in Lisp that is going to interpret
 fictitious Agda code ---henceforth referred to as “700 code”---
 into currently legitimate Agda code.
 
 For example, something like the following, henceforth referred to as ~test~:
-#+NAME:test
-#+BEGIN_Example org-agda
+#+NAME: test
+#+BEGIN_Src agda :results replace
 PackageFormer Semigroup (v : Variation) : Set where
   field
     _⨾_ : Semigroup v → Semigroup v → Semigroup v
     Id  : Semigroup v
     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
-SemigroupR = Semigroup record
-SemigroupD = Semigroup data
-SemigroupT = Semigroup typeclass
-#+END_Example
-Will behave as if:
-#+BEGIN_Example org-agda
-record SemigroupR  : Set where
+Semigroup-semantics  =  Semigroup record
+Semigroup-syntax     =  Semigroup data
+SemigroupOn          =  Semigroup typeclass
+#+END_Src
+#
+# The “:results replace” is since we actually want the results of this
+# block later on when using “test” as a org-provided variable to org-src blocks.
+
+Will behave as if it were written:
+#+BEGIN_Src agda
+record Semigroup-semantics  : Set where
   field
     Carrier : Set
     _⨾_ : Carrier → Carrier → Carrier
     Id  : Carrier
     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
-data SemigroupD : Set where
+data Semigroup-syntax : Set where
     _⨾_ : SemigroupD → SemigroupD → SemigroupD
     Id  : SemigroupD
 
-record SemigroupT (Carrier : Set) : Set where
+record SemigroupOn (Carrier : Set) : Set where
   field
     _⨾_ : Carrier → Carrier → Carrier
     Id  : Carrier
     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-#+END_Example
+#+END_Src
 This is a nearly 200% increase in size; that is, our fictitious code will
 save us a lot of repetition.
 
-* Global preconditions
+* Global Preconditions
+For this prototype, we have the following <<<constraints>>>:
+
 1. All package formers have exactly one explicit ~Variation~ parameter.
-2. The ~where~ keyword appears on the same line as the ~PackageFormer~ key-phrase.
-3. The name of the PackageFormer should not contain ~PackageFormer~ as a sub-identifier.
-4. The first child of the package former is the ~field~ declaration, on its own line.
-* Getting indented children
+   - They have no other parameters.
+
+2. The type of a PackageFormer is ~Set ℓ~ where ~ℓ~ is the empty string
+   or an expression of type ~Level~. In-particular, subscript types
+   are not yet supported.
+
+3. The ~where~ keyword appears on the same line as the ~PackageFormer~ key-phrase.
+
+4. The name of the PackageFormer should not contain ~PackageFormer~ as a sub-identifier.
+
+5. The first child of the package former is the ~field~ declaration, on its own line.
+* Finding Children in the Wild
 
 Consider the following todo list,
 #+NAME: children-example
@@ -103,6 +235,10 @@ Consider the following todo list,
 We would think that ~item 1~ has two ‘children’, and, moreover, one grand-child.
 Whereas ~item 2~ has a single child and ~item 3~ is barren.
 
+Here's my intuitive algorithm: We obtain the indentation of the first child,
+then all subsequent lines with at least that much indentation have the same ancestor.
+
+{{{fold( get-indentation Implementation)}}}
 #+BEGIN_SRC emacs-lisp
 (defun get-indentation (string)
   "How many spaces are there at the front of ‘string’?
@@ -111,13 +247,14 @@ Whereas ~item 2~ has a single child and ~item 3~ is barren.
   "
   (if string (length (s-shared-start string (s-repeat (length string) " "))) 0)
 )
+#+END_SRC
 
-(stringp "nice")
-(stringp '(nice))
+#+RESULTS:
+: get-indentation
 
-(listp "nice")
-(listp '(nice))
-
+{{{end-fold}}}
+{{{fold( get-children Implementation)}}}
+#+BEGIN_SRC emacs-lisp
 (cl-defun get-children (parent the-wild &key (then #'identity))
   "Go into ‘the-wild’ seeking out the first occurence of ‘parent’,
    who once found, ought to have a minimal indentation for its children.
@@ -177,6 +314,8 @@ Whereas ~item 2~ has a single child and ~item 3~ is barren.
 #+RESULTS:
 : get-children
 
+{{{end-fold}}}
+
 Let's try this out on our example hierarchy, ~eh~, from earlier.
 #+BEGIN_SRC emacs-lisp :var eh = children-example :exports both
 (car (get-children "+ item 1" eh))
@@ -219,6 +358,7 @@ Before we move on, let's try altering a child clause; e.g., I'd like
 
 Nice :grin:
 
+
 Now the moment of truth, let's try this out on our example.
 #+BEGIN_SRC emacs-lisp :var test = test :exports both
 (car (get-children "PackageFormer" test))
@@ -237,212 +377,256 @@ Also, does the list variant work:
 
 Test-driven development doesn't seem bad 😲
 
-* PackageFormer Name and Variation Symbol
+* Substrings Delimited by Tokens
 
-A PackageFormer is generally declared as
-#+BEGIN_SRC haskell :tangle no
-PackageFormer Semigroup (v : Variation) : Set where …
-#+END_SRC
+#+begin_center
+/How do we find a string delimited by two tokens?/
+#+end_center
 
-#+RESULTS:
-: Prelude>
-: <interactive>:2:47-51: error: parse error on input ‘where’
+Before we can get to the real stuff, we need to produce a few low-level ---string manipulation---
+utilities, so that we can work with higher-level abstract datatypes.
 
-The body of such a declaration mentions ~Semigroup v~, which we would like to rewrite
-with other names when the package is instantiated. As such, we form a method for
-obtaining the name, the variation symbol, and a method to rewrite substrings of the
-children ---wait, we already have the last one: ~get-children~ with optional ~:then~
-keyword.
++ ~substring-delimited~: Given ~prefix~ and ~suffix~,
+  this operation takes a string of the form  ~⋯‘prefix’⟪needle⟫‘suffix’⋯~ and yields ~needle~.
++ ~substring-delimited-$~: Given ~"⟪prefix⟫ $here ⟪suffix⟫"~
+  this operation takes a string of the form  ~⋯‘prefix’⟪needle⟫‘suffix’⋯~ and yields ~needle~.
 
-#+BEGIN_SRC emacs-lisp
-;; The following two only work on headers of PackageFormer declarations.
+{{{fold(substring-delimited Implementation)}}}
+#+BEGIN_SRC emacs-lisp :results none
+(cl-defun substring-delimited
+    (prefix suffix string &key preserve-spaces longest-substring)
+  "Assuming ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle
+   by default, unless ‘longest-substring’ is true, in which case yield /longest/
+   such needle.
 
-(defun package-former-name (declaration)
-  "Given a declaration of the form
-   “PackageFormer Semigroup (v : Variation) : Set where”
-   return the name “Semigroup”.
+  Unless ‘preserve-spaces’ is true, we convert all adjacent whitespace
+  characters to a single space in the input ‘string’ and trim any surrounding
+  whitespace from the resulting output needle string.
   "
-  (s-chop-prefix "PackageFormer "
-    (s-chop-suffix " ("
-      (car (s-match "PackageFormer .* (" declaration))))
-)
 
+  (let (longest-needle context first-ending result)
 
-(defun variation-symbol (declaration)
-  "Given a declaration of the form
-   “PackageFormer Semigroup (v : Variation) : Set where”
-   return the name “v”.
-  "
-  (s-chop-prefix "("
-    (s-chop-suffix " : Variation)"
-      (car (s-match "(.*)" declaration))))
-)
-#+END_SRC
+    (unless preserve-spaces (setq string (s-collapse-whitespace string)))
+    (setq context (concat prefix ".*" suffix))
+    (setq longest-needle (s-chop-prefix prefix
+                           (s-chop-suffix suffix
+                             (car (s-match context string)))))
 
-#+RESULTS:
-: variation-symbol
-
-Let's test these two out.
-#+BEGIN_SRC emacs-lisp
-(package-former-name "PackageFormer Semigroup (v : Variation) : Set where")
-;; ⇒ "Semigroup"
-
-(variation-symbol "PackageFormer Semigroup (v : Variation) : Set where")
-;; ⇒ "v"
-#+END_SRC
-
-#+RESULTS:
-: v
-
-* Parameter Erasure & Insertion
-
-When a PackageFormer such as the following is instantiated, say, to a typeclass
-variation, we must erase the variation parameter and insert a new type parameter.
-#+BEGIN_SRC haskell :tangle no
-   PackageFormer Semigroup (v : Variation) : Set where …
-↦  record Semigroup (Carrier : Set) : Set  where ⋯
-#+END_SRC
-
-#+RESULTS:
-: <interactive>:5:1: error: parse error on input ‘↦’
-
-#+BEGIN_SRC emacs-lisp
-;; The following only work on headers of PackageFormer declarations.
-
-(defun erase-parameters (declaration)
-  "Given a declaration of the form
-   “PackageFormer Semigroup (existing-params) : Set ℓ where”
-   return
-   “PackageFormer Semigroup : Set ℓ where”
-  "
-  (s-collapse-whitespace ;; Convert all adjacent whitespace chars to a single space.
-   (s-replace
-      (car (s-match "(.*) : Set" declaration))
-      ": Set"
-      declaration))
-)
-
-(defun insert-parameter (param declaration)
-  "Given a declaration of the form
-   “PackageFormer Semigroup (existing-params) : Set ℓ where”
-   return
-   “PackageFormer Semigroup (existing-params) ‘param’ : Set ℓ where”
-
-   Precondition: ‘param’ is a string.
-  "
-  (let ((rest-of-line (car (s-match ": Set.*" declaration))))
-  (s-replace
-      rest-of-line
-      (concat param " " rest-of-line)
-      declaration)
+    (setq first-ending (s-index-of suffix longest-needle))
+    (setq result (if (and (not longest-substring) first-ending)
+                       (substring longest-needle 0 (1- first-ending))
+                       longest-needle))
+    (if preserve-spaces result (s-trim result))
   )
 )
 #+END_SRC
+{{{end-fold}}}
+{{{fold(substring-delimited-$ Implementation)}}}
+#+BEGIN_SRC emacs-lisp
+(cl-defun substring-delimited-$
+    (context string &key preserve-spaces longest-substring)
+  "Assuming ‘context’ = “⟪prefix⟫ $here ⟪suffix⟫”
+   and ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle
+   by default, unless ‘longest-substring’ is true, in which case yield /longest/
+   such needle.
 
-#+RESULTS:
-: insert-parameter
+  Unless ‘preserve-spaces’ is true, we convert all adjacent whitespace
+  characters to a single space in the input ‘string’ and trim any surrounding
+  whitespace from the resulting output needle string.
+  "
 
-Let's test these out:
-#+BEGIN_SRC emacs-lisp :exports both
-(erase-parameters "PackageFormer Semigroup (v : Variation) (C : Set) : Set where")
+  (-let [pre-post (s-split "$here" context)]
+    (substring-delimited (car pre-post) (s-trim (cadr pre-post)) string
+     :preserve-spaces preserve-spaces :longest-substring longest-substring)
+  )
+)
 #+END_SRC
+{{{end-fold}}}
 
-#+RESULTS:
-: PackageFormer Semigroup : Set where
-
-# Notice the superfluous whitespace is /not/ collapsed for parameter insertion.
-#+BEGIN_SRC emacs-lisp :exports both
-(insert-parameter "(Carrier : Set)"
-  (erase-parameters "PackageFormer Semigroup (v : Variation) : Set where"))
-#+END_SRC
-
-#+RESULTS:
-: PackageFormer Semigroup (Carrier : Set) : Set where
-
-A naturally expected property is if we obtain the variation symbol of a package former,
-erase said parameter, then insert it; then we have essentially done nothing.
-#+BEGIN_SRC emacs-lisp :exports both
-(let* ((ex "PackageFormer Semigroup (ww : Variation) : Set where")
-       (vs (variation-symbol ex))
-       (vd (format "(%s : Variation)" vs)))
-
-  (and (equal "PackageFormer Semigroup : Set where" (erase-parameters ex))
-       (equal ex (insert-parameter vd (erase-parameters ex))))
+Suppose a user provides us with an awkwardly spaced PackageFormer header,
+our string manipulation setup is robust enough to get at the constituents:
+#+BEGIN_SRC emacs-lisp :results replace :exports both
+(-let [header "PackageFormer  Semigroup   (  v : Variation) : Set (  ℓexpr)   where"]
+  ;; Three kinds of invocations; the last is my preferred choice ♥‿♥
+  `( ,(substring-delimited "PackageFormer " "(" header :preserve-spaces t :longest-substring t)
+     ,(substring-delimited "PackageFormer " "(" header)
+     ,(substring-delimited-$ "PackageFormer $here (" header)
+   )
 )
 #+END_SRC
 
 #+RESULTS:
-: t
+| Semigroup   (  v : Variation) : Set | Semigroup | Semigroup |
 
-Excellent 😎
+The aim is to eventually have an interface that interacts with an buffer containing Agda code.
+To that end, we propose that our fictitious syntax be directly embedded into via special comments,
+~{-700 ⋯ -}~, henceforth referred to as “<<<700-comments>>>”.
 
-* package-formers list
++ ~(buffer-substring-delimited starting-regexp ending-regexp)~ yields the /next/ portion of the buffer
+  as a string, relative to the current position of the cursor, that is contained in the ‘parenthesis’
+  ~starting-regexp~ and ~ending-regexp~.
+
++ ~(buffer-substring-delimited-whole-buffer starting-regexp ending-regexp)~ yields /all/ portions of the buffer,
+  contained in the ‘parenthesis’ ~starting-regexp~ and ~ending-regexp~, as a list of strings.
+
+  - Cursor position is saved.
+  - This function let's us obtain the contents of /all/ 700-comments.
+
+{{{fold(buffer-substring-delimited Implementation)}}}
 #+BEGIN_SRC emacs-lisp
-;; TODO: The global variables package-formers & instance-declaration should be /buffer/ specfic.
+(cl-defun buffer-substring-delimited (start end &optional (highlight nil))
+  "
+  Get the current buffer's /next/ available substring that is delimited
+  between the regexp tokens ‘start’ up to ‘end’, exclusively.
 
-(defvar package-formers nil
-  "The list of PackageFormer's declarations in the current Agda buffer.")
+  If no tokens are found, an error is thrown.
 
-(defstruct package-former-declaration
-  "Record of componenets that form a PackageFormer."
+  The ‘highlight’ option simply highlights the selected region ---visual feedback
+  for the user.
+  "
+  (let (p1 p2)
+    (re-search-forward start)
+    (setq p1 (point))
+
+    (re-search-forward end)
+    (backward-word)
+    (setq p2 (point))
+
+    (when highlight ;; do we want to highlight the region?
+      (goto-char p1)
+      (push-mark p2)
+      (setq mark-active t)
+    )
+
+    ;; (copy-region-as-kill p1 p2)
+    (buffer-substring-no-properties p1 p2)
+))
+#+END_SRC
+{{{end-fold}}}
+
+{{{fold(buffer-substring-delimited-whole-buffer Implementation)}}}
+#+BEGIN_SRC emacs-lisp
+(cl-defun buffer-substring-delimited-whole-buffer (start end)
+  "Return a list of all substrings in the current buffer that
+   are delimited by regexp tokens ‘start’ and ‘end’, exclusively.
+  "
+  (save-excursion
+    (let ((l nil) (continue t))
+     (beginning-of-buffer)
+
+     (while continue
+       (condition-case nil
+         ;; attemptClause
+         (setq l (cons (buffer-substring-delimited start end) l))
+         ;; recoveryBody
+         (error (setq continue nil))))
+
+     ;; We've collected items as we saw them, so ‘l’ is in reverse.
+    (reverse l)
+    )
+  )
+)
+#+END_SRC
+{{{end-fold}}}
+
+Here are some possible invocations, the last one being our use case.
+#+BEGIN_SRC emacs-lisp :tangle no
+;; Get text delimited by quotes
+(buffer-substring-delimited "^\"" "^\"")
+
+;; Get text delimited by quotes
+(buffer-substring-delimited "^\{-" "^-\}")
+
+;; Execute the following in an Agda buffer to see this function in action.
+(setq it (buffer-substring-delimited-whole-buffer "^\{-700" "^-\}"))
+#+END_SRC
+
+So much string meddling, hopefully no more 🙈 :hear_no_evil: :speak_no_evil:
+
+* The ~package-former~ Datatype
+
+For this prototype's constraints, a PackageFormer will generally declared as
+#+BEGIN_SRC agda :tangle no
+PackageFormer Semigroup (v : Variation) : Set ℓ where
+   field
+     ⋮
+#+END_SRC
+
+The body, ~⋮~, of such a declaration mentions ~Semigroup v~, which we would like to rewrite
+with other names when the package is instantiated. Likewise, we also want to erase or rewrite
+the sole parameter, and possibly increment the level. Let's form a type to work with these components
+rather than meddle with strings all the time.
+
+#+BEGIN_SRC emacs-lisp
+(defstruct package-former
+  "Record of components that form a PackageFormer."
   name variation-symbol level fields
-  )
-;; TODO: For now, PackageFormer's have no other parameters besides the variation symbol.
-
-(cl-defmethod show ((p package-former-declaration))
-  "Pretty print a package-former-declaration record value"
-
-  (concat
-    (format "PackageFormer %s (%s : Variation) : Set %s where \n"
-            (package-former-declaration-name p)
-              (package-former-declaration-variation-symbol p)
-              (package-former-declaration-level p))
-    (s-join "\n" (package-former-declaration-fields p))
-  )
 )
+#+END_SRC
 
-;; nice
-;; (show (car package-formers))
-
-(defun load-package-former-declaration (lines)
-  "The input ‘lines’ mut be a list of lines forming a full PackageFormer declaration;
+With this in hand, let's produce a robust parser.
+#+BEGIN_SRC emacs-lisp
+(defun parse-package-former (lines)
+  "The input ‘lines’ must be a list of lines forming a full PackageFormer declaration;
    e.g., obtained by calling ‘get-children’.
 
-   It is parsed and added to the list of ‘package-formers’.
+   It is parsed and a ‘package-former’ value is returned.
   "
 
   ;; Precondition Example, with intentionally strange whitespacing:
   ;; header ≈ “PackageFormer Semigroup   (v : Variation) : Set  ( ℓexpr)   where”
 
   (-let [header (car lines)]
-    (add-to-list 'package-formers
-               (make-package-former-declaration
+               (make-package-former
                    :name             (substring-delimited-$ "PackageFormer $here (" header)
                    :variation-symbol (substring-delimited-$ "($here : Variation"    header)
                      ;; ‘level’ may be “”, that's okay.
                    :level            (substring-delimited-$ "Set $here where"       header)
-                   :fields           (cdr lines))) ;; maybe skip line with “fields” header?
+                   :fields           (cdr lines))
   )
 )
 #+END_SRC
 
-#+RESULTS:
-: load-package-former-declaration
-
-testing
-#+BEGIN_SRC emacs-lisp :var test = test
-(setq package-formers nil)
-
-(load-package-former-declaration
- (car (get-children "PackageFormer" test)))
-
-; test
-(substring-delimited-$ "Set $here where" (caar (get-children "PackageFormer" test)))
+Let's try this out.
+#+BEGIN_SRC emacs-lisp :var test = test :exports both :results table replace
+(parse-package-former (car (get-children "PackageFormer" test)))
 #+END_SRC
 
 #+RESULTS:
+| #s(package-former Semigroup v  (  field     _⨾_ : Semigroup v → Semigroup v → Semigroup v     Id  : Semigroup v     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))) |
 
-* ~instantiate~ ---the /backend/ core utility
+Conversely, let's have a pretty printer ---for testing purposes, if anything.
+#+BEGIN_SRC emacs-lisp
+(cl-defmethod show ((p package-former))
+  "Pretty print a package-former record value"
+
+  (concat
+    (format "PackageFormer %s (%s : Variation) : Set %swhere\n"
+            (package-former-name p)
+              (package-former-variation-symbol p)
+              (package-former-level p))
+    (s-join "\n" (package-former-fields p))
+  )
+)
+#+END_SRC
+
+At a first glance, ~%swhere\n"~ is in desperate need of some spacing, however
+this space miserliness permits us to phrase an approximation of the opinion
+that parsing and showing should be inverses.
+
+#+BEGIN_SRC emacs-lisp :var test = test :exports both :results table replace
+(-let [pf (car (get-children "PackageFormer" _test))]
+  (equal (s-join "\n" pf) (show (parse-package-former pf)))
+  )
+#+END_SRC
+
+#+RESULTS:
+| t |
+#+begin_center
+( /In Lisp, ~t~ denotes “true”!/ )
+#+end_center
+
+* TODO COMMENT ~instantiate~ ---the /backend/ core utility
 Let's put the pieces together.
 #+BEGIN_SRC emacs-lisp
 (cl-defun instantiate (decls &key
@@ -771,145 +955,12 @@ data Semigroup-syntax-g110  : Set where
 
 Notice that the results contained generated names since no names were provided.
 
-* Acting on Agda Buffer
+* TODO COMMENT Acting on Agda Buffer
 
 The aim is to process test enclosed in ~{-700 ⋯ -}~ comments,
 produce legitimate Agda from that, and ensure the generated Agda is accessible to the
 current buffer automatically.
 
-** TODO substring-delimited and friends
-First, the function to get everything in these special “700-comments”.
-#+BEGIN_SRC emacs-lisp
-(cl-defun buffer-substring-delimited (start end &optional (highlight nil))
-  "
-  Get the current buffer's /next/ available substring that is delimited
-  between the regexp tokens ‘start’ up to ‘end’, exclusively.
-
-  If no tokens are found, an error is thrown.
-
-  The ‘highlight’ option simply highlights the selected region ---visual feedback
-  for the user.
-  "
-  (let (p1 p2)
-    (re-search-forward start)
-    (setq p1 (point))
-
-    (re-search-forward end)
-    (backward-word)
-    (setq p2 (point))
-
-    (when highlight ;; do we want to highlight the region?
-      (goto-char p1)
-      (push-mark p2)
-      (setq mark-active t)
-    )
-
-    ;; (copy-region-as-kill p1 p2)
-    (buffer-substring-no-properties p1 p2)
-))
-#+END_SRC
-
-#+RESULTS:
-: buffer-substring-delimited
-
-Let's obtain the contents of /all/ 700-comments.
-#+BEGIN_SRC emacs-lisp
-(cl-defun buffer-substring-delimited-whole-buffer (start end)
-  "Return a list of all substrings in the current buffer that
-   are delimited by regexp tokens ‘start’ and ‘end’, exclusively.
-  "
-  (save-excursion
-    (let ((l nil) (continue t))
-     (beginning-of-buffer)
-
-     (while continue
-       (condition-case nil
-         ;; attemptClause
-         (setq l (cons (buffer-substring-delimited start end) l))
-         ;; recoveryBody
-         (error (setq continue nil))))
-
-     ;; We've collected items as we saw them, so ‘l’ is in reverse.
-    (reverse l)
-    )
-  )
-)
-#+END_SRC
-
-#+RESULTS:
-: buffer-substring-delimited-whole-buffer
-
-#+BEGIN_SRC emacs-lisp
-(cl-defun substring-delimited
-    (prefix suffix string &key preserve-spaces longest-substring)
-  "Assuming ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle
-   by default, unless ‘longest-substring’ is true, in which case yield /longest/
-   such needle.
-
-  Unless ‘preserve-spaces’ is true, we convert all adjacent whitespace
-  characters to a single space in the input ‘string’ and trim any surrounding
-  whitespace from the resulting output needle string.
-  "
-
-  (let (longest-needle context first-ending result)
-
-    (unless preserve-spaces (setq string (s-collapse-whitespace string)))
-    (setq context (concat prefix ".*" suffix))
-    (setq longest-needle (s-chop-prefix prefix
-                           (s-chop-suffix suffix
-                             (car (s-match context string)))))
-
-    (setq first-ending (s-index-of suffix longest-needle))
-    (setq result (if (and (not longest-substring) first-ending)
-                       (substring longest-needle 0 (1- first-ending))
-                       longest-needle))
-    (if preserve-spaces result (s-trim result))
-  )
-)
-
-(cl-defun substring-delimited-$
-    (context string &key preserve-spaces longest-substring)
-  "Assuming ‘context’ = “⟪prefix⟫ $here ⟪suffix⟫”
-   and ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle
-   by default, unless ‘longest-substring’ is true, in which case yield /longest/
-   such needle.
-
-  Unless ‘preserve-spaces’ is true, we convert all adjacent whitespace
-  characters to a single space in the input ‘string’ and trim any surrounding
-  whitespace from the resulting output needle string.
-  "
-
-  (-let [pre-post (s-split "$here" context)]
-    (substring-delimited (car pre-post) (s-trim (cadr pre-post)) string
-     :preserve-spaces preserve-spaces :longest-substring longest-substring)
-  )
-)
-
-;; testing
-(setq _header "PackageFormer  Semigroup   (  v : Variation) : Set (  ℓexpr)   where")
-(substring-delimited "PackageFormer " "(" _header :preserve-spaces t :longest-substring t)
-(substring-delimited "PackageFormer " "(" _header :preserve-spaces t)
-(substring-delimited "PackageFormer " "(" _header)
-(substring-delimited-$ "PackageFormer $here (" _header) ;; nice!
-#+END_SRC
-
-#+RESULTS:
-: Semigroup
-
-:RndmTests:
-#+BEGIN_SRC emacs-lisp :tangle no
-;; Get text delimited by quotes
-;; (buffer-substring-delimited "^\"" "^\"")
-
-;; Get text delimited by quotes
-;; (buffer-substring-delimited "^\{-" "^-\}")
-
-;; (setq it (buffer-substring-delimited-whole-buffer "^\{-700" "^-\}"))
-#+END_SRC
-
-#+RESULTS:
-
-:End:
 ** insert-generated-import
 Let's give the current buffer access to the location of the generated file.
 #+BEGIN_SRC emacs-lisp
@@ -937,6 +988,55 @@ Let's give the current buffer access to the location of the generated file.
 
 #+RESULTS:
 : insert-generated-import
+
+** package-formers list
+#+BEGIN_SRC emacs-lisp
+;; TODO: The global variables package-formers & instance-declaration should be /buffer/ specfic.
+
+(defvar package-formers nil
+  "The list of PackageFormer's declarations in the current Agda buffer.")
+#+END_SRC
+
+
+
+#+BEGIN_SRC emacs-lisp
+(defun load-package-former (lines)
+  "The input ‘lines’ mut be a list of lines forming a full PackageFormer declaration;
+   e.g., obtained by calling ‘get-children’.
+
+   It is parsed and added to the list of ‘package-formers’.
+  "
+
+  ;; Precondition Example, with intentionally strange whitespacing:
+  ;; header ≈ “PackageFormer Semigroup   (v : Variation) : Set  ( ℓexpr)   where”
+
+  (-let [header (car lines)]
+    (add-to-list 'package-formers
+               (make-package-former
+                   :name             (substring-delimited-$ "PackageFormer $here (" header)
+                   :variation-symbol (substring-delimited-$ "($here : Variation"    header)
+                     ;; ‘level’ may be “”, that's okay.
+                   :level            (substring-delimited-$ "Set $here where"       header)
+                   :fields           (cdr lines))) ;; maybe skip line with “fields” header?
+  )
+)
+#+END_SRC
+
+#+RESULTS:
+: load-package-former
+
+testing
+#+BEGIN_SRC emacs-lisp :var test = test
+(setq package-formers nil)
+
+(load-package-former
+ (car (get-children "PackageFormer" test)))
+
+; test
+(substring-delimited-$ "Set $here where" (caar (get-children "PackageFormer" test)))
+#+END_SRC
+
+#+RESULTS:
 
 ** instantiations-remaining list
 #+BEGIN_SRC emacs-lisp
@@ -1012,7 +1112,7 @@ Let's give the current buffer access to the location of the generated file.
      ;; Else we have a PackageFormer declaration:
      ;; Get it along with the remaining 700-comments.
      (setq item (get-children "PackageFormer" lines))
-     (load-package-former-declaration (car item))
+     (load-package-former (car item))
      (setq lines (cdr item))))
 
   (message "Finished parsing 700-comments.")
@@ -1023,7 +1123,7 @@ Let's give the current buffer access to the location of the generated file.
 #+RESULTS:
 : parse-700-comments
 
-* Now for the /frontend/ core utility
+* TODO COMMENT Now for the /frontend/ core utility
 
 #+BEGIN_SRC emacs-lisp
 (cl-defun reify-instances ()
@@ -1036,7 +1136,7 @@ Let's give the current buffer access to the location of the generated file.
         (setq name (instance-declaration-name inst))
           (setq variation (instance-declaration-variation inst))
         (setq pf-type (instance-declaration-package-former inst))
-        (setq pf (car (--filter (equal pf-type (package-former-declaration-name it)) package-formers)))
+        (setq pf (car (--filter (equal pf-type (package-former-name it)) package-formers)))
         (setq reify (pcase (instance-declaration-variation inst)
                       ("typeclass" (instantiate-as-typeclass (show pf) :new-name name))
                       ("record" (instantiate-as-record (show pf) :new-name name))
@@ -1102,7 +1202,7 @@ Let's give the current buffer access to the location of the generated file.
 
 #+RESULTS:
 
-* TODO Minor mode ---Menu matter
+* TODO COMMENT Minor mode ---Menu matter
 #+BEGIN_SRC emacs-lisp
 
 (defvar 700-menu-bar-menu (make-sparse-keymap "700 PackageFormers"))
@@ -1137,12 +1237,20 @@ Let's give the current buffer access to the location of the generated file.
 #+RESULTS:
 | menu-item | Disable PackageFormer Generation | disable-package-formers |
 
-* TODO missing features
+* TODO COMMENT missing features
+
++ MA: Just change the package-former-variation to package-former-parameter ---which is a pair, “name : type”.
+  This may make it easier later to transition to having multiple parameters.
+
++ !? why does ‘buffer-substring-delimited-whole-buffer’ return a list of strings? Why not join its result to simply return a list?
+
 + [A] Generated.agda needs to inherit all open/import declarations from parent.
 + [A] Lifting a field to the parameter level.
   - [A] “pf typeclass lifting N” lifts the first N fields to the parameter level.
 + [A] Explain how generative modules can be emulated.
 + [B] Renaming?
++ ;; TODO: For now, PackageFormer's have no other parameters besides the variation symbol.
+
 
   #+BEGIN_SRC emacs-lisp
 (defun generate-all-instances () ;; TODO
@@ -1177,10 +1285,139 @@ Let's give the current buffer access to the location of the generated file.
 : generate-all-instances
 
 
+* COMMENT PackageFormer Name and Variation Symbol          :possibly_not_needed:
+
+As such, we form a method for
+obtaining the name, the variation symbol, and a method to rewrite substrings of the
+children ---wait, we already have the last one: ~get-children~ with optional ~:then~
+keyword.
+
+#+BEGIN_SRC emacs-lisp
+;; The following two only work on headers of PackageFormer declarations.
+
+(defun package-former-name (declaration)
+  "Given a declaration of the form
+   “PackageFormer Semigroup (v : Variation) : Set where”
+   return the name “Semigroup”.
+  "
+  (s-chop-prefix "PackageFormer "
+    (s-chop-suffix " ("
+      (car (s-match "PackageFormer .* (" declaration))))
+)
+
+
+(defun variation-symbol (declaration)
+  "Given a declaration of the form
+   “PackageFormer Semigroup (v : Variation) : Set where”
+   return the name “v”.
+  "
+  (s-chop-prefix "("
+    (s-chop-suffix " : Variation)"
+      (car (s-match "(.*)" declaration))))
+)
+#+END_SRC
+
+#+RESULTS:
+: variation-symbol
+
+Let's test these two out.
+#+BEGIN_SRC emacs-lisp
+(package-former-name "PackageFormer Semigroup (v : Variation) : Set where")
+;; ⇒ "Semigroup"
+
+(variation-symbol "PackageFormer Semigroup (v : Variation) : Set where")
+;; ⇒ "v"
+#+END_SRC
+
+#+RESULTS:
+: v
+
+* COMMENT Parameter Erasure & Insertion           :possibly_not_needed:
+MA: Just change the package-former-variation to package-former-parameter ---which is a pair, “name : type”.
+This may make it easier later to transition to having multiple parameters.
+
+When a PackageFormer such as the following is instantiated, say, to a typeclass
+variation, we must erase the variation parameter and insert a new type parameter.
+#+BEGIN_SRC agda
+   PackageFormer Semigroup (v : Variation) : Set where …
+↦  record Semigroup (Carrier : Set) : Set  where ⋯
+#+END_SRC
+
+#+RESULTS:
+: <interactive>:5:1: error: parse error on input ‘↦’
+
+#+BEGIN_SRC emacs-lisp
+;; The following only work on headers of PackageFormer declarations.
+
+(defun erase-parameters (declaration)
+  "Given a declaration of the form
+   “PackageFormer Semigroup (existing-params) : Set ℓ where”
+   return
+   “PackageFormer Semigroup : Set ℓ where”
+  "
+  (s-collapse-whitespace ;; Convert all adjacent whitespace chars to a single space.
+   (s-replace
+      (car (s-match "(.*) : Set" declaration))
+      ": Set"
+      declaration))
+)
+
+(defun insert-parameter (param declaration)
+  "Given a declaration of the form
+   “PackageFormer Semigroup (existing-params) : Set ℓ where”
+   return
+   “PackageFormer Semigroup (existing-params) ‘param’ : Set ℓ where”
+
+   Precondition: ‘param’ is a string.
+  "
+  (let ((rest-of-line (car (s-match ": Set.*" declaration))))
+  (s-replace
+      rest-of-line
+      (concat param " " rest-of-line)
+      declaration)
+  )
+)
+#+END_SRC
+
+#+RESULTS:
+: insert-parameter
+
+Let's test these out:
+#+BEGIN_SRC emacs-lisp :exports both
+(erase-parameters "PackageFormer Semigroup (v : Variation) (C : Set) : Set where")
+#+END_SRC
+
+#+RESULTS:
+: PackageFormer Semigroup : Set where
+
+# Notice the superfluous whitespace is /not/ collapsed for parameter insertion.
+#+BEGIN_SRC emacs-lisp :exports both
+(insert-parameter "(Carrier : Set)"
+  (erase-parameters "PackageFormer Semigroup (v : Variation) : Set where"))
+#+END_SRC
+
+#+RESULTS:
+: PackageFormer Semigroup (Carrier : Set) : Set where
+
+A naturally expected property is if we obtain the variation symbol of a package former,
+erase said parameter, then insert it; then we have essentially done nothing.
+#+BEGIN_SRC emacs-lisp :exports both :results replace
+(let* ((ex "PackageFormer Semigroup (ww : Variation) : Set where")
+       (vd "(%ww : Variation)"))
+
+  (and (equal "PackageFormer Semigroup : Set where" (erase-parameters ex))
+       (equal ex (insert-parameter vd (erase-parameters ex))))
+)
+#+END_SRC
+
+#+RESULTS:
+  | nil |
+
+Excellent 😎
+
 * COMMENT footer
 
 # Local Variables:
-# eval: (load-file "~/org-agda-mode/org-agda-mode.el")
 # eval: (visual-line-mode t)
 # compile-command: (progn (org-babel-tangle) (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1))
 # End:
