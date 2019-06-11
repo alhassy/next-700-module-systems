@@ -15,6 +15,8 @@
 
 # INCLUDE: ~/Dropbox/MyUnicodeSymbols.org
 
+# :tangle yes
+
 * COMMENT org/ob-agda setup :load_me:
 
 Just C-c C-c this block (•̀ᴗ•́)و
@@ -86,6 +88,9 @@ Just C-c C-c this block (•̀ᴗ•́)و
 #+begin_export html
 <style>
 
+/* wrap lengthy lines for code blocks */
+pre{white-space:pre-wrap}
+
 /* inline code; see here for other colours: https://www.w3schools.com/colors/colors_names.asp */
 code { background: LightGray;
        border-radius: 5px; /* How curvy the borders should be. */
@@ -101,6 +106,9 @@ table {
 
     /* Put table in the center of the page, horizontally. */
     margin-left:auto;margin-right:auto;
+
+    font-family:"Courier New";
+    font-size:90%;
 }
 
 /* table ‘d’ata elements */
@@ -120,7 +128,7 @@ pre.src-haskell:before { content: 'Agda'; }
 pre.src-org:before { content: 'Text'; }
 
 /* Using source blocks “agda-results” as pink-background coloured blocks in HTML. */
-pre.src-results-agda:before { content: 'Results: Agda'; }
+/* pre.src-results-agda:before { content: 'Results: Agda'; } */
 pre.src-results-agda { background: pink;}
 /* Execute this for alias: (add-to-list 'org-src-lang-modes '("results-agda" . org-agda)) */
 
@@ -145,13 +153,18 @@ pre.src-results-agda { background: pink;}
 
 Editor extension for supporting [[https://alhassy.github.io/next-700-module-systems-proposal/][“the next 700 module systems” proposal]].
 
+In some sense, we are “continuing” the story of the Z's schemas.
+
 #+BEGIN_CENTER org
 /Everything here works with Agda version 2.6.0./
 #+END_CENTER
 
+
+| Results of tests will be in pink, like this (─‿‿─) |
+
 #+TOC: headlines 2
 
-* Aim: /Scrap the Repetition/
+* DONE Aim: /Scrap the Repetition/
 
 We're going to write a code generator in Lisp that is going to interpret
 fictitious Agda code ---henceforth referred to as “700 code”---
@@ -170,17 +183,6 @@ Semigroup-semantics  =  Semigroup record
 Semigroup-syntax     =  Semigroup data
 SemigroupOn          =  Semigroup typeclass
 #+END_Src
-
-#+RESULTS: test
-: PackageFormer Semigroup (v : Variation) : Set where
-:   field
-:     _⨾_ : Semigroup v → Semigroup v → Semigroup v
-:     Id  : Semigroup v
-:     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-:
-: Semigroup-semantics  =  Semigroup record
-: Semigroup-syntax     =  Semigroup data
-: SemigroupOn          =  Semigroup typeclass
 
 #
 # The “:results replace” is since we actually want the results of this
@@ -205,10 +207,10 @@ record SemigroupOn (Carrier : Set) : Set where
     Id  : Carrier
     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 #+END_Src
-This is a nearly 200% increase in size; that is, our fictitious code will
+This is a nearly <<<200% increase>>> in size; that is, our fictitious code will
 save us a lot of repetition.
 
-* Global Preconditions
+* DONE Global Preconditions
 For this prototype, we have the following <<<constraints>>>:
 
 1. All package formers have exactly one explicit ~Variation~ parameter.
@@ -223,11 +225,21 @@ For this prototype, we have the following <<<constraints>>>:
 4. The name of the PackageFormer should not contain ~PackageFormer~ as a sub-identifier.
 
 5. The first child of the package former is the ~field~ declaration, on its own line.
-* Finding Children in the Wild
 
-Consider the following todo list,
+6. We are only considering single-sorted structures, for now.
+
+   The research [[https://alhassy.github.io/next-700-module-systems-proposal/][proposal]] addresses how to move beyond this issue.
+
+There are many other useful features outlined in the proposal, such as default implementations, that we
+hope to include in the future. For now, we just want something that works, is decently documented, and
+can be useful.
+* DONE Finding Children in the Wild
+
+Being a prototype, we are talking a mostly sting-based approach to working
+with hierarchical phrases.
+For example, consider the following todo list,
 #+NAME: children-example
-#+BEGIN_SRC org
+#+BEGIN_SRC org :results replace
 + item 1
   - subitem 1.1
     ,* subsubitem 1.1.1
@@ -259,7 +271,7 @@ Here's my intuitive algorithm: We obtain the indentation of the first child,
 then all subsequent lines with at least that much indentation have the same ancestor.
 
 {{{fold( get-indentation Implementation)}}}
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 (defun get-indentation (string)
   "How many spaces are there at the front of ‘string’?
 
@@ -268,13 +280,9 @@ then all subsequent lines with at least that much indentation have the same ance
   (if string (length (s-shared-start string (s-repeat (length string) " "))) 0)
 )
 #+END_SRC
-
-#+RESULTS:
-: get-indentation
-
 {{{end-fold}}}
 {{{fold( get-children Implementation)}}}
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 (cl-defun get-children (parent the-wild &key (then #'identity))
   "Go into ‘the-wild’ seeking out the first occurence of ‘parent’,
    who once found, ought to have a minimal indentation for its children.
@@ -330,10 +338,6 @@ then all subsequent lines with at least that much indentation have the same ance
   )
 )
 #+END_SRC
-
-#+RESULTS:
-: get-children
-
 {{{end-fold}}}
 
 Let's try this out on our example hierarchy, ~eh~, from earlier.
@@ -342,7 +346,7 @@ Let's try this out on our example hierarchy, ~eh~, from earlier.
 #+END_SRC
 
 #+RESULTS:
-
+| + item 1 | - subitem 1.1 | * subsubitem 1.1.1 | - subitem 1.2 |
 
 Excellent! Let's looks at the other parents.
 #+BEGIN_SRC emacs-lisp :var eh = children-example :exports both :results table replace
@@ -374,18 +378,19 @@ Before we move on, let's try altering a child clause; e.g., I'd like
 #+END_SRC
 
 #+RESULTS:
-
+| + item 1 | - subitem 1.1 | * subsubitem that is super deep | - subitem 1.2 |
 
 Nice :grin:
 
-
 Now the moment of truth, let's try this out on our example.
-#+BEGIN_SRC emacs-lisp :var test = test :exports both :results table replace
+#+BEGIN_SRC emacs-lisp :var test = test :exports both :results table replace :wrap "src results-agda"
 (car (get-children "PackageFormer" test))
 #+END_SRC
 
 #+RESULTS:
+#+begin_src results-agda
 | PackageFormer Semigroup (v : Variation) : Set where | field | _⨾_ : Semigroup v → Semigroup v → Semigroup v | Id  : Semigroup v | assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z) |
+#+end_src
 
 Also, does the list variant work:
 #+BEGIN_SRC emacs-lisp :var test = test :exports both :results table replace
@@ -393,11 +398,13 @@ Also, does the list variant work:
 #+END_SRC
 
 #+RESULTS:
+#+begin_src results-agda
 | PackageFormer Semigroup (v : Variation) : Set where | field | _⨾_ : Semigroup v → Semigroup v → Semigroup v | Id  : Semigroup v | assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z) |
+#+end_src
 
 Test-driven development doesn't seem bad 😲
 
-* Substrings Delimited by Tokens
+* DONE Substrings Delimited by Tokens
 
 #+begin_center
 /How do we find a string delimited by two tokens?/
@@ -412,7 +419,7 @@ utilities, so that we can work with higher-level abstract datatypes.
   this operation takes a string of the form  ~⋯‘prefix’⟪needle⟫‘suffix’⋯~ and yields ~needle~.
 
 {{{fold(substring-delimited Implementation)}}}
-#+BEGIN_SRC emacs-lisp :results none
+#+BEGIN_SRC emacs-lisp :tangle yes
 (cl-defun substring-delimited
     (prefix suffix string &key preserve-spaces longest-substring)
   "Assuming ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle
@@ -442,7 +449,7 @@ utilities, so that we can work with higher-level abstract datatypes.
 #+END_SRC
 {{{end-fold}}}
 {{{fold(substring-delimited-$ Implementation)}}}
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 (cl-defun substring-delimited-$
     (context string &key preserve-spaces longest-substring)
   "Assuming ‘context’ = “⟪prefix⟫ $here ⟪suffix⟫”
@@ -493,7 +500,7 @@ To that end, we propose that our fictitious syntax be directly embedded into via
   - This function let's us obtain the contents of /all/ 700-comments.
 
 {{{fold(buffer-substring-delimited Implementation)}}}
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 (cl-defun buffer-substring-delimited (start end &optional (highlight nil))
   "
   Get the current buffer's /next/ available substring that is delimited
@@ -525,7 +532,7 @@ To that end, we propose that our fictitious syntax be directly embedded into via
 {{{end-fold}}}
 
 {{{fold(buffer-substring-delimited-whole-buffer Implementation)}}}
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 (cl-defun buffer-substring-delimited-whole-buffer (start end)
   "Return a list of all substrings in the current buffer that
    are delimited by regexp tokens ‘start’ and ‘end’, exclusively.
@@ -550,7 +557,7 @@ To that end, we propose that our fictitious syntax be directly embedded into via
 {{{end-fold}}}
 
 Here are some possible invocations, the last one being our use case.
-#+BEGIN_SRC emacs-lisp :tangle no
+#+BEGIN_SRC emacs-lisp
 ;; Get text delimited by quotes
 (buffer-substring-delimited "^\"" "^\"")
 
@@ -563,7 +570,7 @@ Here are some possible invocations, the last one being our use case.
 
 So much string meddling, hopefully no more 🙈 :hear_no_evil: :speak_no_evil:
 
-* The ~package-former~ Datatype
+* DONE The ~package-former~ Datatype
 
 For this prototype's constraints, a PackageFormer will generally declared as
 #+BEGIN_SRC agda :tangle no
@@ -577,43 +584,75 @@ with other names when the package is instantiated. Likewise, we also want to era
 the sole parameter, and possibly increment the level. Let's form a type to work with these components
 rather than meddle with strings all the time.
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp  :tangle yes
+(defvar package-formers nil
+  "The list of PackageFormer schema declarations in the current Agda buffer.")
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :tangle yes
 (defstruct package-former
-  "Record of components that form a PackageFormer."
+  "Record of components that form a PackageFormer.
+
+   - ‘docstring’: Relevant documentation about this structure; e.g.,
+      what is the instance declaration that generated this type, if any.
+
+   - ‘type’: PackageFormer, record, data, module, etc.
+
+   - ‘name’: The name of the grouping mechnaism schema.
+
+   - ‘params’: The list of parameters we may have.
+
+   - ‘level’: The universe level that the instantiations will inhabit.
+
+   - ‘carrier’: The carrier of an ADT is the ADT, the carrier of a record is the record,
+                the carrier of a typeclass is a specfied set, say “Carrier : Set ℓ”.
+
+   - Finally, the children fields are the typed-names that constitute the body of the
+     grouping mechanism. As long as consistent indentation is selected, it does not matter how much.
+     As such, we keep track of these indentation numerics ourselves in case we need to tweak them.
+  "
   docstring
-  (type "PackageFormer")
+  type
   name
-  (param (make-typedname :name "v" :type "Variation"))
+  params
   level
-  (carrier "PackageFormer v")
+  carrier
   ;; children
-  ;;
-  ;; As long as consistent indentation is selected, it does not matter how much.
   field-header-indentation
   fields-indentation
   fields
-
 )
-;;   - ‘docstring’: What is the parent PackageFormer, or instance declaration, of
-;;     the currently intantiated data-type.
-;;
-;;    - ‘type’: PackageFormer, record, data, module, etc.
-;;   when construed as a function type, the ‘type’ value is rendered ""?
-;;
-;;    - ‘carrier’: What is the carrier of this new instance? E.g., “Carrier”.
-;;      By default it's the ‘new-name’; but this is unresonable when, say, a typeclass
-;;      variation is requested.
 #+END_SRC
 
-Whops, we need support for typed names ---pairs ~“name : type”~.
+It will get rather redundant to write ~(package-former-X p)~ to project the constituents of a PackageFormer ~p~. As such, let's introduce
+a useful macro to “open p” locally.
+#+BEGIN_SRC emacs-lisp :tangle yes
+;; An anaphoric macro ^_^
+(defmacro open-pf (p &rest body)
+  `(let
+    ((docstring                (package-former-docstring ,p))
+     (type                     (package-former-type ,p))
+     (name                     (package-former-name ,p))
+     (params                   (package-former-params ,p))
+     (level                    (package-former-level ,p))
+     (carrier                  (package-former-carrier ,p))
+     (field-header-indentation (package-former-field-header-indentation ,p))
+     (fields-indentation       (package-former-fields-indentation ,p))
+     (fields                   (package-former-fields ,p)))
+    ,@body
+  )
+)
+#+END_SRC
+
+Finally, it seems we need support for typed names ---pairs ~“name : type”~.
 We could use ~car~ and ~cdr~ on pairs, but let's use named projections instead
 so we don't have this extra mental strain and implicit type-checking to ensure.
 
 ** Typed Names
 
-#+BEGIN_SRC emacs-lisp
-(defstruct typedname
-  "Representation of pairs “name : type”,
+#+BEGIN_SRC emacs-lisp :tangle yes
+(defstruct tn
+  "Representation of typed-names, pairs “name : type”,
    for use in a context as in a parameter list
    or in a list of fields of a record-like type."
   name
@@ -622,26 +661,28 @@ so we don't have this extra mental strain and implicit type-checking to ensure.
 
 (cl-defun show-tn (tn)
   "Pretty print a typed-name record value"
-  (if tn (format "(%s : %s)" (typedname-name tn) (typedname-type tn)) "")
+  (if tn (format "(%s : %s)" (tn-name tn) (tn-type tn)) "")
 )
 #+END_SRC
 
-(cl-defmethod show ((x t))
-  "Catch-all show method"
-  (message (format "Default show invoked for object: %s" x))
-  t
-)
+Here's a basic test:
+#+BEGIN_SRC emacs-lisp :results replace table
+(show-tn (make-tn :name "this" :type "that"))
+#+END_SRC
 
+#+RESULTS:
+| (this : that) |
 
 ** Package Former Parsing and Pretty Printing
 
 With this in hand, let's produce a robust parser.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 (defun parse-package-former (lines)
   "The input ‘lines’ must be a list of lines forming a full PackageFormer declaration;
    e.g., obtained by calling ‘get-children’.
 
    It is parsed and a ‘package-former’ value is returned.
+   Whitespace is stripped off of items.
 
    Docstrings are ignored.
   "
@@ -650,17 +691,17 @@ With this in hand, let's produce a robust parser.
   ;; header ≈ “PackageFormer Semigroup   (v : Variation) : Set  ( ℓexpr)   where”
 
   (let* ((header (car lines))
-         (vs (substring-delimited-$ "($here : Variation"    header)))
-               (make-package-former
-                :type "PackageFormer"
-                :carrier (concat "PackageFormer " vs)
-                :name             (substring-delimited-$ "PackageFormer $here (" header)
-                :param (make-typedname :name vs :type "Variation")
-                     ;; ‘level’ may be “”, that's okay.
-                :level            (substring-delimited-$ "Set $here where"       header)
-                  :field-header-indentation (get-indentation (cadr lines))
-                  :fields-indentation (get-indentation (caddr lines))
-                  :fields (--map (s-trim it) (cddr lines)))
+         (vs (substring-delimited-$ "($here : Variation" header)))
+    (make-package-former
+     :type                     "PackageFormer"
+     :carrier                  (concat "PackageFormer " vs)
+     :name                     (substring-delimited-$ "PackageFormer $here (" header)
+     :params                   `(,(make-tn :name vs :type "Variation"))
+     ;; ‘level’ may be “”, that's okay.
+     :level                    (substring-delimited-$ "Set $here where" header)
+     :field-header-indentation (get-indentation (cadr lines))
+     :fields-indentation       (get-indentation (caddr lines))
+     :fields                   (--map (s-trim it) (cddr lines)))
   )
 )
 #+END_SRC
@@ -671,66 +712,54 @@ Let's try this out.
 #+END_SRC
 
 #+RESULTS:
-| #s(package-former PackageFormer Semigroup #s(typedname v Variation)  PackageFormer v 2 4 (_⨾_ : Semigroup v → Semigroup v → Semigroup v Id  : Semigroup v assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))) |
+| #s(package-former nil PackageFormer Semigroup (#s(tn v Variation))  PackageFormer v 2 4 (_⨾_ : Semigroup v → Semigroup v → Semigroup v Id  : Semigroup v assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))) |
 
-Conversely, let's have a pretty printer ---for testing purposes, if anything.
+Conversely, let's have a pretty printer.
 #+BEGIN_SRC emacs-lisp
-;;
-;;   - ‘carrier’: What is the carrier of this new instance? E.g., “Carrier”.
-;;      By default it's the ‘new-name’; but this is unresonable when, say, a typeclass
-;;      variation is requested.
-;;
-(cl-defun show-pf (p &key carrier omit-field-decl omit-docstring)
+(cl-defun show-package-former (p &key carrier omit-field-decl omit-docstring)
   "Pretty print a package-former record value"
 
-  (let ((flds (s-join "\n"
-                      (funcall (if omit-field-decl #'cdr #'identity) (package-former-fields p)))))
-        ; (pf-name (concat (package-former-name p) " " (typedname-name (package-former-param p)))))
-        ;; E.g., “Semigroup v”
+  (open-pf p (concat
 
-    ; (unless carrier (setq carrier pf-name))
-    ; (setq flds (s-replace pf-name carrier flds))
+     ;; 0. The docuemntation string
+     (unless omit-docstring (format "\n{- %s -}\n" docstring))
 
-    (concat
-     (unless omit-docstring (format "\n{- %s -}\n" (package-former-docstring p)))
-     (s-join " "
-      `( ,(package-former-type p)
-         ,(package-former-name p)
-         ,(show-tn (package-former-param p))
-         ": Set"
-         ,(format "%swhere\n" (package-former-level p))))
+     ;; 1. The schema declaration
+     (s-collapse-whitespace (s-join " "
+        (list type name (s-join " " (--map (show-tn it) params))
+              ": Set" level "where")))
 
-        (unless omit-field-decl
-          (concat (s-repeat (package-former-field-header-indentation p) " ") "field\n"))
+     ;; 2. The field keyword
+     (unless omit-field-decl
+       (concat "\n" (s-repeat field-header-indentation " ") "field\n"))
 
-      (s-join       "\n"
-       (--map (concat (s-repeat (package-former-fields-indentation p) " ") it)
-                (package-former-fields p)))
-      )
-   )
+     ;; 3. The fields
+      (s-join "\n"
+       (--map (concat (s-repeat fields-indentation " ") it) fields))
+    )
+  )
 )
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace
- (-let [pf (car (get-children "PackageFormer" test))]
-   (show (parse-package-former pf) :omit-docstring t))
+#+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
+(-let [pf (car (get-children "PackageFormer" test))]
+   (show-package-former (parse-package-former pf) :omit-docstring t))
 #+END_SRC
 
 #+RESULTS:
-: PackageFormer Semigroup (v : Variation) : Set where
-:   field
-:     _⨾_ : Semigroup v → Semigroup v → Semigroup v
-:     Id  : Semigroup v
-:     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+#+begin_src results-agda
+PackageFormer Semigroup (v : Variation) : Set where
+  field
+    _⨾_ : Semigroup v → Semigroup v → Semigroup v
+    Id  : Semigroup v
+    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+#+end_src
 
-At a first glance, ~%swhere\n"~ is in desperate need of some spacing, however
-this space miserliness permits us to phrase an approximation of the opinion
+The call to ~s-collapse-whitespace~ permits us to phrase an approximation of the opinion
 that parsing and showing should be inverses.
-
 #+BEGIN_SRC emacs-lisp :var test = test :exports both :results table replace
-(-let [pf (car (get-children "PackageFormer" _test))]
-  (equal (s-join "\n" pf) (show (parse-package-former pf) :omit-docstring t))
-  )
+(-let [pf (car (get-children "PackageFormer" test))]
+  (equal (s-join "\n" pf) (show-package-former (parse-package-former pf) :omit-docstring t)))
 #+END_SRC
 
 #+RESULTS:
@@ -739,87 +768,6 @@ that parsing and showing should be inverses.
 #+begin_center
 ( /In Lisp, ~t~ denotes “true”!/ )
 #+end_center
-
-** ~package-formers~ List
-#+BEGIN_SRC emacs-lisp
-(defvar package-formers nil
-  "The list of PackageFormer's declarations in the current Agda buffer.")
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-(defun load-package-former (lines)
-  "The input ‘lines’ mut be a list of lines forming a full PackageFormer declaration;
-   e.g., obtained by calling ‘get-children’.
-
-   It is parsed and added to the list of ‘package-formers’.
-  "
-
-    (add-to-list 'package-formers (parse-package-former lines))
-)
-#+END_SRC
-
-* Testing :neato:
-
-#+BEGIN_SRC emacs-lisp :results replace :wrap "example"
-(progn
-  (switch-to-buffer "Testing.agda")
-  (setq _res "hi")
-  (setq package-formers nil) (parse-700-comments)
-  (switch-to-buffer "PackageFormer.org")
-
-  ; _res
-  ; 700-comments
-  ; instantiations-remaining
-
-   package-formers
-   ; (reify-instances)
-   ; (instantiate-as-data (car package-formers))
-
-(-let [pf-name "M-syntax"]
-
-  (instantiate (cadr package-formers)  :name-suffix "syntax"
-                     :type "data"
-                     :omit-field-header t
-                     :new-name pf-name
-
-                     ; :keep-fields (lambda (f) (s-contains? "Vertex" (field-target f)))
-                    )
-
-
-)
-
-  (instantiate-as-data (cadr package-formers))
-)
-#+END_SRC
-
-#+RESULTS:
-#+begin_example
-
-{- This was generated from the PackageFormer Magma -}
-data Magma-syntax  : Set (ℓ.suc ℓ.zero)where
-    _⨾_ : Magma-syntax → Magma-syntax → Magma-syntax
-    -- Id  : Magma-syntax
-#+end_example
-
-
-
-
-    (instantiate decls  :new-name new-name
-                       :name-suffix "syntax"
-                       :type "data"
-                       :omit-field-header t
-                       :keep-fields (lambda (f) (s-contains? pf-name (field-target f)))
-                      ))
-
-#+RESULTS:
-#+begin_example
-
-{- This was generated from the PackageFormer Graph -}
-record Graph-typeclass (Carrier : Set) : Set (ℓ.suc ℓ.zero)where
-  field
-    Vertex : Set
-    _⟶_ : Vertex → Vertex → Set
-#+end_example
 
 * Parsing an Agda Buffer
 ** instantiations-remaining list
@@ -928,7 +876,8 @@ Test:
      ;; Else we have a PackageFormer declaration:
      ;; Get it along with the remaining 700-comments.
      (setq item (get-children "PackageFormer" lines))
-     (load-package-former (car item))
+     ;; load package former
+     (add-to-list 'package-formers (parse-package-former (car item)))
      (setq lines (cdr item))))
 
   (message "Finished parsing 700-comments.")
@@ -1260,9 +1209,9 @@ data Semigroup-syntax  : Set where
     Id  : Semigroup-syntax
 #+end_src
 
-
-
 Notice that the results contained generated names since no names were provided.
+
+Woah, look at that: This' reminiscent of that 200% increase from earlier ;-)
 
 * Instantiate all items in ‘instantiations-remaining’
 
@@ -1367,6 +1316,69 @@ Notice that the results contained generated names since no names were provided.
 
 (advice-add 'agda2-load :around #'reify-package-formers)
 #+END_SRC
+
+* Testing :neato:
+
+#+BEGIN_SRC emacs-lisp :results replace :wrap "example"
+(progn
+  (switch-to-buffer "Testing.agda")
+  (setq _res "hi")
+  (setq package-formers nil) (parse-700-comments)
+  (switch-to-buffer "PackageFormer.org")
+
+  ; _res
+  ; 700-comments
+  ; instantiations-remaining
+
+   package-formers
+   ; (reify-instances)
+   ; (instantiate-as-data (car package-formers))
+
+(-let [pf-name "M-syntax"]
+
+  (instantiate (cadr package-formers)  :name-suffix "syntax"
+                     :type "data"
+                     :omit-field-header t
+                     :new-name pf-name
+
+                     ; :keep-fields (lambda (f) (s-contains? "Vertex" (field-target f)))
+                    )
+
+
+)
+
+  (instantiate-as-data (cadr package-formers))
+)
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+
+{- This was generated from the PackageFormer Magma -}
+data Magma-syntax  : Set (ℓ.suc ℓ.zero)where
+    _⨾_ : Magma-syntax → Magma-syntax → Magma-syntax
+    -- Id  : Magma-syntax
+#+end_example
+
+
+
+
+    (instantiate decls  :new-name new-name
+                       :name-suffix "syntax"
+                       :type "data"
+                       :omit-field-header t
+                       :keep-fields (lambda (f) (s-contains? pf-name (field-target f)))
+                      ))
+
+#+RESULTS:
+#+begin_example
+
+{- This was generated from the PackageFormer Graph -}
+record Graph-typeclass (Carrier : Set) : Set (ℓ.suc ℓ.zero)where
+  field
+    Vertex : Set
+    _⟶_ : Vertex → Vertex → Set
+#+end_example
 
 * TODO COMMENT Acting on Agda Buffer
 
