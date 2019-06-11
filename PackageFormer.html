@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2019-06-10 Mon 20:07 -->
+<!-- 2019-06-11 Tue 08:47 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Package Formers</title>
@@ -333,31 +333,35 @@ In some sense, we are “continuing” the story of the Z's schemas.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#orge7b4925">1. <span class="done DONE">DONE</span> Aim: <i>Scrap the Repetition</i></a></li>
-<li><a href="#org2302fb5">2. <span class="done DONE">DONE</span> Global Preconditions</a></li>
-<li><a href="#org32a9b69">3. <span class="done DONE">DONE</span> Finding Children in the Wild</a></li>
-<li><a href="#orgc4e820f">4. <span class="done DONE">DONE</span> Substrings Delimited by Tokens</a></li>
-<li><a href="#orgf95b0d4">5. <span class="done DONE">DONE</span> The <code>package-former</code> Datatype</a>
+<li><a href="#org2e6584a">1. Aim: <i>Scrap the Repetition</i></a></li>
+<li><a href="#org5173dba">2. Global Preconditions &amp; Future Work</a></li>
+<li><a href="#org390aa06">3. Finding Children in the Wild</a></li>
+<li><a href="#orga85c406">4. Substrings Delimited by Tokens</a></li>
+<li><a href="#org8feba1a">5. The <code>package-former</code> Datatype</a>
 <ul>
-<li><a href="#org6340bc8">5.1. Typed Names</a></li>
-<li><a href="#org83b39e9">5.2. Package Former Parsing and Pretty Printing</a></li>
+<li><a href="#org85067e0">5.1. Typed Names</a></li>
+<li><a href="#org089466a">5.2. Package Former Parsing and Pretty Printing</a></li>
 </ul>
 </li>
-<li><a href="#orge6af346">6. Parsing an Agda Buffer</a>
+<li><a href="#org0f7329d">6. Parsing an Agda Buffer</a>
 <ul>
-<li><a href="#org50bca1f">6.1. instantiations-remaining list</a></li>
-<li><a href="#org9fb4831">6.2. parse-700-comments</a></li>
+<li><a href="#org66c0ce1">6.1. <code>instantiations-remaining</code> list</a></li>
+<li><a href="#orgeb89d52">6.2. <code>parse-700-comments</code></a></li>
 </ul>
 </li>
-<li><a href="#orgd89ab1e">7. <code>instantiate</code> &#x2014;the core utility</a></li>
-<li><a href="#org072bcef">8. Instantiate all items in ‘instantiations-remaining’</a></li>
-<li><a href="#org4694022">9. Testing&#xa0;&#xa0;&#xa0;<span class="tag"><span class="neato">neato</span></span></a></li>
+<li><a href="#org3569160">7. <code>instantiate</code> &#x2014;the core utility</a>
+<ul>
+<li><a href="#orgf714724">7.1. Instantiate all items in <code>instantiations-remaining</code></a></li>
+</ul>
+</li>
+<li><a href="#org32bc430">8. Advising our Beloved <code>C-c C-l</code></a></li>
+<li><a href="#orga0b0e80">9. Minor mode &#x2014;Menu matter</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-orge7b4925" class="outline-2">
-<h2 id="orge7b4925"><span class="section-number-2">1</span> <span class="done DONE">DONE</span> Aim: <i>Scrap the Repetition</i></h2>
+<div id="outline-container-org2e6584a" class="outline-2">
+<h2 id="org2e6584a"><span class="section-number-2">1</span> Aim: <i>Scrap the Repetition</i></h2>
 <div class="outline-text-2" id="text-1">
 <p>
 We're going to write a code generator in Lisp that is going to interpret
@@ -369,7 +373,7 @@ into currently legitimate Agda code.
 For example, something like the following, henceforth referred to as <code>test</code>:
 </p>
 <div class="org-src-container">
-<pre class="src src-agda" id="orgcf27a70"><span style="color: #ba2f59; font-weight: bold;">PackageFormer Semigroup</span> (<span style="color: #0000cd;">v</span> :<span style="color: #ba2f59; font-weight: bold;"> Variation</span>) : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
+<pre class="src src-agda" id="orgc621d4a"><span style="color: #ba2f59; font-weight: bold;">PackageFormer Semigroup</span> (<span style="color: #0000cd;">v</span> :<span style="color: #ba2f59; font-weight: bold;"> Variation</span>) : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
   <span style="color: #cd6600;">field</span>
     <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> :<span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #0000cd;">v</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #0000cd;">v</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #0000cd;">v</span>
    <span style="color: #ba2f59; font-weight: bold;"> Id</span>  :<span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #0000cd;">v</span>
@@ -404,17 +408,17 @@ Will behave as if it were written:
 </pre>
 </div>
 <p>
-This is a nearly <a id="org39a139b">200% increase</a> in size; that is, our fictitious code will
+This is a nearly <a id="org174c798">200% increase</a> in size; that is, our fictitious code will
 save us a lot of repetition.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org2302fb5" class="outline-2">
-<h2 id="org2302fb5"><span class="section-number-2">2</span> <span class="done DONE">DONE</span> Global Preconditions</h2>
+<div id="outline-container-org5173dba" class="outline-2">
+<h2 id="org5173dba"><span class="section-number-2">2</span> Global Preconditions &amp; Future Work</h2>
 <div class="outline-text-2" id="text-2">
 <p>
-For this prototype, we have the following <a id="orga797d87">constraints</a>:
+For this prototype, we have the following <a id="org69474ec">constraints</a>:
 </p>
 
 <ol class="org-ol">
@@ -449,10 +453,41 @@ There are many other useful features outlined in the proposal, such as default i
 hope to include in the future. For now, we just want something that works, is decently documented, and
 can be useful.
 </p>
+
+<p>
+Below are some desirable features to work on.
+</p>
+
+
+<ul class="org-ul">
+<li class="off"><code>[&#xa0;]</code> Why does ‘buffer-substring-delimited-whole-buffer’ return a list of strings? Why not join its result to simply return a list?</li>
+
+<li class="off"><code>[&#xa0;]</code> Generated.agda needs to inherit all open/import declarations from parent.</li>
+
+<li class="off"><code>[&#xa0;]</code> Lifting a field to the parameter level.
+<ul class="org-ul">
+<li>“pf typeclass lifting N” lifts the first N fields to the parameter level.</li>
+<li>The typeclass rendition is just record with a single lift ;-)</li>
+</ul></li>
+
+<li class="off"><code>[&#xa0;]</code> Demonstrate how generative modules can be emulated.</li>
+
+<li class="off"><code>[&#xa0;]</code> Renaming is unimplemented.</li>
+
+<li class="off"><code>[&#xa0;]</code> For now, PackageFormer's have no other parameters besides the variation symbol.</li>
+
+<li class="off"><code>[&#xa0;]</code> The global variables package-formers &amp; instance-declaration should be <i>buffer</i> specific?</li>
+
+<li class="off"><code>[&#xa0;]</code> Assign to a local var, check equality against global <a href="#org13c5ec8">700-comments</a>,
+if identical, no more processing since everything already generated.</li>
+
+<li class="off"><code>[&#xa0;]</code> Generate all instances of a PackageFormer schema.</li>
+</ul>
 </div>
 </div>
-<div id="outline-container-org32a9b69" class="outline-2">
-<h2 id="org32a9b69"><span class="section-number-2">3</span> <span class="done DONE">DONE</span> Finding Children in the Wild</h2>
+
+<div id="outline-container-org390aa06" class="outline-2">
+<h2 id="org390aa06"><span class="section-number-2">3</span> Finding Children in the Wild</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Being a prototype, we are talking a mostly sting-based approach to working
@@ -460,7 +495,7 @@ with hierarchical phrases.
 For example, consider the following todo list,
 </p>
 <div class="org-src-container">
-<pre class="src src-org" id="org3898f95">+ item 1
+<pre class="src src-org" id="orgd5bd5e4">+ item 1
   - subitem 1.1
     * subsubitem 1.1.1
   - subitem 1.2
@@ -702,8 +737,8 @@ Test-driven development doesn't seem bad 😲
 </div>
 </div>
 
-<div id="outline-container-orgc4e820f" class="outline-2">
-<h2 id="orgc4e820f"><span class="section-number-2">4</span> <span class="done DONE">DONE</span> Substrings Delimited by Tokens</h2>
+<div id="outline-container-orga85c406" class="outline-2">
+<h2 id="orga85c406"><span class="section-number-2">4</span> Substrings Delimited by Tokens</h2>
 <div class="outline-text-2" id="text-4">
 <div class="org-center">
 <p>
@@ -814,7 +849,7 @@ our string manipulation setup is robust enough to get at the constituents:
 <p>
 The aim is to eventually have an interface that interacts with an buffer containing Agda code.
 To that end, we propose that our fictitious syntax be directly embedded into via special comments,
-<code>{-700 ⋯ -}</code>, henceforth referred to as “<a id="orgaeed2f3">700-comments</a>”.
+<code>{-700 ⋯ -}</code>, henceforth referred to as “<a id="org13c5ec8">700-comments</a>”.
 </p>
 
 <ul class="org-ul">
@@ -827,7 +862,7 @@ contained in the ‘parenthesis’ <code>starting-regexp</code> and <code>ending
 
 <ul class="org-ul">
 <li>Cursor position is saved.</li>
-<li>This function let's us obtain the contents of <i>all</i> <a href="#orgaeed2f3">700-comments</a>.</li>
+<li>This function let's us obtain the contents of <i>all</i> <a href="#org13c5ec8">700-comments</a>.</li>
 </ul></li>
 </ul>
 
@@ -911,11 +946,11 @@ So much string meddling, hopefully no more 🙈 :hear<sub>no</sub><sub>evil</sub
 </div>
 </div>
 
-<div id="outline-container-orgf95b0d4" class="outline-2">
-<h2 id="orgf95b0d4"><span class="section-number-2">5</span> <span class="done DONE">DONE</span> The <code>package-former</code> Datatype</h2>
+<div id="outline-container-org8feba1a" class="outline-2">
+<h2 id="org8feba1a"><span class="section-number-2">5</span> The <code>package-former</code> Datatype</h2>
 <div class="outline-text-2" id="text-5">
 <p>
-For this prototype's <a href="#orga797d87">constraints</a>, a PackageFormer will generally declared as
+For this prototype's <a href="#org69474ec">constraints</a>, a PackageFormer will generally declared as
 </p>
 <div class="org-src-container">
 <pre class="src src-agda"><span style="color: #ba2f59; font-weight: bold;">PackageFormer Semigroup</span> (<span style="color: #0000cd;">v</span> :<span style="color: #ba2f59; font-weight: bold;"> Variation</span>) : <span style="color: #cd6600;">Set</span> &#8467; <span style="color: #cd6600;">where</span>
@@ -1003,8 +1038,8 @@ so we don't have this extra mental strain and implicit type-checking to ensure.
 </p>
 </div>
 
-<div id="outline-container-org6340bc8" class="outline-3">
-<h3 id="org6340bc8"><span class="section-number-3">5.1</span> Typed Names</h3>
+<div id="outline-container-org85067e0" class="outline-3">
+<h3 id="org85067e0"><span class="section-number-3">5.1</span> Typed Names</h3>
 <div class="outline-text-3" id="text-5-1">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">defstruct</span> tn
@@ -1045,8 +1080,8 @@ Here's a basic test:
 </div>
 </div>
 
-<div id="outline-container-org83b39e9" class="outline-3">
-<h3 id="org83b39e9"><span class="section-number-3">5.2</span> Package Former Parsing and Pretty Printing</h3>
+<div id="outline-container-org089466a" class="outline-3">
+<h3 id="org089466a"><span class="section-number-3">5.2</span> Package Former Parsing and Pretty Printing</h3>
 <div class="outline-text-3" id="text-5-2">
 <p>
 With this in hand, let's produce a robust parser.
@@ -1072,8 +1107,8 @@ With this in hand, let's produce a robust parser.
      <span style="color: #3a81c3;">:carrier</span>                  <span style="color: #67b11d;">(</span>concat <span style="color: #2d9574;">"PackageFormer "</span> vs<span style="color: #67b11d;">)</span>
      <span style="color: #3a81c3;">:name</span>                     <span style="color: #67b11d;">(</span>substring-delimited-$ <span style="color: #2d9574;">"PackageFormer $here ("</span> header<span style="color: #67b11d;">)</span>
      <span style="color: #3a81c3;">:params</span>                   `<span style="color: #67b11d;">(</span>,<span style="color: #b1951d;">(</span>make-tn <span style="color: #3a81c3;">:name</span> vs <span style="color: #3a81c3;">:type</span> <span style="color: #2d9574;">"Variation"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
-     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">level</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217; may be &#8220;&#8221;, that's okay.</span>
-     <span style="color: #3a81c3;">:level</span>                    <span style="color: #67b11d;">(</span>substring-delimited-$ <span style="color: #2d9574;">"Set $here where"</span> header<span style="color: #67b11d;">)</span>
+     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">level</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217; may be &#8220;&#8221;, that's okay. It may be a subscript &amp; so no space after &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">Set</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217;.</span>
+     <span style="color: #3a81c3;">:level</span>                    <span style="color: #67b11d;">(</span>substring-delimited-$ <span style="color: #2d9574;">"Set$here where"</span> header<span style="color: #67b11d;">)</span>
      <span style="color: #3a81c3;">:field-header-indentation</span> <span style="color: #67b11d;">(</span>get-indentation <span style="color: #b1951d;">(</span>cadr lines<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
      <span style="color: #3a81c3;">:fields-indentation</span>       <span style="color: #67b11d;">(</span>get-indentation <span style="color: #b1951d;">(</span>caddr lines<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
      <span style="color: #3a81c3;">:fields</span>                   <span style="color: #67b11d;">(</span><span style="color: #cd6600;">--map</span> <span style="color: #b1951d;">(</span>s-trim it<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>cddr lines<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
@@ -1107,7 +1142,7 @@ Let's try this out.
 Conversely, let's have a pretty printer.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">show-package-former</span> <span style="color: #6c3163;">(</span>p <span style="color: #ba2f59; font-weight: bold;">&amp;key</span> carrier omit-field-decl omit-docstring<span style="color: #6c3163;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">show-package-former</span> <span style="color: #6c3163;">(</span>p <span style="color: #ba2f59; font-weight: bold;">&amp;key</span> omit-field-decl omit-docstring<span style="color: #6c3163;">)</span>
   <span style="color: #da8b55;">"Pretty print a package-former record value"</span>
 
   <span style="color: #6c3163;">(</span><span style="color: #cd6600;">open-pf</span> p <span style="color: #2d9574;">(</span>concat
@@ -1120,9 +1155,10 @@ Conversely, let's have a pretty printer.
 	<span style="color: #3a81c3;">(</span>list type name <span style="color: #6c3163;">(</span>s-join <span style="color: #2d9574;">" "</span> <span style="color: #2d9574;">(</span><span style="color: #cd6600;">--map</span> <span style="color: #887070;">(</span>show-tn it<span style="color: #887070;">)</span> params<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 	      <span style="color: #2d9574;">": Set"</span> level <span style="color: #2d9574;">"where"</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
 
+     <span style="color: #2d9574;">"\n"</span>
      <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">2. The field keyword</span>
      <span style="color: #67b11d;">(</span><span style="color: #cd6600;">unless</span> omit-field-decl
-       <span style="color: #b1951d;">(</span>concat <span style="color: #2d9574;">"\n"</span> <span style="color: #3a81c3;">(</span>s-repeat field-header-indentation <span style="color: #2d9574;">" "</span><span style="color: #3a81c3;">)</span> <span style="color: #2d9574;">"field\n"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+       <span style="color: #b1951d;">(</span>concat <span style="color: #3a81c3;">(</span>s-repeat field-header-indentation <span style="color: #2d9574;">" "</span><span style="color: #3a81c3;">)</span> <span style="color: #2d9574;">"field\n"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
 
      <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">3. The fields</span>
       <span style="color: #67b11d;">(</span>s-join <span style="color: #2d9574;">"\n"</span>
@@ -1180,12 +1216,17 @@ that parsing and showing should be inverses.
 </div>
 </div>
 
-<div id="outline-container-orge6af346" class="outline-2">
-<h2 id="orge6af346"><span class="section-number-2">6</span> Parsing an Agda Buffer</h2>
+<div id="outline-container-org0f7329d" class="outline-2">
+<h2 id="org0f7329d"><span class="section-number-2">6</span> Parsing an Agda Buffer</h2>
 <div class="outline-text-2" id="text-6">
+<p>
+Before we can parse an Agda buffer, we need to be able to parse an instantiation declaration;
+for which we would later generate code.
+</p>
 </div>
-<div id="outline-container-org50bca1f" class="outline-3">
-<h3 id="org50bca1f"><span class="section-number-3">6.1</span> instantiations-remaining list</h3>
+
+<div id="outline-container-org66c0ce1" class="outline-3">
+<h3 id="org66c0ce1"><span class="section-number-3">6.1</span> <code>instantiations-remaining</code> list</h3>
 <div class="outline-text-3" id="text-6-1">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">defvar</span> <span style="color: #715ab1;">instantiations-remaining</span> nil
@@ -1199,6 +1240,7 @@ that parsing and showing should be inverses.
 <span style="color: #da8b55;">   &#10218;name&#10219; = &#10218;package-former&#10219; &#10218;variation&#10219; &#10218;renames&#10219;,</span>
 <span style="color: #da8b55;">   &#10218;renames&#10219; = &#949; | renaming (&#945; to &#945;&#8242; ; &#8230; ; &#969; to &#969;&#8242;).</span>
 <span style="color: #da8b55;">  "</span>
+  docstring <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">What the declaration looks like, useful for reference.</span>
   name package-former variation renames
 <span style="color: #3a81c3;">)</span>
 </pre>
@@ -1233,6 +1275,7 @@ that parsing and showing should be inverses.
        <span style="color: #b1951d;">(</span><span style="color: #cd6600;">setq</span> renames <span style="color: #3a81c3;">(</span><span style="color: #cd6600;">--map</span> <span style="color: #6c3163;">(</span>s-split <span style="color: #2d9574;">"to"</span> it<span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span>s-split <span style="color: #2d9574;">";"</span> renames<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
 
      <span style="color: #67b11d;">(</span><span style="color: #cd6600;">setq</span> inst <span style="color: #b1951d;">(</span>make-instance-declaration
+		     <span style="color: #3a81c3;">:docstring</span> line
 		 <span style="color: #3a81c3;">:name</span>           <span style="color: #3a81c3;">(</span>nth 0 pieces<span style="color: #3a81c3;">)</span>
 		 <span style="color: #3a81c3;">:package-former</span> <span style="color: #3a81c3;">(</span>nth 2 pieces<span style="color: #3a81c3;">)</span>
 		 <span style="color: #3a81c3;">:variation</span>      <span style="color: #3a81c3;">(</span>nth 3 pieces<span style="color: #3a81c3;">)</span>
@@ -1251,19 +1294,21 @@ that parsing and showing should be inverses.
 Test:
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>load-instance-declaration
-  <span style="color: #2d9574;">"MagmaR = Magma record renaming (Carrier to C; _&#10814;_ to _&#8728;_)"</span><span style="color: #3a81c3;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>pp <span style="color: #6c3163;">(</span>load-instance-declaration
+  <span style="color: #2d9574;">"MagmaR = Magma record renaming (Carrier to C; _&#10814;_ to _&#8728;_)"</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
 
 <pre class="example">
-#s(instance-declaration "MagmaR" "Magma" "record" (("Carrier " " C") (" _⨾_ " " _∘_")))
+#s(instance-declaration "MagmaR = Magma record renaming (Carrier to C; _⨾_ to _∘_)" "MagmaR" "Magma" "record"
+(("Carrier " " C")
+(" _⨾_ " " _∘_")))
 </pre>
 </div>
 </div>
 
-<div id="outline-container-org9fb4831" class="outline-3">
-<h3 id="org9fb4831"><span class="section-number-3">6.2</span> parse-<a href="#orgaeed2f3">700-comments</a></h3>
+<div id="outline-container-orgeb89d52" class="outline-3">
+<h3 id="orgeb89d52"><span class="section-number-3">6.2</span> <code>parse-700-comments</code></h3>
 <div class="outline-text-3" id="text-6-2">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">defvar</span> <span style="color: #715ab1;">700-comments</span> nil
@@ -1282,45 +1327,96 @@ Test:
 <span style="color: #da8b55;">  "</span>
   <span style="color: #6c3163;">(</span><span style="color: #cd6600;">interactive</span><span style="color: #6c3163;">)</span>
 
-   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">for testing</span>
-   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(setq instantiations-remaining nil)</span>
-   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(setq package-formers nil)</span>
-
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">For now, &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">item</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217; is either a PackageFormer or instantiation declaration.</span>
-  <span style="color: #6c3163;">(</span><span style="color: #cd6600;">let</span> <span style="color: #2d9574;">(</span>item lines<span style="color: #2d9574;">)</span>
+  <span style="color: #6c3163;">(</span><span style="color: #cd6600;">let</span> <span style="color: #2d9574;">(</span>item lines 700-cmnts<span style="color: #2d9574;">)</span>
 
-  <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Step 0: Catenate all 700-comments into a single string.</span>
-  <span style="color: #2d9574;">(</span><span style="color: #cd6600;">setq</span> 700-comments <span style="color: #67b11d;">(</span>s-join <span style="color: #2d9574;">"\n"</span> <span style="color: #b1951d;">(</span>buffer-substring-delimited-whole-buffer <span style="color: #2d9574;">"^</span><span style="color: #dc752f; background-color: #fbf8ef;">\</span><span style="color: #2d9574;">{-700"</span> <span style="color: #2d9574;">"^-</span><span style="color: #dc752f; background-color: #fbf8ef;">\</span><span style="color: #2d9574;">}"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+  <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">0. Catenate all 700-comments into a single string.</span>
+  <span style="color: #2d9574;">(</span><span style="color: #cd6600;">setq</span> 700-cmnts <span style="color: #67b11d;">(</span>s-join <span style="color: #2d9574;">"\n"</span> <span style="color: #b1951d;">(</span>buffer-substring-delimited-whole-buffer <span style="color: #2d9574;">"^</span><span style="color: #dc752f; background-color: #fbf8ef;">\</span><span style="color: #2d9574;">{-700"</span> <span style="color: #2d9574;">"^-</span><span style="color: #dc752f; background-color: #fbf8ef;">\</span><span style="color: #2d9574;">}"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
-  <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">View comments as a sequence of lines, ignore empty lines ---which are not in our grammar.</span>
-  <span style="color: #2d9574;">(</span><span style="color: #cd6600;">setq</span> lines <span style="color: #67b11d;">(</span><span style="color: #cd6600;">--remove</span> <span style="color: #b1951d;">(</span>s-blank? <span style="color: #3a81c3;">(</span>s-collapse-whitespace it<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>s-lines 700-comments<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+  <span style="color: #2d9574;">(</span><span style="color: #cd6600;">if</span> <span style="color: #67b11d;">(</span>equal 700-comments 700-cmnts<span style="color: #67b11d;">)</span> <span style="color: #67b11d;">(</span>message <span style="color: #2d9574;">"700-comments Unchanged."</span><span style="color: #67b11d;">)</span>
 
-  <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Traverse the 700-comments:</span>
-  <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">If we view a &#8220;lhs = rhs&#8221; equation, add to global &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">instantiations-remaining</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217; list.</span>
-  <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">If we view a PackageFormer declaration, add to global &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">package-formers</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217; list.</span>
-  <span style="color: #2d9574;">(</span><span style="color: #cd6600;">while</span> lines
-   <span style="color: #67b11d;">(</span><span style="color: #cd6600;">setq</span> item <span style="color: #b1951d;">(</span>car lines<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
-   <span style="color: #67b11d;">(</span><span style="color: #cd6600;">if</span> <span style="color: #b1951d;">(</span>load-instance-declaration item<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span><span style="color: #cd6600;">setq</span> lines <span style="color: #3a81c3;">(</span>cdr lines<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
-     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Else we have a PackageFormer declaration:</span>
-     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Get it along with the remaining 700-comments.</span>
-     <span style="color: #b1951d;">(</span><span style="color: #cd6600;">setq</span> item <span style="color: #3a81c3;">(</span>get-children <span style="color: #2d9574;">"PackageFormer"</span> lines<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
-     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">load package former</span>
-     <span style="color: #b1951d;">(</span>add-to-list 'package-formers <span style="color: #3a81c3;">(</span>parse-package-former <span style="color: #6c3163;">(</span>car item<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
-     <span style="color: #b1951d;">(</span><span style="color: #cd6600;">setq</span> lines <span style="color: #3a81c3;">(</span>cdr item<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#189;. Update global.</span>
+    <span style="color: #67b11d;">(</span><span style="color: #cd6600;">setq</span> 700-comments 700-cmnts<span style="color: #67b11d;">)</span>
+
+    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">1. View comments as a sequence of lines, ignore empty lines ---which are not in our grammar.</span>
+    <span style="color: #67b11d;">(</span><span style="color: #cd6600;">setq</span> lines <span style="color: #b1951d;">(</span><span style="color: #cd6600;">--remove</span> <span style="color: #3a81c3;">(</span>s-blank? <span style="color: #6c3163;">(</span>s-collapse-whitespace it<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>s-lines 700-comments<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+
+    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">2. Traverse the 700-comments:</span>
+    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">If we view a &#8220;lhs = rhs&#8221; equation, add to global &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">instantiations-remaining</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217; list.</span>
+    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">If we view a PackageFormer declaration, add to global &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">package-formers</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217; list.</span>
+    <span style="color: #67b11d;">(</span><span style="color: #cd6600;">while</span> lines
+     <span style="color: #b1951d;">(</span><span style="color: #cd6600;">setq</span> item <span style="color: #3a81c3;">(</span>car lines<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
+     <span style="color: #b1951d;">(</span><span style="color: #cd6600;">if</span> <span style="color: #3a81c3;">(</span>load-instance-declaration item<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span><span style="color: #cd6600;">setq</span> lines <span style="color: #6c3163;">(</span>cdr lines<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+       <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Else we have a PackageFormer declaration:</span>
+       <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Get it along with the remaining 700-comments.</span>
+       <span style="color: #3a81c3;">(</span><span style="color: #cd6600;">setq</span> item <span style="color: #6c3163;">(</span>get-children <span style="color: #2d9574;">"PackageFormer"</span> lines<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+       <span style="color: #3a81c3;">(</span>add-to-list 'package-formers <span style="color: #6c3163;">(</span>parse-package-former <span style="color: #2d9574;">(</span>car item<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+       <span style="color: #3a81c3;">(</span><span style="color: #cd6600;">setq</span> lines <span style="color: #6c3163;">(</span>cdr item<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
   <span style="color: #2d9574;">(</span>message <span style="color: #2d9574;">"Finished parsing 700-comments."</span><span style="color: #2d9574;">)</span>
   <span style="color: #6c3163;">)</span>
 <span style="color: #3a81c3;">)</span>
+</pre>
+</div>
 
-<span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(global-set-key (kbd "&lt;f7&gt;") 'parse-700-comments)</span>
+<p>
+Let's test this out on our sample input file, <code>Testing.agda</code>.
+</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">progn</span>
+  <span style="color: #6c3163;">(</span>switch-to-buffer <span style="color: #2d9574;">"Testing.agda"</span><span style="color: #6c3163;">)</span>
+
+  <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> package-formers nil<span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> 700-comments nil<span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>parse-700-comments<span style="color: #6c3163;">)</span>
+
+  <span style="color: #6c3163;">(</span>switch-to-buffer <span style="color: #2d9574;">"PackageFormer.org"</span><span style="color: #6c3163;">)</span>
+
+  <span style="color: #6c3163;">(</span>s-join <span style="color: #2d9574;">"\n\n"</span>
+	  <span style="color: #2d9574;">(</span>list <span style="color: #67b11d;">(</span>s-trim 700-comments<span style="color: #67b11d;">)</span>
+		<span style="color: #67b11d;">(</span>pp package-formers<span style="color: #67b11d;">)</span> <span style="color: #67b11d;">(</span>pp instantiations-remaining<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+<span style="color: #3a81c3;">)</span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-results-agda"><span style="color: #ba2f59; font-weight: bold;">PackageFormer Semigroup</span> (<span style="color: #0000cd;">v</span> :<span style="color: #ba2f59; font-weight: bold;"> Variation</span>) : <span style="color: #cd6600;">Set</span> (&#8467;.<span style="color: #0000cd;">suc</span> &#8467;.<span style="color: #0000cd;">zero</span>) <span style="color: #cd6600;">where</span>
+  <span style="color: #cd6600;">field</span>
+    <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> :<span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #0000cd;">v</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #0000cd;">v</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #0000cd;">v</span>
+    --<span style="color: #ba2f59; font-weight: bold;"> Id</span>  :<span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #0000cd;">v</span>
+    <span style="color: #ba2f59; font-weight: bold;">assoc</span> : &#8704; {<span style="color: #0000cd;">x</span> <span style="color: #0000cd;">y</span> <span style="color: #0000cd;">z</span>} &#8594; (<span style="color: #0000cd;">x</span> &#10814; <span style="color: #0000cd;">y</span>) &#10814; <span style="color: #0000cd;">z</span> &#8801; <span style="color: #0000cd;">x</span> &#10814; (<span style="color: #0000cd;">y</span> &#10814; <span style="color: #0000cd;">z</span>)
+
+Semigroup-<span style="color: #cd6600;">typeclass</span> <span style="color: #cd6600;">=</span><span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #cd6600;">typeclass</span>
+S<span style="color: #0000cd;">emigroupT</span> <span style="color: #cd6600;">=</span><span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #cd6600;">typeclass</span>
+S<span style="color: #0000cd;">emigroupR</span> <span style="color: #cd6600;">=</span><span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #cd6600;">record</span>
+S<span style="color: #0000cd;">emigroupD</span> <span style="color: #cd6600;">=</span><span style="color: #ba2f59; font-weight: bold;"> Semigroup</span> <span style="color: #cd6600;">data</span>
+
+(#<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">package-former</span> <span style="color: #0000cd;">nil</span> <span style="color: #2d9574;">"PackageFormer"</span> <span style="color: #2d9574;">"Semigroup"</span>
+		   (#<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">tn</span> <span style="color: #2d9574;">"v"</span> <span style="color: #2d9574;">"Variation"</span>))
+		   <span style="color: #2d9574;">"(&#8467;.suc &#8467;.zero)"</span> <span style="color: #2d9574;">"PackageFormer v"</span> <span style="color: #a020f0;">2</span> <span style="color: #a020f0;">4</span>
+		   (<span style="color: #2d9574;">"_&#10814;_ : Semigroup v &#8594; Semigroup v &#8594; Semigroup v"</span> <span style="color: #2d9574;">"-- Id  : Semigroup v"</span> <span style="color: #2d9574;">"assoc : &#8704; {x y z} &#8594; (x &#10814; y) &#10814; z &#8801; x &#10814; (y &#10814; z)"</span>)))
+
+
+(#<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">instance-declaration</span> <span style="color: #2d9574;">"SemigroupD"</span> <span style="color: #2d9574;">"Semigroup"</span> <span style="color: #2d9574;">"data"</span> <span style="color: #0000cd;">nil</span>)
+   #<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">instance-declaration</span> <span style="color: #2d9574;">"SemigroupR"</span> <span style="color: #2d9574;">"Semigroup"</span> <span style="color: #2d9574;">"record"</span> <span style="color: #0000cd;">nil</span>)
+   #<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">instance-declaration</span> <span style="color: #2d9574;">"SemigroupT"</span> <span style="color: #2d9574;">"Semigroup"</span> <span style="color: #2d9574;">"typeclass"</span> <span style="color: #0000cd;">nil</span>)
+   #<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">instance-declaration</span> <span style="color: #2d9574;">"Semigroup-typeclass"</span> <span style="color: #2d9574;">"Semigroup"</span> <span style="color: #2d9574;">"typeclass"</span> <span style="color: #0000cd;">nil</span>)
+   #<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">instance-declaration</span> <span style="color: #2d9574;">"AGraph"</span> <span style="color: #2d9574;">"Graph"</span> <span style="color: #2d9574;">"typeclass"</span>
+			   ((<span style="color: #2d9574;">"Carrier "</span> <span style="color: #2d9574;">" Vertex"</span>)))
+   #<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">instance-declaration</span> <span style="color: #2d9574;">"MagmaD"</span> <span style="color: #2d9574;">"Magma"</span> <span style="color: #2d9574;">"data"</span> <span style="color: #0000cd;">nil</span>)
+   #<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">instance-declaration</span> <span style="color: #2d9574;">"MagmaR"</span> <span style="color: #2d9574;">"Magma"</span> <span style="color: #2d9574;">"record"</span> <span style="color: #0000cd;">nil</span>)
+   #<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">instance-declaration</span> <span style="color: #2d9574;">"MagmaT"</span> <span style="color: #2d9574;">"Magma"</span> <span style="color: #2d9574;">"typeclass"</span> <span style="color: #0000cd;">nil</span>)
+   #<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">instance-declaration</span> <span style="color: #2d9574;">"Magma-typeclass"</span> <span style="color: #2d9574;">"Magma"</span> <span style="color: #2d9574;">"typeclass"</span> <span style="color: #0000cd;">nil</span>)
+   #<span style="color: #0000cd;">s</span>(<span style="color: #0000cd;">instance-declaration</span> <span style="color: #2d9574;">"MagmaR"</span> <span style="color: #2d9574;">"Magma"</span> <span style="color: #2d9574;">"record"</span>
+			   ((<span style="color: #2d9574;">"Carrier "</span> <span style="color: #2d9574;">" C"</span>)
+			    (<span style="color: #2d9574;">" _&#10814;_ "</span> <span style="color: #2d9574;">" _&#8728;_"</span>))))
 </pre>
 </div>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orgd89ab1e" class="outline-2">
-<h2 id="orgd89ab1e"><span class="section-number-2">7</span> <code>instantiate</code> &#x2014;the core utility</h2>
+<div id="outline-container-org3569160" class="outline-2">
+<h2 id="org3569160"><span class="section-number-2">7</span> <code>instantiate</code> &#x2014;the core utility</h2>
 <div class="outline-text-2" id="text-7">
 <p>
 Let's put the pieces together.
@@ -1329,7 +1425,7 @@ Let's put the pieces together.
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">instantiate</span> <span style="color: #6c3163;">(</span>decls <span style="color: #ba2f59; font-weight: bold;">&amp;key</span>
   new-name <span style="color: #2d9574;">(</span>type <span style="color: #2d9574;">"record"</span><span style="color: #2d9574;">)</span> carrier
   name-suffix
-  param-replacement
+  params-replacement
   prefix-fields suffix-fields omit-field-header
   <span style="color: #2d9574;">(</span>keep-fields <span style="color: #67b11d;">(</span><span style="color: #cd6600;">lambda</span> <span style="color: #b1951d;">(</span>x<span style="color: #b1951d;">)</span> t<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
   <span style="color: #2d9574;">(</span>alter-raw-fields #'identity<span style="color: #2d9574;">)</span>
@@ -1358,7 +1454,7 @@ Let's put the pieces together.
 <span style="color: #da8b55;">     This may be useful for rapid development when one does not want to provide</span>
 <span style="color: #da8b55;">     a name to an instance, but simply wants the instance to exist.</span>
 
-<span style="color: #da8b55;">   - &#8216;</span><span style="color: #4e3163;">param-replacement</span><span style="color: #da8b55;">&#8217;: '(&#8220;Carrier&#8221; . &#8220;Set&#8221;); empty string by default.</span>
+<span style="color: #da8b55;">   - &#8216;</span><span style="color: #4e3163;">params-replacement</span><span style="color: #da8b55;">&#8217;: '(&#8220;Carrier&#8221; . &#8220;Set&#8221;); empty string by default.</span>
 
 <span style="color: #da8b55;">   - &#8216;</span><span style="color: #4e3163;">prefix-fields</span><span style="color: #da8b55;">&#8217;: List of fields, &#8220;name : type&#8221;, to be added at the beginning</span>
 <span style="color: #da8b55;">      of the field declaration. Default is empty string.</span>
@@ -1384,7 +1480,7 @@ Let's put the pieces together.
 
   <span style="color: #6c3163;">(</span><span style="color: #cd6600;">let*</span> <span style="color: #2d9574;">(</span><span style="color: #67b11d;">(</span>pf <span style="color: #b1951d;">(</span><span style="color: #cd6600;">if</span> <span style="color: #3a81c3;">(</span>package-former-p decls<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>copy-package-former decls<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>parse-package-former <span style="color: #6c3163;">(</span>car <span style="color: #2d9574;">(</span>get-children <span style="color: #2d9574;">"PackageFormer"</span> decls<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
 	 <span style="color: #67b11d;">(</span>pf-name <span style="color: #b1951d;">(</span>package-former-name pf<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
-	 <span style="color: #67b11d;">(</span>pfv <span style="color: #b1951d;">(</span>concat pf-name <span style="color: #2d9574;">" "</span> <span style="color: #3a81c3;">(</span>typedname-name <span style="color: #6c3163;">(</span>package-former-param pf<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+	 <span style="color: #67b11d;">(</span>pfv <span style="color: #b1951d;">(</span>concat pf-name <span style="color: #2d9574;">" "</span> <span style="color: #3a81c3;">(</span>tn-name <span style="color: #6c3163;">(</span>car <span style="color: #2d9574;">(</span>package-former-params pf<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span> <span style="color: #2aa1ae; background-color: #ecf3ec;">;;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">first param is the variation symbol.</span>
 	 <span style="color: #67b11d;">(</span>fields     <span style="color: #b1951d;">(</span>funcall alter-raw-fields <span style="color: #3a81c3;">(</span>package-former-fields pf<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
 	 <span style="color: #2d9574;">)</span>
 
@@ -1397,7 +1493,7 @@ Let's put the pieces together.
   <span style="color: #2d9574;">(</span><span style="color: #cd6600;">setf</span> <span style="color: #67b11d;">(</span>package-former-type pf<span style="color: #67b11d;">)</span> type<span style="color: #2d9574;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">1. Replace "(? : Variation)" with the provided &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">variation-replacement</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217;.</span>
-  <span style="color: #2d9574;">(</span><span style="color: #cd6600;">setf</span> <span style="color: #67b11d;">(</span>package-former-param pf<span style="color: #67b11d;">)</span> param-replacement<span style="color: #2d9574;">)</span>
+  <span style="color: #2d9574;">(</span><span style="color: #cd6600;">setf</span> <span style="color: #67b11d;">(</span>package-former-params pf<span style="color: #67b11d;">)</span> params-replacement<span style="color: #2d9574;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">2. Replace all occurences of &#8220;package-former-name followed by variation&#8221;</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">with &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">carrier</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217;, if any.</span>
@@ -1420,37 +1516,23 @@ Let's put the pieces together.
 	   <span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">5. Stringify!</span>
-  <span style="color: #2d9574;">(</span>show-pf pf <span style="color: #3a81c3;">:omit-field-decl</span> omit-field-header<span style="color: #2d9574;">)</span>
+  <span style="color: #2d9574;">(</span>show-package-former pf <span style="color: #3a81c3;">:omit-field-decl</span> omit-field-header<span style="color: #2d9574;">)</span>
 
  <span style="color: #6c3163;">)</span>
 <span style="color: #3a81c3;">)</span>
-
-<span style="color: #3a81c3;">(</span><span style="color: #cd6600;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">specialise</span> <span style="color: #6c3163;">(</span>instance<span style="color: #6c3163;">)</span>
- <span style="color: #da8b55;">"Input is an instantiation declaration, output is a pacakge former value."</span>
-
- <span style="color: #6c3163;">(</span>make-package-former<span style="color: #6c3163;">)</span>
-
-<span style="color: #3a81c3;">)</span>
 </pre>
 </div>
-
-<div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>load-instance-declaration
-  <span style="color: #2d9574;">"MagmaR = Magma record renaming (Carrier to C; _&#10814;_ to _&#8728;_)"</span><span style="color: #3a81c3;">)</span>
-</pre>
-</div>
-
 
 <p>
 Let's instantiate our test example from earlier to produce a typeclass.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>instantiate _test   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">:new-name "SemigroupT"</span>
-		    <span style="color: #3a81c3;">:name-suffix</span> <span style="color: #2d9574;">"typeclass"</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>instantiate test   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">:new-name "SemigroupT"</span>
+		    <span style="color: #3a81c3;">:name-suffix</span> <span style="color: #2d9574;">"On"</span>
 		    <span style="color: #3a81c3;">:type</span> <span style="color: #2d9574;">"record"</span>
-		    <span style="color: #3a81c3;">:param-replacement</span> <span style="color: #6c3163;">(</span>make-typedname <span style="color: #3a81c3;">:name</span> <span style="color: #2d9574;">"Carrier"</span> <span style="color: #3a81c3;">:type</span> <span style="color: #2d9574;">"Set"</span><span style="color: #6c3163;">)</span>
+		    <span style="color: #3a81c3;">:params-replacement</span> <span style="color: #6c3163;">(</span>list <span style="color: #2d9574;">(</span>make-tn <span style="color: #3a81c3;">:name</span> <span style="color: #2d9574;">"Carrier"</span> <span style="color: #3a81c3;">:type</span> <span style="color: #2d9574;">"Set"</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 		    <span style="color: #3a81c3;">:carrier</span> <span style="color: #2d9574;">"Carrier"</span>
-		      <span style="color: #3a81c3;">:docstring</span> <span style="color: #2d9574;">"This is a test"</span>
+		    <span style="color: #3a81c3;">:docstring</span> <span style="color: #2d9574;">"This is a test"</span>
 		    <span style="color: #3a81c3;">)</span>
 </pre>
 </div>
@@ -1458,15 +1540,13 @@ Let's instantiate our test example from earlier to produce a typeclass.
 <div class="org-src-container">
 <pre class="src src-results-agda">
 <span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This is a test </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
-<span style="color: #cd6600;">record</span> Semigroup-<span style="color: #cd6600;">typeclass</span><span style="color: #ba2f59; font-weight: bold;"> (Carrier</span> : <span style="color: #cd6600;">Set</span>) : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
+<span style="color: #cd6600;">record</span><span style="color: #ba2f59; font-weight: bold;"> Semigroup-On (Carrier</span> : <span style="color: #cd6600;">Set</span>) : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
   <span style="color: #cd6600;">field</span>
     <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
    <span style="color: #ba2f59; font-weight: bold;"> Id</span>  :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
     <span style="color: #ba2f59; font-weight: bold;">assoc</span> : &#8704; {<span style="color: #0000cd;">x</span> <span style="color: #0000cd;">y</span> <span style="color: #0000cd;">z</span>} &#8594; (<span style="color: #0000cd;">x</span> &#10814; <span style="color: #0000cd;">y</span>) &#10814; <span style="color: #0000cd;">z</span> &#8801; <span style="color: #0000cd;">x</span> &#10814; (<span style="color: #0000cd;">y</span> &#10814; <span style="color: #0000cd;">z</span>)
 </pre>
 </div>
-
-
 
 <p>
 What about a bundled up record declaration?
@@ -1484,7 +1564,7 @@ What about a bundled up record declaration?
 <div class="org-src-container">
 <pre class="src src-results-agda">
 <span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This was generated from the PackageFormer Semigroup </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
-<span style="color: #cd6600;">record</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup-semantics</span>  : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
+<span style="color: #cd6600;">record</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup-semantics</span> : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
   <span style="color: #cd6600;">field</span>
    <span style="color: #ba2f59; font-weight: bold;"> Carrier</span> : <span style="color: #cd6600;">Set</span>
     <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
@@ -1562,7 +1642,7 @@ The results are as expected, so let's move to the real use case.
 <div class="org-src-container">
 <pre class="src src-results-agda">
 <span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This was generated from the PackageFormer Semigroup </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
-<span style="color: #cd6600;">data</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span>  : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
+<span style="color: #cd6600;">data</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span> : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
     <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> : <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span> &#8594; <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span> &#8594; <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span>
    <span style="color: #ba2f59; font-weight: bold;"> Id</span>  : <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span>
 </pre>
@@ -1577,7 +1657,7 @@ function 🤠 We can emulate generative modules this way too! 😻
 Let's package these particular toggle configurations into their own functions.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">instantiate-as-typeclass</span> <span style="color: #6c3163;">(</span>decls <span style="color: #ba2f59; font-weight: bold;">&amp;key</span> new-name <span style="color: #2d9574;">(</span>carrier <span style="color: #2d9574;">"Carrier"</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">instantiate-as-typeclass</span> <span style="color: #6c3163;">(</span>decls <span style="color: #ba2f59; font-weight: bold;">&amp;key</span> new-name <span style="color: #2d9574;">(</span>carrier <span style="color: #2d9574;">"Carrier"</span><span style="color: #2d9574;">)</span> docstring<span style="color: #6c3163;">)</span>
 
   <span style="color: #da8b55;">"Given a PackageFormer declaration, instantiate it into a concrete Agda &#8220;typeclass&#8221;.</span>
 
@@ -1591,17 +1671,18 @@ Let's package these particular toggle configurations into their own functions.
 
 <span style="color: #da8b55;">  "</span>
   <span style="color: #6c3163;">(</span>instantiate decls <span style="color: #3a81c3;">:new-name</span> new-name
-		     <span style="color: #3a81c3;">:name-suffix</span> <span style="color: #2d9574;">"typeclass"</span>
+		     <span style="color: #3a81c3;">:name-suffix</span> <span style="color: #2d9574;">"On"</span>
 		     <span style="color: #3a81c3;">:type</span> <span style="color: #2d9574;">"record"</span>
-		       <span style="color: #3a81c3;">:param-replacement</span> <span style="color: #2d9574;">(</span>make-typedname <span style="color: #3a81c3;">:name</span> carrier <span style="color: #3a81c3;">:type</span> <span style="color: #2d9574;">"Set"</span><span style="color: #2d9574;">)</span>
+		     <span style="color: #3a81c3;">:params-replacement</span> <span style="color: #2d9574;">(</span>list <span style="color: #67b11d;">(</span>make-tn <span style="color: #3a81c3;">:name</span> carrier <span style="color: #3a81c3;">:type</span> <span style="color: #2d9574;">"Set"</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 		     <span style="color: #3a81c3;">:carrier</span> carrier
+		       <span style="color: #3a81c3;">:docstring</span> docstring
 		    <span style="color: #6c3163;">)</span>
 <span style="color: #3a81c3;">)</span>
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">instantiate-as-record</span> <span style="color: #6c3163;">(</span>decls <span style="color: #ba2f59; font-weight: bold;">&amp;key</span> new-name <span style="color: #2d9574;">(</span>carrier <span style="color: #2d9574;">"Carrier"</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">instantiate-as-record</span> <span style="color: #6c3163;">(</span>decls <span style="color: #ba2f59; font-weight: bold;">&amp;key</span> new-name <span style="color: #2d9574;">(</span>carrier <span style="color: #2d9574;">"Carrier"</span><span style="color: #2d9574;">)</span> docstring<span style="color: #6c3163;">)</span>
 
   <span style="color: #da8b55;">"Given a PackageFormer declaration, instantiate it into a concrete Agda record.</span>
 
@@ -1619,13 +1700,14 @@ Let's package these particular toggle configurations into their own functions.
 		    <span style="color: #3a81c3;">:type</span> <span style="color: #2d9574;">"record"</span>
 		    <span style="color: #3a81c3;">:carrier</span> carrier
 		    <span style="color: #3a81c3;">:prefix-fields</span> `<span style="color: #2d9574;">(</span>,<span style="color: #67b11d;">(</span>format <span style="color: #2d9574;">"%s : Set"</span> carrier<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+		     <span style="color: #3a81c3;">:docstring</span> docstring
 		    <span style="color: #6c3163;">)</span>
 <span style="color: #3a81c3;">)</span>
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">instantiate-as-data</span> <span style="color: #6c3163;">(</span>decls <span style="color: #ba2f59; font-weight: bold;">&amp;key</span> new-name <span style="color: #2d9574;">(</span>carrier <span style="color: #2d9574;">"Carrier"</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">instantiate-as-data</span> <span style="color: #6c3163;">(</span>decls <span style="color: #ba2f59; font-weight: bold;">&amp;key</span> new-name <span style="color: #2d9574;">(</span>carrier <span style="color: #2d9574;">"Carrier"</span><span style="color: #2d9574;">)</span> docstring<span style="color: #6c3163;">)</span>
 
   <span style="color: #da8b55;">"Given a PackageFormer declaration, instantiate it into a concrete Agda record.</span>
 
@@ -1646,6 +1728,7 @@ Let's package these particular toggle configurations into their own functions.
 		       <span style="color: #3a81c3;">:type</span> <span style="color: #2d9574;">"data"</span>
 		       <span style="color: #3a81c3;">:omit-field-header</span> t
 		       <span style="color: #3a81c3;">:keep-fields</span> <span style="color: #67b11d;">(</span><span style="color: #cd6600;">lambda</span> <span style="color: #b1951d;">(</span>f<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>s-contains? pf-name <span style="color: #3a81c3;">(</span>field-target f<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+			 <span style="color: #3a81c3;">:docstring</span> docstring
 		      <span style="color: #2d9574;">)</span>
   <span style="color: #6c3163;">)</span>
 <span style="color: #3a81c3;">)</span>
@@ -1656,27 +1739,25 @@ Let's package these particular toggle configurations into their own functions.
 That's a lot of mumbo jumbo, let's have a sanity check.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>s-join <span style="color: #2d9574;">"\n"</span> `<span style="color: #6c3163;">(</span>
-,<span style="color: #2d9574;">(</span>instantiate-as-typeclass test<span style="color: #2d9574;">)</span>
-,<span style="color: #2d9574;">(</span>instantiate-as-record test<span style="color: #2d9574;">)</span>
-,<span style="color: #2d9574;">(</span>instantiate-as-data test<span style="color: #2d9574;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>s-join <span style="color: #2d9574;">"\n"</span> <span style="color: #6c3163;">(</span>list
+ <span style="color: #2d9574;">(</span>instantiate-as-typeclass test<span style="color: #2d9574;">)</span>
+ <span style="color: #2d9574;">(</span>instantiate-as-record test<span style="color: #2d9574;">)</span>
+ <span style="color: #2d9574;">(</span>instantiate-as-data test<span style="color: #2d9574;">)</span>
 <span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
-
-<span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(instantiate-as-typeclass (cadr package-formers) :new-name "hello")</span>
 </pre>
 </div>
 
 <div class="org-src-container">
 <pre class="src src-results-agda">
 <span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This was generated from the PackageFormer Semigroup </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
-<span style="color: #cd6600;">record</span> Semigroup-<span style="color: #cd6600;">typeclass</span><span style="color: #ba2f59; font-weight: bold;"> (Carrier</span> : <span style="color: #cd6600;">Set</span>) : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
+<span style="color: #cd6600;">record</span><span style="color: #ba2f59; font-weight: bold;"> Semigroup-On</span> : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
   <span style="color: #cd6600;">field</span>
     <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
    <span style="color: #ba2f59; font-weight: bold;"> Id</span>  :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
     <span style="color: #ba2f59; font-weight: bold;">assoc</span> : &#8704; {<span style="color: #0000cd;">x</span> <span style="color: #0000cd;">y</span> <span style="color: #0000cd;">z</span>} &#8594; (<span style="color: #0000cd;">x</span> &#10814; <span style="color: #0000cd;">y</span>) &#10814; <span style="color: #0000cd;">z</span> &#8801; <span style="color: #0000cd;">x</span> &#10814; (<span style="color: #0000cd;">y</span> &#10814; <span style="color: #0000cd;">z</span>)
 
 <span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This was generated from the PackageFormer Semigroup </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
-<span style="color: #cd6600;">record</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup-semantics</span>  : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
+<span style="color: #cd6600;">record</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup-semantics</span> : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
   <span style="color: #cd6600;">field</span>
    <span style="color: #ba2f59; font-weight: bold;"> Carrier</span> : <span style="color: #cd6600;">Set</span>
     <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
@@ -1684,7 +1765,7 @@ That's a lot of mumbo jumbo, let's have a sanity check.
     <span style="color: #ba2f59; font-weight: bold;">assoc</span> : &#8704; {<span style="color: #0000cd;">x</span> <span style="color: #0000cd;">y</span> <span style="color: #0000cd;">z</span>} &#8594; (<span style="color: #0000cd;">x</span> &#10814; <span style="color: #0000cd;">y</span>) &#10814; <span style="color: #0000cd;">z</span> &#8801; <span style="color: #0000cd;">x</span> &#10814; (<span style="color: #0000cd;">y</span> &#10814; <span style="color: #0000cd;">z</span>)
 
 <span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This was generated from the PackageFormer Semigroup </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
-<span style="color: #cd6600;">data</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span>  : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
+<span style="color: #cd6600;">data</span> <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span> : <span style="color: #cd6600;">Set</span> <span style="color: #cd6600;">where</span>
     <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> : <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span> &#8594; <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span> &#8594; <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span>
    <span style="color: #ba2f59; font-weight: bold;"> Id</span>  : <span style="color: #ba2f59; font-weight: bold;">Semigroup-syntax</span>
 </pre>
@@ -1695,14 +1776,13 @@ Notice that the results contained generated names since no names were provided.
 </p>
 
 <p>
-Woah, look at that: This' reminiscent of that <a href="#org39a139b">200% increase</a> from earlier ;-)
+Woah, look at that: This' reminiscent of that <a href="#org174c798">200% increase</a> from earlier ;-)
 </p>
 </div>
-</div>
 
-<div id="outline-container-org072bcef" class="outline-2">
-<h2 id="org072bcef"><span class="section-number-2">8</span> Instantiate all items in ‘instantiations-remaining’</h2>
-<div class="outline-text-2" id="text-8">
+<div id="outline-container-orgf714724" class="outline-3">
+<h3 id="orgf714724"><span class="section-number-3">7.1</span> Instantiate all items in <code>instantiations-remaining</code></h3>
+<div class="outline-text-3" id="text-7-1">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">reify-instances</span> <span style="color: #6c3163;">()</span>
  <span style="color: #da8b55;">"Instantiate all items in &#8216;</span><span style="color: #4e3163;">instantiations-remaining</span><span style="color: #da8b55;">&#8217;."</span>
@@ -1725,9 +1805,9 @@ Woah, look at that: This' reminiscent of that <a href="#org39a139b">200% increas
      <span style="color: #67b11d;">(</span><span style="color: #cd6600;">setq</span> reify
 	   <span style="color: #b1951d;">(</span><span style="color: #cd6600;">cond</span> <span style="color: #3a81c3;">(</span><span style="color: #6c3163;">(</span>not pfs<span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span>format <span style="color: #2d9574;">"%s = {! No PackageFormer &#8216;</span><span style="color: #4e3163;">%s</span><span style="color: #2d9574;">&#8217; declared. !}"</span> name pf-type<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 		 <span style="color: #3a81c3;">(</span>t <span style="color: #6c3163;">(</span><span style="color: #cd6600;">pcase</span> <span style="color: #2d9574;">(</span>instance-declaration-variation inst<span style="color: #2d9574;">)</span>
-		      <span style="color: #2d9574;">(</span><span style="color: #2d9574;">"typeclass"</span> <span style="color: #887070;">(</span>instantiate-as-typeclass <span style="color: #3a81c3;">(</span>car pfs<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">:new-name</span> name<span style="color: #887070;">)</span><span style="color: #2d9574;">)</span>
-		      <span style="color: #2d9574;">(</span><span style="color: #2d9574;">"record"</span>    <span style="color: #887070;">(</span>instantiate-as-record <span style="color: #3a81c3;">(</span>car pfs<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">:new-name</span> name<span style="color: #887070;">)</span><span style="color: #2d9574;">)</span>
-		      <span style="color: #2d9574;">(</span><span style="color: #2d9574;">"data"</span>      <span style="color: #887070;">(</span>instantiate-as-data <span style="color: #3a81c3;">(</span>car pfs<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">:new-name</span> name<span style="color: #887070;">)</span><span style="color: #2d9574;">)</span>
+		      <span style="color: #2d9574;">(</span><span style="color: #2d9574;">"typeclass"</span> <span style="color: #887070;">(</span>instantiate-as-typeclass <span style="color: #3a81c3;">(</span>car pfs<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">:new-name</span> name <span style="color: #3a81c3;">:docstring</span> <span style="color: #3a81c3;">(</span>instance-declaration-docstring inst<span style="color: #3a81c3;">)</span><span style="color: #887070;">)</span><span style="color: #2d9574;">)</span>
+		      <span style="color: #2d9574;">(</span><span style="color: #2d9574;">"record"</span>    <span style="color: #887070;">(</span>instantiate-as-record <span style="color: #3a81c3;">(</span>car pfs<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">:new-name</span> name <span style="color: #3a81c3;">:docstring</span> <span style="color: #3a81c3;">(</span>instance-declaration-docstring inst<span style="color: #3a81c3;">)</span><span style="color: #887070;">)</span><span style="color: #2d9574;">)</span>
+		      <span style="color: #2d9574;">(</span><span style="color: #2d9574;">"data"</span>      <span style="color: #887070;">(</span>instantiate-as-data <span style="color: #3a81c3;">(</span>car pfs<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">:new-name</span> name <span style="color: #3a81c3;">:docstring</span> <span style="color: #3a81c3;">(</span>instance-declaration-docstring inst<span style="color: #3a81c3;">)</span><span style="color: #887070;">)</span><span style="color: #2d9574;">)</span>
 		      <span style="color: #2d9574;">(</span>v  <span style="color: #887070;">(</span>format <span style="color: #2d9574;">"%s = {! Variation %s not yet supported!}"</span> name v<span style="color: #887070;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
 
      <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Add to list of results.</span>
@@ -1736,36 +1816,112 @@ Woah, look at that: This' reminiscent of that <a href="#org39a139b">200% increas
    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Output results as a string.</span>
    <span style="color: #2d9574;">(</span>s-join <span style="color: #2d9574;">"\n"</span> result<span style="color: #2d9574;">)</span>
 <span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
-
-<span style="color: #3a81c3;">(</span>global-set-key <span style="color: #6c3163;">(</span>kbd <span style="color: #2d9574;">"&lt;f7&gt;"</span><span style="color: #6c3163;">)</span> 'reify-instances<span style="color: #3a81c3;">)</span>
-
-	<span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Perform the instantiation.</span>
-	<span style="color: #2aa1ae; background-color: #ecf3ec;">; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(setq reify (pcase (instance-declaration-variation inst)</span>
-
-
-		      <span style="color: #2aa1ae; background-color: #ecf3ec;">;</span><span style="color: #2aa1ae; background-color: #ecf3ec;">("record" (instantiate-as-record (show pf) :new-name name))</span>
-		      <span style="color: #2aa1ae; background-color: #ecf3ec;">;</span><span style="color: #2aa1ae; background-color: #ecf3ec;">("data" (instantiate-as-data (show pf) :new-name name))</span>
-	  <span style="color: #2aa1ae; background-color: #ecf3ec;">;            </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(otherwise  "neat")))) ;;(message-box "Error: Variation %s not supported yet." variation))</span>
-	<span style="color: #e0211d; text-decoration: overline;">)</span>
-
-
-
 </pre>
 </div>
+
+<p>
+As always, let's ensure this works as intended.
+</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">progn</span>
+  <span style="color: #6c3163;">(</span>switch-to-buffer <span style="color: #2d9574;">"Testing.agda"</span><span style="color: #6c3163;">)</span>
+
+  <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> package-formers nil<span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> instantiations-remaining nil<span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> 700-comments nil<span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>parse-700-comments<span style="color: #6c3163;">)</span>
+
+  <span style="color: #6c3163;">(</span>switch-to-buffer <span style="color: #2d9574;">"PackageFormer.org"</span><span style="color: #6c3163;">)</span>
+
+  <span style="color: #6c3163;">(</span>reify-instances<span style="color: #6c3163;">)</span>
+<span style="color: #3a81c3;">)</span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-results-agda">
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This was generated from the PackageFormer Semigroup </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+<span style="color: #cd6600;">record</span><span style="color: #ba2f59; font-weight: bold;"> SemigroupTypeclass (Carrier</span> : <span style="color: #cd6600;">Set</span>) : <span style="color: #cd6600;">Set</span> (&#8467;.<span style="color: #0000cd;">suc</span> &#8467;.<span style="color: #0000cd;">zero</span>) <span style="color: #cd6600;">where</span>
+  <span style="color: #cd6600;">field</span>
+    <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
+    --<span style="color: #ba2f59; font-weight: bold;"> Id</span>  :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
+    <span style="color: #ba2f59; font-weight: bold;">assoc</span> : &#8704; {<span style="color: #0000cd;">x</span> <span style="color: #0000cd;">y</span> <span style="color: #0000cd;">z</span>} &#8594; (<span style="color: #0000cd;">x</span> &#10814; <span style="color: #0000cd;">y</span>) &#10814; <span style="color: #0000cd;">z</span> &#8801; <span style="color: #0000cd;">x</span> &#10814; (<span style="color: #0000cd;">y</span> &#10814; <span style="color: #0000cd;">z</span>)
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This was generated from the PackageFormer Semigroup </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+<span style="color: #cd6600;">record</span><span style="color: #ba2f59; font-weight: bold;"> SemigroupT (Carrier</span> : <span style="color: #cd6600;">Set</span>) : <span style="color: #cd6600;">Set</span> (&#8467;.<span style="color: #0000cd;">suc</span> &#8467;.<span style="color: #0000cd;">zero</span>) <span style="color: #cd6600;">where</span>
+  <span style="color: #cd6600;">field</span>
+    <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
+    --<span style="color: #ba2f59; font-weight: bold;"> Id</span>  :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
+    <span style="color: #ba2f59; font-weight: bold;">assoc</span> : &#8704; {<span style="color: #0000cd;">x</span> <span style="color: #0000cd;">y</span> <span style="color: #0000cd;">z</span>} &#8594; (<span style="color: #0000cd;">x</span> &#10814; <span style="color: #0000cd;">y</span>) &#10814; <span style="color: #0000cd;">z</span> &#8801; <span style="color: #0000cd;">x</span> &#10814; (<span style="color: #0000cd;">y</span> &#10814; <span style="color: #0000cd;">z</span>)
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This was generated from the PackageFormer Semigroup </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+<span style="color: #cd6600;">record</span><span style="color: #ba2f59; font-weight: bold;"> SemigroupR</span> : <span style="color: #cd6600;">Set</span> (&#8467;.<span style="color: #0000cd;">suc</span> &#8467;.<span style="color: #0000cd;">zero</span>) <span style="color: #cd6600;">where</span>
+  <span style="color: #cd6600;">field</span>
+   <span style="color: #ba2f59; font-weight: bold;"> Carrier</span> : <span style="color: #cd6600;">Set</span>
+    <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
+    --<span style="color: #ba2f59; font-weight: bold;"> Id</span>  :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
+    <span style="color: #ba2f59; font-weight: bold;">assoc</span> : &#8704; {<span style="color: #0000cd;">x</span> <span style="color: #0000cd;">y</span> <span style="color: #0000cd;">z</span>} &#8594; (<span style="color: #0000cd;">x</span> &#10814; <span style="color: #0000cd;">y</span>) &#10814; <span style="color: #0000cd;">z</span> &#8801; <span style="color: #0000cd;">x</span> &#10814; (<span style="color: #0000cd;">y</span> &#10814; <span style="color: #0000cd;">z</span>)
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This was generated from the PackageFormer Semigroup </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+<span style="color: #cd6600;">data</span><span style="color: #ba2f59; font-weight: bold;"> SemigroupD</span> : <span style="color: #cd6600;">Set</span> (&#8467;.<span style="color: #0000cd;">suc</span> &#8467;.<span style="color: #0000cd;">zero</span>) <span style="color: #cd6600;">where</span>
+    <span style="color: #ba2f59; font-weight: bold;">_&#10814;_</span> :<span style="color: #ba2f59; font-weight: bold;"> SemigroupD</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> SemigroupD</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> SemigroupD</span>
+    --<span style="color: #ba2f59; font-weight: bold;"> Id</span>  :<span style="color: #ba2f59; font-weight: bold;"> SemigroupD</span>
+</pre>
+</div>
+
+<p>
+Super cool stuff <code>(งಠ_ಠ)ง</code>
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org32bc430" class="outline-2">
+<h2 id="org32bc430"><span class="section-number-2">8</span> Advising our Beloved <code>C-c C-l</code></h2>
+<div class="outline-text-2" id="text-8">
+<p>
+Let's give the current buffer access to the location of the generated file.
+</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">defun</span> <span style="color: #6c3163; font-weight: bold;">insert-generated-import</span> <span style="color: #6c3163;">(</span>name-of-generated-file<span style="color: #6c3163;">)</span>
+  <span style="color: #da8b55;">"In the current file, find the top-most module declaration</span>
+<span style="color: #da8b55;">   then insert an import of the generated file.</span>
+<span style="color: #da8b55;">  "</span>
+  <span style="color: #6c3163;">(</span><span style="color: #cd6600;">interactive</span><span style="color: #6c3163;">)</span>
+
+  <span style="color: #6c3163;">(</span><span style="color: #cd6600;">save-excursion</span>
+    <span style="color: #2d9574;">(</span>beginning-of-buffer<span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span><span style="color: #cd6600;">condition-case</span> the-err
+      <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">attemptClause:</span>
+      <span style="color: #67b11d;">(</span>re-search-forward <span style="color: #b1951d;">(</span>concat <span style="color: #2d9574;">"open import "</span> name-of-generated-file<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+       <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">recoveryBody:</span>
+      <span style="color: #67b11d;">(</span><span style="color: #dc752f; background-color: #fbf8ef;">error</span> <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(message-box (format "%s" the-err))</span>
+	 <span style="color: #b1951d;">(</span>re-search-forward <span style="color: #2d9574;">"</span><span style="color: #2d9574; font-weight: bold;">\\</span><span style="color: #2d9574; font-weight: bold;">(</span><span style="color: #2d9574;">module.*</span><span style="color: #2d9574; font-weight: bold;">\\</span><span style="color: #2d9574; font-weight: bold;">)</span><span style="color: #2d9574;">"</span><span style="color: #b1951d;">)</span>
+	 <span style="color: #b1951d;">(</span>replace-match <span style="color: #3a81c3;">(</span>concat <span style="color: #2d9574;">"\\1\nopen import "</span> name-of-generated-file<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
+	<span style="color: #67b11d;">)</span>
+    <span style="color: #2d9574;">)</span>
+  <span style="color: #6c3163;">)</span>
+<span style="color: #3a81c3;">)</span>
+</pre>
+</div>
+
+<p>
+The aim is to process test enclosed in <code>{-700 ⋯ -}</code> comments,
+produce legitimate Agda from that, and ensure the generated Agda is accessible to the
+current buffer automatically.
+</p>
 
 <div class="org-src-container">
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">defun</span> <span style="color: #6c3163; font-weight: bold;">reify-package-formers</span> <span style="color: #6c3163;">(</span>orig-fun <span style="color: #ba2f59; font-weight: bold;">&amp;rest</span> args<span style="color: #6c3163;">)</span>
   <span style="color: #6c3163;">(</span><span style="color: #cd6600;">interactive</span><span style="color: #6c3163;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Sometimes we may want the full name due to files being in a nested</span>
-  <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">directory hierarchy:</span>
-  <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(file-name-sans-extension buffer-file-name)</span>
+  <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">directory hierarchy: (file-name-sans-extension buffer-file-name)</span>
   <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> generated-file-name <span style="color: #2d9574;">(</span>concat<span style="color: #67b11d;">(</span>file-name-sans-extension <span style="color: #b1951d;">(</span>buffer-name<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
 		  <span style="color: #2d9574;">"_Generated"</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This&#8217; inefficent.</span>
   <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> package-formers nil<span style="color: #6c3163;">)</span>
   <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> instantiations-remaining nil<span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> 700-comments nil<span style="color: #6c3163;">)</span>
   <span style="color: #6c3163;">(</span>parse-700-comments<span style="color: #6c3163;">)</span>
 
   <span style="color: #6c3163;">(</span><span style="color: #cd6600;">with-temp-buffer</span>
@@ -1779,17 +1935,9 @@ Woah, look at that: This' reminiscent of that <a href="#org39a139b">200% increas
 	     ,<span style="color: #3a81c3;">(</span>format <span style="color: #2d9574;">"module %s where "</span> generated-file-name<span style="color: #3a81c3;">)</span>
 	     ,<span style="color: #3a81c3;">(</span>reify-instances<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
-    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(mark-whole-buffer)</span>
     <span style="color: #2d9574;">(</span>write-region <span style="color: #67b11d;">(</span>beginning-of-buffer<span style="color: #67b11d;">)</span> <span style="color: #67b11d;">(</span>end-of-buffer<span style="color: #67b11d;">)</span>
 		  <span style="color: #67b11d;">(</span>concat generated-file-name <span style="color: #2d9574;">".agda"</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
     <span style="color: #6c3163;">)</span>
-    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">MA: Using &#8216;(write-file "Generated.agda")&#8217; means we make a file</span>
-    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">then the temporary buffer /vistis/ the agda file, which loads the</span>
-    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">agda process therein, which is undesirable since it could leave</span>
-    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">agda working on the buffer even after it has been killed!</span>
-    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This would necessiate calling (agda2-restart) afterwards.</span>
-    <span style="color: #2aa1ae; background-color: #ecf3ec;">;;</span>
-    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Instead we write the whole region, without visiting the resuting file.</span>
 
   <span style="color: #6c3163;">(</span>insert-generated-import generated-file-name<span style="color: #6c3163;">)</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">call agda2-load</span>
@@ -1800,73 +1948,85 @@ Woah, look at that: This' reminiscent of that <a href="#org39a139b">200% increas
 <span style="color: #3a81c3;">(</span>advice-add 'agda2-load <span style="color: #3a81c3;">:around</span> #'reify-package-formers<span style="color: #3a81c3;">)</span>
 </pre>
 </div>
+
+<p>
+Personal note:
+Using <code>(write-file "Generated.agda")</code> means we make a file
+then the temporary buffer <i>visits</i> the Agda file, which loads the
+Agda process therein, which is undesirable since it could leave
+Agda working on the buffer even after it has been killed!
+</p>
+<ul class="org-ul">
+<li>This would necessiate calling <code>(agda2-restart)</code> afterwards.</li>
+<li>Instead we write the whole region, without visiting the resuting file.</li>
+</ul>
 </div>
 </div>
 
-<div id="outline-container-org4694022" class="outline-2">
-<h2 id="org4694022"><span class="section-number-2">9</span> Testing&#xa0;&#xa0;&#xa0;<span class="tag"><span class="neato">neato</span></span></h2>
+<div id="outline-container-orga0b0e80" class="outline-2">
+<h2 id="orga0b0e80"><span class="section-number-2">9</span> Minor mode &#x2014;Menu matter</h2>
 <div class="outline-text-2" id="text-9">
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">progn</span>
-  <span style="color: #6c3163;">(</span>switch-to-buffer <span style="color: #2d9574;">"Testing.agda"</span><span style="color: #6c3163;">)</span>
-  <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> _res <span style="color: #2d9574;">"hi"</span><span style="color: #6c3163;">)</span>
-  <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> package-formers nil<span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span>parse-700-comments<span style="color: #6c3163;">)</span>
-  <span style="color: #6c3163;">(</span>switch-to-buffer <span style="color: #2d9574;">"PackageFormer.org"</span><span style="color: #6c3163;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #cd6600;">defvar</span> <span style="color: #715ab1;">700-menu-bar-menu</span> <span style="color: #6c3163;">(</span>make-sparse-keymap <span style="color: #2d9574;">"700 PackageFormers"</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 
-  <span style="color: #2aa1ae; background-color: #ecf3ec;">; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">_res</span>
-  <span style="color: #2aa1ae; background-color: #ecf3ec;">; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">700-comments</span>
-  <span style="color: #2aa1ae; background-color: #ecf3ec;">; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">instantiations-remaining</span>
+<span style="color: #3a81c3;">(</span>define-key global-map <span style="color: #6c3163;">[</span>menu-bar my-menu<span style="color: #6c3163;">]</span> <span style="color: #6c3163;">(</span>cons <span style="color: #2d9574;">"700PackageFormers"</span> 700-menu-bar-menu<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+</pre>
+</div>
 
-   package-formers
-   <span style="color: #2aa1ae; background-color: #ecf3ec;">; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(reify-instances)</span>
-   <span style="color: #2aa1ae; background-color: #ecf3ec;">; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(instantiate-as-data (car package-formers))</span>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>define-key 700-menu-bar-menu <span style="color: #6c3163;">[</span>enable-package-formers<span style="color: #6c3163;">]</span>
+  '<span style="color: #6c3163;">(</span>menu-item <span style="color: #2d9574;">"Enable PackageFormer Generation"</span> enable-package-formers<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 
-<span style="color: #6c3163;">(</span><span style="color: #cd6600;">-let</span> <span style="color: #2d9574;">[</span>pf-name <span style="color: #2d9574;">"M-syntax"</span><span style="color: #2d9574;">]</span>
-
-  <span style="color: #2d9574;">(</span>instantiate <span style="color: #67b11d;">(</span>cadr package-formers<span style="color: #67b11d;">)</span>  <span style="color: #3a81c3;">:name-suffix</span> <span style="color: #2d9574;">"syntax"</span>
-		     <span style="color: #3a81c3;">:type</span> <span style="color: #2d9574;">"data"</span>
-		     <span style="color: #3a81c3;">:omit-field-header</span> t
-		     <span style="color: #3a81c3;">:new-name</span> pf-name
-
-		     <span style="color: #2aa1ae; background-color: #ecf3ec;">; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">:keep-fields (lambda (f) (s-contains? "Vertex" (field-target f)))</span>
-		    <span style="color: #2d9574;">)</span>
-
-
-<span style="color: #6c3163;">)</span>
-
-  <span style="color: #6c3163;">(</span>instantiate-as-data <span style="color: #2d9574;">(</span>cadr package-formers<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+<span style="color: #3a81c3;">(</span><span style="color: #cd6600;">defun</span> <span style="color: #6c3163; font-weight: bold;">enable-package-formers</span> <span style="color: #6c3163;">()</span>
+ <span style="color: #6c3163;">(</span><span style="color: #cd6600;">interactive</span><span style="color: #6c3163;">)</span>
+ <span style="color: #6c3163;">(</span>advice-add 'agda2-load <span style="color: #3a81c3;">:around</span> #'reify-package-formers<span style="color: #6c3163;">)</span>
+ <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">place notification in modeline</span>
+ <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> global-mode-string
+      <span style="color: #2d9574;">(</span><span style="color: #cd6600;">cond</span> <span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span>consp global-mode-string<span style="color: #b1951d;">)</span>
+	     <span style="color: #b1951d;">(</span>add-to-list 'global-mode-string <span style="color: #2d9574;">"700 (&#8226;&#768;&#7447;&#8226;&#769;)&#1608;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+	    <span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span>not global-mode-string<span style="color: #b1951d;">)</span>
+	     <span style="color: #b1951d;">(</span>list <span style="color: #2d9574;">"700 (&#8226;&#768;&#7447;&#8226;&#769;)&#1608;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+	    <span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span>stringp global-mode-string<span style="color: #b1951d;">)</span>
+	     <span style="color: #b1951d;">(</span>list <span style="color: #2d9574;">"700 (&#8226;&#768;&#7447;&#8226;&#769;)&#1608;"</span> global-mode-string<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+ <span style="color: #6c3163;">(</span>message-box <span style="color: #2d9574;">"C-c C-l now reifies &#8220;700-comments&#8221; into legitimate Agda."</span><span style="color: #6c3163;">)</span>
 <span style="color: #3a81c3;">)</span>
 </pre>
 </div>
 
-<pre class="example">
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>define-key 700-menu-bar-menu <span style="color: #6c3163;">[</span>disable-package-formers<span style="color: #6c3163;">]</span>
+  '<span style="color: #6c3163;">(</span>menu-item <span style="color: #2d9574;">"Disable PackageFormer Generation"</span> disable-package-formers<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 
-{- This was generated from the PackageFormer Magma -}
-data Magma-syntax  : Set (ℓ.suc ℓ.zero)where
-    _⨾_ : Magma-syntax → Magma-syntax → Magma-syntax
-    -- Id  : Magma-syntax
+<span style="color: #3a81c3;">(</span><span style="color: #cd6600;">defun</span> <span style="color: #6c3163; font-weight: bold;">disable-package-formers</span> <span style="color: #6c3163;">()</span>
+ <span style="color: #6c3163;">(</span><span style="color: #cd6600;">interactive</span><span style="color: #6c3163;">)</span>
+ <span style="color: #6c3163;">(</span>advice-remove 'agda2-load #'reify-package-formers<span style="color: #6c3163;">)</span>
+ <span style="color: #6c3163;">(</span><span style="color: #cd6600;">setq</span> global-mode-string <span style="color: #2d9574;">(</span>remove <span style="color: #2d9574;">"700 (&#8226;&#768;&#7447;&#8226;&#769;)&#1608;"</span> global-mode-string<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>message-box <span style="color: #2d9574;">"C-c C-l now behaves as it always has."</span><span style="color: #6c3163;">)</span>
+<span style="color: #3a81c3;">)</span>
 </pre>
+</div>
 
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>define-key 700-menu-bar-menu <span style="color: #6c3163;">[</span>package-formers-about<span style="color: #6c3163;">]</span>
+  '<span style="color: #6c3163;">(</span>menu-item <span style="color: #2d9574;">"About PackageFormers"</span> package-formers-about<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 
+<span style="color: #3a81c3;">(</span><span style="color: #cd6600;">defun</span> <span style="color: #6c3163; font-weight: bold;">package-formers-about</span> <span style="color: #6c3163;">()</span>
+ <span style="color: #6c3163;">(</span><span style="color: #cd6600;">interactive</span><span style="color: #6c3163;">)</span>
+ <span style="color: #6c3163;">(</span>switch-to-buffer <span style="color: #2d9574;">"*PackageFormer-About*"</span><span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span>insert
+  <span style="color: #2d9574;">" This is an editor extension prototyping &#8220;the next 700 module systems&#8221; proposed research.</span>
 
+<span style="color: #2d9574;">    An informal documentation, with examples, page can be found at</span>
+<span style="color: #2d9574;">    https://alhassy.github.io/next-700-module-systems-proposal/PackageFormer.html</span>
 
-<p>
-(instantiate decls  :new-name new-name
-		   :name-suffix "syntax"
-		   :type "data"
-		   :omit-field-header t
-		   :keep-fields (lambda (f) (s-contains? pf-name (field-target f)))
-		  ))
-</p>
+<span style="color: #2d9574;">    The technical matter can be found at https://alhassy.github.io/next-700-module-systems-proposal/</span>
 
-<pre class="example">
-
-{- This was generated from the PackageFormer Graph -}
-record Graph-typeclass (Carrier : Set) : Set (ℓ.suc ℓ.zero)where
-  field
-    Vertex : Set
-    _⟶_ : Vertex → Vertex → Set
+<span style="color: #2d9574;">    If you experience anything &#8220;going wrong&#8221; or have any ideas for improvement,</span>
+<span style="color: #2d9574;">    please contact Musa Al-hassy at alhassy@gmail.com; thank-you &#9829;&#8255;&#9829;</span>
+<span style="color: #2d9574;">  "</span>
+ <span style="color: #6c3163;">)</span>
+<span style="color: #3a81c3;">)</span>
 </pre>
+</div>
 </div>
 </div>
 </div>
