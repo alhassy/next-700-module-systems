@@ -90,6 +90,7 @@ Also consider doubling the code block indentation.
 # LATEX_HEADER: \settopmatter{prinfolios=true,princcs=false,printacmref=false}
 # LATEX_HEADER: \usepackage[backend=biber,style=alphabetic]{biblatex}
 # LATEX_HEADER: \addbibresource{MyReferences.bib}
+# LATEX_HEADER: \usepackage{edcomms}
 
 # LATEX_HEADER: \acmJournal{PACMPL}
 # LATEX_HEADER: \acmVolume{1}
@@ -189,7 +190,9 @@ Also consider doubling the code block indentation.
 
   The subtlety of what is a ‘parameter’ ---exposed at the type level--- and what is a
   ‘field’ ---hidden as a component value--- has led to awkward formulations and
-  the duplication of existing types for the sole purpose of different uses.
+  the duplication of existing types for the sole purpose of different
+  uses.
+  \edchange{WK}{%
   For example, the ever-ubiquitous monoid, a prime model of compositionality,
   in traditional Haskell, is only allowed one instance per datatype. The Booleans,
   however, have multiple monoids such as sequential and parallel monoids
@@ -203,6 +206,14 @@ Also consider doubling the code block indentation.
   An alternative solution would be to parameterise the monoid interface not only by
   its carrier type ---the Booleans in our example--- but also by the underlying
   compositionality scheme ---the conjunction and disjunction operators in our scheme.
+  }{%
+  For example, each Haskell typeclass can have only one instance per datatype;
+  since there are several monoids with the datatype ~Bool~ as carrier,
+  in particular those induced by conjunction and disjunction,
+  the de-facto-standard libraries for Haskell
+  define two isomorphic copies ~All~ and ~Any~ of ~Bool~,
+  only for the purpose of being able to attach the respective monoid instances to them.
+  }%edchange
 
   It seems that there are two contenders for the monoid interface:
   #+begin_src agda
