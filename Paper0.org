@@ -66,7 +66,7 @@ Also consider doubling the code block indentation.
   Programming languages with sufficiently expressive type theories provide users with
   different means of data ‘bundling’. Specifically one can choose to encode information
   in a record either as a parameter or a field, in depdently-typed languages such as
-  Agda, Coq and Idris.
+  Agda, Coq, Lean and Idris.
   For example, we can speak of graphs /over/ a particular vertex set, or speak
   of arbitrary graphs where the vertex set is a component.
   These create isomorphic types, but differ with respect to intended use.
@@ -85,13 +85,13 @@ Also consider doubling the code block indentation.
 #+end_small
 
 * LaTeX setup                                                        :ignore:
-# latex_class_options: [acmsmall,review,anonymous]
-#+latex_class_options: [acmsmall,review]
+#+latex_class_options: [acmsmall,review,anonymous]
+# latex_class_options: [acmsmall,review]
 #+LATEX_CLASS: acmart
 
-# LATEX_HEADER: \settopmatter{prinfolios=true,princcs=false,printacmref=false}
+#+LATEX_HEADER: \settopmatter{prinfolios=true,princcs=false,printacmref=false}
 # LATEX_HEADER: \usepackage[backend=biber,style=alphabetic]{biblatex}
-# LATEX_HEADER: \addbibresource{MyReferences.bib}
+#+LATEX_HEADER: \addbibresource{MyReferences.bib}
 
 # LATEX_HEADER: \acmJournal{PACMPL}
 # LATEX_HEADER: \acmVolume{1}
@@ -102,6 +102,7 @@ Also consider doubling the code block indentation.
 # LATEX_HEADER: \acmDOI{}
 #+LATEX_HEADER: \setcopyright{none}
 
+# JC: Using a hard-coded path for resources like this is EVIL. Please fix.
 #+LATEX_HEADER: \usepackage{/Users/musa/MyUnicodeSymbols/MyUnicodeSymbols}
 #+LATEX_HEADER: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
 #+LATEX_HEADER: \newunicodechar{≢}{\ensuremath{\nequiv}}
@@ -160,20 +161,8 @@ Also consider doubling the code block indentation.
 % \author{Wolfram Kahl}
 #+END_EXPORT
 
-* COMMENT old  ---outline, 4 pages
 
-  0. Introduction: Which perspective of semigroups does one select? Semigroup𝒾 from the thesis proposal;
-     the perspective considered should have legitimate uses rather than artificial ones.
-     How do we write, e.g., ‘concat’ in the various forms. What is the minimal reduplication required using
-     existing techniques.
-
-  1. \textsf{\upshape PackageFormer}s: Unifying the different perspectives under the same banner. We speak in terms of elaborations,
-     but may propose elementary typing rules or semantics. Discuss \textsf{\upshape PackageFormer} polymorphism, from §4 of thesis proposal.
-
-  2. Next Steps: Ignoring the implementation, there are no sound semantics for these constructs.
-     Discuss theory presentation combinators and possible extensions.
-
-* Introduction ---Selecting the ‘right’ perspective
+* Introduction --- Selecting the ‘right’ perspective
 
   :Ideas:
   Which perspective of semigroups does one select? Semigroup𝒾 from the thesis proposal;
@@ -182,31 +171,34 @@ Also consider doubling the code block indentation.
      existing techniques.
    :End:
 
-  Library designers want to produce software components that are not only useful to their
-  immediate needs but also useful to the needs of others, such as themselves for a
-  later project. As such, designers aim for a high-level of generality for increased
-  reusability. The dimension we tackle in this paper is how much of a structures
-  constituents are exposed at the type level and how many are left inside,
-  to be projected when needed.
+  Library designers want to produce software components that are useful to for
+  the perceived needs of a variety of users and usage scenarios.  It is therefore
+  natural for designers to aim for a high-level of generality, in the hopes of increased
+  reusability. One such particular ``choice'' will occupy us here: when creating a
+  record to bundle up certain information that ``naturally'' belongs together, what
+  parts of that record should be /parameters/ and what parts should be
+  /fields/?
 
   The subtlety of what is a ‘parameter’ ---exposed at the type level--- and what is a
-  ‘field’ ---hidden as a component value--- has led to awkward formulations and
+  ‘field’ ---a component value--- has led to awkward formulations and
   the duplication of existing types for the sole purpose of different uses.
-  For example, the ever-ubiquitous monoid, a prime model of compositionality,
-  in traditional Haskell, is only allowed one instance per datatype. The Booleans,
-  however, have multiple monoids such as sequential and parallel monoids
+  \edcomm{JC}{Incorporate a little bit of the text of Tom Hales' critique of
+  Lean, verbation and cite, here}
+  For example, the ubiquitous monoid, used to model compositionality,
+  in Haskell, is only allowed one instance per datatype. The Booleans,
+  however, support multiple monoid instances such as sequential and parallel monoids
   ---the former being conjunction with
-  identity /true/ and the latter being disjunction with identity /false.
-  # --- which are
-  # tractable demonstrations mirroring sequential and concurrent programming.
+  identity /true/ and the latter being disjunction with identity /false/.
 
-  The solution, in Haskell, is to have two isomorphic copies ~All~ and ~Any~ for which
-  the former is given the sequential monoid and the latter the parallel monoid.
-  An alternative solution would be to parameterise the monoid interface not only by
-  its carrier type ---the Booleans in our example--- but also by the underlying
-  compositionality scheme ---the conjunction and disjunction operators in our scheme.
+  The solution, in Haskell, is to have two isomorphic copies ~All~ 
+  (using conjunction) and ~Any~ (using disjunction).
+  An alternative solution would be to parameterise the monoid interface by
+  its underlying compositionality scheme as well as its carrier type.
 
-  It seems that there are two contenders for the monoid interface:
+  But perhaps Haskell's type system does not give the programmer sufficient
+  tools to adequately express such ideas. As such, for the rest of this paper
+  we will illustrate our ideas in Agda~\cite{}. For the example at hand,
+  it seems that there are two contenders for the monoid interface:
   #+begin_src agda
   record Monoid₁ (Carrier : Set) : Set where
     field
@@ -369,7 +361,7 @@ Also consider doubling the code block indentation.
   these entities? Are we forced to code along particular instantiations?
   No; unless we desire to do so.
 
-* A Novel Polymorphism
+* A New Kind of Polymorphism
 
   Suppose we want to produce the function ~concat~, which composes the elements of a list
   according to a compositionality scheme ---examples of this include summing over
