@@ -91,7 +91,8 @@ Also consider doubling the code block indentation.
 
 #+LATEX_HEADER: \settopmatter{prinfolios=true,princcs=false,printacmref=false}
 # LATEX_HEADER: \usepackage[backend=biber,style=alphabetic]{biblatex}
-#+LATEX_HEADER: \addbibresource{MyReferences.bib}
+# LATEX_HEADER: \addbibresource{MyReferences.bib}
+# LATEX_HEADER: \usepackage{edcomms}
 
 # LATEX_HEADER: \acmJournal{PACMPL}
 # LATEX_HEADER: \acmVolume{1}
@@ -190,10 +191,26 @@ Also consider doubling the code block indentation.
   ---the former being conjunction with
   identity /true/ and the latter being disjunction with identity /false/.
 
-  The solution, in Haskell, is to have two isomorphic copies ~All~ 
+The solution, in Haskell, is to have two isomorphic copies ~All~ 
   (using conjunction) and ~Any~ (using disjunction).
   An alternative solution would be to parameterise the monoid interface by
   its underlying compositionality scheme as well as its carrier type.
+
+:Old:
+  The solution, in Haskell, is to have two isomorphic copies ~All~ and ~Any~ for which
+  the former is given the sequential monoid and the latter the parallel monoid.
+  An alternative solution would be to parameterise the monoid interface not only by
+  its carrier type ---the Booleans in our example--- but also by the underlying
+  compositionality scheme ---the conjunction and disjunction operators in our scheme.
+  }{%
+  For example, each Haskell typeclass can have only one instance per datatype;
+  since there are several monoids with the datatype ~Bool~ as carrier,
+  in particular those induced by conjunction and disjunction,
+  the de-facto-standard libraries for Haskell
+  define two isomorphic copies ~All~ and ~Any~ of ~Bool~,
+  only for the purpose of being able to attach the respective monoid instances to them.
+  }%edchange
+:End:
 
   But perhaps Haskell's type system does not give the programmer sufficient
   tools to adequately express such ideas. As such, for the rest of this paper
