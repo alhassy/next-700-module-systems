@@ -186,11 +186,11 @@ Also consider doubling the code block indentation.
   Re item 10, that's what's being addressed in this work.
   :End:
 
-  For example, the ubiquitous monoid, used to model compositionality,
-  in Haskell, is only allowed one instance per datatype. However, the Booleans,
-  for example, support multiple monoid instances such as sequential and parallel monoids
-  ---the former being conjunction with
-  identity /true/ and the latter being disjunction with identity /false/.
+  # For example, the ubiquitous monoid, used to model compositionality,
+  # in Haskell, is only allowed one instance per datatype. However, the Booleans,
+  # for example, support multiple monoid instances such as sequential and parallel monoids
+  # ---the former being conjunction with
+  # identity /true/ and the latter being disjunction with identity /false/.
   For example, each Haskell typeclass can have only one instance per datatype;
   since there are several monoids with the datatype ~Bool~ as carrier,
   in particular those induced by conjunction and disjunction,
@@ -200,8 +200,9 @@ Also consider doubling the code block indentation.
 
   But perhaps Haskell's type system does not give the programmer sufficient
   tools to adequately express such ideas. As such, for the rest of this paper
-  we will illustrate our ideas in Agda~\cite{agda_overview}. For the example at hand,
+  we will illustrate our ideas in Agda \cite{agda_overview}. For the example at hand,
   it seems that there are two contenders for the monoid interface:
+  \newpage
   #+begin_src agda
   record Monoid₁ (Carrier : Set) : Set where
     field
@@ -211,7 +212,8 @@ Also consider doubling the code block indentation.
      leftId  : ∀ {x} → Id ⨾ x ≡ x
      rightId : ∀ {x} → x ⨾ Id ≡ x
 
-  record Monoid₂ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) : Set where
+  record Monoid₂ (Carrier : Set)
+                 (_⨾_ : Carrier → Carrier → Carrier) : Set where
      Id      : Carrier
      assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
      leftId  : ∀ {x} → Id ⨾ x ≡ x
@@ -262,24 +264,30 @@ Also consider doubling the code block indentation.
     rightId : ∀ {x} → x ⨾ Id ≡ x
   #+end_src
 
+  \noindent
   Superficially, the parameters and fields have been flattened into a single location
   and the name ~Carrier~ has been dispensed with in-favour of ~MonoidP~, which also happens
   to be name of this newly declared entity.
-  We commend the astute reader who has noticed a hint of predicitivity here, but it is
-  an issue we shall not address in the current work.
+  #
+  # MA: We commend the astute reader who has noticed a hint of predicitivity here,
+  # but it is an issue we shall not address in the current work.
+  #
+  # WK: No, as a matter of courtesy.
 
   #+BEGIN_EXPORT latex
-  \emph{One uses a \textsf{\upshape PacakageFormer} by instantiating the particular presentation that is desired.}
+  \emph{One uses a \textsf{\upshape PackageFormer} by instantiating the particular presentation that is desired.}
   #+END_EXPORT
 
   We conceive of an extensible type ~Variations~ which includes ~datatype~ and ~record~
   as two keywords. Moreover, this type is equipped with a number of combinators, one
-  of which is the curry-like infix operator ~_unbundled_ : Variation → ℕ → Variation~ which modifies a particular
+  of which is the infix operator ~_unbundled_ : Variation → ℕ → Variation~ which modifies a particular
   presentation by also lifting the first ~n~ constituents from the field level to the
   parameter level. In particular, ~typeclass = record unbundled 1~.
   We also allow the named version of this combinator, namely
   ~_exposing_ : Variation → List Name → Variation~.
-  Let's demonstrate these concepts.
+  Instantiation syntax is of the form ~“⟪package-former-name⟫ ⟪variation⟫”~,
+  as such, ~_unbundled_~  and ~_exposing_~ have higher precedence.
+  Let us demonstrate these concepts.
 
   0. [@0] We may obtain the previous formulations of ~Monoid₁~ in two different ways:
         \vspace{0.3em}
@@ -299,7 +307,11 @@ Also consider doubling the code block indentation.
 
       \vspace{0.3em}
 
-  2. To speak of /a monoid over an arbitrary carrier/, we declare:
+Our precedence rules indicate that ~MonoidP ⋯~ parenthesises as if it were ~MonoidP (⋯)~.
+Moreover, notice that the infix combinators for unbundling and exposing,
+behave similar to the curry functional $(A × B → C) \;→\; (A → B → C)$.
+
+  2. [@2] To speak of /a monoid over an arbitrary carrier/, we declare:
         \vspace{0.3em}
    #+begin_src agda
  Monoid₃ = MonoidP record
@@ -308,6 +320,7 @@ Also consider doubling the code block indentation.
    \noindent
    It behaves as if it were declared thusly:
    \vspace{0.3em}
+   \noindent
    #+begin_src agda
     record Monoid₃ : Set₁ where
       field
@@ -328,10 +341,11 @@ Also consider doubling the code block indentation.
     \noindent
     It behaves as if it were declared thusly:
        \vspace{0.3em}
+        \noindent
      #+begin_src agda
     data Monoid₄ : Set where
-        _⨾_ : Monoid₄ → Monoid₄ → Monoid₄
-        Id  : Monoid₄
+      _⨾_ : Monoid₄ → Monoid₄ → Monoid₄
+      Id  : Monoid₄
 #+end_src
    \vspace{0.3em}
    \noindent
@@ -344,11 +358,12 @@ Also consider doubling the code block indentation.
     \noindent
     It behaves as if it were declared thusly:
        \vspace{0.3em}
+       \noindent
     #+begin_src agda
     data Monoid₅ (Vars : Set) : Set where
-        inj : Vars → Monoid₄ Vars
-        _⨾_ : Monoid₄ Vars → Monoid₄ Vars → Monoid₄ Vars
-        Id  : Monoid₄ Vars
+      inj : Vars → Monoid₄ Vars
+      _⨾_ : Monoid₄ Vars → Monoid₄ Vars → Monoid₄ Vars
+      Id  : Monoid₄ Vars
   #+end_src
 
      \vspace{0.3em}
@@ -372,6 +387,8 @@ Also consider doubling the code block indentation.
   a list, multiplication over a list, checking all items in a list are true, or
   at least one item in the list is true. Depending on the interface presentation
   selected, the typing of this function could be elegant or awkward, as follows.
+
+  \vspace{1em}
 #+BEGIN_SRC agda
   concat₁ : {C : Set} {M : Monoid₁ C} → List C → C
 
@@ -381,6 +398,7 @@ Also consider doubling the code block indentation.
 
   concat₄ : List Monoid₄ → Monoid₄
 #+END_SRC
+  \vspace{1em}
 
   An immediate attempt to unify these declarations requires pinpointing exactly
   /which type is referred to semantically by the phrase MonoidP./
@@ -390,10 +408,11 @@ Also consider doubling the code block indentation.
   ~do τ ← MonoidP; ⋯τ⋯~ whenever we wish to refer to /values/ of the underlying carrier
   of a particular instantiaiton, rather than referring to the type /of/ such values.
   In particular:
-
   \vspace{0.3em}
 #+BEGIN_SRC agda
-  do τ ← MonoidP record; ℬ τ    ≈  λ {τ : MonoidP record} → ℬ (MonoidP.Carrier τ)
+  do τ ← MonoidP record; ℬ τ    ≈  λ {τ : MonoidP record}
+                                      → ℬ (MonoidP.Carrier τ)
+
   do τ ← MonoidP datatype; ℬ τ  ≈  ℬ (MonoidP datatype)
 #+END_SRC
   \vspace{0.3em}
@@ -456,8 +475,8 @@ Also consider doubling the code block indentation.
   6. Flexible polymorphic definitions: One should be able to construct a program
      according to the most convenient presentation, but be able to have it
      /automatically/ applicable to other instantiations;
-     \cite{types_for_modules,haskell_modules_formally}
-     # first_class_modules_support
+     \cite{types_for_modules}.
+     # first_class_modules_support haskell_modules_formally
 
      For example, the ~concat~ function was purely syntactic and the easiet formulation
      uses the algebraic data-type rendition, whence one would write \newline
@@ -639,6 +658,41 @@ Suggestion (just an example of sth you can do), mention a record type (or someth
   year      = {2019},
   url       = {https://alhassy.github.io/next-700-module-systems-proposal/thesis-proposal.pdf}
 }
+
+@InProceedings{types_for_modules,
+  author       = {Derek Dreyer and Karl Crary and Robert Harper},
+  title        = {A Type System for Higher-Order Modules},
+  year         = 2003,
+  booktitle    = {Conference Record of {POPL} 2003: The 30th
+                  {SIGPLAN-SIGACT} Symposium on Principles of
+                  Programming Languages, New Orleans, Louisisana, USA,
+                  January 15-17, 2003},
+  pages        = {236-249},
+  doi          = {10.1145/640128.604151},
+  url          = {https://doi.org/10.1145/640128.604151},
+  timestamp    = {Tue, 06 Nov 2018 11:07:43 +0100},
+  biburl       = {https://dblp.org/rec/bib/conf/popl/DreyerCH03},
+  bibsource    = {dblp computer science bibliography,
+                  https://dblp.org}
+}
+
+@InProceedings{agda_overview,
+  author       = {Ana Bove and Peter Dybjer and Ulf Norell},
+  title        = {A Brief Overview of Agda - {A} Functional Language
+                  with Dependent Types},
+  year         = 2009,
+  booktitle    = {Theorem Proving in Higher Order Logics, 22nd
+                  International Conference, TPHOLs 2009, Munich,
+                  Germany, August 17-20, 2009. Proceedings},
+  pages        = {73-78},
+  doi          = {10.1007/978-3-642-03359-9\_6},
+  url          = {https://doi.org/10.1007/978-3-642-03359-9\_6},
+  timestamp    = {Tue, 14 May 2019 10:00:48 +0200},
+  biburl       = {https://dblp.org/rec/bib/conf/tphol/BoveDN09},
+  bibsource    = {dblp computer science bibliography,
+                  https://dblp.org}
+}
+
 
 * COMMENT footer                                                     :ignore:
 
