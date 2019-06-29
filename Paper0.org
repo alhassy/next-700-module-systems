@@ -522,8 +522,9 @@ additional things that can be done.}
   Suppose we want to produce the function ~concat~, which composes the elements of a list
   according to a compositionality scheme --- examples of this include summing over
   a list, multiplication over a list, checking all items in a list are true, or
-  at least one item in the list is true. Depending on the interface presentation
-  selected, the typing of this function could be elegant or awkward, as follows.
+  at least one item in the list is true.
+  Depending on the selected instantiation,
+  the resulting function may have types such as the following:
 
   \vspace{1em}
 #+BEGIN_SRC agda
@@ -541,14 +542,14 @@ additional things that can be done.}
   \vspace{1em}
 
   \noindent
-  An immediate attempt to unify these declarations requires pinpointing exactly
-  /which type is referred to semantically by the phrase MonoidP./
-  For the ~datatype~ variation, it could only refer to the resulting algebraic data-type;
+  An attempt to unify these declarations requires understanding exactly
+  /which type is referred to by the phrase MonoidP./
+  For the ~termtype~ variation, it can only refer to the resulting algebraic data-type;
   whereas for the ~record~ variation, it could refer to the result record type /or/ to
   the ~Carrier~ projection of such record types. Consequently, we use monad-like notation
   ~do τ ← MonoidP; ⋯τ⋯~ whenever we wish to refer to /values/ of the underlying carrier
-  of a particular instantiaiton, rather than referring to the type /of/ such values.
-  In particular:
+  of a particular instantiation, rather than referring to the type /of/ such values.
+  For example:
   \vspace{0.3em}
 
   #+begin_export latex
@@ -560,11 +561,11 @@ additional things that can be done.}
   do τ ← MonoidP record; ℬ τ    ≈  λ {τ : MonoidP record}
                                       → ℬ (MonoidP.Carrier τ)
 
-  do τ ← MonoidP datatype; ℬ τ  ≈  ℬ (MonoidP datatype)
+  do τ ← MonoidP termtype; ℬ τ  ≈  ℬ (MonoidP termtype)
 #+END_SRC
   \vspace{0.3em}
   \noindent
-  With this understanding in-hand, we may write /variation polymorphic/ programs:
+  This lets us write the following /variation polymorphic/ programs:
 #+BEGIN_SRC agda
   concatP : {v : Variation}
           → do τ ← MonoidP v
@@ -592,14 +593,25 @@ additional things that can be done.}
   this tractable we have also provided a novel form of polymorphism and demonstrated
   it with minimal examples.
 
-  We have implemented a meta-program that realises these elaborations in an unobtrusive
-  fashion: An Agda programmer simply declares them in special comments.
-  The resulting ‘editor tactic’ demonstrates that this language feature is promising.
+  # We have implemented a meta-program that realises these
+  # elaborations in an unobtrusive
+  # fashion: An Agda programmer simply declares them in special comments.
+  # The resulting ‘editor tactic’ demonstrates
+  # that this language feature is promising.
+  We have implemented this as an ``editor tactic'' meta-program.
+  In actual use, an Agda programmer declares what they want
+  using the combinators above (inside special Agda code comments),
+  and these are then elaborated into Agda code.
 
-  Thus far we have relied on the reader's understanding of functional programming and
-  algebraic data types to provide an informal and indirect semantics by means of
-  elaborations into existing notions. An immediate next step would be to provide
-  explicit semantics for \textsf{\upshape PackageFormer}'s within a minimal type theory.
+  # Thus far we have relied on the reader's understanding of functional programming and
+  # algebraic data types to provide an informal and indirect semantics by means of
+  # elaborations into existing notions. An immediate next step would be to provide
+  # explicit semantics for \textsf{\upshape PackageFormer}'s within a minimal type theory.
+  We have presented our work indirectly by using examples, which we
+  hope are sufficiently clear to indicate our intent. We next intend to
+  provide explicit (elaboration) semantics for ~PackageFormer~ within a   
+  minimal type theory.
+
   Moreover there are a number of auxiliary goals, including:
 
   1. How do users extend the built-in ~Variations~ type along with the intended
@@ -611,44 +623,51 @@ additional things that can be done.}
      which may introduce new names, such as the aforementioned ~Carrier~ and ~Vars.~
 
   2. Explain how generative modules \cite{modular_modules}
-     are supported by this scheme, and they indeed are.
+     are supported by this scheme.
 
-  3. Demonstrate how tedious boilerplate code for renamings, hidings, extensions,
+  3. Demonstrate how boilerplate code for renamings, hidings, extensions,
      and the flattening of hierarchical structures can be formed;
      \cite{tpc}.
 
   4. How do multiple default, or optional, clauses for a constituent fit into this
-     language feature. This may necessitate a form of limited subtyping.
+     language feature.
+     # This may necessitate a form of limited subtyping.
 
-  5. Discuss inheritance, coercion, and transport along canonical isomorphisms.
+  # 5. Discuss inheritance, coercion, and transport along canonical isomorphisms.
 
-  6. Flexible polymorphic definitions: One should be able to construct a program
+  5. Flexible polymorphic definitions: One should be able to construct a program
      according to the most convenient presentation, but be able to have it
      /automatically/ applicable to other instantiations;
      \cite{types_for_modules}.
      # first_class_modules_support haskell_modules_formally
 
-     For example, the ~concat~ function was purely syntactic and the easiet formulation
+     For example, the ~concat~ function was purely syntactic and the easiest formulation
      uses the algebraic data-type rendition, whence one would write \newline
-     ~concat : List MonoidP datatype → MonoidP datatype~ \newline
+     ~concat : List MonoidP termtype → MonoidP termtype~ \newline
      and the variation is found then systematically generalised to obtain \newline
      ~concatP : {v : Variation}  →  do τ ← MonoidP v;  List τ → τ~. \newline
      When there are multiple variations mentioned, the problem becomes less clear cut
      and the simplest solution may be to simply indicate which variation or occurrences
      thereof is intended to be generalised.
 
-  Finally, the astute reader will have remembered that our abstract mentions graphs yet
-  there was no further discussion on that example. Indeed, one of the next goals is to
+  Finally, the careful reader will have noticed
+  that our abstract mentions graphs, yet
+  there was no further discussion on that example.
+  Indeed, one of the next goals is to
   accommodate multi-sorted structures where sorts may /depend/ on one another, as edge-sets
   depend on the vertex-set chosen.
 
   There are many routes to progress on this fruitful endeavour.
-  However, a prototype capable of supporting the examples mentioned can be found at
-  \newline
-  https://alhassy.github.io/next-700-module-systems-proposal/.
+  # However, a prototype capable of supporting the examples mentioned
+  # can be found at
+  # \newline
+  # https://alhassy.github.io/next-700-module-systems-proposal/.
+  We have a complete    
+  prototype available on github, which we will link to once the paper is
+  no longer double-blind.
 
-  We look forward to this feature reducing the length of our code
-  and alleviating us of tedious boilerplate constructions.
+  # We look forward to this feature reducing the length of our code
+  # and alleviating us of tedious boilerplate constructions.
 
 * OLD COMMENT other ideas
 
