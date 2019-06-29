@@ -1,4 +1,4 @@
-# (shell-command "mv Paper0.pdf GPCE_19_Alhassy_Carette_Kahl.pdf")
+# (shell-command "cp Paper0.pdf GPCE_19_Alhassy_Carette_Kahl.pdf")
 # (shell-command "mv GPCE_19_Alhassy_Carette_Kahl.pdf Paper0.pdf")
 
 # (progn (org-babel-tangle) (org-latex-export-to-pdf) (async-shell-command "open Paper0.pdf"))
@@ -62,6 +62,7 @@ Also consider doubling the code block indentation.
 #+LATEX_HEADER: \usepackage[backend=biber,style=alphabetic]{biblatex}
 #+LATEX_HEADER: \addbibresource{MyReferences.bib}
 #+LATEX_HEADER: \usepackage{edcomms}
+#+LATEX_HEADER: \edcommsfalse
 
 #+LATEX_HEADER: \acmJournal{GPCE}
 # LATEX_HEADER: \acmVolume{1}
@@ -77,6 +78,7 @@ Also consider doubling the code block indentation.
 #+LATEX_HEADER: \newunicodechar{≢}{\ensuremath{\nequiv}}
 #+LATEX_HEADER: \newunicodechar{τ}{\ensuremath{\tau}}
 #+LATEX_HEADER: \newunicodechar{₄}{\ensuremath{_4}}
+#+LATEX_HEADER: \newunicodechar{₅}{\ensuremath{_5}}
 #+LATEX_HEADER: \newunicodechar{′}{'}
 #+LATEX_HEADER: \newunicodechar{″}{''}
 
@@ -139,7 +141,7 @@ Also consider doubling the code block indentation.
 
   Programming languages with sufficiently expressive type theories provide users with
   different means of data ‘bundling’. Specifically one can choose to encode information
-  in a record either as a parameter or a field, in depdently-typed languages such as
+  in a record either as a parameter or a field, in dependently-typed languages such as
   Agda, Coq, Lean and Idris.
   For example, we can speak of graphs /over/ a particular vertex set, or speak
   of arbitrary graphs where the vertex set is a component.
@@ -167,7 +169,7 @@ Also consider doubling the code block indentation.
      existing techniques.
    :End:
 
-  Library designers want to produce software components that are useful to for
+  Library designers want to produce software components that are useful for
   the perceived needs of a variety of users and usage scenarios.  It is therefore
   natural for designers to aim for a high-level of generality, in the hopes of increased
   reusability. One such particular ``choice'' will occupy us here: When creating a
@@ -210,6 +212,7 @@ Also consider doubling the code block indentation.
   For the monoid example,
   it seems that there are three contenders for the monoid interface:
 
+  \newpage
   #+begin_src agda
   record Monoid₀ : Set₁ where
     field
@@ -258,30 +261,36 @@ Also consider doubling the code block indentation.
   the form most convenient for their use-cases. This desire for reusability motivates
   a new language feature: The \textsf{\upshape PackageFormer}.
 
-  Moreover, what if the user wanted the syntax to form monoid terms as in
-  metaprogramming.
-  #+begin_export latex
-  \edcomm{JC}{This is too imprecise --- please put specific Agda code
-    for MonoidTerm (you have the room) instead. Then you can say
-    something like ``We can see that this version can also be
-    mechanically obtained from $Monoid_1$ by turning each field into a
-    constructor''. This will make the idea much clearer.}
-#+end_export
-  That would necessitate yet another nearly identical data-structure
-  --- having constructors rather than field projections.
+  Moreover, it is often the case that one begins working with a record of useful
+  semantic data, but then, say, for proof automation, may want to use the associated
+  datatype for syntax. For example, the syntax of closed monoid terms is formalised as follows.
+  #+begin_src agda
+    data Monoid₃ : Set where
+      _⨾_ : Monoid₃ → Monoid₃ → Monoid₃
+      Id  : Monoid₃
+  #+end_src
+  \noindent
+  We can see that this version can also be
+  mechanically obtained from ~Monoid₀~ by discarding ‘non-simple’
+  fields then turning the remaining fields into constructors.
+  # That would necessitate yet another nearly identical data-structure
+  # --- having constructors rather than field projections.
 
   We show how all these different
   presentations can be derived from a /single/
   \textsf{\upshape PackageFormer} declaration
   via a generative meta-program integrated into the
-  most widely used Agda ``IDE'', the Emacs mode for Agda. 
+  most widely used Agda ``IDE'', the Emacs mode for Agda.
+  In particular, a package of $N$ constituents with $M$
+  presentations of bundling results in nearly $N × M$ lines of code,
+  yet this quadratic count becomes linear $N + M$ by having a single
+  package declaration of $N$ constituents with $M$ subsequent instantiations.
   It is this massive reduction in duplicated efforts and maintenance that we view
   as the main contribution of our work.
-  #+begin_export latex
-  \edcomm{JC}{``massive reduction in duplicated efforts and maintenance'' begs the
-   question of doing a quantitative study to measure this --- which you have
-   neither done, nor intend to do.}
-#+end_export
+
+  :Remarks:
+  To demonstrate the generality of the notion of package formers we shall demonstrate how other common forms could be ‘derived’ from the single declaration above. It is to be noted that for such a small example, such derived code may be taken for granted, however for much larger theories —for example, a “field” comes with more than 20 fields— the ability to derive different perspectives in a consistent fashion is indispens- able; especially when the package is refactored. More realistically, a symmetric rig groupoid uses about 212 coherence laws [rig_computation], for which case-splitting, to perform proofs, yields over 200 goals thereby making metaprogramming a tempting approach.
+  :End:
 
 * \textsf{\upshape PackageFormer}s --- Being non-committal as much as possible
   :Remarks:
@@ -346,8 +355,8 @@ typeclass   : Variation
 termtype    : Variation
 _unbundled_ : Variation → ℕ → Variation
 _exposing_  : Variation → List Name → Variation
-                          -- Syntax as for ~using~
 #+end_src
+#                           -- Syntax as for using
 # # JC proposes ~termlanguage~ for ~termtype~
 \noindent
  The operators ~_unbundled_~ and ~_exposing_~
@@ -355,7 +364,7 @@ _exposing_  : Variation → List Name → Variation
  While\linebreak ~_exposing_~ explicitly lists the names that should be turned
  into parameters, in that sequence, `` ~_unbundled~ $n$'' exposes the
  first $n$ names declared in the package former.
-  # # 
+  # #
   # # We conceive of an extensible type ~Variations~
   # # which includes ~termtype~ and ~record~
   # # as two keywords. Moreover, this type is equipped with a number of combinators, one
@@ -375,7 +384,7 @@ _exposing_  : Variation → List Name → Variation
  Monoid₀'  = MonoidP record
 #+end_src
   The package former name is currently by default replaced by the
-  name ``~Carrier~'' in instantiations.
+  name ~“Carrier”~ in instantiations.
 
   1. [@1] We may obtain the previous formulation of
      ~Monoid₁~ as follows:
@@ -412,7 +421,7 @@ _exposing_  : Variation → List Name → Variation
 # # as if it were ~MonoidP (⋯)~.
 # # Moreover, notice that the infix combinators for unbundling and exposing,
 # # behave similar to the curry functional $(A × B → C) \;→\; (A → B → C)$.
-# # 
+# #
 # #   2. [@2] To speak of /a monoid over an arbitrary carrier/, we declare:
 # #         \vspace{0.3em}
 # #    #+begin_src agda
@@ -431,42 +440,32 @@ _exposing_  : Variation → List Name → Variation
 # #         Id      : Carrier
 # #         ⋯
 # # #+end_src
-# # 
+# #
 # #   The name ~Carrier~ is a default and could be renamed; likewise for ~Vars~ below.
 
   3. [@3] Finally, we mentioned metaprogramming's need to work with terms:
         \vspace{0.3em}
     #+begin_src agda
- Monoid₄ = MonoidP termtype
+ Monoid₃′ = MonoidP termtype
 #+end_src
     \vspace{0.3em}
-    \noindent
-    This behaves as if it were declared as follows:
-       \vspace{0.3em}
-        \noindent
-     #+begin_src agda
-    data Monoid₄ : Set where
-      _⨾_ : Monoid₄ → Monoid₄ → Monoid₄
-      Id  : Monoid₄
-#+end_src
-   \vspace{0.3em}
    \noindent
    Of course we may want to have terms /over/ a particular variable set, and so declare:
       \vspace{0.3em}
      #+begin_src agda
- Monoid₅ = MonoidP termtype exposing (Vars)
+ Monoid₄ = MonoidP termtype exposing (Vars)
 #+end_src
     \vspace{0.3em}
     \noindent
     Since the name ~Vars~ does not occur in the ~MonoidP~ package former,
     and is different from the special name ~Carrier~,
     it is added as a ~Set~ parameter together with an injection
-    into the created datatype ~Monoid₅~,
+    into the created datatype ~Monoid₄~,
     which could equivalently be defined as follows:
        \vspace{0.3em}
        \noindent
     #+begin_src agda
-    data Monoid₅ (Vars : Set) : Set where
+    data Monoid₄ (Vars : Set) : Set where
       inj : Vars → Monoid₄ Vars
       _⨾_  : Monoid₄ Vars
            → Monoid₄ Vars → Monoid₄ Vars
@@ -483,17 +482,17 @@ _exposing_  : Variation → List Name → Variation
 # ##       #+begin_src agda
 # ##   MonoidTermPropEqu = MonoidP equality where termtype = Monoid₅
 # ##  #+end_src
-# ##  
+# ##
 # ##      #+begin_src agda
 # ##      data MonoidTermPropEqu (Vars : Set) : Set where
 # ##        eqVars : {v w : Vars}  → v ≡ w → inj v ≡ inj w
 # ##        ...
 # ##    #+end_src
-# ##  
+# ##
 # ##       #+begin_src agda
 # ##   MonoidTermSetoid = MonoidP termSetoid where termtype = Monoid₅
 # ##  #+end_src
-# ##  
+# ##
 # ##      #+begin_src agda
 # ##      module _ {v e : Level} (Vars : Setoid v e) where
 # ##        open SetoidV Vars
@@ -503,7 +502,7 @@ _exposing_  : Variation → List Name → Variation
 # ##        MonoidTermSetoid : Setoid v e
 # ##        MonoidTermSetoid = record { ... }
 # ##    #+end_src
-# ##  
+# ##
 
 # #  There are of-course a number of variations on how a package is to be presented;
 # #  we have only mentioned two for brevity. The interested reader may consult
@@ -515,6 +514,57 @@ instead, especially as you have the room, insert a paragraph naming the
 additional things that can be done.}
 #+end_export
 
+  For brevity we have only discussed product representations of packages, however
+  the language feature also supports elaborations into nested dependent-sums
+  as in the case where we may have a coherent substructure.
+  Alongside ~_unbundled_~, we also have infix combinators for extending an
+  instantiation with additional fields or constructors, and the renaming of constituents
+  according to a user provided String-to-String function.
+  Moreover, just as syntactic datatype declarations may be derived, we also
+  allow support for the derivation of induction principles and structure-preserving homomorphism types.
+  Our envisioned system would be able to derive simple, tedious, uninteresting concepts; leaving difficult,
+  interesting, ones for humans to solve.
+
+  :Remarks:
+  0. Besides syntax, induction principles are also derived:
+
+  2. The ability to extend an instantiation with additional new fields or constructors.
+
+     - Since typeclass declarations provide type-level functions, these can be
+       pre-composed with functions that alter their inputs.
+       E.g., ~MonoidP typeclass~ is a parmeterised type which is a function of types,
+       so, for example, ~MonoidP typeclass ∘ List~ is the same but the carrier is now
+       lists over the provide parameter.
+
+       - Likewise we provide support for a constraint upon the parameter:
+         MonoidP typeclass using constraint
+         reduces
+         MonoidP typeclass field constraint : ...
+
+         nice.
+
+  1. Records, Haskell-style typeclasses,
+     nested dependent sums with the carrier declared or existentially quantified,
+     sums: Disjoint collection of declarations where each declaration is itself
+     a dependet sum consistong of the context necessayr toensure that the consitnutets
+     are well-typed.
+
+     There are obvious isomorphisms and these should be guarentted.
+
+  4. The ability to apply a string-to-string function to alter the names of constiuents
+     ‘decorated’.
+
+  5. Derive homomorphisms, strucutre preserving operations.
+
+  6. Support multiple defaults.
+
+  3. Constitients of package formers give rise to functions ---e.g., by replacing the
+     PackageFormer name with a new fresh variable. See 𝒯, page 42, of thesis-proposal.
+
+     In turn, this can be used to produce simple, tedious, induction principles. See (0) above.
+
+  4. This is particularly useful when one wants to extract such constieunte types for re-use elsewhere.
+  :End:
 
   The \textsf{\upshape PackageFormer} language feature unifies disparate representations of the
   same concept under a single banner. How does one actually /do/ anything with
@@ -533,16 +583,16 @@ additional things that can be done.}
 
   \vspace{1em}
 #+BEGIN_SRC agda
+  concat₀ : {M : Monoid₀}
+          → let C = Monoid₀.Carrier M
+             in  List C → C
+
   concat₁ : {C : Set} {M : Monoid₁ C} → List C → C
 
   concat₂ : {C : Set} {_⨾_ : C → C→ C}
             {M : Monoid₂ C _⨾_} → List C → C
 
-  concat₃ : {M : Monoid₃}
-          → let C = Monoid₃.Carrier M
-            in  List C → C
-
-  concat₄ : List Monoid₄ → Monoid₄
+  concat₃ : List Monoid₃ → Monoid₃
 #+END_SRC
   \vspace{1em}
 
@@ -557,24 +607,19 @@ additional things that can be done.}
   For example:
   \vspace{0.3em}
 
-  #+begin_export latex
-  \edcomm{WK}{Is the following ``Agda code'' meant to be a two-column
-  layout? I have no idea what it might mean!}
-#+end_export
-
 #+BEGIN_SRC agda
-  do τ ← MonoidP record; ℬ τ    ≈  λ {τ : MonoidP record}
-                                      → ℬ (MonoidP.Carrier τ)
+     do τ ← MonoidP record; ℬ τ
+  ≈  λ {τ : MonoidP record} → ℬ (MonoidP.Carrier τ)
 
-  do τ ← MonoidP termtype; ℬ τ  ≈  ℬ (MonoidP termtype)
+     do τ ← MonoidP termtype; ℬ τ
+  ≈  ℬ (MonoidP termtype)
 #+END_SRC
   \vspace{0.3em}
   \noindent
   This lets us write the following /variation polymorphic/ programs:
 #+BEGIN_SRC agda
   concatP : {v : Variation}
-          → do τ ← MonoidP v
-                List τ → τ
+          → do τ ← MonoidP v; List τ → τ
   concatP []       = MonoidP.Id
   concatP (x ∷ xs) = x ⨾ concatP xs
     where _⨾_ = MonoidP._⨾_
@@ -614,7 +659,7 @@ additional things that can be done.}
   # explicit semantics for \textsf{\upshape PackageFormer}'s within a minimal type theory.
   We have presented our work indirectly by using examples, which we
   hope are sufficiently clear to indicate our intent. We next intend to
-  provide explicit (elaboration) semantics for ~PackageFormer~ within a   
+  provide explicit (elaboration) semantics for ~PackageFormer~ within a
   minimal type theory.
 
   Moreover there are a number of auxiliary goals, including:
@@ -646,11 +691,18 @@ additional things that can be done.}
      \cite{types_for_modules}.
      # first_class_modules_support haskell_modules_formally
 
+          # ~concatP : {v : Variation}  →  do τ ← MonoidP v;  List τ → τ~. \newline
      For example, the ~concat~ function was purely syntactic and the easiest formulation
      uses the algebraic data-type rendition, whence one would write \newline
      ~concat : List MonoidP termtype → MonoidP termtype~ \newline
-     and the variation is found then systematically generalised to obtain \newline
-     ~concatP : {v : Variation}  →  do τ ← MonoidP v;  List τ → τ~. \newline
+     and the variation is found, then systematically generalised to obtain \newline
+     #+begin_src agda
+concatP : {v : Variation}
+        →  do τ ← MonoidP v;  List τ → τ
+     #+end_src
+
+     \vspace{1em}
+     \noindent
      When there are multiple variations mentioned, the problem becomes less clear cut
      and the simplest solution may be to simply indicate which variation or occurrences
      thereof is intended to be generalised.
@@ -668,7 +720,7 @@ additional things that can be done.}
   # can be found at
   # \newline
   # https://alhassy.github.io/next-700-module-systems-proposal/.
-  We have a complete    
+  We have a complete
   prototype available on github, which we will link to once the paper is
   no longer double-blind.
 
@@ -878,14 +930,14 @@ Suggestion (just an example of sth you can do), mention a record type (or someth
 }
 
 @PhdThesis{Norell-2007,
-  author = 	 {Ulf Norell},
-  title = 	 {Towards a Practical Programming Language Based on Dependent Type Theory},
+  author =   {Ulf Norell},
+  title =    {Towards a Practical Programming Language Based on Dependent Type Theory},
   OPTschool  = {Department of Computer Science and Engineering, Chalmers University of Technology},
   school  = {Dept.\null{} Comp.\null{} Sci.\null{} and Eng., Chalmers Univ.\null{} of Technology},
-  year = 	 2007,
+  year =     2007,
   month = SEP,
-  DirectURL = 	 {http://www.cs.chalmers.se/~ulfn/papers/thesis.html},
-  WKloc = 	 {doc/pap/BIB},
+  DirectURL =    {http://www.cs.chalmers.se/~ulfn/papers/thesis.html},
+  WKloc =    {doc/pap/BIB},
   note = {See also
   \href{http://wiki.portal.chalmers.se/agda/pmwiki.php}{\textsf{http://wiki.portal.chalmers.se/agda/pmwiki.php}}}
 }
