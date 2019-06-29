@@ -176,8 +176,8 @@ Also consider doubling the code block indentation.
   /fields/? This is analogous to whether functions are curried and so arguments
   may be provided partially, or otherwise must be provided all-together in one tuple.
 
-  The subtlety of what is a ‘parameter’ ---exposed at the type level--- and what is a
-  ‘field’ ---a component value--- has led to awkward formulations and
+  The subtlety of what is a ‘parameter’ --- exposed at the type level --- and what is a
+  ‘field’ --- a component value --- has led to awkward formulations and
   the duplication of existing types for the sole purpose of different uses.
 
   :JC:
@@ -209,7 +209,7 @@ Also consider doubling the code block indentation.
   we will illustrate our ideas in Agda \cite{agda_overview}.
   For the monoid example,
   it seems that there are three contenders for the monoid interface:
-  \newpage
+
   #+begin_src agda
   record Monoid₀ : Set₁ where
     field
@@ -228,15 +228,18 @@ Also consider doubling the code block indentation.
       leftId  : ∀ {x} → Id ⨾ x ≡ x
       rightId : ∀ {x} → x ⨾ Id ≡ x
 
-  record Monoid₂ (Carrier : Set)
-                 (_⨾_ : Carrier → Carrier → Carrier) : Set where
-     Id      : Carrier
-     assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-     leftId  : ∀ {x} → Id ⨾ x ≡ x
-     rightId : ∀ {x} → x ⨾ Id ≡ x
+  record Monoid₂
+           (Carrier : Set)
+           (_⨾_ : Carrier → Carrier → Carrier)
+         : Set  where
+    field
+      Id      : Carrier
+      assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
   #+end_src
 
-  \vspace{0.3em}
+  \vspace{0.3em}\noindent
   In ~Monoid₀~, we will call ~Carrier~ ``bundled up'',
   while we call it ``exposed'' in ~Monoid₁~ and ~Monoid₂~.
   The bundled-up version allows us to speak of /a/
@@ -257,11 +260,13 @@ Also consider doubling the code block indentation.
 
   Moreover, what if the user wanted the syntax to form monoid terms as in
   metaprogramming.
+  #+begin_export latex
   \edcomm{JC}{This is too imprecise --- please put specific Agda code
     for MonoidTerm (you have the room) instead. Then you can say
-    something like "We can see that this version can also be
-    mechanically obtained from Monoid_1 by turning each field into a
-    constructor". This will make the idea much clearer.}
+    something like ``We can see that this version can also be
+    mechanically obtained from $Monoid_1$ by turning each field into a
+    constructor''. This will make the idea much clearer.}
+#+end_export
   That would necessitate yet another nearly identical data-structure
   --- having constructors rather than field projections.
 
@@ -269,9 +274,11 @@ Also consider doubling the code block indentation.
   presentations can be derived from a /single/ \textsf{\upshape PackageFormer} declaration.
   It is this massive reduction in duplicated efforts and maintenance that we view
   as the main contribution of our work.
+  #+begin_export latex
   \edcomm{JC}{``massive reduction in duplicated efforts and maintenance'' begs the
    question of doing a quantitative study to measure this --- which you have
    neither done, nor intend to do.}
+#+end_export
 
 * \textsf{\upshape PackageFormer}s --- Being non-committal as much as possible
   :Remarks:
@@ -287,7 +294,7 @@ Also consider doubling the code block indentation.
     # made real only by how Prolog users treat arguments to a relation.
     # Dependently-typed programming at its core is the adamant hygienic blurring of
     # concepts
-    # ---namely, types are terms \cite{types_overview}---
+    # --- namely, types are terms \cite{types_overview} ---
     # and so the previous presentations of monoids are unified in the following
     # single declaration which does not distinguish between parameters and fields.
     #
@@ -312,9 +319,9 @@ Also consider doubling the code block indentation.
   Notice that here ~Carrier~ has been removed in favour of the name MonoidP,
   which also is the name of the newly declared entity.
   This does indeed mean that so far our facility is //single sorted//.
-  ## Superficially, the parameters and fields have been flattened into a single location
-  ## and the name ~Carrier~ has been dispensed with in-favour of ~MonoidP~,
-  ## which also happens to be name of this newly declared entity.
+  # # Superficially, the parameters and fields have been flattened into a single location
+  # # and the name ~Carrier~ has been dispensed with in-favour of ~MonoidP~,
+  # # which also happens to be name of this newly declared entity.
   #
   # MA: We commend the astute reader who has noticed a hint of predicitivity here,
   # but it is an issue we shall not address in the current work.
@@ -325,27 +332,70 @@ Also consider doubling the code block indentation.
   \emph{One uses a \textsf{\upshape PackageFormer} by instantiating the particular presentation that is desired.}
   #+END_EXPORT
 
-  We conceive of an extensible type ~Variations~ which includes ~datatype~ and ~record~
-  as two keywords. Moreover, this type is equipped with a number of combinators, one
-  of which is the infix operator ~_unbundled_ : Variation → ℕ → Variation~ which modifies a particular
-  presentation by also lifting the first ~n~ constituents from the field level to the
-  parameter level. In particular, ~typeclass = record unbundled 1~.
-  We also allow the named version of this combinator, namely
-  ~_exposing_ : Variation → List Name → Variation~.
-  Instantiation syntax is of the form ~“⟪package-former-name⟫ ⟪variation⟫”~,
-  as such, ~_unbundled_~  and ~_exposing_~ have higher precedence.
-  Let us demonstrate these concepts.
-
-  0. [@0] We may obtain the previous formulations of ~Monoid₁~ in two different ways:
-        \vspace{0.3em}
+  A package former is used via /instantiations/, written as low-precedence
+ juxtapositions of a package former name and and expression of type
+ ~Variation~.
+ # WK: I currently think that ``Variation'' is not a good name for this type.
+ The latter can be built in particular via the following:
     #+begin_src agda
- Monoid₁′  = MonoidP typeclass
- Monoid₁″ = MonoidP record exposing Carrier
+record      : Variation
+typeclass   : Variation
+termtype    : Variation
+_unbundled_ : Variation → ℕ → Variation
+_exposing_  : Variation → List Name → Variation
+                          -- Syntax as for ~using~
 #+end_src
+# # JC proposes ~termlanguage~ for ~termtype~
+\noindent
+ The operators ~_unbundled_~ and ~_exposing_~
+ have higher precedence than the instantiation juxtaposition.
+ While ~_exposing_~ explicitly lists the names that should be turned
+ into parameters, in that sequence, ``~_unbundled~ /n/~'' exposes the
+ first /n/ names declared in the package former.
+  # # 
+  # # We conceive of an extensible type ~Variations~
+  # # which includes ~termtype~ and ~record~
+  # # as two keywords. Moreover, this type is equipped with a number of combinators, one
+  # # of which is the infix operator ~_unbundled_ : Variation → ℕ → Variation~ which modifies a particular
+  # # presentation by also lifting the first ~n~ constituents from the field level to the
+  # # parameter level. In particular, ~typeclass = record unbundled 1~.
+  # # We also allow the named version of this combinator, namely
+  # # ~_exposing_ : Variation → List Name → Variation~.
+  # # Instantiation syntax is of the form ~“⟪package-former-name⟫ ⟪variation⟫”~,
+  # # as such, ~_unbundled_~  and ~_exposing_~ have higher precedence.
+  # # Let us demonstrate these concepts.
 
-    \vspace{0.3em}
+  0. [@0] To make ~Monoid₀'~ the type of /arbitrary monoids/
+   (that is, with arbitrary carrier), we declare:
+        \vspace{0.3em}
+   #+begin_src agda
+ Monoid₀'  = MonoidP record
+#+end_src
+  The package former name is currently by default replaced by the
+  name ``~Carrier~'' in instantiations.
 
-  1. Likewise, there are number of ways to regain the previous formulation of ~Monoid₂~.
+  1. [@1] We may obtain the previous formulation of
+     ~Monoid₁~ as follows:
+        \vspace{0.3em}
+# # -- WK: typeclass was not shown
+# # Monoid₁′  = MonoidP typeclass
+# # Monoid₁″ = MonoidP record exposing (Carrier)
+    #+begin_src agda
+ Monoid₁'  = MonoidP record exposing (Carrier)
+ Monoid₁″ = MonoidP record unbundled 1
+#+end_src
+# ##  This also
+# ##  Haskell2010-style (single-parameter) type classes then correspond to
+# ##  ~_unbundled 1, and so we define
+# ##    #+begin_src agda
+# ##  MonmoidClass = MonoidP typeclass unbundled 1
+# ## #+end_src
+# ## WK: ?
+
+# #    \vspace{0.3em}
+
+  2. [@2] As for ~Monoid₁~, there are also different ways
+     to regain the previous formulation of ~Monoid₂~.
         \vspace{0.3em}
     #+begin_src agda
  Monoid₂′  = MonoidP record unbundled 2
@@ -354,39 +404,40 @@ Also consider doubling the code block indentation.
 
       \vspace{0.3em}
 
-Our precedence rules indicate that ~MonoidP ⋯~ parenthesises as if it were ~MonoidP (⋯)~.
-Moreover, notice that the infix combinators for unbundling and exposing,
-behave similar to the curry functional $(A × B → C) \;→\; (A → B → C)$.
-
-  2. [@2] To speak of /a monoid over an arbitrary carrier/, we declare:
-        \vspace{0.3em}
-   #+begin_src agda
- Monoid₃ = MonoidP record
-#+end_src
-   \vspace{0.3em}
-   \noindent
-   It behaves as if it were declared thusly:
-   \vspace{0.3em}
-   \noindent
-   #+begin_src agda
-    record Monoid₃ : Set₁ where
-      field
-        Carrier : Set
-        _⨾_     : Carrier → Carrier → Carrier
-        Id      : Carrier
-        ⋯
-#+end_src
-
-  The name ~Carrier~ is a default and could be renamed; likewise for ~Vars~ below.
+# # Our precedence rules indicate that ~MonoidP ⋯~ parenthesises
+# # as if it were ~MonoidP (⋯)~.
+# # Moreover, notice that the infix combinators for unbundling and exposing,
+# # behave similar to the curry functional $(A × B → C) \;→\; (A → B → C)$.
+# # 
+# #   2. [@2] To speak of /a monoid over an arbitrary carrier/, we declare:
+# #         \vspace{0.3em}
+# #    #+begin_src agda
+# #  Monoid₃ = MonoidP record
+# # #+end_src
+# #    \vspace{0.3em}
+# #    \noindent
+# #    It behaves as if it were declared thusly:
+# #    \vspace{0.3em}
+# #    \noindent
+# #    #+begin_src agda
+# #     record Monoid₃ : Set₁ where
+# #       field
+# #         Carrier : Set
+# #         _⨾_     : Carrier → Carrier → Carrier
+# #         Id      : Carrier
+# #         ⋯
+# # #+end_src
+# # 
+# #   The name ~Carrier~ is a default and could be renamed; likewise for ~Vars~ below.
 
   3. [@3] Finally, we mentioned metaprogramming's need to work with terms:
         \vspace{0.3em}
     #+begin_src agda
- Monoid₄ = MonoidP datatype
+ Monoid₄ = MonoidP termtype
 #+end_src
     \vspace{0.3em}
     \noindent
-    It behaves as if it were declared thusly:
+    This behaves as if it were declared as follows:
        \vspace{0.3em}
         \noindent
      #+begin_src agda
@@ -399,11 +450,15 @@ behave similar to the curry functional $(A × B → C) \;→\; (A → B → C)$.
    Of course we may want to have terms /over/ a particular variable set, and so declare:
       \vspace{0.3em}
      #+begin_src agda
- Monoid₅ = MonoidP datatype exposing (Vars)
+ Monoid₅ = MonoidP termtype exposing (Vars)
 #+end_src
     \vspace{0.3em}
     \noindent
-    It behaves as if it were declared thusly:
+    Since the name ~Vars~ does not occur in the ~MonoidP~ package former,
+    and is different from the special name ~Carrier~,
+    it is added as a ~Set~ parameter together with an injection
+    into the created datatype ~Monoid₅~,
+    which could equivalently be defined as follows:
        \vspace{0.3em}
        \noindent
     #+begin_src agda
@@ -415,22 +470,57 @@ behave similar to the curry functional $(A × B → C) \;→\; (A → B → C)$.
 
      \vspace{0.3em}
      \noindent
-     Note that only ‘functional’ symbols have been exposed in these elaborations; no ‘proof-matter’.
+     Note that only ‘functional’ symbols have been exposed in these
+     instantiations;
+     no ‘proof-matter’.
 
-  There are of-course a number of variation on how a package is to be presented,
-  we have only mentioned two for brevity. The interested reader may consult
-  the ‘next 700 module systems’ proposal \cite{alhassy_thesis_proposal};
-  which discusses more variations and examples in detail.
+# ##  WK: Try it:
+# ##       #+begin_src agda
+# ##   MonoidTermPropEqu = MonoidP equality where termtype = Monoid₅
+# ##  #+end_src
+# ##  
+# ##      #+begin_src agda
+# ##      data MonoidTermPropEqu (Vars : Set) : Set where
+# ##        eqVars : {v w : Vars}  → v ≡ w → inj v ≡ inj w
+# ##        ...
+# ##    #+end_src
+# ##  
+# ##       #+begin_src agda
+# ##   MonoidTermSetoid = MonoidP termSetoid where termtype = Monoid₅
+# ##  #+end_src
+# ##  
+# ##      #+begin_src agda
+# ##      module _ {v e : Level} (Vars : Setoid v e) where
+# ##        open SetoidV Vars
+# ##        data _≈T_ : Monoid₅ CarrierV → Monoid₅ CarrierV  → Set (v \sqcup e) where
+# ##          eqVars : {v w : Vars}  → v ≈V w → inj v ≈T inj w
+# ##          ...
+# ##        MonoidTermSetoid : Setoid v e
+# ##        MonoidTermSetoid = record { ... }
+# ##    #+end_src
+# ##  
+
+# #  There are of-course a number of variations on how a package is to be presented;
+# #  we have only mentioned two for brevity. The interested reader may consult
+# #  the ‘next 700 module systems’ proposal \cite{alhassy_thesis_proposal};
+# #  which discusses more variations and examples in detail.
+  #+begin_export latex
+  \edcomm{JC}{I would
+instead, especially as you have the room, insert a paragraph naming the
+additional things that can be done.}
+#+end_export
+
 
   The \textsf{\upshape PackageFormer} language feature unifies disparate representations of the
   same concept under a single banner. How does one actually /do/ anything with
   these entities? Are we forced to code along particular instantiations?
   No; unless we desire to do so.
 
-* A New Kind of Polymorphism
+*  \textsf{\upshape Variation} Polymorphism
+# # A New Kind of Polymorphism
 
   Suppose we want to produce the function ~concat~, which composes the elements of a list
-  according to a compositionality scheme ---examples of this include summing over
+  according to a compositionality scheme --- examples of this include summing over
   a list, multiplication over a list, checking all items in a list are true, or
   at least one item in the list is true. Depending on the interface presentation
   selected, the typing of this function could be elegant or awkward, as follows.
@@ -439,14 +529,18 @@ behave similar to the curry functional $(A × B → C) \;→\; (A → B → C)$.
 #+BEGIN_SRC agda
   concat₁ : {C : Set} {M : Monoid₁ C} → List C → C
 
-  concat₂ : {C : Set} {_⨾_ : C → C→ C} {M : Monoid₂ C _⨾_} → List C → C
+  concat₂ : {C : Set} {_⨾_ : C → C→ C}
+            {M : Monoid₂ C _⨾_} → List C → C
 
-  concat₃ : {M : Monoid₃} → let C = Monoid₃.Carrier M  in  List C → C
+  concat₃ : {M : Monoid₃}
+          → let C = Monoid₃.Carrier M
+            in  List C → C
 
   concat₄ : List Monoid₄ → Monoid₄
 #+END_SRC
   \vspace{1em}
 
+  \noindent
   An immediate attempt to unify these declarations requires pinpointing exactly
   /which type is referred to semantically by the phrase MonoidP./
   For the ~datatype~ variation, it could only refer to the resulting algebraic data-type;
@@ -456,6 +550,12 @@ behave similar to the curry functional $(A × B → C) \;→\; (A → B → C)$.
   of a particular instantiaiton, rather than referring to the type /of/ such values.
   In particular:
   \vspace{0.3em}
+
+  #+begin_export latex
+  \edcomm{WK}{Is the following ``Agda code'' meant to be a two-column
+  layout? I have no idea what it might mean!}
+#+end_export
+
 #+BEGIN_SRC agda
   do τ ← MonoidP record; ℬ τ    ≈  λ {τ : MonoidP record}
                                       → ℬ (MonoidP.Carrier τ)
@@ -466,9 +566,12 @@ behave similar to the curry functional $(A × B → C) \;→\; (A → B → C)$.
   \noindent
   With this understanding in-hand, we may write /variation polymorphic/ programs:
 #+BEGIN_SRC agda
-  concatP : {v : Variation}  →  do τ ← MonoidP v;  List τ → τ
+  concatP : {v : Variation}
+          → do τ ← MonoidP v
+                List τ → τ
   concatP []       = MonoidP.Id
-  concatP (x ∷ xs) = x ⨾ concatP xs where _⨾_ = MonoidP._⨾_
+  concatP (x ∷ xs) = x ⨾ concatP xs
+    where _⨾_ = MonoidP._⨾_
 #+END_SRC
 
   \vspace{0.3em}
