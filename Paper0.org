@@ -6,7 +6,8 @@
 # TITLE: Loosen your belt whenever you like
 #+TITLE: A Language Feature to Unbundle Data at Will
 #+DESCRIPTION: Thesis proposal for Musa Al-hassy; McMaster University 2019.
-#+AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]], [[mailto:carette@mcmaster.ca][Jacques Carette]], [[mailto:kahl@cas.mcmaster.ca][Wolfram Kahl]]
+# AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]], [[mailto:carette@mcmaster.ca][Jacques Carette]], [[mailto:kahl@mcmaster.ca][Wolfram Kahl]]
+#+AUTHOR: Musa Al-hassy, Jacques Carette, Wolfram Kahl
 #+EMAIL: alhassy@gmail.com
 #+OPTIONS: toc:nil d:nil title:t
 #+PROPERTY: header-args :tangle no :comments link
@@ -52,11 +53,12 @@ Also consider doubling the code block indentation.
 :End:
 
 * LaTeX setup                                                        :ignore:
-#+latex_class_options: [acmsmall,review,anonymous]
+#+latex_class_options: [sigplan,review,anonymous]
+# latex_class_options: [acmsmall,review,anonymous]
 # latex_class_options: [acmsmall,review]
 #+LATEX_CLASS: acmart
 
-#+LATEX_HEADER: \settopmatter{prinfolios=true,princcs=false,printacmref=false}
+#+LATEX_HEADER: \settopmatter{printfolios=true,printccs=false,printacmref=false}
 #+LATEX_HEADER: \usepackage[backend=biber,style=alphabetic]{biblatex}
 #+LATEX_HEADER: \addbibresource{MyReferences.bib}
 #+LATEX_HEADER: \usepackage{edcomms}
@@ -78,7 +80,8 @@ Also consider doubling the code block indentation.
 #+LATEX_HEADER: \newunicodechar{′}{'}
 #+LATEX_HEADER: \newunicodechar{″}{''}
 
-#+LATEX_HEADER: \usepackage[dvipsnames]{xcolor} % named colours
+# LATEX_HEADER: \usepackage[dvipsnames]{xcolor} % named colours
+#+LATEX_HEADER: \usepackage{xcolor} % named colours
 #+LATEX_HEADER: \usepackage{color}
 #+LATEX_HEADER: \definecolor{darkred}{rgb}{0.3, 0.0, 0.0}
 #+LATEX_HEADER: \definecolor{darkgreen}{rgb}{0.0, 0.3, 0.1}
@@ -203,17 +206,27 @@ Also consider doubling the code block indentation.
 
   But perhaps Haskell's type system does not give the programmer sufficient
   tools to adequately express such ideas. As such, for the rest of this paper
-  we will illustrate our ideas in Agda \cite{agda_overview}. For the example at hand,
-  it seems that there are two contenders for the monoid interface:
+  we will illustrate our ideas in Agda \cite{agda_overview}.
+  For the monoid example,
+  it seems that there are three contenders for the monoid interface:
   \newpage
   #+begin_src agda
+  record Monoid₀ : Set₁ where
+    field
+      Carrier : Set
+      _⨾_     : Carrier → Carrier → Carrier
+      Id      : Carrier
+      assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
+
   record Monoid₁ (Carrier : Set) : Set where
     field
-      _⨾_    : Carrier → Carrier → Carrier
-     Id      : Carrier
-     assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-     leftId  : ∀ {x} → Id ⨾ x ≡ x
-     rightId : ∀ {x} → x ⨾ Id ≡ x
+      _⨾_     : Carrier → Carrier → Carrier
+      Id      : Carrier
+      assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
 
   record Monoid₂ (Carrier : Set)
                  (_⨾_ : Carrier → Carrier → Carrier) : Set where
@@ -224,13 +237,18 @@ Also consider doubling the code block indentation.
   #+end_src
 
   \vspace{0.3em}
-  Of-course there are also the alternative formulations of where we bundle up
-  the ~Carrier~ rather than have it exposed ---e.g., when we wish to speak of /a/
-  monoid rather than /a monoid on a given type/--- or where we are interested
-  in the identity element rather than in the compositionality scheme
-  ---e.g., discrepancy ‘≢’ and indistinguishability ‘≡’ have the same identities as
-  conjunction and disjunction, respectively. Moreover, there are other combinations
-  of what is to be exposed and hidden, for applications that we might never think of.
+  In ~Monoid₀~, we will call ~Carrier~ ``bundled up'',
+  while we call it ``exposed'' in ~Monoid₁~ and ~Monoid₂~.
+  The bundled-up version allows us to speak of /a/
+  monoid, rather than /a monoid on a given type/ which is captured by ~Monoid₁~.
+  While ~Monoid₂~ exposes both the carrier and the composition operation,
+  we might in some situation be interested
+  in exposing the identity element instead
+  --- e.g., the discrepancy ‘≢’ and indistinguishability ‘≡’ operations
+  on the Booleans
+  have the same identities as conjunction and disjunction, respectively.
+  Moreover, there are other combinations of what is to be exposed and hidden,
+  for applications that we might never think of.
 
   Rather than code with /interface formulations we think people will likely use/, it is far
   more general to /commit to no particular formulation/ and allow the user to select
@@ -238,27 +256,45 @@ Also consider doubling the code block indentation.
   a new language feature: The \textsf{\upshape PackageFormer}.
 
   Moreover, what if the user wanted the syntax to form monoid terms as in
-  metaprogramming. That would necessitate yet another nearly identical data-structure
-  ---having constructors rather than field projections. We show how all these different
+  metaprogramming.
+  \edcomm{JC}{This is too imprecise --- please put specific Agda code
+    for MonoidTerm (you have the room) instead. Then you can say
+    something like "We can see that this version can also be
+    mechanically obtained from Monoid_1 by turning each field into a
+    constructor". This will make the idea much clearer.}
+  That would necessitate yet another nearly identical data-structure
+  --- having constructors rather than field projections.
+
+  We show how all these different
   presentations can be derived from a /single/ \textsf{\upshape PackageFormer} declaration.
   It is this massive reduction in duplicated efforts and maintenance that we view
   as the main contribution of our work.
+  \edcomm{JC}{``massive reduction in duplicated efforts and maintenance'' begs the
+   question of doing a quantitative study to measure this --- which you have
+   neither done, nor intend to do.}
 
-* \textsf{\upshape PackageFormer}s ---Being non-committal as much as possible
+* \textsf{\upshape PackageFormer}s --- Being non-committal as much as possible
   :Remarks:
   Unifying the different perspectives under the same banner. We speak in terms of elaborations,
      but may propose elementary typing rules or semantics. Discuss \textsf{\upshape PackageFormer} polymorphism, from §4 of thesis proposal.
      :End:
 
-    It is notoriously difficult to reconstruct the possible inputs to a function
-    that yielded a certain output. That is, unless you are using Prolog of-course,
-    where the distinctions between input and output are an illusion that is otherwise
-    made real only by how Prolog users treat arguments to a relation.
-    Dependently-typed programming at its core is the adamant hygienic blurring of
-    concepts
-    ---namely, types are terms \cite{types_overview}---
-    and so the previous presentations of monoids are unified in the following
-    single declaration which does not distinguish between parameters and fields.
+    # It is notoriously difficult to reconstruct the possible inputs to a function
+    # that yielded a certain output.
+    # That is, unless you are using Prolog of-course,
+    # where the distinctions between input and output are an illusion
+    # that is otherwise
+    # made real only by how Prolog users treat arguments to a relation.
+    # Dependently-typed programming at its core is the adamant hygienic blurring of
+    # concepts
+    # ---namely, types are terms \cite{types_overview}---
+    # and so the previous presentations of monoids are unified in the following
+    # single declaration which does not distinguish between parameters and fields.
+    #
+    We claim that the previous monoid-related pieces of Agda code
+    can all be unified as a single declaration
+    which does not distinguish between parameters and fields,
+    where ~PackageFormer~ is a keyword with similar syntax as ~record~:
 
       #+begin_src agda
   PackageFormer MonoidP : Set where
@@ -270,9 +306,15 @@ Also consider doubling the code block indentation.
   #+end_src
 
   \noindent
-  Superficially, the parameters and fields have been flattened into a single location
-  and the name ~Carrier~ has been dispensed with in-favour of ~MonoidP~, which also happens
-  to be name of this newly declared entity.
+  Coupled with various `directives' that let one declare
+  what should be parameters and what should be fields,
+  we can reproduce the above.
+  Notice that here ~Carrier~ has been removed in favour of the name MonoidP,
+  which also is the name of the newly declared entity.
+  This does indeed mean that so far our facility is //single sorted//.
+  ## Superficially, the parameters and fields have been flattened into a single location
+  ## and the name ~Carrier~ has been dispensed with in-favour of ~MonoidP~,
+  ## which also happens to be name of this newly declared entity.
   #
   # MA: We commend the astute reader who has noticed a hint of predicitivity here,
   # but it is an issue we shall not address in the current work.
@@ -708,9 +750,9 @@ Suggestion (just an example of sth you can do), mention a record type (or someth
 }
 
 * COMMENT footer                                                     :ignore:
+#### eval: (progn (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1))
 
 # Local Variables:
 # eval: (progn (org-babel-goto-named-src-block "make-acmart-class") (org-babel-execute-src-block) (outline-hide-sublevels 1))
-# eval: (progn (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1))
 # compile-command: (progn (org-babel-tangle) (org-latex-export-to-pdf) (async-shell-command "open Paper0.pdf"))
 # End:
