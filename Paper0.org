@@ -1,18 +1,12 @@
-# (shell-command "cp Paper0.pdf GPCE_19_Alhassy_Carette_Kahl.pdf")
-# (shell-command "mv GPCE_19_Alhassy_Carette_Kahl.pdf Paper0.pdf")
-
-# (progn (org-babel-tangle) (org-latex-export-to-pdf) (async-shell-command "open Paper0.pdf"))
-
-# TITLE: Loosen your belt whenever you like
 #+TITLE: A Language Feature to Unbundle Data at Will
 #+DESCRIPTION: Thesis proposal for Musa Al-hassy; McMaster University 2019.
-# AUTHOR: [[mailto:alhassm@mcmaster.ca][Musa Al-hassy]], [[mailto:carette@mcmaster.ca][Jacques Carette]], [[mailto:kahl@mcmaster.ca][Wolfram Kahl]]
 #+AUTHOR: Musa Al-hassy, Jacques Carette, Wolfram Kahl
 #+EMAIL: alhassy@gmail.com
 #+OPTIONS: toc:nil d:nil title:t
 #+PROPERTY: header-args :tangle no :comments link
-#+TODO: TODO | OLD LaTeX
+#+TODO: TODO | OLD LaTeX README Remarks
 
+* Remarks COMMENT on writing
 # At the end of a section, explain why the section is there,
 # and what the reader should take away from it.
 
@@ -52,76 +46,144 @@ Also consider doubling the code block indentation.
 - Where are the citations? There should be citations throughout!
 :End:
 
-* LaTeX setup                                                        :ignore:
-#+latex_class_options: [sigplan,review,anonymous]
-# latex_class_options: [acmsmall,review,anonymous]
-# latex_class_options: [acmsmall,review]
-#+LATEX_CLASS: acmart
+* README COMMENT Dependencies of this org file
 
-#+LATEX_HEADER: \settopmatter{printfolios=true,printccs=false,printacmref=false}
-#+LATEX_HEADER: \usepackage[backend=biber,style=alphabetic]{biblatex}
-#+LATEX_HEADER: \addbibresource{MyReferences.bib}
-#+LATEX_HEADER: \usepackage{edcomms}
-#+LATEX_HEADER: \edcommsfalse
+In the source blocks below, go into each one and press C-c C-c
+to have it executed. Some ‘results’ will be echoed into the buffer
+if everything went well.
 
-#+LATEX_HEADER: \acmJournal{GPCE}
-# LATEX_HEADER: \acmVolume{1}
-#+LATEX_HEADER: \acmNumber{GPCE}
-# LATEX_HEADER: \acmArticle{1}
-#+LATEX_HEADER: \acmYear{2019}
-# LATEX_HEADER: \acmMonth{1}
-# LATEX_HEADER: \acmDOI{}
-#+LATEX_HEADER: \setcopyright{none}
+Rather than executing the following blocks each time you edit this file,
+consider adding them to your Emacs [[https://alhassy.github.io/init/][configuration file]].
 
-#+LATEX_HEADER: \usepackage{MyUnicodeSymbols}
-#+LATEX_HEADER: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
-#+LATEX_HEADER: \newunicodechar{≢}{\ensuremath{\nequiv}}
-#+LATEX_HEADER: \newunicodechar{τ}{\ensuremath{\tau}}
-#+LATEX_HEADER: \newunicodechar{₄}{\ensuremath{_4}}
-#+LATEX_HEADER: \newunicodechar{₅}{\ensuremath{_5}}
-#+LATEX_HEADER: \newunicodechar{′}{'}
-#+LATEX_HEADER: \newunicodechar{″}{''}
+ + org-mode :: This particular markup is called org-mode.
 
-# LATEX_HEADER: \usepackage[dvipsnames]{xcolor} % named colours
-#+LATEX_HEADER: \usepackage{xcolor} % named colours
-#+LATEX_HEADER: \usepackage{color}
-#+LATEX_HEADER: \definecolor{darkred}{rgb}{0.3, 0.0, 0.0}
-#+LATEX_HEADER: \definecolor{darkgreen}{rgb}{0.0, 0.3, 0.1}
-#+LATEX_HEADER: \definecolor{darkblue}{rgb}{0.0, 0.1, 0.3}
-#+LATEX_HEADER: \definecolor{darkorange}{rgb}{1.0, 0.55, 0.0}
-#+LATEX_HEADER: \definecolor{sienna}{rgb}{0.53, 0.18, 0.09}
-#+LATEX_HEADER: \hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkgreen}
+     Let's obtain Org-mode along with the extras that allow us to ignore
+     heading names, but still utilise their contents --e.g., such as a heading
+     named ‘preamble’ that contains org-mode setup for a file.
+     #+begin_src emacs-lisp
+;; first we get a handy-dandy package manager
 
-# Having small-font code blocks.
-# LATEX_HEADER: \RequirePackage{fancyvrb}
-# LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+(require 'package)
+(setq package-archives '(("org"       . "https://orgmode.org/elpa/")
+                         ("gnu"       . "https://elpa.gnu.org/packages/")
+                         ("melpa"     . "https://melpa.org/packages/")
+                         ("melpa-stable" . "https://stable.melpa.org/packages/")
+                         ))
+(package-initialize)
 
-#+BEGIN_EXPORT latex
-% \author{Musa Al-hassy}
-% \affiliation{
-%   \institution{McMaster University}
-%   \streetaddress{1280 Main St. W.}
-%   \city{Hamilton}
-%   \state{ON}
-%   \postcode{L8S 4K1}
-%   \country{Canada}}
-% \email{alhassm@mcmaster.ca}
-% \author{Jacques Carette}
-% \author{Wolfram Kahl}
-#+END_EXPORT
+(package-refresh-contents)
 
-** COMMENT acmart Emacs setup
- #+NAME: make-acmart-class
- #+BEGIN_SRC emacs-lisp :results none
-(with-eval-after-load "ox-latex"
-   (add-to-list 'org-latex-classes
-        '("acmart" "\\documentclass{acmart}"
-          ("\\section{%s}" . "\\section*{%s}")
-          ("\\subsection{%s}" . "\\subsection*{%s}")
-          ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-          ("\\paragraph{%s}" . "\\paragraph*{%s}")
-          ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+(package-install 'use-package)
+(require 'use-package)
+(setq use-package-always-ensure t)
+
+;; then we get the org-mode goodness
+
+(use-package org
+  :ensure org-plus-contrib
+  :config
+  (require 'ox-extra)
+  (ox-extras-activate '(ignore-headlines)))
+#+end_src
+
+     This lets us use the ~:ignore:~ tag on headlines you'd like to have ignored,
+     while not ignoring their content --see [[https://emacs.stackexchange.com/a/17677/10352][here]].
+
+     - Use the ~:noexport:~ tag to omit a headline /and/ its contents.
+
+ + minted & bib :: Source blocks obtain colour.
+
+     Execute the following for bib ref as well as minted
+     Org-mode uses the Minted package for source code highlighting in PDF/LaTeX
+     --which in turn requires the pygmentize system tool.
+     #+BEGIN_SRC emacs-lisp
+     (setq org-latex-listings 'minted
+           org-latex-packages-alist '(("" "minted"))
+           org-latex-pdf-process
+           '("pdflatex -shell-escape -output-directory %o %f"
+             ;; "biber %b"
+             "bibtex %b"
+             "pdflatex -shell-escape -output-directory %o %f"
+             "pdflatex -shell-escape -output-directory %o %f")
+     )
+     #+END_SRC
+
+  # Enable the following to have small-font code blocks.
+  # LATEX_HEADER: \RequirePackage{fancyvrb}
+  # LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+
+ + amart :: Enable acmart latex class.
+
+   #+NAME: make-acmart-class
+   #+BEGIN_SRC emacs-lisp
+(add-to-list 'org-latex-classes
+             '("acmart" "\\documentclass{acmart}"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+
+ (message "acmart has been loaded")
  #+END_SRC
+
+   The ‘footer’ at the end of this file currently executes only this code block for you
+   ---if you enable the local vars. You can easily tweak it to execute the other blocks,
+   if you like.
+
+ + org-ref :: [[https://github.com/jkitchin/org-ref][An exquisite system]] for handling references.
+
+    If everything works, the following entity will display useful data
+    when the mouse hovers over it (•̀ᴗ•́)و If you click on it, then you're
+    in for a lot of super neat stuff, such as searching for the pdf online!
+
+    cite:agda_overview
+
+    #+BEGIN_SRC emacs-lisp
+(use-package org-ref :demand t)
+
+;; Files to look at when no “╲bibliography{⋯}” is not present in a file.
+;; Most useful for non-LaTeX files.
+(setq reftex-default-bibliography '("References.bib"))
+
+(use-package helm-bibtex :demand t)
+;; If you use helm-bibtex as the citation key completion method you should set these variables too.
+
+(setq bibtex-completion-bibliography "References.bib")
+#+END_SRC
+
+  Execute ~M-x helm-bibtex~ and, say, enter ~agda~ and you will be presented with
+  all the entries in the bib database that mention ‘agda’. Super cool stuff.
+
+* LaTeX setup                                                        :ignore:
+
+  #+LATEX_CLASS: acmart
+  #+latex_class_options: [sigplan,review,anonymous]
+  # latex_class_options: [acmsmall,review,anonymous]
+
+  # ACM uses the natbib package
+  #
+  # LATEX_HEADER: \settopmatter{printfolios=true,printccs=false,printacmref=false}
+
+  # Visible editorial comments.
+  #+LATEX_HEADER: \usepackage{edcomms}
+  #+LATEX_HEADER: \edcommsfalse
+
+  #+LATEX_HEADER: \acmYear{2019}
+  #+LATEX_HEADER: \setcopyright{none}
+  # LATEX_HEADER: \acmJournal{GPCE}
+  # LATEX_HEADER: \acmVolume{1}
+  # LATEX_HEADER: \acmNumber{GPCE}
+  # LATEX_HEADER: \acmArticle{1}
+  # LATEX_HEADER: \acmMonth{1}
+  # LATEX_HEADER: \acmDOI{}
+
+  # Dark green colour for links.
+  #+LATEX_HEADER: \usepackage{color}
+  #+LATEX_HEADER: \definecolor{darkgreen}{rgb}{0.0, 0.3, 0.1}
+  #+LATEX_HEADER: \hypersetup{colorlinks,linkcolor=darkgreen,citecolor=darkgreen,urlcolor=darkgreen}
+
+  #+LATEX_HEADER: \usepackage{CheatSheet/UnicodeSymbols}
 
 * Abstract :ignore:
 #+begin_center
@@ -208,7 +270,7 @@ Also consider doubling the code block indentation.
 
   But perhaps Haskell's type system does not give the programmer sufficient
   tools to adequately express such ideas. As such, for the rest of this paper
-  we will illustrate our ideas in Agda \cite{Norell-2007,agda_overview}.
+  we will illustrate our ideas in Agda cite:Norell-2007,agda_overview.
   For the monoid example,
   it seems that there are three contenders for the monoid interface:
 
@@ -571,7 +633,7 @@ additional things that can be done.}
   these entities? Are we forced to code along particular instantiations?
   No; unless we desire to do so.
 
-*  \textsf{\upshape Variation} Polymorphism
+* \textsf{\upshape Variation} Polymorphism
 # # A New Kind of Polymorphism
 
   Suppose we want to produce the function ~concat~, which composes the elements of a list
@@ -606,7 +668,6 @@ additional things that can be done.}
   of a particular instantiation, rather than referring to the type /of/ such values.
   For example:
   \vspace{0.3em}
-
 #+BEGIN_SRC agda
      do τ ← MonoidP record; ℬ τ
   ≈  λ {τ : MonoidP record} → ℬ (MonoidP.Carrier τ)
@@ -672,12 +733,12 @@ additional things that can be done.}
      by providing a function such as ~List Constituent → Pair (List Constituent)~,
      which may introduce new names, such as the aforementioned ~Carrier~ and ~Vars.~
 
-  2. Explain how generative modules \cite{modular_modules}
+  2. Explain how generative modules cite:modular_modules
      are supported by this scheme.
 
   3. Demonstrate how boilerplate code for renamings, hidings, extensions,
      and the flattening of hierarchical structures can be formed;
-     \cite{tpc}.
+     cite:tpc.
 
   4. How do multiple default, or optional, clauses for a constituent fit into this
      language feature.
@@ -688,7 +749,7 @@ additional things that can be done.}
   5. Flexible polymorphic definitions: One should be able to construct a program
      according to the most convenient presentation, but be able to have it
      /automatically/ applicable to other instantiations;
-     \cite{types_for_modules}.
+     cite:types_for_modules.
      # first_class_modules_support haskell_modules_formally
 
           # ~concatP : {v : Variation}  →  do τ ← MonoidP v;  List τ → τ~. \newline
@@ -726,6 +787,11 @@ concatP : {v : Variation}
 
   # We look forward to this feature reducing the length of our code
   # and alleviating us of tedious boilerplate constructions.
+
+* Bib                                                                :ignore:
+
+ #+latex: \bibliography{References}
+ #+latex: \bibliographystyle{plainnat}
 
 * OLD COMMENT other ideas
 
@@ -875,77 +941,11 @@ Suggestion (just an example of sth you can do), mention a record type (or someth
    After loading it, Agda users may employ special comments from which legitimate Agda code is automatically generated
    as users step-wise program.
 
-* Bib  :ignore:
-#+LaTeX: \printbibliography
-* COMMENT References
-@online{alhassy_thesis_proposal,
-  author    = {Musa Al-hassy},
-  title     = {The Next 700 Module Systems: Extending Dependently-Typed Languages to Implement Module System Features In The Core Language},
-  school    = {McMaster University},
-  year      = {2019},
-  url       = {https://alhassy.github.io/next-700-module-systems-proposal/thesis-proposal.pdf}
-}
-
-@InProceedings{types_for_modules,
-  author       = {Derek Dreyer and Karl Crary and Robert Harper},
-  title        = {A Type System for Higher-Order Modules},
-  year         = 2003,
-  booktitle    = {Conference Record of {POPL} 2003: The 30th
-                  {SIGPLAN-SIGACT} Symposium on Principles of
-                  Programming Languages, New Orleans, Louisisana, USA,
-                  January 15--17, 2003},
-  pages        = {236--249},
-  doi          = {10.1145/640128.604151},
-  DOIURL          = {https://doi.org/10.1145/640128.604151},
-  timestamp    = {Tue, 06 Nov 2018 11:07:43 +0100},
-  biburl       = {https://dblp.org/rec/bib/conf/popl/DreyerCH03},
-  bibsource    = {dblp computer science bibliography,
-                  https://dblp.org}
-}
-
-@InProceedings{agda_overview,
-  author       = {Ana Bove and Peter Dybjer and Ulf Norell},
-  title        = {A Brief Overview of {Agda} --- {A} Functional Language
-                  with Dependent Types},
-  year      = {2009},
-  booktitle    = {Theorem Proving in Higher Order Logics, 22nd
-                  International Conference, TPHOLs 2009, Munich,
-                  Germany, August 17--20, 2009. Proceedings},
-  pages        = {73--78},
-  doi          = {10.1007/978-3-642-03359-9\_6},
-  DOIURL          = {https://doi.org/10.1007/978-3-642-03359-9\_6},
-  timestamp    = {Tue, 14 May 2019 10:00:48 +0200},
-  biburl       = {https://dblp.org/rec/bib/conf/tphol/BoveDN09},
-  bibsource    = {dblp computer science bibliography,
-                  https://dblp.org}
-}
-
-@Online{types_overview,
-  author       = {Nino Guallart},
-  title        = {An Overview of Type Theories},
-  year         = 2014,
-  archiveprefix= {arXiv},
-  eprint       = {1411.1029v2},
-  primaryclass = {math.LO}
-}
-
-@PhdThesis{Norell-2007,
-  author =   {Ulf Norell},
-  title =    {Towards a Practical Programming Language Based on Dependent Type Theory},
-  OPTschool  = {Department of Computer Science and Engineering, Chalmers University of Technology},
-  school  = {Dept.\null{} Comp.\null{} Sci.\null{} and Eng., Chalmers Univ.\null{} of Technology},
-  year =     2007,
-  month = SEP,
-  DirectURL =    {http://www.cs.chalmers.se/~ulfn/papers/thesis.html},
-  WKloc =    {doc/pap/BIB},
-  note = {See also
-  \href{http://wiki.portal.chalmers.se/agda/pmwiki.php}{\textsf{http://wiki.portal.chalmers.se/agda/pmwiki.php}}}
-}
-
 * COMMENT footer                                                     :ignore:
-#### eval: (progn (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1))
+
+(shell-command "cp Paper0.pdf GPCE_19_Alhassy_Carette_Kahl.pdf")
 
 # Local Variables:
-# eval: (progn (org-babel-goto-named-src-block "make-acmart-class") (org-babel-execute-src-block) (outline-hide-sublevels 1))
+# eval: (progn (org-babel-goto-named-src-block "make-acmart-class") (org-babel-execute-src-block))
 # compile-command: (progn (org-babel-tangle) (org-latex-export-to-pdf) (async-shell-command "open Paper0.pdf"))
 # End:
