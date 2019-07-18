@@ -18,13 +18,23 @@ PackageFormer Monoid (v : Variation) : Set where
     leftId  : ∀ {x : Monoid v} → Id ⨾ x ≡ x
     rightId : ∀ {x : Monoid v} → x ⨾ Id ≡ x
 
-MonoidTypeclass = Monoid typeclass hiding (_⨾_)
-MonoidT = Monoid typeclass renaming (Carrier to C; _⨾_ to _⊕_)
-MonoidR = Monoid record unbundling 2
-MonoidE = Monoid record exposing (Carrier; Id)
-MonoidB = Monoid record with (Carrier to Bool; Id to false)
-MonoidD = Monoid data renaming (_⨾_ to _Δ_)
+
+Monoid′  = Monoid opening (MonoidRDT; it ++ "′")
 -}
+
+-- MonoidR  = Monoid record unbundling 2
+
+{-
+MonoidTypeclass = Monoid typeclass hiding (_⨾_)
+MonoidT         = Monoid typeclass renaming (Carrier to C; _⨾_ to _⊕_)
+MonoidR         = Monoid record unbundling 2
+MonoidE         = Monoid record exposing (Carrier; Id)
+MonoidB         = Monoid record with (Carrier to Bool; Id to false)
+MonoidD         = Monoid data renaming (_⨾_ to _Δ_)
+MonoidD′        = Monoid data decorated ( "╲" ++ it ++ "╱")
+
+-- Accidentally “datar” instead of “data”.
+Whoops = Monoid datar
 
 _ = MonoidTypeclass
 {- record MonoidTypeclass (Carrier : Set) : Set where … -}
@@ -43,3 +53,7 @@ _ = MonoidE
 
 _ = MonoidB ; open MonoidB using (leftfalse)
 {- record MonoidB : Set₀ where … -}
+
+_ = MonoidD′
+
+-}
