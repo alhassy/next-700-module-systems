@@ -1,14 +1,21 @@
 # (org-babel-load-file "PackageFormer.org")
-;; ⇒ (defalias (quote ap-it) (cons (quote macro) (function (lambda (itbody more) (list (quote ap) (list (quote lambda) (quote (it)) itbody) more)))))
 # Export all Lisp blocks into a file then load it.
 #
 # (setq test outsidetest)
+
+:Idea:
+TODO: Maintain a list of instantations-loaded, then use that to obtain
+the elements of an instance to determine how an ‘opening’ should be
+performed. For example, given ⟪params ❙ fields⟫ we know that the
+opening module must have ⟪params, ℛ : instance⟫ as parameters,
+and the remaining list of fields will then avilable for renaming.
+This scheme will work for arbitrary typeclasses ^_^
+:End:
 
 #+TITLE: Prototyping PackageFormers with Elisp
 #+DESCRIPTION: Generalising ADTS, records, typeclasses to “package formers”.
 #+AUTHOR: Musa Al-hassy
 #+EMAIL: alhassy@gmail.com
-#+STARTUP: indent
 #+PROPERTY: header-args :results none :tangle no :comments link
 
 #+CATEGORIES: Agda MetaProgramming Lisp
@@ -18,9 +25,7 @@
 # SOURCE: https://raw.githubusercontent.com/alhassy/org-agda-mode/master/literate.lagda
 
 # (defun org-outline-overlay-data (x) )
-
 #+TODO: TODO | Future
-
 :Threading_Remarks:
 
 ;; The “thread-first x forms” syntax feeds initial value ‘x’ as the first argument into the
@@ -45,7 +50,6 @@
 ;;
 ;; The operator ‘-->’ uses the name ‘it’ by default.
 :End:
-
 :Testing_Remarks:
 #+BEGIN_SRC emacs-lisp
  ;; ⇒ crashes since equality is nil.
@@ -258,6 +262,8 @@ To follow along, it may be useful to look at an [[https://alhassy.github.io/Elis
 
 #+TOC: headlines 2
 
+
+---Colouring momentarily disabled---
 * Aim: /Scrap the Repetition/
 
 We're going to write a code generator in Lisp that is going to interpret
@@ -616,6 +622,21 @@ The following subsections introduce:
      buffer enclosed in the given delimiters, as a list of strings.
 + ~extract-imports~ :: Obtain all ‘import’ clauses so that they can be
      ported over to the generated file.
++ ~itify~ :: A macro that generates macros!
+
+  A common pattern I've observed is code of the form
+  ~(f (lambda (x) body-with-x) arg)~ ---i.e., there is a useful
+  function ~f~ that is invoked with two arguments; the first being a
+  function. The declaration ~(itify f~) will produce a macro named ~f-it~
+  that takes two arguments where the first is an expression involving
+  a free variable ~it~ such that
+             | ~(f-it expr-with-it more)  ≈  (f (λ (it) expr-with-it) more)~ |
+
+  We then test this out on the utility ~rename-mixfix~.
+  - ~rename-mixfix~ :: Ignore outermost Agda argument markers ‘_’
+                     when renaming an mixfix argument;
+                     e.g., ~_[_⊗_]  ↦  _₀[_⊗_]¹~ where this particular renaming
+                     is a prefix subscript 0 and postfix 1.
 
 First some useful libraries:
 #+BEGIN_SRC emacs-lisp :tangle no
@@ -1115,6 +1136,126 @@ We also want to prefix the generated file with the imports of the current file.
 
 So much string meddling, hopefully no more 🙈 :hear_no_evil: :speak_no_evil:
 
+** ~Itify~: A macro that makes macros ♥‿♥
+
+  A common pattern I've observed is code of the form
+  ~(f (lambda (x) body-with-x) arg)~ ---i.e., there is a useful
+  function ~f~ that is invoked with two arguments; the first being a
+  function. The declaration ~(itify f~) will produce a macro named ~f-it~
+  that takes two arguments where the first is an expression involving
+  a free variable ~it~ such that
+             | ~(f-it expr-with-it more)  ≈  (f (λ (it) expr-with-it) more)~ |
+
+I'm only considering binary functions, since they're my most common
+case ---it's little trouble to move to the general case.
+
+Let's consider the simplest binary operator whose first argument is
+necessarily a function ---namely, function application.
+#+BEGIN_SRC emacs-lisp
+(defun ap (f x) "bye" (funcall f x))
+#+END_SRC
+
+Let's form the desired macro:
+#+BEGIN_SRC emacs-lisp
+(defmacro ap-it (itbody more)
+  (list 'ap (list 'lambda '(it) itbody) more)
+  ;; ≈ `(ap (lambda (it) ,itbody) ,more)
+  )
+#+END_SRC
+
+We have elected to present this with the ~list~ form
+rather than the quasi-quote, since it's clear how to
+yield the former as part of a macro /result/.
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(defmacro itify (fname)
+  "
+   From a function (h f x), obtain a macro (h-it (⋯it⋯) x) that rewrites into
+   the orginal such that the first (functional) argument  may now be an expression
+   with free variable ‘it’. One declates (itify h) for a named top-level function ‘h’.
+
+   NOTE: Since functions are of the form (cons 'macro-or-fun (function (lambda args body)))
+   we can obtain the number of args by getting ‘args’ and taking its length.
+   Then we can change any of its indices to take an expression rather than a function.
+   Indeed, (macroexpand '(itify ap))
+         ⇒ (defalias (quote ap-it) (cons (quote macro) (function (lambda (itbody more)
+             (list (quote ap) (list (quote lambda) (quote (it)) itbody) more)))))      .
+  "
+
+  `(defmacro ,(intern (format "%s-it" (symbol-name fname))) (itbody more)
+       (list (quote ,fname) (list 'lambda '(it) itbody) more))
+)
+#+END_SRC
+
+Let's test this out.
+#+BEGIN_SRC emacs-lisp
+;; 0. Too clunky
+(ap (lambda (it) (+ 2 it)) 3) ;; ⇒ 5
+
+;; 1. Desired
+(itify ap)
+(ap-it (+ 2 it) 3) ;; nice.
+
+;; 2. Works with lambdas?
+((lambda (e) (ap-it (+ 2 it) e)) 2)
+
+;; 3. Scoping is fine?
+;; Outermost ‘it’ belongs to --map; inner-most ‘it’ belongs to ap-it. (─‿‿─)
+(--map (ap-it (+ 2 it) it) '(1 2 3)) ;; ⇒ (3 4 5)
+
+;; 4. Works well with read/eval?
+(ap-it (eval (car (read-from-string "(+ 2 it)"))) 3) ;; ⇒ 5
+#+END_SRC
+
+A common use of the following will be when ‘threads’ are used for
+sequential processing.
+#+BEGIN_SRC emacs-lisp :tangle yes
+(itify funcall)
+#+END_SRC
+
+Now for a more useful and complex setting.
+#+BEGIN_SRC emacs-lisp :tangle yes
+(defun rename-mixfix (f op)
+  "Given an Agda mixfix operator, apply a function on strings ‘f’ on
+   the inner-most delimiting tokens of the operator, in-particular ignoring
+   outer argument markers ‘_’.
+
+   For example, if you wish to decorate an operator with a prime or a subscript,
+   we cannot simply catenate else we obtain “_⊕_₁” rather than “_⊕₁_”.
+
+   Here are some sample results, assuming “f ≈ (λ (it) (format “₀%s¹” it))”:
+   _⊕_     ↦  _₀⊕¹_
+   _[_⊗_]  ↦  _₀[_⊗_]¹
+   he_lo   ↦  ₀he_lo¹
+   he-lo   ↦  ₀he-lo¹
+  "
+
+  (let* ((parts (s-split "_" op)) (front (s-blank? (first parts))) (rear (s-blank? (car (last parts)))))
+
+  (--> (concat (when front "_") "$here" (when rear "_"))
+       (substring-delimited-$ it op :longest-substring t)
+       (funcall f it)
+       (concat (when front "_") it (when rear "_"))
+   )))
+
+;; Need this for ‘reify-instances’.
+(itify rename-mixfix)
+#+END_SRC
+
+{{{fold(Unit Tests)}}}
+#+BEGIN_SRC emacs-lisp :tangle yes
+(ert-deftest rename-mixfix ()
+
+  (should (equal (rename-mixfix #'identity "_⊕_") "_⊕_"))
+
+  (should (equal "_⊕′_" (rename-mixfix-it (eval (car (read-from-string "(concat it \"′\")"))) "_⊕_")))
+
+  (should  (equal (--map (rename-mixfix-it (format "₀%s¹" it) it) '("_⊕_" "_[_⊗_]" "he_lo" "he-lo"))
+       ;; Outermost ‘it’ belongs to --map; inner-most ‘it’ belongs to rename-mixfix-it.
+  '("_₀⊕¹_" "_₀[_⊗_]¹" "₀he_lo¹" "₀he-lo¹"))))
+#+END_SRC
+{{{end-fold}}}
+
 * The ~package-former~ Datatype
 
 For this prototype's constraints, a PackageFormer will generally declared as
@@ -1197,6 +1338,11 @@ a useful macro to “open p” locally.
 ( Lisp convention would advise this function to be named ~with-pf~, but I'm using the prefix ~open~,
 as it is closer to the object language, Agda. )
 
+  It is crucial to realise that we have just established a convention
+  that partitions the elements of a PackageFormer:
+  + <<<parameters>>> are the elements before the waist line.
+  + <<<fields>>> are the elements after the waist line.
+
 Finally, it seems we need support for typed names ---pairs ~“name : type”~.
 We could use ~car~ and ~cdr~ on pairs, but let's use named projections instead
 so we don't have this extra mental strain and implicit type-checking to ensure.
@@ -1273,7 +1419,8 @@ With this in hand, let's produce a robust parser.
          (level (substring-delimited-$ "Set$here where" header))
          (carrier (concat name " " vs " : Set" level)))
 
-    (--map (highlight-phrase (s-trim it) 'hi-yellow) (cdr lines))
+    ;; MA: Replace with a hook.
+    ;; (--map (highlight-phrase (s-trim it) 'hi-yellow) (cdr lines))
 
     (make-package-former
      :type                     "PackageFormer"
@@ -1329,7 +1476,9 @@ Conversely, let's have a pretty printer.
    See ‘show-package-former’ for their use and how their printed.
   "
   (--any? (s-contains? it f) '("field" "private")))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp :tangle yes
 (cl-defun show-package-former (p &key waist-strings
                                  (omit-level nil) omit-docstring omit-car-element)
   "Pretty print a package-former record value.
@@ -1355,24 +1504,23 @@ Conversely, let's have a pretty printer.
      ;; The elements of a PackageFormer
        (thread-last fields
 
-        ;; Print the waist strings; not efficient, but this’ a prototype.
-        (-split-at waist)
-        (funcall (lambda (it) (-concat (car it) waist-strings (cadr it))))
+        (-concat waist-strings)
 
         ;; Indent all elements, less indentation for the specials.
         (--map (concat (s-repeat (- indentation (if (special it) 2 0)) " ") it))
         (funcall (if omit-car-element #'cdr #'identity))
         )
-    )
-  )
-))
+    ))))
 #+END_SRC
 
 Let's test it out by /including/ a whole new local variable and trying
 to include the ~field~ Agda keyword.
 #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
-(-let [pf (cadr (get-children "PackageFormer" test))]
-   (show-package-former (parse-package-former pf)
+(let* ((raw (cadr (get-children "PackageFormer" test)))
+       (pf (parse-package-former raw))
+       )
+  (setf (package-former-waist pf) 2)
+   (show-package-former pf
     :omit-car-element t
     :waist-strings (list "private" "n : ℕ" "n = 3" "field {- elements -} "))
    ))
@@ -1381,8 +1529,7 @@ to include the ~field~ Agda keyword.
 #+RESULTS:
 #+begin_src results-agda
 
-PackageFormer Semigroup (v : Variation) : Set where
-  private
+PackageFormer Semigroup (v : Variation) (Semigroup v : Set) : Set where
     n : ℕ
     n = 3
   field {- elements -}
@@ -1449,12 +1596,14 @@ to parse such entities, and monitor them within list.
   docstring ;; What the declaration looks like, useful for reference.
   name package-former variation
   (waist 0)
+
   renames  ;; an association list, trimmed whitespace
+
   hidings  ;; list, trimmed whitespace
   manifest ;; an association list, trimmed whitespace
   exposes  ;; list, trimmed whitespace
   decorations ;; function to be applied to name and element-names of a PackageFormer.
-  opening ;; FIXME: Not ideal; merge with renaming?
+  openings  ;; (list type args) ;; FIXME: Not ideal; merge with renaming?
   extra-params
 )
 #+END_SRC
@@ -1462,6 +1611,105 @@ to parse such entities, and monitor them within list.
 TODO: Above, instead of ~renames~ have a field, say, ~alteration~ which is intended
 to be a functional reification of a Variation expression; e.g., the renaming ops are within ~alteration~.
 Before moving to this generality, ensure ~renames~ works then generalise.
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(cl-defun parse-labelled-to-list (label the-list &key (no-to nil))
+
+     "Given a “to-list” of the form “label (x₀ to y₀; …; xₙ to yₙ; λ x → Bx)”
+      yield the Lisp list of dotted pairs “( ((x₀ . y₀) ⋯ (xₙ . yₙ)) “(lambda (x) Bx)”)”
+      where the *optional* final clause of the to-list is considered a default or ‘otherwise’
+      case and is converted into a legitimate Lisp function.
+
+      No label results in to-list becoming a dotted list.
+      When the otherwise clause is absent, we yield the identity function.
+
+      If “no-to” is true, then we do not parse the to-clauses, yielding
+      a list of strings.
+
+      Errors on an empty list. Yields nil if the label is not found.
+      Note that n = 0 is fine is okay provided the otherwise clause
+      is present.
+     "
+
+     (when (or (equal (car the-list) label) (s-blank? (s-trim label)))
+
+     (-let* ((result (thread-last the-list
+
+                      ;; Stick them back together
+                      (s-join " ")
+
+                      ;; Discard identifying label
+                      (substring-delimited-$ (format "%s ($here)" label))
+
+                      ;; Split along semicolons.
+                      (s-split ";")
+
+                      ;; Removed superflous whitespace
+                      (--map (s-trim it))))
+
+             otherwise var)
+
+       ;; If there is a “otherwise” function to apply,
+       ;; then turn it into a Lisp function and drop it
+       ;; from the prefix of the to-list. Else, set otherwise to identity.
+       (if (not (s-contains? "λ" (car (-take-last 1 result))))
+
+           (setq otherwise #'identity)
+
+         ;; Drop the Agda's λ→ in-favour of Lisp's (lambda ⋯).
+         ;; Replace Agda catenation's with Lisp concat.
+         (setq otherwise (thread-last (car (-take-last 1 result))
+               (s-replace "++" " ")
+               (substring-delimited-$ "λ $here")
+               (s-split " → ")
+               (funcall-it (format "(lambda (%s) (concat %s))" (car it) (cadr it)))
+               read-from-string
+               car
+               ))
+
+         (setq result (-drop-last 1 result)))
+
+       ;; Turn into dotted pairs, unless suggested otherwise.
+       ;; Need to ensure ‘result’ is non-empty; since it may
+       ;; be a singleton that was dropped into the ‘otherwise’.
+       (when (and result (not no-to))
+         (setq result (thread-last result
+             (--map (s-split " to " it))
+             ;; Need to ensure it's a list of pairs; otherwise something went wrong.
+             ;; Suffices to ensure the head element has a second componenet.
+             (funcall-it (if (cadar it) it
+                 (error "parse-labelled-to-list: Is this “to-list” well-formed: %s ⁇" (pp it))))
+             (--map (cons (s-trim (first it)) (s-trim (second it)))))))
+
+       (list result otherwise)
+   )))
+
+(ert-deftest parse-tos ()
+
+  ;; Expected use
+  (should (equal '(("a" . "b") ("c" . "d")) (car(parse-labelled-to-list "map" (s-split " " "map (a to b; c to d)")))))
+  (should (equal '(("a" . "b")) (car(parse-labelled-to-list "map" (s-split " " "map (a to b)")))))
+  (should (equal '(("a" . "b")) (car(parse-labelled-to-list "map" (s-split " " "map (a to b; λ x → x)")))))
+  (should (equal (lambda (x) (concat x)) (cadr(parse-labelled-to-list "map" (s-split " " "map (a to b; λ x → x)")))))
+  (should (equal (lambda (x) (concat x "′")) (cadr(parse-labelled-to-list "map" (s-split " " "map (a to b; λ x → x ++ \"′\")")))))
+  (should (equal (lambda (x) (concat x "′")) (cadr(parse-labelled-to-list "map" (s-split " " "map (λ x → x ++ \"′\")")))))
+
+  ;; Empty list errors.
+  (should-error (parse-labelled-to-list "map" (s-split " " "map ()")))
+
+  ;; Singleton list
+  (should (equal '(("a" . "b")) (car (parse-labelled-to-list "map" (s-split " " "map (a to b)")))))
+
+  ;; No label results in to-list becoming a dotted list.
+  (should (equal '(("a" . "b") ("c" . "d")) (car(parse-labelled-to-list "" (s-split " " "(a to b; c to d)")))))
+
+  ;; Unmatched label.
+  (should (equal nil (car(parse-labelled-to-list "mapp" (s-split " " "map (a to b)")))))
+
+  ;; Ill-formed list.
+  (should-error (parse-labelled-to-list "map" (s-split " " "map (a what b)")))
+)
+#+END_SRC
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (defun load-instance-declaration (line)
@@ -1479,116 +1727,50 @@ Before moving to this generality, ensure ~renames~ works then generalise.
   ;; ⇒ ≥4 pieces, separated by spaces, where second item must be an equality.
   ;; Note: (cddddr nil) ≈ nil
 
-  (let* (inst (pieces (s-split " " (s-collapse-whitespace line))) (more (cddddr pieces)) renames hidings exposes manifest (unbundling 0) decorations openings openings-param)
-   (when (and (<= 4 (length pieces)) (equal (nth 1 pieces) "="))
+  (let* (inst (pieces (s-split " " (s-collapse-whitespace line))) (more (cddddr pieces))
+              renames hidings exposes manifest (unbundling 0) decorations openings openings-param)
+
+    ;; Minimal check that the the declaration is well-formed.
+   (if (not (and (<= 4 (length pieces)) (equal (nth 1 pieces) "=") (not (s-blank? (s-trim (nth 0 pieces))))))
+       (message "load-instance-declaration: Declarations should have at least 4 non-empty pieces; %s ⁇" line)
+       ;; We do not crash here since we also arbitrary Agda to flow through the 700-comments as well.
 
      (when (equal (car more) "unbundling")
 
        ;; Discard identifying tokens
        (setq unbundling (string-to-number (cadr more))))
 
+     (setq hidings (car (parse-labelled-to-list "hiding" more :no-to t)))
 
-     (when (equal (car more) "hiding")
-
-       ;; Stick them back together
-       (setq hidings (s-join " " more))
-
-       ;; Discard identifying tokens
-       (setq hidings (substring-delimited-$ "hiding ($here)" hidings))
-
-       ;; Split along semicolons to obtain a list.
-       (setq hidings (--map (s-trim it) (s-split ";" hidings))))
-
-
-     (when (equal (car more) "exposing")
-
-       ;; Stick them back together
-       (setq exposes (s-join " " more))
-
-       ;; Discard identifying tokens
-       (setq exposes (substring-delimited-$ "exposing ($here)" exposes))
-
-       ;; Split along semicolons to obtain a list.
-       (setq exposes (--map (s-trim it) (s-split ";" exposes)))
-
+     (setq exposes (car (parse-labelled-to-list "exposing" more :no-to t)))
        ;; The exposed items should be hoisted upwards in the elements listing.
-       ;;
        ;; Then the waist is also hoisted.
-       (setq unbundling (length exposes))
-       )
+       (when exposes (setq unbundling (length exposes)))
 
-     (when (equal (car more) "with")
+     (setq renames (car (parse-labelled-to-list "renaming" more)))
 
-       ;; Stick them back together
-       (setq manifest (s-join " " more))
-
-       ;; Discard identifying tokens
-       (setq manifest (substring-delimited-$ "with ($here)" manifest))
-
-       ;; Split along semicolons, then turn into dotted pairs.
-       (setq manifest (--map (cons (s-trim (first it)) (s-trim (second it))) (--map (s-split "to" it) (s-split ";" manifest))))
-
+     (setq manifest (car (parse-labelled-to-list "with" more)))
        ;; If ‘Carrier’ is one of the items, then reduce the waist line;
        ;; otherwise the next item is hoisted upwards.
        (when (--any? (equal it "Carrier") (-map #'car manifest))
-           (decf unbundling)
-       ))
+           (decf unbundling))
 
-     ;; LHS = PF opening (⟪record-name⟫; α to α′ ; … ; ω to ω′)
+     ;; E.g., PF′ = PF v decorated (λ x → ⋯x⋯ ++ "′")
+     (setq decorations (cadr (parse-labelled-to-list "decorated" more)))
+
+     ;; LHS = PF opening ⟪record-name⟫ (α to α′ ; … ; ω to ω′)
      ;;
-     ;; NOTE: This clause differs from the rest: No variation tag ‘record, data, typeclass’.
-     ;; Since a ⟪record-name⟫ is requested, even the PF is irrelevant.
+     ;; Since a ⟪record-name⟫ is requested, the PF may appear to be irrelevant.
+     ;; However, we need it in order to invoke the “instantiate” function
+     ;; later: It requires a PackageFormer to specialise.
+     ;; Alternatively, we could keep track of the parents of instantiations
+     ;; but this is a new list to maintain and the result is that this
+     ;; instance declaration breaks uniformity from the others.
+     ;; Uniformity is preferable, for now.
      (when (equal (nth 3 pieces) "opening")
-      (setq openings
-       (thread-last
-         ;; Stick them back together
-         (s-join " " more)
-
-         ;; Discard identifying tokens
-         (substring-delimited-$ "opening ( $here )")
-
-         ;; Split along semicolons
-         (s-split ";")
-
-         ;; Save the name of the record being opened
-         (funcall (lambda (it) (setq openings-param (s-chop-prefix "(" (car it))) (cdr it)))
-
-         ;; MA: TODO: Turn the rest into dotted pairs.
-         ;; (--map (s-split "to" it))
-         ;; (--map (cons (s-trim (first it)) (s-trim (second it))))
-
-         ;; Transform it into a Lisp expression
-         (-take-last 1)
-         car
-         (s-replace "++" " ")
-         (format "(concat %s)")
-       )))
-
-
-     (when (equal (car more) "renaming")
-
-       ;; Stick them back together
-       (setq renames (s-join " " more))
-
-       ;; Discard identifying tokens
-       (setq renames (substring-delimited-$ "renaming ($here)" renames))
-
-       ;; Split along semicolons, then turn into dotted pairs.
-       (setq renames (--map (cons (s-trim (first it)) (s-trim (second it))) (--map (s-split "to" it) (s-split ";" renames)))))
-
-
-     ;; E.g., PF′ = PF v decorated (⋯it⋯ ++ "′")
-     (when (equal (car more) "decorated")
-
-       ;; Stick them back together
-       (setq decorations (s-join " " more))
-
-       ;; Discard identifying tokens
-       (setq decorations (substring-delimited-$ "decorated ($here)" decorations))
-
-       ;; Transform it into a Lisp expression.
-       (setq decorations (s-replace "++" " " decorations))
-       (setq decorations (format "(concat %s)" decorations)))
+      (setq openings (parse-labelled-to-list "" (cdr more)))
+      (setq openings (cons (nth 4 pieces) openings)) ;; carrier - renames - otherwise
+      )
 
      (setq inst (make-instance-declaration
                  :docstring      line
@@ -1599,16 +1781,17 @@ Before moving to this generality, ensure ~renames~ works then generalise.
                  :hidings        hidings
                  :exposes        exposes
                  :manifest       manifest
-                 :opening        openings
-                 :extra-params   openings-param
+                 :openings       openings
                  :decorations    decorations
                  :renames        renames))
 
      (add-to-list 'instantiations-remaining inst)
 
      ;; PackageFormer names are in yellow; instances are are bolded.
-     (highlight-phrase (format "%s " (nth 2 pieces)) 'hi-yellow)
-     (highlight-phrase (nth 0 pieces) 'bold) ;; 'warning) ;; i.e., orange
+     ;; (highlight-phrase (format "%s " (nth 2 pieces)) 'hi-yellow)
+     ;; (highlight-phrase (nth 0 pieces) 'bold) ;; 'warning) ;; i.e., orange
+     ;;
+     ;; MA: Replace with a hook.
 
    )
    ;; Return value.
@@ -1616,106 +1799,48 @@ Before moving to this generality, ensure ~renames~ works then generalise.
   )
 )
 
-(ert-deftest load-inst () "" t)
-(when nil
-  :expected-result :failed
-  (should (equal (load-instance-declaration "MagmaR = Magma record renaming (Carrier to C; _⨾_ to _∘_)")
-                 #s(instance-declaration "MagmaR = Magma record renaming (Carrier to C; _⨾_ to _∘_)" "MagmaR" "Magma" "record" 0
-                 (("Carrier" . "C") ("_⨾_" . "_∘_")) nil nil nil nil nil)))
-
-  ;; Extra whitespace
-  (should (equal (load-instance-declaration "MagmaR    = Magma record renaming (Carrier to C; _⨾_ to _∘_)")
-                 #s(instance-declaration "MagmaR    = Magma record renaming (Carrier to C; _⨾_ to _∘_)" "MagmaR" "Magma" "record" 0
-                 (("Carrier" . "C") ("_⨾_" . "_∘_")) nil nil nil nil nil)))
-
-
-  ;; TODO: Test where we forgot to provide a name on the LHS, fix code to yield an error message-box.
-  ;; More tests needed.
-  (should (equal 'more-tests-for-loaded-instance 'needed))
-
-)
-
 #+END_SRC
 
 {{{fold(Tests)}}}
+#+BEGIN_SRC emacs-lisp :tangle yes
+(ert-deftest lid ()
 
-#+BEGIN_SRC emacs-lisp :results replace
-(load-instance-declaration
-  "LHS = Magma opening (MagmaR; Carrier to C; _⨾_ to _∘_; it ++ \"′\"") ;; MA: TODO: Acknowledge init-tail of to-list.
+  ;; Basic invocation shape
+  (should (load-instance-declaration "LHS = PF var"))
+
+  ;; Ill-formed: LHS name is empty string.
+  (should (not (load-instance-declaration " = PF var")))
+
+  ;; Renames
+  (should (equal "((Carrier . C) (_⨾_ . _∘_))" (format "%s" (instance-declaration-renames (load-instance-declaration
+  "LHS = Magma record renaming (Carrier to C; _⨾_ to _∘_)")))))
+
+  ;; unbundling
+  (should (equal 3 (instance-declaration-waist (load-instance-declaration "MagmaR = Magma record unbundling 3"))))
+
+  ;; hiding
+  (should (equal "(Id)" (format "%s" (instance-declaration-hidings (load-instance-declaration "MagmaR = Magma record hiding (Id)")))))
+
+  ;; manifest
+  (should (equal "((Carrier . 𝔹) (Id . false))" (format "%s" (instance-declaration-manifest (load-instance-declaration "MonoidB = Monoid record with (Carrier to 𝔹; Id to false)")))))
+  ;;
+  ;; This limits us to have monoidal operations ∨ or ≢, for example, but forbids ∧ and ≡.
+
+  ;; exposes
+  (should (equal "(Carrier Id)" (format "%s" (instance-declaration-exposes (load-instance-declaration "MonoidB = Monoid record exposing (Carrier; Id)")))))
+  ;;
+  ;; This is a counterpart to Agda's ~using~ keyword, we are only showing items as parameters and the rest are ‘hidden’ as components.
+
+  ;; decoration
+  (should (equal (lambda (x) (concat x "′")) (instance-declaration-decorations (load-instance-declaration "MonoidB = Monoid record decorated (λ x → x ++ \"′\")"))))
+
+  ;; opening
+  (should (equal "(MagmaR ((Carrier . C) (_⨾_ . _∘_)) (lambda (x) (concat x ′)))" (format "%s" (instance-declaration-openings (load-instance-declaration "LHS = Magma opening MagmaR (Carrier to C; _⨾_ to _∘_; λ x → x ++ \"′\")")))))
+
+  (should (equal "(MagmaR ((Carrier . C)) identity)" (format "%s" (instance-declaration-openings (load-instance-declaration "LHS = Magma opening MagmaR (Carrier to C)")))))
+
+)
 #+END_SRC
-
-#+RESULTS:
-: #s(instance-declaration "LHS = Magma opening (MagmaR; Carrier to C; _⨾_ to _∘_; it ++ \"′\"" "LHS" "Magma" "opening" 0 nil nil nil nil nil "(concat  it   \"′\")" "MagmaR")
-
-Testing renames:
-#+BEGIN_SRC emacs-lisp :results replace
-(pp (load-instance-declaration
-  " = Magma record renaming (Carrier to C; _⨾_ to _∘_)"))
-#+END_SRC
-
-#+RESULTS:
-: #s(instance-declaration " = Magma record renaming (Carrier to C; _⨾_ to _∘_)" "" "Magma" "record" 0
-: (("Carrier" . "C")
-: ("_⨾_" . "_∘_"))
-: nil nil nil nil nil nil)
-
-Testing unbundling:
-#+BEGIN_SRC emacs-lisp :results replace
-(pp (load-instance-declaration
-  "MagmaR = Magma record unbundling 3"))
-#+END_SRC
-
-#+RESULTS:
-: #s(instance-declaration "MagmaR = Magma record unbundling 3" "MagmaR" "Magma" "record" 3 nil nil nil nil it)
-
-Testing hiding:
-#+BEGIN_SRC emacs-lisp :results replace
-(pp (load-instance-declaration
-  "MagmaR = Magma record hiding (Id)"))
-#+END_SRC
-
-#+RESULTS:
-: #s(instance-declaration "MagmaR = Magma record hiding (Id)" "MagmaR" "Magma" "record" 0 nil
-: ("Id")
-: nil nil nil)
-
-Testing manifest clause:
-#+BEGIN_SRC emacs-lisp :results replace
-(pp (load-instance-declaration
-  "MonoidB = Monoid record with (Carrier to 𝔹; Id to false)"))
-#+END_SRC
-
-#+RESULTS:
-: #s(instance-declaration "MonoidB = Monoid record with (Carrier to 𝔹; Id to false)" "MonoidB" "Monoid" "record" -1 nil nil
-: (("Carrier" . "𝔹")
-: ("Id" . "false"))
-: nil)
-
-This limits us to have monoidal operations ∨ or ≢, for example, but forbids ∧ and ≡.
-
-Testing exposes clause:
-#+BEGIN_SRC emacs-lisp :results replace
-(pp (load-instance-declaration
-  "MonoidB = Monoid record exposing (Carrier; Id)"))
-#+END_SRC
-
-#+RESULTS:
-: #s(instance-declaration "MonoidB = Monoid record exposing (Carrier; Id)" "MonoidB" "Monoid" "record" 2 nil nil nil
-: ("Carrier" "Id"))
-
-This is a counterpart to Agda's ~using~ keyword, we are only showing items as parameters and the rest are ‘hidden’ as components.
-
-Testing decoration clause:
-#+BEGIN_SRC emacs-lisp :results replace
-(pp (load-instance-declaration
-  "MonoidB = Monoid record decorated (it ++ \"′\")"))
-#+END_SRC
-
-#+RESULTS:
-: #s(instance-declaration "MonoidB = Monoid record decorated (it ++ \"′\")" "MonoidB" "Monoid" "record" 0 nil nil nil nil "(concat it   \"′\")")
-
-
-
 {{{end-fold}}}
 
 ** ~parse-700-comments~
@@ -1820,7 +1945,7 @@ MonoidR = Monoid record unbundling 2
                            nil nil nil))
 #+end_src
 
-* TODO ~instantiate~ ---the core utility :BROKEN:
+* ~instantiate~ ---the core utility
 ** Top matter :ignore:
 Let's put the pieces together.
 #+BEGIN_SRC emacs-lisp  :tangle yes
@@ -1931,9 +2056,7 @@ Let's put the pieces together.
 
   (unless carrier  (setq carrier new-name))
 
- ;; (error (format "⟨%s⟩" carrier)  )
-
-  (setf (package-former-elements pf)
+  (setf fields
           (--map (s-replace pfv carrier it) (package-former-elements pf)))
 
   ;; 3. Replace PackageFormer's name with provided instantiation name.
@@ -1966,28 +2089,16 @@ Let's instantiate our test example from earlier to produce a two-argument typecl
                     :name-suffix "On"
                     ; :type "record"
                     :carrier "Carrier"
-                    :docstring "" ; "Look ma: The Carrier and the op are exposed!"
-                    ; :waist-strings (list "field")
-                    ; :waist 2
+                    :docstring "Look ma: The Carrier and the op are exposed!"
+                    :waist-strings (list "field")
+                    :waist (1+ 1) ;; We're lifting upwards the visible _⨾_
+                                  ;; Whereas “Carrier” is not visible, but
+                                  ;; an implicit necessity.
                     )
 #+END_SRC
 
 #+RESULTS:
 #+begin_src results-agda
-{-  -}
-record Semigroup-On : Set (Level.suc Level.zero) where
-    v : Variation
-    Semigroup v : Set
-    _⨾_ : Semigroup v → Semigroup v → Semigroup v
-    Id  : Semigroup v
-    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-#+end_src
-
-
-
-#RESULTS:
-#+begin_src results-agda
-
 {- Look ma: The Carrier and the op are exposed! -}
 record Semigroup-On (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) : Set where
   field
@@ -2000,15 +2111,14 @@ What about a bundled up record declaration? Simple, we leave the waist with defa
 (instantiate test   :name-suffix "semantics"
                     :type "record"
                     :carrier "Carrier"
-                    :has-field-decl t
+                    :waist-strings (list "field")
                     )
 #+END_SRC
 
 #+RESULTS:
 #+begin_src results-agda
-
-{- This was generated from the PackageFormer Semigroup. -}
-record Semigroup-semantics : Set(Level.suc Level.zero) where
+{- This was generated from the PackageFormer Semigroup . -}
+record Semigroup-semantics : Set (Level.suc Level.zero) where
   field
     Carrier : Set
     _⨾_ : Carrier → Carrier → Carrier
@@ -2055,7 +2165,7 @@ Now a real use case.
   (instantiate test  :name-suffix "syntax"
                      :type "data"
                      :new-name pf-name
-                     :inc-level nil
+                     :inc-level nil   ;; Necessary, since true by default.
                      :keep-fields (lambda (f) (s-contains? pf-name (field-target (cadr (s-split ":" f)))))
                      ;; :alter-fields (lambda (fs) (--map (format "Nice-%s" it) fs))
                     )
@@ -2064,8 +2174,7 @@ Now a real use case.
 
 #+RESULTS:
 #+begin_src results-agda
-
-{- This was generated from the PackageFormer Semigroup. -}
+{- This was generated from the PackageFormer Semigroup . -}
 data Semigroup-syntax : Set where
     _⨾_ : Semigroup-syntax → Semigroup-syntax → Semigroup-syntax
     Id  : Semigroup-syntax
@@ -2095,8 +2204,7 @@ The instantations are straight-forward:
   (let* ((pf (if (package-former-p decls) (copy-package-former decls) (parse-package-former (cadr (get-children "PackageFormer" decls)))))
          (pf-name (package-former-name pf)))
 
-    ;; TODO: MA: Should this be ‘decls’ or ‘pf’? Write some tests.
-    (instantiate decls  :new-name new-name
+    (instantiate pf  :new-name new-name
                        :name-suffix "syntax"
                        :type "data"
                        :inc-level nil
@@ -2134,17 +2242,16 @@ The instantations are straight-forward:
                     :type "record"
                     :carrier carrier
                     :docstring docstring
-                    :has-field-decl t
+                    :waist-strings (list "field")
                     :waist (+ depth waist)
                     :alter-fields alter-fields
                     )
 )
 #+END_SRC
 
-
 That's a lot of mumbo jumbo, let's have a sanity check.
 #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
-(s-join "\n" (list
+(s-join "\n\n" (list
  (instantiate-as-unbundled 1 test :name-suffix "On") ;; typeclass
  (instantiate-as-unbundled 0 test :name-suffix "semantics") ;; record
  (instantiate-as-data test)
@@ -2153,15 +2260,14 @@ That's a lot of mumbo jumbo, let's have a sanity check.
 
 #+RESULTS:
 #+begin_src results-agda
-
-{- This was generated from the PackageFormer Semigroup. -}
+{- This was generated from the PackageFormer Semigroup . -}
 record Semigroup-On (Carrier : Set) : Set where
   field
     _⨾_ : Carrier → Carrier → Carrier
     Id  : Carrier
     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
-{- This was generated from the PackageFormer Semigroup. -}
+{- This was generated from the PackageFormer Semigroup . -}
 record Semigroup-semantics : Set (Level.suc Level.zero) where
   field
     Carrier : Set
@@ -2169,7 +2275,7 @@ record Semigroup-semantics : Set (Level.suc Level.zero) where
     Id  : Carrier
     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
-{- This was generated from the PackageFormer Semigroup. -}
+{- This was generated from the PackageFormer Semigroup . -}
 data Semigroup-syntax : Set where
     _⨾_ : Semigroup-syntax → Semigroup-syntax → Semigroup-syntax
     Id  : Semigroup-syntax
@@ -2181,7 +2287,44 @@ Woah, look at that: This' reminiscent of that 200% increase from earlier ;-)
 *Moreover*, with ~unbundled~ we may expose any or all constituents of a package
 at will.
 
-*** Module instantions
+{{{fold(Unit Tests)}}}
+#+BEGIN_SRC emacs-lisp :var test = test
+(ert-deftest inst ()
+
+  ;; Parameterised record
+  (should (equal (instantiate test :carrier "Carrier" :docstring "" :waist-strings (list "field") :waist 2)
+                 "{-  -}
+record Semigroup- (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) : Set where
+  field
+    Id  : Carrier
+    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)"))
+
+  (should (equal  (instantiate-as-unbundled 1 test :name-suffix "On")
+                  "{- This was generated from the PackageFormer Semigroup . -}
+record Semigroup-On (Carrier : Set) : Set where
+  field
+    _⨾_ : Carrier → Carrier → Carrier
+    Id  : Carrier
+    assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)"))
+
+  ;; ADT, data declaration
+  (should (equal  (instantiate test :type "data" :new-name "𝒮" :docstring "" :inc-level nil
+                               :keep-fields (lambda (f) (s-contains? "𝒮" (field-target (cadr (s-split ":" f))))))
+                  "{-  -}
+data 𝒮 : Set where
+    _⨾_ : 𝒮 → 𝒮 → 𝒮
+    Id  : 𝒮"))
+
+   (should (equal (instantiate-as-data test)
+                  "{- This was generated from the PackageFormer Semigroup . -}
+data Semigroup-syntax : Set where
+    _⨾_ : Semigroup-syntax → Semigroup-syntax → Semigroup-syntax
+    Id  : Semigroup-syntax")))
+
+#+END_SRC
+{{{end-fold}}}
+
+** Module instantions
 
 We can emit module declarations as follows; which may be useful for ADT instantions
 of PackageFormers that contain derived operations.
@@ -2189,7 +2332,6 @@ of PackageFormers that contain derived operations.
 (instantiate test   :new-name "Semantics₁"
                     :type "module"
                     :carrier "Carrier"
-                    :has-field-decl nil
                     :omit-level-decl t
                     :waist 4
                     )
@@ -2197,8 +2339,7 @@ of PackageFormers that contain derived operations.
 
 #+RESULTS:
 #+begin_src results-agda
-
-{- This was generated from the PackageFormer Semigroup. -}
+{- This was generated from the PackageFormer Semigroup . -}
 module Semantics₁ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) (Id : Carrier) (assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) where
 #+end_src
 
@@ -2206,95 +2347,119 @@ For now, a common scenario is forming modules that re-export a type under a new 
 e.g., in the setting where we want to have multiple references to a structure, as in when defining homomorphisms.
 #  :tangle yes
 #+BEGIN_SRC emacs-lisp exports both :results replace :wrap "src results-agda"
-(cl-defun instantiate-as-opening (decls &key new-name kind docstring (alter-fields #'identity) (renames-itexpr "it"))
+(cl-defun instantiate-as-opening (decls inst)
 
   "Given a PackageFormer declaration, instantiate it into a concrete Agda record.
 
    - ‘decls’ is immediately provided to ‘get-children’, so it may be a string,
       a list, or a value of type ‘package-former’.
 
-   - ‘new-name’ is the name of the resulting instance.
-     Default is “⟪PackageFormer'sName⟫-record-g*” for a random sequence of digits ‘*’.
-
-   TODO: Document remaining args.
+   - ‘inst’ is an instance declaration value whose ‘openings’ componenet is non-nil.
   "
 
-    (instantiate (car package-formers)
-      ;; :new-name new-name
-      ;; :type "module"
-      ;; :has-field-decl nil
-      ;; :omit-level-decl t
-      ;; :docstring docstring
-      ;; :waist 1
-      ;; :alter-fields (lambda (fs) fs)
-      )
+  (let* ((openings (instance-declaration-openings inst))
+         (new-name (instance-declaration-name inst))
+         (kind (car openings))
+         (renames (cadr openings))
+         (otherwise (caddr openings)))
 
-    )
+        (s-replace "\t" "    " ;; replace rabs with spaces
+        (instantiate decls    :new-name new-name
+                    :type "module"
+                    :docstring (instance-declaration-docstring inst)
+                    :omit-level-decl t
+                    :waist 1
+                    :alter-fields (lambda (fs)
+                     (let (fsnew)
 
-                 (when nil :new-name new-name
 
+                       (loop for (old . new) in renames
+                             do (push (format "%s to %s" old new) fsnew))
 
-                    ;;
-                    ;; opening formation
-                    (let (fsnew)
-                    ; (loop for f in (funcall alter-fields (cdr fs)) ;; omit ‘carrier’
-                       ; do (push (format "%s to %s" (get-name f) (rename-mixfix-it (car (read-from-string "it")) (get-name f))) fsnew))
+                       ;; TODO: MA: To consider default ‘otherwise’ via opening λ x → x ++ "′"
+                       ;; (read-from-string "(lambda (x) xt)")
+                       ;;
 
-                    (thread-last
+                       ;; HACK: Terrible.
+                       (setq fs (cons (map-name "Carrier" (car fs)) (cdr fs)))
+
+                       (loop for f in fs
+                             do (unless (assoc (get-name f) renames)
+                                  (push (format "%s to %s" (get-name f)
+                                                (rename-mixfix otherwise (get-name f)))
+                                        fsnew)))
+
+                       (thread-last
                         ;; Resulting elements must be a list, so we make a singleton list.
-                        (format "\t\t( %s\n\t\t\t)" (s-join "\n\t\t\t; " fsnew))
+                        (format "\t\t( %s\n\t\t\t)" (s-join "\n\t\t\t; " (reverse fsnew)))
                         list
 
                         ;; Stick on the renaming, which in turn requires an opening clause;
                         ;; which in turn requires a module parameter.
-                        ; (cons "\t renaming")
-                        ; (cons (format "open %s ℛ public" kind))
-                        ; (cons (format "ℛ : %s" kind))
-                    )) fs ))
+                        (cons "\t renaming")
+                        (cons (format "open %s ℛ public" kind))
+                        (cons (format "ℛ : %s" kind))
+                       )
 
-;;  "Monoid′  = Monoid opening (MonoidRDT; it ++ \"′\")"
-
-(instantiate-as-opening (car package-formers) :new-name "Decorated₁")
+    ))))))
 #+END_SRC
 
 #+RESULTS:
 #+begin_src results-agda
+instantiate-as-opening
 #+end_src
 
-
-  (let* () ; (pf (if (package-former-p decls) (copy-package-former decls) (parse-package-former (cadr (get-children "PackageFormer" decls)))))
-         ; (pf-name (package-former-name pf)))
-
-    (instantiate decls    :new-name "Semantics₁!!!"
-                    :type "module"
-                    ; :docstring "???"
-                    :has-field-decl nil
-                    :omit-level-decl t
-                    :waist 1 :alter-fields (lambda (fs)
-                    ;;
-                    ;; opening formation
-                    (let (fsnew (kind "(instance-declaration-extra-params inst)"))
-                    (loop for f in (cdr fs) ;; omit ‘carrier’
-                       do (push (format "%s to %s" 1 2)))
-                                        ; (get-name f) (rename-mixfix-it (eval (car (read-from-string (instance-declaration-opening inst)))) (get-name f)) fs
-
-                    (thread-last
-                        ;; Resulting elements must be a list, so we make a singleton list.
-                        (format "\t\t( %s\n\t\t\t)" (s-join "\n\t\t\t; " fsnew))
-                        list
-
-                        ;; Stick on the renaming, which in turn requires an opening clause;
-                        ;; which in turn requires a module parameter.
-                        ; (cons "\t renaming")
-                        ; (cons (format "open %s ℛ public" kind))
-                        ; (cons (format "ℛ : %s" kind))
-                    ))))))
-
-
 Let's test it out.
-#+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
-(instantiate-as-opening "Monoid′  = Monoid opening (MonoidRDT; it ++ \"′\")")
+#+BEGIN_SRC emacs-lisp :results replace :wrap "src results-agda"
+(-let [inst (load-instance-declaration "Monoid′ = MonoidPF opening Monoid (Carrier to 𝒮; _⨾_ to _⊕_; λ x → x ++ \"′\")")]
+  (instantiate-as-opening test inst))
 #+END_SRC
+
+#+RESULTS:
+#+begin_src results-agda
+{- Monoid′ = MonoidPF opening Monoid (Carrier to 𝒮; _⨾_ to _⊕_; λ x → x ++ "′") -}
+module Monoid′ (ℛ : Monoid) where
+    open Monoid ℛ public
+         renaming
+            ( Carrier to 𝒮
+            ; _⨾_ to _⊕_
+            ; Id to Id′
+            ; assoc to assoc′
+            )
+#+end_src
+
+This utility shines when we use it wholesale; as follows.
+#+BEGIN_SRC emacs-lisp :results replace :wrap "src results-agda"
+(let ((inst₁ (load-instance-declaration "Monoid₁ = MonoidPF opening Monoid (λ x → x ++ \"₁\")"))
+      (inst₂ (load-instance-declaration "Monoid₂ = MonoidPF opening Monoid (λ x → x ++ \"₂\")")))
+  (s-join "\n\n" (list (instantiate-as-opening test inst₁) (instantiate-as-opening test inst₂))))
+#+END_SRC
+
+#+RESULTS:
+#+begin_src results-agda
+{- Monoid₁ = MonoidPF opening Monoid (λ x → x ++ "₁") -}
+module Monoid₁ (ℛ : Monoid) where
+    open Monoid ℛ public
+         renaming
+            ( Carrier to Carrier₁
+            ; _⨾_ to _⨾₁_
+            ; Id to Id₁
+            ; assoc to assoc₁
+            )
+
+{- Monoid₂ = MonoidPF opening Monoid (λ x → x ++ "₂") -}
+module Monoid₂ (ℛ : Monoid) where
+    open Monoid ℛ public
+         renaming
+            ( Carrier to Carrier₂
+            ; _⨾_ to _⨾₂_
+            ; Id to Id₂
+            ; assoc to assoc₂
+            )
+#+end_src
+
+We have written this kind of boilerplate so often that we welcome the
+sweet relief provided by the editor tactic being developed herein.
 
 ** Instantiate all items in ~instantiations-remaining~
 
@@ -2329,6 +2494,7 @@ Let's test it out.
                       ("typeclass" (-partial 'instantiate-as-unbundled 1))
                       ("record"    (-partial 'instantiate-as-unbundled 0))
                       ("data"      'instantiate-as-data)
+                      ("opening"   (-const (instantiate-as-opening pfs inst)))
                       (v  (-const (format "\n%s = {! Variation ‘%s’ not yet supported !}" name v)))))))
 
      ;; Exposes clause should not be used with typeclass since it is a special case of record.
@@ -2404,8 +2570,8 @@ Let's test it out.
      ;; (--map (setq reify (s-replace (car it) (cdr it) reify))
      ;; (instance-declaration-renames inst))
 
-     ;; Add to list of results.
-     (setq result (-cons* reify result))
+     ;; Add to list of results. The empty string yields a new line between each generated instantiation.
+     (setq result (-cons* reify "" result))
 )
    ;; Output results as a string.
      (s-join "\n" result)
@@ -2441,50 +2607,7 @@ As always, let's ensure this works as intended.
 
 #+RESULTS:
 #+begin_src results-agda
-
-Monoid′ = {! Variation ‘opening’ not yet supported !}
-#+end_src
-
-#RESULTS:
-#+begin_src results-agda
-
-{- MonoidTypeclass = Monoid typeclass hiding (_⨾_) -}
-record MonoidTypeclass (Carrier : Set(ℓ₀)) : Set (ℓ₀) where
-  field
-    Id      : Carrier
-
-{- MonoidT = Monoid typeclass renaming (Carrier to C; _⨾_ to _⊕_) -}
-record MonoidT (C : Set(ℓ₀)) : Set (ℓ₀) where
-  field
-    _⊕_     : let Carrier = C in C → C → C
-    Id      : let Carrier = C in C
-    assoc   : let _⨾_ = _⊕_ in let Carrier = C in ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftId  : let _⨾_ = _⊕_ in let Carrier = C in ∀ {x : let _⨾_ = _⊕_ in let Carrier = C in C} → Id ⨾ x ≡ x
-    rightId : let _⨾_ = _⊕_ in let Carrier = C in ∀ {x : let _⨾_ = _⊕_ in let Carrier = C in C} → x ⨾ Id ≡ x
-
-{- MonoidR = Monoid record unbundling 2 -}
-record MonoidR (Carrier : Set(ℓ₀)) (_⨾_ : Carrier → Carrier → Carrier) : Set (ℓ₀) where
-  field
-    Id      : Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
-    rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
-
-{- MonoidE = Monoid record exposing (Carrier; Id) -}
-record MonoidE (Carrier : Set(ℓ₀)) (Id : Carrier) : Set (ℓ₀) where
-  field
-    _⨾_     : Carrier → Carrier → Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
-    rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
-
-{- MonoidB = Monoid record with (Carrier to Bool; Id to false) -}
-record MonoidB : Set (ℓ₀) where
-  field
-    _⨾_     : Bool → Bool → Bool
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftfalse  : ∀ {x : Bool} → false ⨾ x ≡ x
-    rightfalse : ∀ {x : Bool} → x ⨾ false ≡ x
+#<buffer PackageFormer.org>
 #+end_src
 
 Super cool stuff ~(งಠ_ಠ)ง~
@@ -2493,106 +2616,6 @@ Note that the renaming clause must have its old forms appear in the same order t
 This could be avoided by obtaining the names of the continents, then intersecting that with the renames list, along the first component.
 
 NOTE: Level polymorphism with generalised variables does not work for data declaration.
-
-** TODO: Location?
-
-Macros with ~it~ as the name of functional parts.
-#+BEGIN_SRC emacs-lisp :tangle yes
-(defun ap (f x) "bye" (funcall f x))
-
-(defmacro ap-it (itbody more)
-  ;; `(ap (lambda (it) ,itbody) ,more)
-  (list 'ap (list 'lambda '(it) itbody) more)
-  )
-
-;; 0. too clunky
-(ap (lambda (it) (+ 2 it)) 3) ;; ⇒ 5
-;; 1. Desired
-(itify ap)
-(ap-it (+ 2 it) 3) ;; nice.
-;; 2. Works with lambdas?
-((lambda (e) (ap-it (+ 2 it) e)) 2)
-;; 3. Scoping is fine?
-;; Outermost ‘it’ belongs to --map; inner-most ‘it’ belongs to ap-it. (─‿‿─)
-(--map (ap-it (+ 2 it) it) '(1 2 3)) ;; ⇒ (3 4 5)
-;; 4. Works well with read/eval?
-(ap-it (eval (car (read-from-string "(+ 2 it)"))) 3) ;; ⇒ 5
-
-;; itify
-(defmacro itify (fname)
-  "
-   From a function (h f x), obtain a macro (h-it (⋯it⋯) x) that rewrites into
-   the orginal such that the first (functional) argument  may now be an expression
-   with free variable ‘it’.
-
-   NOTE: Since functions are of the form (cons 'macro-or-fun (function (lambda args body)))
-   we can obtain the number of args by getting ‘args’ and taking its length.
-   Then we can change any of its indices to take an expression rather than a function.
-  "
-
-;; ⇒ (defalias (quote ap-it) (cons (quote macro) (function (lambda (itbody more) (list (quote ap) (list (quote lambda) (quote (it)) itbody) more)))))
-  `(defmacro ,(intern (format "%s-it" (symbol-name fname))) (itbody more)
-       (list (quote ,fname) (list 'lambda '(it) itbody) more))
-;; ⇒ (defalias (quote ap-it) (cons (quote macro) (function (lambda (itbody more) (list (quote ap) (list (quote lambda) (quote (it)) itbody) more)))))
-)
-;; ⇒ (defalias (quote ap-it) (cons (quote macro) (function (lambda (itbody more) (list (quote ap) (list (quote lambda) (quote (it)) itbody) more)))))
-
-(insert (format "\n;; ⇒ %s" (macroexpand ' (itify ap) )))
-;; ⇒ (defalias (quote ap-it) (cons (quote macro) (function (lambda (itbody more) (list (quote ap) (list (quote lambda) (quote (it)) itbody) more)))))
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(defun rename-mixfix (f op)
-  "Given an Agda mixfix operator, apply a function on strings ‘f’ on
-   the inner-most delimiting tokens of the operator, in-particular ignoring
-   outer argument markers ‘_’.
-
-   For example, if you wish to decorate an operator with a prime or a subscript,
-   we cannot simply catenate else we obtain “_⊕_₁” rather than “_⊕₁_”.
-
-   Here are some sample results, assuming “f ≈ (λ (it) (format “₀%s¹” it))”:
-   _⊕_     ↦  _₀⊕¹_
-   _[_⊗_]  ↦  _₀[_⊗_]¹
-   he_lo   ↦  ₀he_lo¹
-   he-lo   ↦  ₀he-lo¹
-  "
-
-  (let* ((parts (s-split "_" op)) (front (s-blank? (first parts))) (rear (s-blank? (car (last parts)))))
-
-  (--> (concat (when front "_") "$here" (when rear "_"))
-       (substring-delimited-$ it op :longest-substring t)
-       (funcall f it)
-       (concat (when front "_") it (when rear "_"))
-   )))
-
-  ;; TODO: MA: Discard old code
-
-;; ⇒ (defalias (quote ap-it) (cons (quote macro) (function (lambda (itbody more) (list (quote ap) (list (quote lambda) (quote (it)) itbody) more)))))
-
- ;; (cond
-  ;;      ( (and front rear) (format "_%s_" (funcall f (substring-delimited-$ "_$here_" op))))
-  ;;      (front (format "_%s" (funcall f (s-chop-prefix "_" op))))
-  ;;      (rear  (format "%s_" (funcall f (s-chop-suffix "_" op))))
-  ;;      (t (funcall f op))
-  ;;    )
-  ;;   )
-  ;; )
-
-;; Need this for ‘reify-instances’.
-(itify rename-mixfix)
-
-;; ⇒ (defalias (quote ap-it) (cons (quote macro) (function (lambda (itbody more) (list (quote ap) (list (quote lambda) (quote (it)) itbody) more)))))
-
-;; Test: Crash if error; else remain silent.
-;;
-(assert (equal (--map (rename-mixfix-it (format "₀%s¹" it) it) '("_⊕_" "_[_⊗_]" "he_lo" "he-lo"))
-       ;; Outermost ‘it’ belongs to --map; inner-most ‘it’ belongs to rename-mixfix-it.
-  '("_₀⊕¹_" "_₀[_⊗_]¹" "₀he_lo¹" "₀he-lo¹")))
-
-(rename-mixfix #'identity "_⊕_")
-
-(rename-mixfix-it (eval (car (read-from-string "(concat it \"′\")"))) "_⊕_") ;; ⇒ _⊕′_
-#+END_SRC
 
 ** COMMENT Construction Site :TestingGround:
 
@@ -2619,43 +2642,9 @@ Macros with ~it~ as the name of functional parts.
 (-let [inst (car instantiations-remaining)]
 (-let [pfs (car package-formers)]
 
-(setq opening-formation (lambda (fs) (list "opening MonoidR : 𝒩yet")))
-
-(setq rename-rewriting (lambda (fs) (if-let ((rns (instance-declaration-renames inst)) (fsnew fs) (changes 0) )
-                                                          ;; For each “old to new”, replace ‘old’ in every /subsequent/ field with ‘new’ via a let-clause.
-                                                          (progn (loop for f in fs for i from 0
-                                                                       do (when-let* ((old (get-name f)) (new (cdr (assoc old rns))))
-                                                                            (setq fsnew (--map (s-replace old new it) fsnew))
-                                                                            ; (push (format "private %s = %s" old new) (cdr (nthcdr (+ i changes) fsnew)))
-                                                                            ; (push "field" (cdr (nthcdr (+ i changes 1) fsnew)))
-                                                                            (setf (nthcdr (+ i 1 changes) fsnew)
-                                                                                  (--map (s-replace ": " (format ": let %s = %s in " old new) it) (nthcdr (+ i 1 changes) fsnew)))
-                                                                            (incf changes)))
-                                                                 fsnew)
-                                                         fs) )) ;; otherwise leave fields alone.
-
-
-;; instantiate-as-unbundled 0 pfs  :waist (instance-declaration-waist inst) :alter-fields …
-
-     (setq decorated-rewriting (lambda (fs) (if (instance-declaration-decorations inst)
-                                  (-let ((fsnew nil) old new (letin nil))
-                                      (loop for f in (reverse fs)
-                                            do (setq old (get-name f))
-                                               (push (map-name (setq new (rename-mixfix-it (eval (car (read-from-string (instance-declaration-decorations inst)))) name)) f) fsnew)
-                                               (setq letin (cons (format "let %s = %s in " old new) letin))
-                                            )
-                                      ;; Could ty this into renaming, but avoiding such entaglement for now.
-                                      ;; Stick all renames “so far” in front of each declaration.
-                                      (loop for f in fsnew for i from 0 do (setf (nth i fsnew) (map-type (concat (s-join "" (-take i letin)) type) f)))
-                                      fsnew
-                                    )
-                                  fs
-                                  )))
-
 (instantiate pfs    :new-name "Semantics₁!!!"
                     :type "module"
                     ; :docstring "???"
-                    :has-field-decl nil
                     :omit-level-decl t
                     :waist 1 :alter-fields (lambda (fs)
                     ;;
@@ -2692,12 +2681,6 @@ module Semantics₁!!! (ℛ : MonoidRDT) where
             ; _⨾_ to _⨾′_
             )
 #+end_src
-
-
-
-
-
-
 
 # RESULTS:
 #+begin_src results-agda
@@ -2802,8 +2785,10 @@ current buffer automatically.
   (apply orig-fun args)
 
    ;; Colour 700 keywords
-  (loop for kw in '("PackageFormer" "Variation" "hiding" "renaming" "unbundling" "exposing" "renaming" "with")
-    do (highlight-phrase kw 'hi-green))
+  ;; (loop for kw in '("PackageFormer" "Variation" "hiding" "renaming" "unbundling" "exposing" "renaming" "with")
+  ;;  do (highlight-phrase kw 'hi-green))
+  ;; Replace with a hook.
+
   (highlight-phrase "700" 'error)
 
   (message "700 ∷ All the best coding! (•̀ᴗ•́)و")
@@ -2917,7 +2902,7 @@ Let's pack these together into a minor mode.
 #+END_SRC
 {{{end-fold}}}
 
-* TODO tooltips
+* TODO COMMENT tooltips
 
 https://stackoverflow.com/questions/293853/defining-new-tooltips-in-emacs
 
