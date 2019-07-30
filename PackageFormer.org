@@ -71,7 +71,7 @@ This scheme will work for arbitrary typeclasses ^_^
 #+DESCRIPTION: Generalising ADTS, records, typeclasses to “package formers”.
 #+AUTHOR: Musa Al-hassy
 #+EMAIL: alhassy@gmail.com
-#+PROPERTY: header-args :results none :tangle no :comments link
+#+PROPERTY: header-args :results none :tangle no :comments link :noweb yes
 
 #+CATEGORIES: Agda MetaProgramming Lisp
 #+OPTIONS: html-postamble:nil toc:nil d:nil tag:nil
@@ -186,7 +186,7 @@ Just C-c C-c this block (•̀ᴗ•́)و
 ;     ;; font lock list: Order of colouring matters;
 ;     ;; the numbers refer to the subpart, or the whole(0), that should be coloured.
 ;     (-concat  ;; ★★★★★★★★★★★★★★ org-agda-extra-word-colours is a free variable, user should define it /before/ loading org-agda-mode ★★★★★★★★★★★★★★
-	       (if (boundp (quote org-agda-extra-word-colours)) org-agda-extra-word-colours nil)
+           (if (boundp (quote org-agda-extra-word-colours)) org-agda-extra-word-colours nil)
 ;     (list ⋯) ⋯))
 
 ;; Also this so people use “agda” instead of being forced to use “org-agda”
@@ -317,7 +317,7 @@ To follow along, it may be useful to look at an [[https://alhassy.github.io/Elis
 
 | Results of tests will be in pink, like this. |
 
-#+TOC: headlines 2
+#+TOC: headlines 3
 
 * Aim: /Scrap the Repetition/
 
@@ -407,7 +407,7 @@ data ScalarSyntax : Set₁ where
     _×_     : ScalarSyntax → ScalarSyntax → ScalarSyntax
 
 {- Nutshell: Keep items ending in “Stream Carrier”, then discard that ending,
-	     then form a subscripted version for each argument.
+         then form a subscripted version for each argument.
 -}
 record Stream (Carrier : Set) : Set₁ where
   coinductive
@@ -495,7 +495,6 @@ Click here to obtain [[https://raw.githubusercontent.com/alhassy/next-700-module
 ;; https://github.com/magnars/s.el                                                       ;;
 (package-install 's)                ;; “The long lost Emacs string manipulation library” ;;
 (package-install 'dash)             ;; “A modern list library for Emacs”                 ;;
-(package-install 'dash-functional)  ;; “Function combinators”                            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Next, obtain the Elisp file, load it, and attach it to Agda.
@@ -526,7 +525,7 @@ When you enable ~700-mode~:
      coloured yellow, and their instantations are simply bolded. To update a coloured
      item, simply save then revert-buffer (F5), then reload with C-c C-l.
 
-	 | *─colouring currently disabled─* |
+     | *─colouring currently disabled─* |
 
 If you need any assistance, please contact me!
 
@@ -552,14 +551,13 @@ by other Agda code, and otherwise leave it free standing.
 ⟪700-syntax⟫    ::=  ⟪PackageFormer⟫ | ⟪Instantiation⟫ | ⟪Agda⟫
 
 ⟪PackageFormer⟫ ::= PackageFormer ⟪Identifier⟫ : Set (⟪level⟫) where
-		       ⟪newline-with-indentation⟫ ⟪Element⟫*
+               ⟪newline-with-indentation⟫ ⟪Element⟫*
 
 ⟪Element⟫       ::=  ⟪Identifier⟫ : ⟪Any-Agda-Type⟫
 
 ⟪Instantiation⟫ ::= ⟪Identifier⟫ = ⟪Identifier⟫ ⟪VariationalClause⟫
 
-⟪VariationalClause⟫ ::= ⟪VariationalClause⟫ ⟴ ⟪VariationalClause⟫
-		      | ⟪Identifier⟫ (:key (value))*
+⟪VariationalClause⟫ ::= [⟪Identifier⟫] (:key (value))* (⟴ ⟪VariationalClause⟫)*
 #+END_EXAMPLE
 
 :Old:
@@ -567,9 +565,9 @@ by other Agda code, and otherwise leave it free standing.
 {- Only listing the currently implemented -}
 ⟪Variation⟫     ::= typeclass | data | record
 ⟪VOp⟫           ::=   renaming ⟪ToList⟫
-		    | unbundling ⟪ℕ⟫
-		    | exposing (⟪Semicolon-seperated-list-of-Identifiers⟫)
-		    | with     ⟪ToList⟫
+            | unbundling ⟪ℕ⟫
+            | exposing (⟪Semicolon-seperated-list-of-Identifiers⟫)
+            | with     ⟪ToList⟫
 
 ⟪ToList⟫ ::= (⟪Identifier₀⟫ to ⟪Identifier₀⟫; ⋯; ⟪Identifierₙ⟫ to ⟪Identifierₙ⟫) {- for any n : ℕ -}
 #+END_EXAMPLE
@@ -577,10 +575,10 @@ by other Agda code, and otherwise leave it free standing.
 
 + One derives many presentations of a grouping mechanism by what we call ‘variational clauses’.
   - In a multiline comment, a non-700-comment, one declares ‘varitionals’ such as
-     | ~𝒱-typeclass height = :kind record :level dec :waist-strings ("field") :waist height"~  |
+     | ~𝒱-typeclass height = :kind record :level dec :waist-strings ("field") :waist height~   |
 
      These are functions whose names begin with ~𝒱-~, they may have arguments on the left-hand-side,
-     and their right hand side may invoke any of the 4 meta-primitives
+     and their right hand side may invoke any of the 5 meta-primitives
      ~kind, waist, waist-strings, level, alter-elements~ with any mixture of
      arguments and concrete values.
 
@@ -604,9 +602,9 @@ by other Agda code, and otherwise leave it free standing.
    Agda keyword ~field~. We may declare this particular configuration using the meta-primitives
    ~:kind~ and ~:waist-strings~, as follows.
 #+BEGIN_SRC agda
-	{-
-	𝒱-record = :kind record :waist-strings (\"field\")
-	-}
+    {-
+    𝒱-record = :kind record :waist-strings (\"field\")
+    -}
 #+END_SRC
 
    Unsurprisingly, we have elected to name this grouping mechanism configuration as ~𝒱-record~.
@@ -618,7 +616,7 @@ by other Agda code, and otherwise leave it free standing.
 
 #+BEGIN_src agda
 {-700
-	M-Set-Record = M-Set record
+    M-Set-Record = M-Set record
 -}
 #+END_SRC
 
@@ -646,9 +644,9 @@ record M-Set-Record : Set₁ where
 
   For example, suppose we accidentally wrote ~recorder~ instead of ~record~ for the ~:kind~ as in the following.
 #+BEGIN_SRC agda
-	{-
-	𝒱-whoops  = :kind recorder :waist-strings ("field")
-	-}
+    {-
+    𝒱-whoops  = :kind recorder :waist-strings ("field")
+    -}
 #+END_SRC
   Even thought we have the correct invocation, say ~M-Set-Record = M-Set whoops~,
   when we try to load our Agda file the Agda process is interrupted and we are warned:
@@ -656,8 +654,8 @@ record M-Set-Record : Set₁ where
  700: This kind “recorder” is not supported by Agda!
       Valid kinds: record, data, module, PackageFormer.
 
-	⇨	M-Set-Record = M-Set whoops
-	⇨	whoops ≈ (nil ((kind . recorder) (waist-strings field)))
+    ⇨	M-Set-Record = M-Set whoops
+    ⇨	whoops ≈ (nil ((kind . recorder) (waist-strings field)))
 #+END_SRC
   The 700 system informs us of our fault in “quotes”, suggests a solution,
   and points to the offending declaration hierarchy. Neato (•̀ᴗ•́)و
@@ -668,9 +666,9 @@ record M-Set-Record : Set₁ where
   However, in the subsequent examples, we shall tersely present the three in one
   in code fragment, as below. This is for exposition only; the three stages do not coexist in such close proximity.
 #+BEGIN_SRC results-agda
-	{- 0. 𝒱ariation declaration
-	   1. Invocation declaration -}
-	   2. Resulting Generation
+    {- 0. 𝒱ariation declaration
+       1. Invocation declaration -}
+       2. Resulting Generation
 #+END_SRC
 
 *** Typeclasses ---Parameterised Records--- and Meta-Primitives ~:waist~ & ~:level~
@@ -913,17 +911,17 @@ Notice that $𝑛𝑎𝑚𝑒 is a special variable that refers to the newly def
  #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
 (let* ((variationals nil) (instantiations-remaining nil)
        (vs (load-variationals (s-join "\n" '(
-	  "𝒱-identity = "
-	  "𝒱-record  = :kind record :waist-strings (\"field\")"
-	  "𝒱-whoops  = :kind recorder :waist-strings (\"field\")"
-	  "𝒱-typeclass-attempt  = :kind record :waist-strings (\"field\") :waist 2"
-	  "𝒱-typeclass₂  = :kind record :waist-strings (\"field\") :waist 2 :level dec"
-	  "𝒱-primed-record = :kind record :waist-strings (\"field\") :alter-elements (λ f → (map-name (concat name \"′\") f))"
-	  "𝒱-primed = :alter-elements (λ f → (map-name (concat name \"′\") f))"
-	  "𝒱-typeclass height level = :kind record :waist-strings (\"field\") :waist height :level level"
+      "𝒱-identity = "
+      "𝒱-record  = :kind record :waist-strings (\"field\")"
+      "𝒱-whoops  = :kind recorder :waist-strings (\"field\")"
+      "𝒱-typeclass-attempt  = :kind record :waist-strings (\"field\") :waist 2"
+      "𝒱-typeclass₂  = :kind record :waist-strings (\"field\") :waist 2 :level dec"
+      "𝒱-primed-record = :kind record :waist-strings (\"field\") :alter-elements (λ f → (map-name (concat name \"′\") f))"
+      "𝒱-primed = :alter-elements (λ f → (map-name (concat name \"′\") f))"
+      "𝒱-typeclass height level = :kind record :waist-strings (\"field\") :waist height :level level"
 ; TODO:	  ; "𝒱-renamed with = :alter-elements (λ e → (map-name (funcall with name) e))"
-	  "𝒱-data-with carrier = :kind data :level dec :alter-elements (λ f → (if (s-contains? carrier (target (get-type f))) (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) f) \"\"))"
-	  ))))
+      "𝒱-data-with carrier = :kind data :level dec :alter-elements (λ f → (if (s-contains? carrier (target (get-type f))) (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) f) \"\"))"
+      ))))
        (pf (load-package-former (second (get-children "PackageFormer" test)))))
 
   (--map (load-instance-declaration it)
@@ -970,17 +968,17 @@ Notice that $𝑛𝑎𝑚𝑒 is a special variable that refers to the newly def
 #+BEGIN_SRC emacs-lisp :var monoid = monoid :exports both :results replace :wrap "src results-agda"
 (let* ((variationals nil) (instantiations-remaining nil)
        (vs (load-variationals (s-join "\n" '(
-	  "𝒱-identity = "
-	  "𝒱-record  = :kind record :waist-strings (\"field\")"
-	  "𝒱-whoops  = :kind recorder :waist-strings (\"field\")"
-	  "𝒱-typeclass-attempt  = :kind record :waist-strings (\"field\") :waist 2"
-	  "𝒱-typeclass₂  = :kind record :waist-strings (\"field\") :waist 2 :level dec"
-	  "𝒱-primed-record = :kind record :waist-strings (\"field\") :alter-elements (λ f → (map-name (concat name \"′\") f))"
-	  "𝒱-primed = :alter-elements (λ f → (map-name (concat name \"′\") f))"
-	  "𝒱-typeclass height level = :kind record :waist-strings (\"field\") :waist height :level level"
+      "𝒱-identity = "
+      "𝒱-record  = :kind record :waist-strings (\"field\")"
+      "𝒱-whoops  = :kind recorder :waist-strings (\"field\")"
+      "𝒱-typeclass-attempt  = :kind record :waist-strings (\"field\") :waist 2"
+      "𝒱-typeclass₂  = :kind record :waist-strings (\"field\") :waist 2 :level dec"
+      "𝒱-primed-record = :kind record :waist-strings (\"field\") :alter-elements (λ f → (map-name (concat name \"′\") f))"
+      "𝒱-primed = :alter-elements (λ f → (map-name (concat name \"′\") f))"
+      "𝒱-typeclass height level = :kind record :waist-strings (\"field\") :waist height :level level"
 ; TODO:	  ; "𝒱-renamed with = :alter-elements (λ e → (map-name (funcall with name) e))"
-	  "𝒱-data-with carrier = :kind data :level dec :alter-elements (λ f → (if (s-contains? carrier (target (get-type f))) (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) f) \"\"))"
-	  ))))
+      "𝒱-data-with carrier = :kind data :level dec :alter-elements (λ f → (if (s-contains? carrier (target (get-type f))) (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) f) \"\"))"
+      ))))
        (pf (load-package-former (second (get-children "PackageFormer" monoid)))))
 
   (--map (load-instance-declaration it)
@@ -1093,8 +1091,8 @@ For example, with the current setup, we may go about requesting multiple monoid 
 open Monoid-Classical using () renaming (_⨾_ to Op)
 
 yuck-one :  (X Y : Classical 𝔹)
-	 →  Op X  ≡ _∧_  →  Op Y  ≡ _∨_
-	 →  Set
+     →  Op X  ≡ _∧_  →  Op Y  ≡ _∨_
+     →  Set
 yuck-one = ???
 #+END_SRC
 
@@ -1189,13 +1187,13 @@ The following subsections introduce:
   function. The declaration ~(itify f~) will produce a macro named ~f-it~
   that takes two arguments where the first is an expression involving
   a free variable ~it~ such that
-	     | /(f-it expr-with-it more)  ≈  (f (λ (it) expr-with-it) more)/  |
+         | /(f-it expr-with-it more)  ≈  (f (λ (it) expr-with-it) more)/  |
 
   We then test this out on the utility ~rename-mixfix~.
   - ~rename-mixfix~ :: Ignore outermost Agda argument markers ‘_’
-		     when renaming an mixfix argument;
-		     e.g., ~_[_⊗_]  ↦  _₀[_⊗_]¹~ where this particular renaming
-		     is a prefix subscript 0 and postfix 1.
+             when renaming an mixfix argument;
+             e.g., ~_[_⊗_]  ↦  _₀[_⊗_]¹~ where this particular renaming
+             is a prefix subscript 0 and postfix 1.
 
 First some useful libraries:
 #+BEGIN_SRC emacs-lisp :tangle no
@@ -1204,7 +1202,6 @@ First some useful libraries:
 ;; https://github.com/magnars/s.el
 (require 's)               ;; “The long lost Emacs string manipulation library”
 (require 'dash)            ;; “A modern list library for Emacs”
-(require 'dash-functional) ;; “Function combinators”
 #+END_SRC
 
 ** Finding Children in the Wild
@@ -1284,8 +1281,8 @@ then all subsequent lines with at least that much indentation have the same ance
    Moreover, we also return the rest of the unconsidered portion of ‘the-wild’:
 
    Result list: (  unconsidered-prefix-of-the-wild
-		   (cons parent-line children-lines)
-		   unconsidered-remaining-lines )
+           (cons parent-line children-lines)
+           unconsidered-remaining-lines )
 
    The first element is the porition that does not contain an occurence
    of ‘parent’. The second is the parent and its children, if possible.
@@ -1297,9 +1294,9 @@ then all subsequent lines with at least that much indentation have the same ance
   "
 
   (let ((lines (if (stringp the-wild) (s-lines the-wild) the-wild))
-	(indentation -1)
-	prefix
-	parent-line)
+    (indentation -1)
+    prefix
+    parent-line)
 
     ;; Ensure: lines ≈ (cons (not-here-prefix) (cons parent-here more-lines) )
     (setq lines (--split-with (not (s-contains? parent it)) lines))
@@ -1424,7 +1421,7 @@ why tests fail.
     ;; Consider each line above as a parent, with ‘eh’ as the wild.
     (loop for parent in (s-split "\n" eh) do
       (let* ((cs (get-children parent eh))
-	     (children (cdadr cs)))
+         (children (cdadr cs)))
 
       ;; Result is a list of lists: Each is either nil or a cons.
       (loop for r in cs do (should (listp r)))
@@ -1489,13 +1486,13 @@ utilities, so that we can work with higher-level abstract datatypes.
   (-let [str "𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟜 𝟞"] ;; Intentionally repeated ‘𝟜’.
     ;; Pattern for loop: (prefix postfix expected-needle :comment))
     (loop for it in `( ( "" "" ,str            :Identity)
-		       ( "𝟘" "𝟞" "𝟙 𝟚 𝟛 𝟜 𝟝 𝟜"  :Boundaries)
-		       ( "" "𝟞" "𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟜" :NoLeft)
-		       ( "𝟘" "" "𝟙 𝟚 𝟛 𝟜 𝟝 𝟜 𝟞" :NoRight)
-		       ( "𝟠" ""  ,str          :BogusL)
-		       ( "" "∞"  ,str          :BogusR)
-		       ( "𝟠" "∞" ,str          :BogusLR)
-		     )
+               ( "𝟘" "𝟞" "𝟙 𝟚 𝟛 𝟜 𝟝 𝟜"  :Boundaries)
+               ( "" "𝟞" "𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟜" :NoLeft)
+               ( "𝟘" "" "𝟙 𝟚 𝟛 𝟜 𝟝 𝟜 𝟞" :NoRight)
+               ( "𝟠" ""  ,str          :BogusL)
+               ( "" "∞"  ,str          :BogusR)
+               ( "𝟠" "∞" ,str          :BogusLR)
+             )
       do (should (equal (third it) (substring-delimited (first it) (second it) str))))
 
     (should (equal "𝟛" (substring-delimited "𝟚" "𝟜" str)))
@@ -1537,13 +1534,13 @@ utilities, so that we can work with higher-level abstract datatypes.
   (-let [str "𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟜 𝟞"] ;; Intentionally repeated ‘𝟜’.
     ;; Pattern for loop: (prefix postfix expected-needle :comment)
     (loop for it in `( ( "$here" ,str              :Identity)
-		       ( "𝟘 $here 𝟞" "𝟙 𝟚 𝟛 𝟜 𝟝 𝟜"  :Boundaries)
-		       ( "$here 𝟞" "𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟜"  :NoLeft)
-		       ( "𝟘 $here"  "𝟙 𝟚 𝟛 𝟜 𝟝 𝟜 𝟞" :NoRight)
-		       ( "𝟠 $here"   ,str          :BogusL)
-		       ( "$here ∞"   ,str          :BogusR)
-		       ( "𝟠 $here ∞" ,str          :BogusLR)
-		     )
+               ( "𝟘 $here 𝟞" "𝟙 𝟚 𝟛 𝟜 𝟝 𝟜"  :Boundaries)
+               ( "$here 𝟞" "𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟜"  :NoLeft)
+               ( "𝟘 $here"  "𝟙 𝟚 𝟛 𝟜 𝟝 𝟜 𝟞" :NoRight)
+               ( "𝟠 $here"   ,str          :BogusL)
+               ( "$here ∞"   ,str          :BogusR)
+               ( "𝟠 $here ∞" ,str          :BogusLR)
+             )
       do (should (equal (second it) (substring-delimited-$ (first it) str))))
 
     ;; Longest substring
@@ -1641,10 +1638,10 @@ To that end, we propose that our fictitious syntax be directly embedded via spec
 
      (while continue
        (condition-case nil
-	 ;; attemptClause
-	 (setq l (cons (buffer-substring-delimited start end) l))
-	 ;; recoveryBody
-	 (error (setq continue nil))))
+     ;; attemptClause
+     (setq l (cons (buffer-substring-delimited start end) l))
+     ;; recoveryBody
+     (error (setq continue nil))))
 
      ;; We've collected items as we saw them, so ‘l’ is in reverse.
     (reverse l)
@@ -1677,7 +1674,7 @@ We also want to prefix the generated file with the imports of the current file.
     (s-split "\n")
     (--filter (s-contains? "import" it))
     (--remove (s-contains?
-	       (format  "%s_Generated" (file-name-sans-extension (buffer-name))) it))
+           (format  "%s_Generated" (file-name-sans-extension (buffer-name))) it))
     (s-join "\n")
   )
 )
@@ -1694,7 +1691,7 @@ So much string meddling, hopefully no more 🙈 :hear_no_evil: :speak_no_evil:
   function. The declaration ~(itify f~) will produce a macro named ~f-it~
   that takes two arguments where the first is an expression involving
   a free variable ~it~ such that
-	     | ~(f-it expr-with-it more)  ≈  (f (λ (it) expr-with-it) more)~ |
+         | ~(f-it expr-with-it more)  ≈  (f (λ (it) expr-with-it) more)~ |
 
 I'm only considering binary functions, since they're my most common
 case ---it's little trouble to move to the general case.
@@ -1728,8 +1725,8 @@ yield the former as part of a macro /result/.
    we can obtain the number of args by getting ‘args’ and taking its length.
    Then we can change any of its indices to take an expression rather than a function.
    Indeed, (macroexpand '(itify ap))
-	 ⇒ (defalias (quote ap-it) (cons (quote macro) (function (lambda (itbody more)
-	     (list (quote ap) (list (quote lambda) (quote (it)) itbody) more)))))      .
+     ⇒ (defalias (quote ap-it) (cons (quote macro) (function (lambda (itbody more)
+         (list (quote ap) (list (quote lambda) (quote (it)) itbody) more)))))      .
   "
 
   `(defmacro ,(intern (format "%s-it" (symbol-name fname))) (itbody more)
@@ -1831,7 +1828,7 @@ rather than meddle with strings all the time.
    - ‘name’: The name of the grouping mechanism schema.
 
    - ‘level’: The universe level that the instantiations will inhabit.
-	      The universe level of the PackageFormer.
+          The universe level of the PackageFormer.
 
    - Finally, the children fields are the typed-names that constitute the body of the
      grouping mechanism. As long as consistent indentation is selected, it does not matter how much.
@@ -1935,7 +1932,7 @@ so we don't have this extra mental strain and implicit type-checking to ensure.
   (should (equal "name" (get-name "name   : type")))
   ;; Multiple “:”.
   (should (equal "∀ {X : Obj 𝒞} → (X ⟶ X)"
-		 (get-type"Id : ∀ {X : Obj 𝒞} → (X ⟶ X)") ))
+         (get-type"Id : ∀ {X : Obj 𝒞} → (X ⟶ X)") ))
   )
 
 #+END_SRC
@@ -1965,22 +1962,22 @@ With this in hand, let's produce a robust parser.
 
 (catch 'exit
   (let* (pf
-	 (header (or (car lines) (throw 'exit nil)))
-	 (name (substring-delimited-$ "PackageFormer $here :" header))
-	 (level (substring-delimited-$ "Set $here where" header)))
+     (header (or (car lines) (throw 'exit nil)))
+     (name (substring-delimited-$ "PackageFormer $here :" header))
+     (level (substring-delimited-$ "Set $here where" header)))
 
     ;; MA: Replace with a hook.
     ;; (--map (highlight-phrase (s-trim it) 'hi-yellow) (cdr lines))
 
     (setq pf
        (make-package-former
-	:type                     "PackageFormer"
-	:name                     name
-	;; ‘level’ may be “”, that's okay. It may be a subscript or implicitly zero & so no space after ‘Set’.
-	:level                    level
-	:waist                    0 ;; TODO: Currently no parameter support for arbitrary PackageFormers.
-	:indentation              (get-indentation (cadr lines))
-	:elements                 (--map (s-trim it) (cdr lines))
+    :type                     "PackageFormer"
+    :name                     name
+    ;; ‘level’ may be “”, that's okay. It may be a subscript or implicitly zero & so no space after ‘Set’.
+    :level                    level
+    :waist                    0 ;; TODO: Currently no parameter support for arbitrary PackageFormers.
+    :indentation              (get-indentation (cadr lines))
+    :elements                 (--map (s-trim it) (cdr lines))
      ))
 
     (push (cons name pf) package-formers)
@@ -2010,7 +2007,7 @@ With this in hand, let's produce a robust parser.
    ;; Full parsing.
    (-let [pf (load-package-former (cadr (get-children "PackageFormer" test)))]
      (should (equal (format "%s" pf)
-		    "#s(package-former nil PackageFormer M-Set ₁ 0 3 (Scalar  : Set Vector  : Set _·_     : Scalar → Vector → Vector 𝟙       : Scalar _×_     : Scalar → Scalar → Scalar leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)))")))
+            "#s(package-former nil PackageFormer M-Set ₁ 0 3 (Scalar  : Set Vector  : Set _·_     : Scalar → Vector → Vector 𝟙       : Scalar _×_     : Scalar → Scalar → Scalar leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)))")))
    )
 #+END_SRC
 
@@ -2039,14 +2036,14 @@ Conversely, let's have a pretty printer.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (cl-defun show-package-former (p &key extra-waist-strings
-				 (omit-level nil) omit-docstring omit-car-element)
+                 (omit-level nil) omit-docstring omit-car-element)
   "Pretty print a package-former record value.
 
    -‘waist-strings’: Arbitrary new elements that are input at the location of the
      PackageFormer's waist. E.g., the following results in a new local alias ‘n’
      before the remaining constitutents are printed under a “field” clause.
 
-	 :waist-strings (list “private” “n : ℕ” “n = 3” “field”)
+     :waist-strings (list “private” “n : ℕ” “n = 3” “field”)
   "
 
   (open-pf p (s-join "\n" (-cons*
@@ -2056,19 +2053,19 @@ Conversely, let's have a pretty printer.
 
      ;; 1. The schema declaration
       (s-collapse-whitespace (s-join " " (list type name (s-join " " (--map (concat "(" it ")") parameters)) (unless omit-level (concat ": Set" level))
-				    "where")))
+                    "where")))
 
 
      ;; The elements of a PackageFormer
        (thread-last fields
 
-	(-concat waist-strings)
-	(-concat extra-waist-strings)
+    (-concat waist-strings)
+    (-concat extra-waist-strings)
 
-	;; Indent all elements, less indentation for the specials.
-	(--map (concat (s-repeat (- indentation (if (special it) 2 0)) " ") it))
-	(funcall (if omit-car-element #'cdr #'identity))
-	)
+    ;; Indent all elements, less indentation for the specials.
+    (--map (concat (s-repeat (- indentation (if (special it) 2 0)) " ") it))
+    (funcall (if omit-car-element #'cdr #'identity))
+    )
     ))))
 #+END_SRC
 
@@ -2106,7 +2103,7 @@ that parsing and showing should be inverses.
 #+BEGIN_SRC emacs-lisp :var test = test :exports both :results table replace
 (-let [pf (cadr (get-children "PackageFormer" test))]
   (equal (concat "\n" (s-join "\n" pf))
-	 (show-package-former (load-package-former pf))))
+     (show-package-former (load-package-former pf))))
 #+END_SRC
 
 #+RESULTS:
@@ -2122,24 +2119,591 @@ encode it using ert; instead we use a raw assert.
 #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace
   (-let [pf (cadr (get-children "PackageFormer" test))]
   (assert (equal (s-concat "\n" (s-join "\n" pf))
-		 (show-package-former (load-package-former pf)))))
+         (show-package-former (load-package-former pf)))))
 #+END_SRC
 
 #+RESULTS:
 
 :End:
 
-* Parsing an Agda Buffer
+* Variational Language
+
+  A variational has the syntactic form specfied by
+
+#+BEGIN_SRC text
+        𝓋  ::= [identifier] (:key value)* (⟴ 𝓋)*
+             | identifier (identifier)* = 𝓋
+#+END_SRC
+
+  With the intention that ~l a = r~ is a list of key-value pairs
+  determined from the right-hand side where the arguments ~a~
+  are to be considered place-holders. Whenever one mentions free variables,
+  or terms, one actually speaks of functions. Hence, let's reify these as functions.
+
+#+BEGIN_SRC emacs-lisp :results replace
+(defun rec-replace (old new thing)
+  "Traverse ‘thing’ and seek out all, possibly nested, instances
+   of ‘old’ and replace them with ‘new’."
+  (cond
+   ((equal thing old) new  )
+   ((atom thing)      thing)
+   ((consp thing)     (cons (rec-replace old new (car thing))
+                            (rec-replace old new (cdr thing))))))
+
+;; test
+;; (rec-replace 'it 3
+;;              '(1 2 it 4 (5 it) 7 (+ 8 it))
+;;             )
+;; Neato!
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :results replace
+;; Posterity
+(defmacro 𝒱₀ (name &rest body)
+  "lhs args = key-value pairs   ⇒  a Lisp lambda taking args, yielding the pairs"
+  (let* ((it body) (args-pairs (-split-on '= body)) args pairs pp)
+    (pcase (length args-pairs)
+      (2 (setq args  (car args-pairs)
+               pairs (cadr args-pairs)))
+      (t (setq pairs (car args-pairs))))
+
+    `(lambda ,args
+    ,(-let [res
+        `,(loop for key   in pairs by #'cddr
+                      for value in (cdr pairs) by #'cddr
+                      collect (cons key value))]
+
+       ;; Stage the formal names *now*, then evaluate their values at run time.
+       ;; Traverse the list of pairs and change the nested formal names with the
+       ;; given values. Praise the Lord!
+      `(loop for a in (quote ,args)
+            collect (rec-replace a (eval a) (quote ,res)))
+
+  ))))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :results replace
+(defun 𝒱𝒸 (body-list)
+  "Parse a single 𝒱ariational 𝒸lause, as a list, of the form “[label] (:key :value)*”.
+
+   If there is a ‘label’, then yield ‘(label :key value ⋯)’
+   since ‘label’ is assumed to exist as a variational having the given
+   keys as arguments. The result should be a list of pairs.
+
+   If there is no label, the parse the list of pairs.
+
+  For example,
+     (cl-defun test (&key height kind) (format \"%s & %s\" height kind))
+     (𝒱₁ '(test :height 3 :kind 'data)) ⇒ “3 & data” ≈ (test :height 3 :kind data)
+     (𝒱₁ '(     :height 3 :kind data)) ⇒ ((:height . 3) (:kind . data))
+
+   Newer items c₀ ⟴ ⋯ ⟴ cₙ should be at the front of the list;
+   access should then be using ‘assoc’.
+  "
+
+  (let* (res)
+    (loop for clause in (-split-on '⟴ body-list)
+          do (setq res (-concat
+                 ;; Symbols starting with “:” are keywords.
+                 (if (not (keywordp (car clause)))
+                     ;; Function invocation case
+                     (eval `(,(car clause) ,@(cdr clause)))
+                   ;; List of key-value pairs
+                   `,(loop for key   in clause by #'cddr
+                           for value in (cdr clause) by #'cddr
+                           collect (cons key value)))
+                   ;; Newer items c₀ ⟴ ⋯ ⟴ cₙ should be at the front of the list;
+                   ;; access should then be using assoc.
+                   res)))
+    res
+    ))
+
+; DONE
+; (𝒱𝒸 '(test₁ :height 3 ⟴ :kind module)) ;; ⇒ ((:kind . module) ((:kind . record) (:waist . 3)))
+; (𝒱𝒸 '(:height 3 :kind data)) ;; ⇒ ((:height . 3) (:kind . data))
+
+(defmacro 𝒱 (name &rest body)
+
+  (let* ((it body) (args-body (-split-on '= body)) args body res)
+    (pcase (length args-body)
+      (2 (setq args  (car args-body)
+               body (cadr args-body)))
+      (t (setq body (car args-body))))
+
+    (setq res (𝒱𝒸 body))
+
+    `(cl-defun ,name (&key ,args)
+
+
+       ;; Stage the formal names *now*, then evaluate their values at run time.
+       ;; Traverse the list of pairs and change the nested formal names with the
+       ;; given values. Praise the Lord!
+       (if (not (quote ,args)) (quote ,res)
+      (loop for a in (quote ,args)
+            collect (rec-replace a (eval a) (quote ,res))))
+
+ )))
+
+(𝒱 test₁ heightish = :kind record :waist heightish)
+(𝒱 test₂  = :kind data ⟴ test₁ :heightish 2)
+(test₁ :heightish 6) ;; ⇒ (((:kind . record) (:waist . 6)))
+(test₂) ;; ⇒ (((:kind . record) (:waist . 2)) (:kind . data))
+
+(thread-last "𝒱-typeclass = :kind record :waist 1"
+  (s-replace "𝒱-" "𝒱 ")
+  (format "(%s)")
+  read-from-string
+  car
+  eval)
+
+(typeclass) ;; ⇒ ((:kind . record) (:waist . 1))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :results replace
+(defun show-me ()
+  "Evaluate a Lisp expression and insert its value
+   as a comment at the end of the line.
+
+   Useful for documenting values or checking values.
+  "
+  (interactive)
+  (-let [it
+         (thread-last (thing-at-point 'line)
+           read-from-string
+           car
+           eval
+           (format " ;; ⇒ %s"))]
+    (end-of-line)
+    (insert it)))
+#+END_SRC
+
+
+#+begin_src emacs-lisp :tangle yes :results replace
+
+(cl-defun load-variational (variation-string)
+  "Obtain lines of the buffer that start with “𝒱-”.
+   Realise them as Lisp association lists.
+
+   A line is something like:
+
+      𝒱-name x₀ … xₙ  =  ([label₀] :key₀ val₁ ⋯ :keyₘ valₘ ⟴)*
+
+   The result is a list of 3-tuples (name (x₀ ⋯ xₙ) ((key₀ val₀) ⋯ (keyₘ valₘ))),
+   containing the clause's name, argument list, and key-value pairs.
+
+   If the optional ‘string-list’ is provided, then use
+   that instead of searching the buffer. This feature
+   has been added on to make the presentation of tests
+   and examples easier to digest ---without the mockup
+   of fletting ‘buffer-substring-no-properties’ to return
+   what could instead be ‘string-list’. It was the addition
+   of a simple ‘or’ ---far less than this string explaning it.
+
+   For now, the RHS must be an expression of the form “:key₀ value₀ ⋯ :keyₙ valueₙ”
+   - where the valueᵢ are legitmate Lisp expressions
+   - and the LHS is an atomic name.
+
+   Note: The space around the “:” is irrelevant; no valueᵢ may contain a colon or an equals sign.
+  "
+
+  (thread-last variation-string
+    (s-replace "𝒱-" "𝒱 ")
+    (format "(%s)")
+    read-from-string
+    car
+    eval))
+#+end_src
+
+
+#+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
+(load-variational "𝒱-primed-record = :kind record")
+
+; (load-variational "𝒱-primed-record = :kind record :waist-strings (\"field\") :alter-elements (λ f → (map-name (concat name \"′\") f))")
+#+END_SRC
+
+* Loading an Agda Buffer
 
 Before we can parse an Agda buffer, we need to be able to parse an instantiation declaration;
 for which we would later generate code.
 
+# Let's keep track of the user-defined variationals.
     #+BEGIN_SRC emacs-lisp :tangle yes
 (defvar instantiations-remaining nil
   "The PackageFormer instantiations that need to be performed.")
+
+(defvar variationals nil
+  "Association list of Agda-user defined variational operators.")
 #+END_SRC
 
-** List of  ~instantiations-remaining~
+** COMMENT Variationals  :old_approach:
+
+   Let's parse arguments as legitimate Lisp forms.
+#+begin_src emacs-lisp :tangle yes
+(cl-defun to-lisp (string)
+  "Parse Agda ‘string’ to obtain a Lisp expression.
+
+   + (λ x → B)   ↦  (lambda (x) B′)
+   + B may contain ++, in which case the result is a ‘concat’.
+   - B may not contain ‘→’.
+
+  If B is a parens-enclosed expression, then we expect it to
+  already be a legitimate Lisp form and so leave it alone.
+  "
+
+  (assert (stringp string))
+
+  (let* ((expr (s-collapse-whitespace string))
+     args
+     (body expr)
+     (isλ (equal "(λ" (s-shared-start "(λ" expr))))
+
+    (when isλ
+      (thread-last string
+    (s-chop-prefix "(λ")
+    (s-chop-suffix ")")
+    (s-split "→")
+    (setq expr))
+
+      (setq args (car expr))
+      (setq body (cadr expr))
+    )
+
+    ;; (error "%s" body)
+
+    ;; Ensure ‘body’ is a lisp expression.
+    (when  (and (s-blank? (s-shared-start "(" body))
+        (s-blank? (s-shared-end ")" body)))
+
+     (when (and isλ (s-contains? " ++ " body))
+       (thread-last body
+         (s-replace "++" " ")
+         (format "(concat %s)")
+         (setq body)))
+
+     )
+
+    ;; Realise it as Lisp
+    (setq expr (if isλ (format "(lambda (%s) %s)" args body)
+           body))
+    (car (read-from-string expr))
+))
+
+(ert-deftest to-lisp ()
+  (should (equal 'data (to-lisp "data")))
+  (should (equal '(list 'a 'b 'c) (to-lisp "(list 'a 'b 'c)")))
+  (should (equal '('a 'b 'c) (to-lisp "('a 'b 'c)")))
+  (should (equal '("a" "b") (to-lisp "(\"a\" \"b\")")))
+  (should (equal '(lambda (x) Bx) (to-lisp "(λ x → Bx)")))
+  (should (equal '(lambda (x) (when t x)) (to-lisp "(λ x → (when t x))")))
+  (should (equal '(lambda (x) just this) (to-lisp "(λ x → just this")))
+  (should (equal '(lambda (x) (concat x "′")) (to-lisp "(λ x → x ++ \"′\")")))
+)
+#+end_src
+
+A variational clause is of the following form
+---with normal forms being lists of key-value pairs.
+#+BEGIN_SRC text
+𝓋  ::=  𝓋 (⟴ 𝓋)*
+     | [⟨identifier⟩] (:key value)*
+#+END_SRC
+
+#+begin_src emacs-lisp :tangle yes :results replace
+(cl-defun update-state (xs ys)
+  "Given ys, a list of key-value pairs, where the keys appear free in list of pairs xs,
+   update the values of xs making use of these new pairs.
+
+   E.g., (setq xs '((a . (list b d)) (c . d)))
+         (setq ys '((b . 𝒷) (d . 𝒹)))
+         ⇒    (update-state xs ys)
+            ≈ '((a . (list “𝒷” “𝒹”)) (c . “𝒹”)))
+  "
+  (loop for (key . val) in xs
+         collect (cons key
+            (eval `(progn ,@(--map `(setq ,(car it) ,(format "%s" (cdr it))) ys)
+              ,(car (read-from-string (format "%s" val)))))))
+  )
+
+;; (update-state xx yy)
+#+end_src
+
+#+RESULTS:
+: update-state
+
+#+begin_src emacs-lisp :tangle yes :results replace
+(cl-defun parse-variational-clause (line)
+
+  "Given a string of items “name :key₀ val₀ … :keyₙ valueₙ”
+   seperated by ⟴, and where the ‘name’ string may be empty,
+   turn it into a list of such items; i.e., a list of tuples
+   (name pairs) where the ‘pairs’ refers to the key-value
+   components."
+
+  (let (variations label alterations)
+
+  ;; For now, variation must be separated by ⟴.
+     (setq variations (s-split "⟴" line))
+
+     (setq alterations
+     (loop for va in variations
+       do (setq label (car (s-split " " (s-trim va))))
+         ;; If the variation begins with a “:key value” pair, then
+         ;; it is anonymous & its label is nil;
+         ;; otherwise it is a variational application.
+         (setq label (unless (equal ":" (s-shared-start ":" (s-trim va)))
+             (car (s-split " " (s-trim va)))))
+         collect
+         (thread-last
+             ;; Split along “:key value” pairs;
+             ;; Drop first non-key item, the label, if any.
+             (s-split ":" (s-join " "
+                                  (funcall (if label #'cdr #'identity)
+                                           (s-split " " va :omit-nulls))))
+
+             ;; Split along the space to get key and value.
+           (--map (s-split " " it :omit-nulls))
+           cdr
+           (--map (cons (to-lisp (car it))           ;; Transform it into legitimate Lisp.
+                (to-lisp (s-join " " (cdr it)))))
+           (cons (or label 'anonymous)))))
+
+     ;; We know have the declared alterations in the given order.
+     ;; alterations ≈ list of (name (list-of (key value))) tuples
+     ;; (should (--every? (equal 2 (length it)) alterations))
+
+     alterations
+    )
+  )
+
+
+;; TODO: Might as well throw away load-instance-declaration now.
+;
+(parse-variational-clause ":waist 2 ⟴ :kind record ⟴ more :yarg x :barg y")
+#+end_src
+
+#+RESULTS:
+| anonymous | (waist . 2)     |            |
+| anonymous | (kind . record) |            |
+| more      | (yarg . x)      | (barg . y) |
+
+#+begin_src emacs-lisp :tangle yes :results replace
+
+(cl-defun load-variationals (&optional string-list)
+  "Obtain lines of the buffer that start with “𝒱-”.
+   Realise them as Lisp association lists.
+
+   A line is something like:
+
+      𝒱-name x₀ … xₙ  =  ([label₀] :key₀ val₁ ⋯ :keyₘ valₘ ⟴)*
+
+   The result is a list of 3-tuples (name (x₀ ⋯ xₙ) ((key₀ val₀) ⋯ (keyₘ valₘ))),
+   containing the clause's name, argument list, and key-value pairs.
+
+   If the optional ‘string-list’ is provided, then use
+   that instead of searching the buffer. This feature
+   has been added on to make the presentation of tests
+   and examples easier to digest ---without the mockup
+   of fletting ‘buffer-substring-no-properties’ to return
+   what could instead be ‘string-list’. It was the addition
+   of a simple ‘or’ ---far less than this string explaning it.
+
+   For now, the RHS must be an expression of the form “:key₀ value₀ ⋯ :keyₙ valueₙ”
+   - where the valueᵢ are legitmate Lisp expressions
+   - and the LHS is an atomic name.
+
+   Note: The space around the “:” is irrelevant; no valueᵢ may contain a colon or an equals sign.
+  "
+  (let (variations name args new-body)
+
+    (thread-last (or string-list (buffer-substring-no-properties (point-min) (point-max)))
+      (s-split "\n")
+      (--map (s-collapse-whitespace it))
+      (--filter (not (s-blank? (s-shared-start "𝒱-" it))))
+      (--map (s-chop-prefix "𝒱-" it))
+      (setq variations)
+
+      (--map (s-split "=" it))
+      (setq variations)
+    )
+
+    (loop for (name-args body) in variations
+      do (setq name-args (s-split " " name-args :omit-nulls))
+         (setq name (car name-args))
+         (setq args (cdr name-args))
+
+         (setq body (parse-variational-clause body))
+
+         ;; (thread-last (s-split ":" body :omit-nulls)
+         ;;   (--map (s-split " " it :omit-nulls))
+         ;;   cdr
+         ;;   (--map (cons (to-lisp (car it))
+         ;;        (to-lisp (s-join " " (cdr it)))))
+         ;;   (list name args)
+         ;;   (add-to-list 'variationals))
+
+         ; (message-box "%s" body)
+         (should (listp body))
+
+         ;; ‘body’ is now a list of tuples ---optional label with key-value pairs.
+         ;; We want it to just be a list of pairs of key-value pairs.
+         ;; If there's no label, add the pair;
+         ;; if there's a label then add the label's pairs with the given key-value context.
+         (setq new-body nil)
+         (loop for clause in body
+               do ; (message-box "%s" (caaddr (assoc (car clause) variationals)))
+                  ; (message-box "%s" (cadr clause))
+                  (if (equal 'anonymous (car clause)) (setq new-body (-concat new-body (cdr clause)))
+                    (setq new-body (-concat new-body (update-state (caaddr (assoc (car clause) variationals))
+                                        (cadr clause))))))
+
+         ; (message-box "%s\n%s\n%s" name args new-body)
+         ; (setq body (--map (progn (message-box "%s" it) (if (consp (car it)) (car it) it)) new-body))
+         (add-to-list 'variationals (list name args new-body))  ;
+         )
+
+    variationals
+))
+#+end_src
+
+#+RESULTS:
+: load-variationals
+
+# (org-babel-load-file "PackageFormer.org")
+
+ # NOTE:
+ # Breaks since I'm not allowing “:” in variationals since it acts as an invocation to the meta-primitives.
+ #
+ # :alter-elements (λ f → (s-contains? pf-name (target (cadr (s-split \":\" f))))) "
+
+:anonoymous_argument_test:
+ #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
+(flet ((buffer-substring-no-properties (x y)
+"𝒱-form₁ height ty = :waist height :kind ty
+𝒱-form₂            = :level inc :kind module ⟴ :kind record ⟴ form₁ :height 2 :ty data"
+))
+  (setq variationals nil)
+  (load-variationals)
+)
+#+END_SRC
+#+RESULTS:
+#+begin_src results-agda
+| form₁ | (height ty) | ((waist . height) (kind . ty)) |
+#+end_src
+
+
+Desired shape
+#+begin_src results-agda
+| form₂ | nil         | ((kind . record) (height . 2) (ty . data)) |
+| form₁ | (height ty) | ((waist . height) (kind . ty))             |
+#+end_src
+current shape:
+#+begin_src results-agda
+| form₂ | nil         | ((anonymous ((kind . record))) (form₁ ((height . 2) (ty . data)))) |
+| form₁ | (height ty) | ((anonymous ((waist . height) (kind . ty))))                       |
+#+end_src
+
+:End:
+:Simple_argument_test:
+ #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
+(flet ((buffer-substring-no-properties (x y)
+"𝒱-data-with-carrierN arg₀ arg₃ = :kind arg₃"))
+  (setq variationals nil)
+  (load-variationals)
+
+(load-package-former (second (get-children "PackageFormer" test)))
+(let ((mid (load-instance-declaration "NewName = M-Set data-with-carrierN :arg₃ (HelloWorld oh my) :comment This's so cool")))
+
+  ; (instance-declaration-alterations mid)
+  (instantiate mid)
+))
+#+END_SRC
+:End:
+:all_argument_test:
+ #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
+(flet ((buffer-substring-no-properties (x y)
+"𝒱-test arg₀ arg₁ arg₂ a₃ a₄ = :kind arg₀ :waist arg₁ :waist-strings arg₂ :level a₃ :alter-elements a₄ "))
+  (setq variationals nil)
+  (load-variationals)
+
+(load-package-former (second (get-children "PackageFormer" test)))
+(let ((mid (load-instance-declaration "NewName = M-Set test :a₄ ((lambda (x) (concat \"₂\" x))) :a₃ (inc) :arg₀ (record) :arg₁ (1) :arg₂ ((\"field BdRO\"))")))
+
+  ; (instance-declaration-alterations mid)
+  (instantiate mid)
+))
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_src results-agda
+{- NewName = M-Set test :a₄ ((lambda (x) (concat "₂" x))) :a₃ (inc) :arg₀ (record) :arg₁ (1) :arg₂ (("field BdRO")) -}
+record NewName (₂Scalar : Set) : Set₂ where
+ field BdRO
+   ₂Vector  : Set
+   ₂_·_     : Scalar → Vector → Vector
+   ₂𝟙       : Scalar
+   ₂_×_     : Scalar → Scalar → Scalar
+   ₂leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
+   ₂assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+#+END_src
+:End:
+:using_⟴_:
+ #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
+(flet ((buffer-substring-no-properties (x y)
+"𝒱-test kind  = :kind kind
+𝒱-test′ height = :waist height
+"))
+  (setq variationals nil)
+  (load-variationals)
+
+(load-package-former (second (get-children "PackageFormer" test)))
+(let ((mid (load-instance-declaration "NewName = M-Set test :kind (module) ⟴ test′ :height (3)")))
+
+  ; (instance-declaration-alterations mid)
+  (instantiate mid)
+))
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_src results-agda
+{- NewName = M-Set test :kind (module) ⟴ test′ :height (3) -}
+module NewName (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector) : Set₁ where
+   𝟙       : Scalar
+   _×_     : Scalar → Scalar → Scalar
+   leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
+   assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+#+END_src
+:End:
+:more_anonymous_testing:
+ #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
+(flet ((buffer-substring-no-properties (x y)
+"𝒱-test        = :kind record ⟴ test′ :height 2
+𝒱-test′ height = :waist height
+"))
+  (setq variationals nil)
+  (load-variationals)
+)
+(load-package-former (second (get-children "PackageFormer" test)))
+(let ((mid (load-instance-declaration "LHS = M-Set test ⟴ :level dec")))
+
+  ; (instance-declaration-alterations mid)
+  (instantiate mid)
+))
+#+END_SRC
+
+#+RESULTS:
+#+begin_src results-agda
+{- LHS = M-Set test ⟴ :level dec -}
+record LHS : Set where
+   Scalar  : Set
+   Vector  : Set
+   _·_     : Scalar → Vector → Vector
+   𝟙       : Scalar
+   _×_     : Scalar → Scalar → Scalar
+   leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
+   assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+#+end_src
+:End:
+
+** Instantiations Remaining
 Herein we define the datatype of ~instance-declaration~, describe how
 to parse such entities, and monitor them within a list.
 
@@ -2189,50 +2753,50 @@ we overload them for sake of familiarity ---in actuality, we are generalising th
      (when (or (equal (car (s-split " " (s-trim the-list))) label) (s-blank? (s-trim label)))
 
      (-let* ( ;; (label "var") (the-list "var ()") no-to
-	     (result (thread-last the-list
+         (result (thread-last the-list
 
-		      ;; Discard identifying label
-		      (substring-delimited-$ (format "%s ($here)" label))
+              ;; Discard identifying label
+              (substring-delimited-$ (format "%s ($here)" label))
 
-		      ;; Split along semicolons.
-		      (s-split ";")
+              ;; Split along semicolons.
+              (s-split ";")
 
-		      ;; Removed superflous whitespace
-		      (--map (s-trim it))))
+              ;; Removed superflous whitespace
+              (--map (s-trim it))))
 
-	     otherwise var)
+         otherwise var)
 
        ;; If there is a “otherwise” function to apply,
        ;; then turn it into a Lisp function and drop it
        ;; from the prefix of the to-list. Else, set otherwise to identity.
        (if (not (s-contains? "λ" (car (-take-last 1 result))))
 
-	   (setq otherwise #'identity)
+       (setq otherwise #'identity)
 
-	 ;; Drop the Agda's λ→ in-favour of Lisp's (lambda ⋯).
-	 ;; Replace Agda catenation's with Lisp concat.
-	 (setq otherwise (thread-last (car (-take-last 1 result))
-	       (s-replace "++" " ")
-	       (substring-delimited-$ "λ $here")
-	       (s-split " → ")
-	       (funcall-it (format "(lambda (%s) (concat %s))" (car it) (cadr it)))
-	       read-from-string
-	       car
-	       ))
+     ;; Drop the Agda's λ→ in-favour of Lisp's (lambda ⋯).
+     ;; Replace Agda catenation's with Lisp concat.
+     (setq otherwise (thread-last (car (-take-last 1 result))
+           (s-replace "++" " ")
+           (substring-delimited-$ "λ $here")
+           (s-split " → ")
+           (funcall-it (format "(lambda (%s) (concat %s))" (car it) (cadr it)))
+           read-from-string
+           car
+           ))
 
-	 (setq result (-drop-last 1 result)))
+     (setq result (-drop-last 1 result)))
 
        ;; Turn into dotted pairs, unless suggested otherwise.
        ;; Need to ensure ‘result’ is non-empty; since it may
        ;; be a singleton that was dropped into the ‘otherwise’.
        (when (and result (not no-to))
-	 (setq result (thread-last result
-	     (--map (s-split " to " it))
-	     ;; Need to ensure it's a list of pairs; otherwise something went wrong.
-	     ;; Suffices to ensure the head element has a second component.
-	     (funcall-it (if (cadar it)
-		 (--map (cons (s-trim (first it)) (s-trim (second it))) it)
-		 (message "parse-labelled-to-list: Is this “to-list” well-formed: %s ⁇" (pp it)) it))))) ;; No desire to error since we may parse non 700-syntax.
+     (setq result (thread-last result
+         (--map (s-split " to " it))
+         ;; Need to ensure it's a list of pairs; otherwise something went wrong.
+         ;; Suffices to ensure the head element has a second component.
+         (funcall-it (if (cadar it)
+         (--map (cons (s-trim (first it)) (s-trim (second it))) it)
+         (message "parse-labelled-to-list: Is this “to-list” well-formed: %s ⁇" (pp it)) it))))) ;; No desire to error since we may parse non 700-syntax.
        (list result otherwise)
 )))
 #+END_SRC
@@ -2285,14 +2849,14 @@ Loading an instantiation into our list is now trivial.
   ;; Note: (cddddr nil) ≈ nil
 
   (let* (inst
-	 (pieces (s-split " " (s-collapse-whitespace line)))
-	 (new-name   (nth 0 pieces))
-	 (eqSymb     (nth 1 pieces))
-	 (parent     (nth 2 pieces))
-	 (variations (nthcdr 3 pieces))
-	 alterations
-	 label
-	 )
+     (pieces (s-split " " (s-collapse-whitespace line)))
+     (new-name   (nth 0 pieces))
+     (eqSymb     (nth 1 pieces))
+     (parent     (nth 2 pieces))
+     (variations (nthcdr 3 pieces))
+     alterations
+     label
+     )
 
     ;; Minimal check that the the declaration is well-formed.
    ;; if nil ;; (not (and (== 4 (length pieces)) (equal (nth 1 pieces) "=") (not (s-blank? (s-trim (nth 0 pieces))))))
@@ -2301,29 +2865,46 @@ Loading an instantiation into our list is now trivial.
 
   (when (not (or (s-blank? (s-trim new-name)) (not (equal "=" eqSymb)) (not parent)))
 
-     ;; Stick the rest back together.
-     (setq variations (s-join " " variations))
+     (thread-last  variations
+       (s-join " ")     ;; Stick the rest back together.
+       (format "'(%s)") ;; Construe as a lisp list
+       read-from-string
+       cadar
+       𝒱𝒸
+       (setq alterations))
 
-     ;; TODO: HACK: For now, variation MUST be seperated by ⟴.
-     (setq variations (s-split "⟴" variations))
-     ;; This now is a list of items of the shape “var ⟪left-parens⟫ args”.
+     ;; ;; For now, variation must be separated by ⟴.
+     ;; (setq variations (s-split "⟴" variations))
 
-     (loop for va in variations
-	   do (setq label (car (s-split " " (s-trim va))))
-	      ;; (push (cons label (parse-labelled-to-list label va)) alterations)
-	     (thread-last (s-split ":" (s-join " " (cdr (s-split " " va :omit-nulls)))) ;; Split along “:key value” pairs.
-	       (--map (s-split " " it :omit-nulls))      ;; Split along the space to get key and value.
-	       cdr
-	       (--map (cons (to-lisp (car it))           ;; Transform it into legitimate Lisp.
-			    (to-lisp (s-join " " (cdr it)))))
-	       (list label)
-	       (add-to-list 'alterations)))
+     ;; ;; (push (cons label (parse-labelled-to-list label va)) alterations)
+     ;; (loop for va in variations
+     ;;   do (setq label (car (s-split " " (s-trim va))))
+     ;;     ;; If the variation begins with a “:key value” pair, then
+     ;;     ;; it is anonymous & its label is nil;
+     ;;     ;; otherwise it is a variational application.
+     ;;     (setq label (unless (equal ":" (s-shared-start ":" (s-trim va)))
+     ;;         (car (s-split " " (s-trim va)))))
+
+     ;;     (thread-last
+     ;;         ;; Split along “:key value” pairs;
+     ;;         ;; Drop first non-key item, the label, if any.
+     ;;         (s-split ":" (s-join " "
+     ;;                              (funcall (if label #'cdr #'identity)
+     ;;                                       (s-split " " va :omit-nulls))))
+
+     ;;         ;; Split along the space to get key and value.
+     ;;       (--map (s-split " " it :omit-nulls))
+     ;;       cdr
+     ;;       (--map (cons (to-lisp (car it))           ;; Transform it into legitimate Lisp.
+     ;;            (to-lisp (s-join " " (cdr it)))))
+     ;;       (list (or label 'anonymous))
+     ;;       (add-to-list 'alterations)))
 
      (setq inst (make-instance-declaration
-		 :docstring      line
-		 :name           (nth 0 pieces)
-		 :package-former (nth 2 pieces)
-		 :alterations    alterations))
+         :docstring      line
+         :name           (nth 0 pieces)
+         :package-former (nth 2 pieces)
+         :alterations    alterations))
 
      (add-to-list 'instantiations-remaining inst)
 
@@ -2332,20 +2913,24 @@ Loading an instantiation into our list is now trivial.
   )
 ))
 
+(load-instance-declaration "LHS = PF :arg₀ val₀ ⟴ test₁ :heightish 23")
+
      ;; PackageFormer names are in yellow; instances are are bolded.
      ;; (highlight-phrase (format "%s " (nth 2 pieces)) 'hi-yellow)
      ;; (highlight-phrase (nth 0 pieces) 'bold) ;; 'warning) ;; i.e., orange
      ;;
      ;; MA: Replace with a hook.
-
-
 #+END_SRC
 
+TODO: fix tests.
 {{{fold(Tests)}}}
 #+BEGIN_SRC emacs-lisp :tangle yes
 (ert-deftest lid ()
 
   (let (id)
+
+  ;; Anonymous variational
+  (setq id (load-instance-declaration "LHS = PF :arg₀ val₀ ⟴ var₁ :arg₁ val₁"))
 
   ;; Basic invocation shape
   ;; “to”! (setq id (load-instance-declaration "NewName = PF var₁ :arg (λ x₁ → B₁) ⟴ var₂ :arg (a to b; λ x₂ → B₂)"))
@@ -2354,7 +2939,7 @@ Loading an instantiation into our list is now trivial.
   (should (equal "NewName" (instance-declaration-name id)))
   (should (equal "PF" (instance-declaration-package-former id)))
   (should (equal "((var₂ ((a . b)) (lambda (x₂) (concat B₂))) (var₁ nil (lambda (x₁) (concat B₁))))"
-		 (format "%s" (instance-declaration-alterations id))))
+         (format "%s" (instance-declaration-alterations id))))
 
   ;; Ill-formed: LHS name is empty string.
   (should (not (load-instance-declaration " = PF var")))
@@ -2447,10 +3032,10 @@ Let's test this out on our sample input file, ~Testing.agda~.
 (ert-deftest l7c ()
 (let (this)
   (flet ((buffer-substring-delimited-whole-buffer (x y) (s-split "\n" this))
-	 (same (x y) (progn (setq this y)
-		     (setq 700-comments nil porting-list nil)
-		     (load-700-comments)
-		     (should (equal x this)))))
+     (same (x y) (progn (setq this y)
+             (setq 700-comments nil porting-list nil)
+             (load-700-comments)
+             (should (equal x this)))))
 
        (same (car porting-list) "variable
    ℓ : Level"))
@@ -2468,8 +3053,8 @@ Let's test this out on our sample input file, ~Testing.agda~.
   (switch-to-buffer "PackageFormer.org")
 
   (s-join "\n\n"
-	  (list (s-trim 700-comments)
-		(pp package-formers) (pp instantiations-remaining)))
+      (list (s-trim 700-comments)
+        (pp package-formers) (pp instantiations-remaining)))
 )
 #+END_SRC
 
@@ -2490,255 +3075,21 @@ MonoidR  = MonoidP record
 MonoidR′ = MonoidR renaming (λ x → x ++ "′")
 
 (#s(package-former nil "PackageFormer" "MonoidP" "₁" 0 4
-		   ("Carrier : Set" "_⨾_     : Carrier → Carrier → Carrier" "Id      : Carrier" "assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)" "leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x" "rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x")))
+           ("Carrier : Set" "_⨾_     : Carrier → Carrier → Carrier" "Id      : Carrier" "assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)" "leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x" "rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x")))
 
 
 (#s(instance-declaration "MonoidR′ = MonoidR renaming (λ x → x ++ \"′\")" "MonoidR′" "MonoidR"
-			 (("renaming" nil
-			   (lambda
-			     (x)
-			     (concat x "′")))))
+             (("renaming" nil
+               (lambda
+                 (x)
+                 (concat x "′")))))
    #s(instance-declaration "MonoidR  = MonoidP record" "MonoidR" "MonoidP"
-			   (("record"
-			     (("record"))
-			     identity))))
+               (("record"
+                 (("record"))
+                 identity))))
 #+end_src
 
 * ~instantiate~ ---the core utility
-** Variationals
-
-#+begin_src emacs-lisp :tangle yes
-(defvar variationals nil
-  "Association list of Agda-user defined variational operators.")
-
-(cl-defun to-lisp (string)
-  "Parse Agda ‘string’ to obtain a Lisp expression.
-
-   + (λ x → B)   ↦  (lambda (x) B′)
-   + B may contain ++, in which case the result is a ‘concat’.
-   - B may not contain ‘→’.
-
-  If B is a parens-enclosed expression, then we expect it to
-  already be a legitimate Lisp form and so leave it alone.
-  "
-
-  (assert (stringp string))
-
-  (let* ((expr (s-collapse-whitespace string))
-	 args
-	 (body expr)
-	 (isλ (equal "(λ" (s-shared-start "(λ" expr))))
-
-    (when isλ
-      (thread-last string
-	(s-chop-prefix "(λ")
-	(s-chop-suffix ")")
-	(s-split "→")
-	(setq expr))
-
-      (setq args (car expr))
-      (setq body (cadr expr))
-    )
-
-    ;; (error "%s" body)
-
-    ;; Ensure ‘body’ is a lisp expression.
-    (when  (and (s-blank? (s-shared-start "(" body))
-		(s-blank? (s-shared-end ")" body)))
-
-	 (when (and isλ (s-contains? " ++ " body))
-	   (thread-last body
-	     (s-replace "++" " ")
-	     (format "(concat %s)")
-	     (setq body)))
-
-	 )
-
-    ;; Realise it as Lisp
-    (setq expr (if isλ (format "(lambda (%s) %s)" args body)
-		   body))
-    (car (read-from-string expr))
-))
-
-(ert-deftest to-lisp ()
-  (should (equal 'data (to-lisp "data")))
-  (should (equal '(list 'a 'b 'c) (to-lisp "(list 'a 'b 'c)")))
-  (should (equal '('a 'b 'c) (to-lisp "('a 'b 'c)")))
-  (should (equal '("a" "b") (to-lisp "(\"a\" \"b\")")))
-  (should (equal '(lambda (x) Bx) (to-lisp "(λ x → Bx)")))
-  (should (equal '(lambda (x) (when t x)) (to-lisp "(λ x → (when t x))")))
-  (should (equal '(lambda (x) just this) (to-lisp "(λ x → just this")))
-  (should (equal '(lambda (x) (concat x "′")) (to-lisp "(λ x → x ++ \"′\")")))
-)
-
-(cl-defun load-variationals (&optional string-list)
-  "Obtain lines of the buffer that start with “𝒱-”.
-   Realise them as Lisp functions.
-
-   If the optional ‘string-list’ is provided, then use
-   that instead of searching the buffer. This feature
-   has been added on to make the presentation of tests
-   and examples easier to digest ---without the mockup
-   of fletting ‘buffer-substring-no-properties’ to return
-   what could instead be ‘string-list’. It was the addition
-   of a simple ‘or’ ---far less than this string explaning it.
-
-   For now, the RHS must be an expression of the form “:key₀ value₀ ⋯ :keyₙ valueₙ”
-   - where the valueᵢ are legitmate Lisp expressions
-   - and the LHS is an atomic name.
-
-   Note: The space around the “:” is irrelevant; no valueᵢ may contain a colon or an equals sign.
-
-  "
-  (let (variations name args)
-
-    (thread-last (or string-list (buffer-substring-no-properties (point-min) (point-max)))
-      (s-split "\n")
-      (--map (s-collapse-whitespace it))
-      (--filter (not (s-blank? (s-shared-start "𝒱-" it))))
-      (--map (s-chop-prefix "𝒱-" it))
-      (setq variations)
-
-      (--map (s-split "=" it))
-      (setq variations)
-    )
-
-    (loop for (name-args body) in variations
-	  do (setq name-args (s-split " " name-args :omit-nulls))
-	     (setq name (car name-args))
-	     (setq args (cdr name-args))
-
-	     (thread-last (s-split ":" body :omit-nulls)
-	       (--map (s-split " " it :omit-nulls))
-	       cdr
-	       (--map (cons (to-lisp (car it))
-			    (to-lisp (s-join " " (cdr it)))))
-	       (list name args)
-	       (add-to-list 'variationals)
-	  ))
-
-    variationals
-))
-#+end_src
-
- # NOTE:
- # Breaks since I'm not allowing “:” in variationals since it acts as an invocation to the meta-primitives.
- #
- # :alter-elements (λ f → (s-contains? pf-name (target (cadr (s-split \":\" f))))) "
-
-:Simple_argument_test:
- #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
-(flet ((buffer-substring-no-properties (x y)
-"𝒱-data-with-carrierN arg₀ arg₃ = :kind arg₃"))
-  (setq variationals nil)
-  (load-variationals)
-
-(load-package-former (second (get-children "PackageFormer" test)))
-(let ((mid (load-instance-declaration "NewName = M-Set data-with-carrierN :arg₃ (HelloWorld oh my) :comment This's so cool")))
-
-  ; (instance-declaration-alterations mid)
-  (instantiate mid)
-))
-#+END_SRC
-:End:
-:all_argument_test:
- #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
-(flet ((buffer-substring-no-properties (x y)
-"𝒱-test arg₀ arg₁ arg₂ a₃ a₄ = :kind arg₀ :waist arg₁ :waist-strings arg₂ :level a₃ :alter-elements a₄ "))
-  (setq variationals nil)
-  (load-variationals)
-
-(load-package-former (second (get-children "PackageFormer" test)))
-(let ((mid (load-instance-declaration "NewName = M-Set test :a₄ ((lambda (x) (concat \"₂\" x))) :a₃ (inc) :arg₀ (record) :arg₁ (1) :arg₂ ((\"field BdRO\"))")))
-
-  ; (instance-declaration-alterations mid)
-  (instantiate mid)
-))
-#+END_SRC
-
-#+RESULTS:
-#+BEGIN_src results-agda
-{- NewName = M-Set test :a₄ ((lambda (x) (concat "₂" x))) :a₃ (inc) :arg₀ (record) :arg₁ (1) :arg₂ (("field BdRO")) -}
-record NewName (₂Scalar : Set) : Set₂ where
- field BdRO
-   ₂Vector  : Set
-   ₂_·_     : Scalar → Vector → Vector
-   ₂𝟙       : Scalar
-   ₂_×_     : Scalar → Scalar → Scalar
-   ₂leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
-   ₂assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
-#+END_src
-:End:
-:using_⟴_:
- #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
-(flet ((buffer-substring-no-properties (x y)
-"𝒱-test kind  = :kind kind
-𝒱-test′ height = :waist height
-"))
-  (setq variationals nil)
-  (load-variationals)
-
-(load-package-former (second (get-children "PackageFormer" test)))
-(let ((mid (load-instance-declaration "NewName = M-Set test :kind (module) ⟴ test′ :height (3)")))
-
-  ; (instance-declaration-alterations mid)
-  (instantiate mid)
-))
-#+END_SRC
-
-#+RESULTS:
-#+BEGIN_src results-agda
-{- NewName = M-Set test :kind (module) ⟴ test′ :height (3) -}
-module NewName (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector) : Set₁ where
-   𝟙       : Scalar
-   _×_     : Scalar → Scalar → Scalar
-   leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
-   assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
-#+END_src
-:End:
-:using_𝓌𝒾𝓉𝒽_TODO:
- #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
-(flet ((buffer-substring-no-properties (x y)
-"𝒱-test kind  = :kind kind
-𝒱-test′ height = :waist height
-"))
-  (setq variationals nil)
-  (load-variationals)
-
-(load-package-former (second (get-children "PackageFormer" test)))
-(let ((mid (load-instance-declaration "NewName = M-Set test :kind (module) 𝓌𝒾𝓉𝒽 :waist (2) ⟴ test′ :height (1)")))
-
-  ; (instance-declaration-alterations mid)
-  (instantiate mid)
-))
-#+END_SRC
-
-#+RESULTS:
-#+BEGIN_src results-agda
-{- NewName = M-Set test :kind (module) 𝓌𝒾𝓉𝒽 :waist (2) ⟴ test′ :height (1) -}
-module NewName (Scalar : Set) : Set₁ where
-   Vector  : Set
-   _·_     : Scalar → Vector → Vector
-   𝟙       : Scalar
-   _×_     : Scalar → Scalar → Scalar
-   leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
-   assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
-#+END_src
-:End:
-Records provide a semantics, what if we want the syntax?
-Since ~data~ declarations consist of constructors, whose target type necessarily
-begins with the name of the ~data~-type being defined, let's only keep those fields and drop the rest.
-
-First, a helper function.
-#+BEGIN_SRC emacs-lisp :tangle yes
-(defun target (field)
-  "Given a declaration “name : type0 → ⋯ → typeN”, yield “typeN”. "
-  (ignore-errors (car (-take-last 1 (s-split "→" field))))
-  ;; Ignore errors since field may be nil.
-)
-#+END_SRC
-
-** ~instantiate~
 # TODO:
 Let's put the pieces together.
 #+BEGIN_SRC emacs-lisp  :tangle yes
@@ -2748,133 +3099,154 @@ Let's put the pieces together.
   "
 
   (should (instance-declaration-p id))
-  (let ((self (copy-package-former (cdr (assoc (instance-declaration-package-former id) package-formers)))) variation op $𝑛𝑎𝑚𝑒)
+  (let ((self (copy-package-former (cdr (assoc (instance-declaration-package-former id) package-formers))))
+        variation op $𝑛𝑎𝑚𝑒)
 
     ;; “(⁉ 'c)” ≈ Get component c, if present, from op.
     ;;              Moreover, if its result references one of op's arguments
     ;;              then evaluate it (as a Lisp expression)
     ;;              otherwise return it as is.
-    (flet ((⁉ (c) (-as-> (cdr (assoc c (cadr op))) 𝓇
-		     (if (--any (s-contains? (format "%s" it) (format "%s" 𝓇)) (car op))
-			 (eval 𝓇)  𝓇)))
-	   ;; Don’t bother generating non-working Agda code: Better see the error now rather than at Agda typechecking.
-	   (700-wf (c m) (unless c (error (format "700: %s\n\n\t⇨\t%s\n\t⇨\t%s ≈ %s" m (instance-declaration-docstring id) variation op)))))
+;    (flet ((⁉ (c) nil)
+      ; (-as-> (cdr (assoc c (cadr op))) 𝓇
+      ;       (if (--any (s-contains? (format "%s" it) (format "%s" 𝓇)) (car op))
+      ;       (eval 𝓇)  𝓇)))
+       ;; Don’t bother generating non-working Agda code: Better see the error now rather than at Agda typechecking.
+ ;      (700-wf (c m) (unless c (error (format "700: %s\n\n\t⇨\t%s\n\t⇨\t%s ≈ %s" m (instance-declaration-docstring id) variation op))))
 
-      (700-wf self (format "Parent “%s” not defined." (instance-declaration-package-former id)))
+;      (700-wf self (format "Parent “%s” not defined." (instance-declaration-package-former id)))
 
       (setf (package-former-docstring self) (instance-declaration-docstring id))
       (setq $𝑛𝑎𝑚𝑒 (instance-declaration-name id))
       (setf (package-former-name self) $𝑛𝑎𝑚𝑒)
 
-	    (loop ;; for (variation args *otherwise*) in (instance-declaration-alterations id)
-		  for (variation args) in (instance-declaration-alterations id)
-		  do
-		  (setq op (cdr (assoc variation variationals)))
-		  (700-wf op (format "Variational “%s” not defined." variation))
+                ;; :kind ≈ The vocabulary that replaces “PackageFormer”.
+          (when-let ((kind (cdr (assoc ':kind (instance-declaration-alterations id)))))
+              (should (symbolp kind))
+              ; (700-wf (-contains? '(record data module PackageFormer) kind)
+              ;    (format "This kind “%s” is not supported by Agda!\n     Valid kinds: record, data, module, PackageFormer." kind))
+              (setf (package-former-type self) (format "%s" kind)))
 
-		  ;; Ensure op is well-formed: It's a list of length two: Arguments and body.
-		  (should (= 2 (length op)))
-
-		  ;; Substitute all formal variables for ‘op’ with their values.
-		  (loop for arg in (cadr (assoc variation variationals))
-			do
-			;(setq args (--map (mapcar (lambda (x) (quote x)) it) args))
-					; (message-box "%s ; %s; %s" args arg (assoc (intern arg) args))
-			(--> (cdr (assoc (intern arg) args)) (700-wf (consp it) (format "Arguments for “%s” must be provided as nonempty ()-enclosed lists." arg)))
-			(set (intern arg) (car (cdr (assoc (intern arg) args)))))
-			 ;; TODO: MA: Only considering the first argument of a list; for now.
-
-		  ;; :kind ≈ The vocabulary that replaces “PackageFormer”.
-		  (when-let ((kind (⁉ 'kind)))
-		      (should (symbolp kind))
-		      (700-wf (-contains? '(record data module PackageFormer) kind)
-			      (format "This kind “%s” is not supported by Agda!\n     Valid kinds: record, data, module, PackageFormer." kind))
-		      (setf (package-former-type self) (format "%s" kind)))
-
-		  ;; :waist ≈ The division between parameters and remaining elements.
-		  (when-let ((waist (⁉ 'waist)))
-		    (700-wf (numberp waist) (format "The “waist” should be a number; which “%s” is not." waist))
-		    (setf (package-former-waist self) waist))
-
-		  ;; :waist-strings ≈ Extra strings to insert at the waist position.
-		  (when-let ((strings (⁉ 'waist-strings)))
-		    (assert (listp strings))
-		    (setf (package-former-waist-strings self) strings))
-
-		  ;; :level ≈ Either 'inc or 'dec, for increment or decrementing the level.
-		  (when-let ((key (⁉ 'level)) (lvl (package-former-level self))
-			     (toLevel (lambda (n) (s-join "" (-concat
-					    (-repeat n "Level.suc (") (list "Level.zero") (-repeat n ")")))))
-			     (subs `("" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉" ,(funcall toLevel 10))))
-
-		    (700-wf (-contains? '(inc dec) key) "The “level” must be “inc” or “dec”.")
-
-		    (if-let ((here (-elem-index (s-trim lvl) subs)))
-
-		      (setq lvl (pcase key
-			('inc (nth (1+ here) subs))
-			('dec (nth (1- here) subs))))
-
-		      (setq lvl (pcase key
-			('inc (format "Level.suc (%s)" lvl))
-			('dec (s-join "suc" (cdr (s-split "suc" lvl :omit-nulls)))))))
-
-		    (setf (package-former-level self) lvl))
-
-		  ;; :alter-elements ≈ Map over the typed name constituents.
-		  (when-let ((ae (⁉ 'alter-elements)))
-		    (setf (package-former-elements self)
-			  (-map ae (package-former-elements self))))
-			  ;; (setq fsnew (funcall op otherwise fs)) ;; MA: TODO: Incorporate ‘args’!
-		  )
-)
       ;; We've just formed a new PackageFormer, which can be modified, specialised, later on.
       (add-to-list 'package-formers (cons (instance-declaration-name id) self))
 
       (show-package-former self)
-  )
-)
+))
+
+        ;; loop ;; for (variation args *otherwise*) in (instance-declaration-alterations id)
+        ;;   for (variation args) in (instance-declaration-alterations id)
+        ;;   do
+        ;;   (setq op (cdr (assoc variation variationals)))
+
+          ;; Ensure op is well-formed: It's a list of length two: Arguments and body.
+          ;; (should (= 2 (length op)))
+          ;; Not true for anonymous variationals, which are sensibly only a body.
+          ;;
+          ;; When the variation is anonymous then the “args” are actually
+          ;; the body.
+          ;; (if (not (equal variation 'anonymous))
+
+          ;;     (700-wf op (format "Variational “%s” not defined." variation))
+
+          ;;     (setq op (list () args))) ;; Empty args list along with body.
+
+          ;; ;; Substitute all formal variables for ‘op’ with their values.
+          ;; (loop for arg in (cadr (assoc variation variationals))
+          ;;   do
+          ;;   ; (setq args (--map (mapcar (lambda (x) (quote x)) it) args))
+          ;;   ; (message-box "%s ; %s; %s" args arg (assoc (intern arg) args))
+          ;;   (--> (cdr (assoc (intern arg) args)) (700-wf (consp it) (format "Arguments for “%s” must be provided as nonempty ()-enclosed lists." arg)))
+          ;;   (set (intern arg) (car (cdr (assoc (intern arg) args))))
+          ;;    ;; TODO: MA: Only considering the first argument of a list; for now.
+
+          ;; :kind ≈ The vocabulary that replaces “PackageFormer”.
+          (when-let ((kind (cdr (assoc ':kind (instance-declaration-alterations id)))))
+              (should (symbolp kind))
+              ; (700-wf (-contains? '(record data module PackageFormer) kind)
+              ;    (format "This kind “%s” is not supported by Agda!\n     Valid kinds: record, data, module, PackageFormer." kind))
+              (setf (package-former-type self) (format "%s" kind)))
+
+          ;; ;; :waist ≈ The division between parameters and remaining elements.
+          ;; (when-let ((waist (⁉ 'waist)))
+          ;;   (700-wf (numberp waist) (format "The “waist” should be a number; which “%s” is not." waist))
+          ;;   (setf (package-former-waist self) waist))
+
+          ;; ;; :waist-strings ≈ Extra strings to insert at the waist position.
+          ;; (when-let ((strings (⁉ 'waist-strings)))
+          ;;   (assert (listp strings))
+          ;;   (setf (package-former-waist-strings self) strings))
+
+          ;; ;; :level ≈ Either 'inc or 'dec, for increment or decrementing the level.
+          ;; (when-let ((key (⁉ 'level)) (lvl (package-former-level self))
+          ;;        (toLevel (lambda (n) (s-join "" (-concat
+          ;;               (-repeat n "Level.suc (") (list "Level.zero") (-repeat n ")")))))
+          ;;        (subs `("" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉" ,(funcall toLevel 10))))
+
+          ;;   (700-wf (-contains? '(inc dec) key) "The “level” must be “inc” or “dec”.")
+
+          ;;   (if-let ((here (-elem-index (s-trim lvl) subs)))
+
+          ;;     (setq lvl (pcase key
+          ;;   ('inc (nth (1+ here) subs))
+          ;;   ('dec (nth (1- here) subs))))
+
+          ;;     (setq lvl (pcase key
+          ;;   ('inc (format "Level.suc (%s)" lvl))
+          ;;   ('dec (s-join "suc" (cdr (s-split "suc" lvl :omit-nulls)))))))
+
+          ;;   (setf (package-former-level self) lvl))
+
+          ;; ;; :alter-elements ≈ Map over the typed name constituents.
+          ;; (when-let ((ae (⁉ 'alter-elements)))
+          ;;   (setf (package-former-elements self)
+          ;;     (-map ae (package-former-elements self))))
+          ;;     ;; (setq fsnew (funcall op otherwise fs)) ;; MA: TODO: Incorporate ‘args’!
+
+      ;; We've just formed a new PackageFormer, which can be modified, specialised, later on.
+      (add-to-list 'package-formers (cons (instance-declaration-name id) self))
+
+      (show-package-former self)
+
 #+END_SRC
 
 # DONE:
 Let's instantiate our test example from earlier to produce a super simple record;
-i.e., legitimate Agda. Moreover, let's decorate each field name with a prime.
+i.e., legitimate Agda. Moreover, let's decorate each field name with a prime
+and lift-up the first two items to be parameters.
 
 #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
-(flet ((buffer-substring-no-properties (x y)
-  "𝒱-primed-record = :kind record :waist-strings (\"field\") :alter-elements (λ f → (map-name (concat name \"′\") f))"))
-  (setq variationals nil)
-  (load-variationals)
-
+;   "𝒱-primed-record = :kind record :waist-strings (\"field\") :alter-elements (λ f → (map-name (concat name \"′\") f))")
+(load-variational "𝒱-primed-record = :kind record")
+(setq package-formers nil)
 (load-package-former (second (get-children "PackageFormer" test)))
-(let ((mid (load-instance-declaration "NewNasme = M-Set primed-record")))
-
+(let ((mid (load-instance-declaration "NewNasme = M-Set :kind record")))
   (instantiate mid)
-))
+)
+
+
+
+(cdr (assoc ':kind '((:kind . record))))
 #+END_SRC
 
-#+RESULTS:
-#+BEGIN_src results-agda
-{- NewNasme = M-Set primed-record -}
-record NewNasme : Set₁ where
+# RESULTS:
+#+begin_src results-agda
+{- NewNasme = M-Set primed-record ⟴ :waist 2 -}
+record NewNasme (Scalar′ : Set) (Vector′ : Set) : Set₁ where
  field
-   Scalar′ : Set
-   Vector′ : Set
    _·′_ : Scalar → Vector → Vector
    𝟙′ : Scalar
    _×′_ : Scalar → Scalar → Scalar
    leftId′ : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
    assoc′ : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
-#+END_src
+#+end_src
 
 :asserts:
 #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
 
 (assert (equal "NewNasme = {! Undefined Parent: M-Sset !}"
-		(instantiate (load-instance-declaration "NewNasme = M-Sset var"))))
+        (instantiate (load-instance-declaration "NewNasme = M-Sset var"))))
 
 (assert (equal "NewNasme = {! Undefined Variational: do-the-thing !}"
-		(instantiate (load-instance-declaration "NewNasme = M-Set do-the-thing"))))
+        (instantiate (load-instance-declaration "NewNasme = M-Set do-the-thing"))))
 #+END_SRC
 :End:
 
@@ -2929,9 +3301,9 @@ Let's test it out:
 (-let [pf-name "Semigroup-syntax"]
 
   (list (s-contains? pf-name (target "Id    :  Semigroup-syntax"))
-	(s-contains? pf-name (target "_⨾_   :  Semigroup-syntax → Semigroup-syntax → Semigroup-syntax"))
-	(s-contains? pf-name (target "assoc :  ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)"))
-	(s-contains? pf-name (target "Semigroup-syntax : Set")))
+    (s-contains? pf-name (target "_⨾_   :  Semigroup-syntax → Semigroup-syntax → Semigroup-syntax"))
+    (s-contains? pf-name (target "assoc :  ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)"))
+    (s-contains? pf-name (target "Semigroup-syntax : Set")))
 )
 #+END_SRC
 
@@ -3028,14 +3400,14 @@ at will.
 
   ;; Parameterised record
   (should (equal (instantiate test :carrier "Carrier" :docstring "" :waist-strings (list "field") :waist 2)
-		 "{-  -}
+         "{-  -}
 record Semigroup- (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) : Set where
   field
     Id  : Carrier
     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)"))
 
   (should (equal  (instantiate-as-unbundled 1 test :name-suffix "On")
-		  "{- This was generated from the PackageFormer Semigroup . -}
+          "{- This was generated from the PackageFormer Semigroup . -}
 record Semigroup-On (Carrier : Set) : Set where
   field
     _⨾_ : Carrier → Carrier → Carrier
@@ -3044,14 +3416,14 @@ record Semigroup-On (Carrier : Set) : Set where
 
   ;; ADT, data declaration
   (should (equal  (instantiate test :type "data" :new-name "𝒮" :docstring "" :inc-level nil
-			       :keep-fields (lambda (f) (s-contains? "𝒮" (target (cadr (s-split ":" f))))))
-		  "{-  -}
+                   :keep-fields (lambda (f) (s-contains? "𝒮" (target (cadr (s-split ":" f))))))
+          "{-  -}
 data 𝒮 : Set where
     _⨾_ : 𝒮 → 𝒮 → 𝒮
     Id  : 𝒮"))
 
    (should (equal (instantiate-as-data test)
-		  "{- This was generated from the PackageFormer Semigroup . -}
+          "{- This was generated from the PackageFormer Semigroup . -}
 data Semigroup-syntax : Set where
     _⨾_ : Semigroup-syntax → Semigroup-syntax → Semigroup-syntax
     Id  : Semigroup-syntax")))
@@ -3066,11 +3438,11 @@ We can emit module declarations as follows; which may be useful for ADT instanti
 of PackageFormers that contain derived operations.
 #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
 (instantiate test   :new-name "Semantics₁"
-		    :type "module"
-		    :carrier "Carrier"
-		    :omit-level-decl t
-		    :waist 4
-		    )
+            :type "module"
+            :carrier "Carrier"
+            :omit-level-decl t
+            :waist 4
+            )
 #+END_SRC
 
 #+RESULTS:
@@ -3094,48 +3466,48 @@ e.g., in the setting where we want to have multiple references to a structure, a
   "
 
   (let* ((openings (instance-declaration-openings inst))
-	 (new-name (instance-declaration-name inst))
-	 (kind (car openings))
-	 (renames (cadr openings))
-	 (otherwise (caddr openings)))
+     (new-name (instance-declaration-name inst))
+     (kind (car openings))
+     (renames (cadr openings))
+     (otherwise (caddr openings)))
 
-	(s-replace "\t" "    " ;; replace rabs with spaces
-	(instantiate decls    :new-name new-name
-		    :type "module"
-		    :docstring (instance-declaration-docstring inst)
-		    :omit-level-decl t
-		    :waist 1
-		    :alter-fields (lambda (fs)
-		     (let (fsnew)
+    (s-replace "\t" "    " ;; replace rabs with spaces
+    (instantiate decls    :new-name new-name
+            :type "module"
+            :docstring (instance-declaration-docstring inst)
+            :omit-level-decl t
+            :waist 1
+            :alter-fields (lambda (fs)
+             (let (fsnew)
 
 
-		       (loop for (old . new) in renames
-			     do (push (format "%s to %s" old new) fsnew))
+               (loop for (old . new) in renames
+                 do (push (format "%s to %s" old new) fsnew))
 
-		       ;; TODO: MA: To consider default ‘otherwise’ via opening λ x → x ++ "′"
-		       ;; (read-from-string "(lambda (x) xt)")
-		       ;;
+               ;; TODO: MA: To consider default ‘otherwise’ via opening λ x → x ++ "′"
+               ;; (read-from-string "(lambda (x) xt)")
+               ;;
 
-		       ;; HACK: Terrible.
-		       (setq fs (cons (map-name "Carrier" (car fs)) (cdr fs)))
+               ;; HACK: Terrible.
+               (setq fs (cons (map-name "Carrier" (car fs)) (cdr fs)))
 
-		       (loop for f in fs
-			     do (unless (assoc (get-name f) renames)
-				  (push (format "%s to %s" (get-name f)
-						(rename-mixfix otherwise (get-name f)))
-					fsnew)))
+               (loop for f in fs
+                 do (unless (assoc (get-name f) renames)
+                  (push (format "%s to %s" (get-name f)
+                        (rename-mixfix otherwise (get-name f)))
+                    fsnew)))
 
-		       (thread-last
-			;; Resulting elements must be a list, so we make a singleton list.
-			(format "\t\t( %s\n\t\t\t)" (s-join "\n\t\t\t; " (reverse fsnew)))
-			list
+               (thread-last
+            ;; Resulting elements must be a list, so we make a singleton list.
+            (format "\t\t( %s\n\t\t\t)" (s-join "\n\t\t\t; " (reverse fsnew)))
+            list
 
-			;; Stick on the renaming, which in turn requires an opening clause;
-			;; which in turn requires a module parameter.
-			(cons "\t renaming")
-			(cons (format "open %s ℛ public" kind))
-			(cons (format "ℛ : %s" kind))
-		       )
+            ;; Stick on the renaming, which in turn requires an opening clause;
+            ;; which in turn requires a module parameter.
+            (cons "\t renaming")
+            (cons (format "open %s ℛ public" kind))
+            (cons (format "ℛ : %s" kind))
+               )
 
     ))))))
 #+END_SRC
@@ -3156,12 +3528,12 @@ Let's test it out.
 {- Monoid′ = MonoidPF opening Monoid (Carrier to 𝒮; _⨾_ to _⊕_; λ x → x ++ "′") -}
 module Monoid′ (ℛ : Monoid) where
     open Monoid ℛ public
-	 renaming
-	    ( Carrier to 𝒮
-	    ; _⨾_ to _⊕_
-	    ; Id to Id′
-	    ; assoc to assoc′
-	    )
+     renaming
+        ( Carrier to 𝒮
+        ; _⨾_ to _⊕_
+        ; Id to Id′
+        ; assoc to assoc′
+        )
 #+end_src
 
 This utility shines when we use it wholesale; as follows.
@@ -3176,22 +3548,22 @@ This utility shines when we use it wholesale; as follows.
 {- Monoid₁ = MonoidPF opening Monoid (λ x → x ++ "₁") -}
 module Monoid₁ (ℛ : Monoid) where
     open Monoid ℛ public
-	 renaming
-	    ( Carrier to Carrier₁
-	    ; _⨾_ to _⨾₁_
-	    ; Id to Id₁
-	    ; assoc to assoc₁
-	    )
+     renaming
+        ( Carrier to Carrier₁
+        ; _⨾_ to _⨾₁_
+        ; Id to Id₁
+        ; assoc to assoc₁
+        )
 
 {- Monoid₂ = MonoidPF opening Monoid (λ x → x ++ "₂") -}
 module Monoid₂ (ℛ : Monoid) where
     open Monoid ℛ public
-	 renaming
-	    ( Carrier to Carrier₂
-	    ; _⨾_ to _⨾₂_
-	    ; Id to Id₂
-	    ; assoc to assoc₂
-	    )
+     renaming
+        ( Carrier to Carrier₂
+        ; _⨾_ to _⨾₂_
+        ; Id to Id₂
+        ; assoc to assoc₂
+        )
 #+end_src
 
 We have written this kind of boilerplate so often that we welcome the
@@ -3270,9 +3642,9 @@ Let's give the current buffer access to the location of the generated file.
       (re-search-forward (concat "open import " name-of-generated-file))
        ;; recoveryBody:
       (error ;; (message-box (format "%s" the-err))
-	 (re-search-forward "\\(module.*\\)")
-	 (replace-match (concat "\\1\nopen import " name-of-generated-file))
-	)
+     (re-search-forward "\\(module.*\\)")
+     (replace-match (concat "\\1\nopen import " name-of-generated-file))
+    )
     )
   )
 )
@@ -3287,21 +3659,21 @@ current buffer automatically.
   (interactive)
 
   (let (generated-file-name
-	(parent-imports (extract-imports))
+    (parent-imports (extract-imports))
        )
 
   ;; Sometimes we may want the full name due to files being in a nested
   ;; directory hierarchy: (file-name-sans-extension buffer-file-name)
   (setq generated-file-name (concat(file-name-sans-extension (buffer-name))
-		  "_Generated"))
+          "_Generated"))
 
   ;; Load variationals, PackageFormers, instantiations, and porting list.
   ;; Setting the following to nil each time is not ideal.
   (setq	variationals              nil
-	package-formers           nil
-	instantiations-remaining  nil
-	700-comments              nil
-	porting-list              nil)
+    package-formers           nil
+    instantiations-remaining  nil
+    700-comments              nil
+    porting-list              nil)
 
   (load-variationals)
   (load-700-comments)
@@ -3311,15 +3683,15 @@ current buffer automatically.
 
     ;; Copy/paste imports from parent file.
     (insert (s-join "\n" `(
-	     "{- This file is generated ;; do not alter. -}\n"
-	     ,parent-imports
-	     "open import Level as Level"
-	     ,(format "module %s where " generated-file-name)
-	     , (s-join "\n" porting-list)
-	     ,(reify-instances))))
+         "{- This file is generated ;; do not alter. -}\n"
+         ,parent-imports
+         "open import Level as Level"
+         ,(format "module %s where " generated-file-name)
+         , (s-join "\n" porting-list)
+         ,(reify-instances))))
 
     (write-region (beginning-of-buffer) (end-of-buffer)
-		  (concat generated-file-name ".agda"))
+          (concat generated-file-name ".agda"))
     )
 
   (insert-generated-import generated-file-name)
@@ -3463,10 +3835,10 @@ http://kitchingroup.cheme.cmu.edu/blog/2016/03/16/Getting-graphical-feedback-as-
 
 (loop for (key . value) in 700-words
       do (font-lock-add-keywords nil
-	  `(( ,key
-	     0
-	     '(face font-lock-keyword-face help-echo
-		    (lambda (window object position) "t" ,value))))))
+      `(( ,key
+         0
+         '(face font-lock-keyword-face help-echo
+            (lambda (window object position) "t" ,value))))))
 * Future Work
 
 Well, that was a lot of Lisp I had to learn ~(งಠ_ಠ)ง~
@@ -3554,23 +3926,23 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
    point : LawfullyPointed v
    law   : LawfullyPointed FOL {- Concrete variation -}
 
-					     #+END_SRC
+                         #+END_SRC
       Would elaborate to something like:
       #+BEGIN_SRC agda
        data LP-Term (Vars : Set) : Set where
-	    {- Abstract fields from constituents of packageformer -}
-	    Point    : LP-Term
-	    {- Fragment of first order logic term formation -}
-	    _′       : Vars → LP-Term {- Injection of vars as terms -}
-	    _≈_      : LP-Term → LP-Term → LP-Term
-	    ∀′ ∃′    : (Vars → LP-Term) → LP-Term
+        {- Abstract fields from constituents of packageformer -}
+        Point    : LP-Term
+        {- Fragment of first order logic term formation -}
+        _′       : Vars → LP-Term {- Injection of vars as terms -}
+        _≈_      : LP-Term → LP-Term → LP-Term
+        ∀′ ∃′    : (Vars → LP-Term) → LP-Term
 
        record LP : Set₁ where
-	 constructor _,_,_
-	 field
-	    Carrier : Set
-	    point   : Carrier
-	    law     : LP-Term Carrier
+     constructor _,_,_
+     field
+        Carrier : Set
+        point   : Carrier
+        law     : LP-Term Carrier
 #+END_SRC
 
       With the following example uses.
@@ -3585,7 +3957,7 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
       removed ---in particular, constituents that depend on ~c~ would also be dropped.
 
       :Hide:
-	#+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp
 (defun generate-all-instances () ;; TODO
   "For each PackageFormer ‘pf’, produce the default instances:
    ‘pf-record’, ‘pf-typeclass’, ‘pf-data’.
@@ -3669,16 +4041,16 @@ Let's put the pieces together.
   "
 
   (let* ((pf (cadr (get-children "PackageFormer" decls)))
-	 (header     (car pf))
-	 (pf-name (package-former-name header))
-	 (pf-variation (variation-symbol header))
-	 (field-decl (cadr pf)) ;; In order to maintain user-provided indentation.
-	 (fields     (funcall alter-raw-fields (cddr pf)))
-	 (indentation (s-repeat (if fields (get-indentation (car fields)) 0) " "))
-	   (preFields   (--map (concat indentation it) prefix-fields))
-	   (postFields  (--map (concat indentation it) suffix-fields))
-	 (tc nil)
-	 )
+     (header     (car pf))
+     (pf-name (package-former-name header))
+     (pf-variation (variation-symbol header))
+     (field-decl (cadr pf)) ;; In order to maintain user-provided indentation.
+     (fields     (funcall alter-raw-fields (cddr pf)))
+     (indentation (s-repeat (if fields (get-indentation (car fields)) 0) " "))
+       (preFields   (--map (concat indentation it) prefix-fields))
+       (postFields  (--map (concat indentation it) suffix-fields))
+     (tc nil)
+     )
 
   ;; Default value of ‘new-name’ & ‘carrier’ are ⟪PackageFormer'sName⟫-⟪name-suffix⟫.
   (unless new-name (setq new-name (format "%s-%s-%s" pf-name name-suffix (gensym))))
@@ -3702,10 +4074,10 @@ Let's put the pieces together.
 
   ;; Stick all the pieces together, along with the new fields.
   (setq tc (s-join "\n"
-	(-cons* header
-	(-concat
-	   (if omit-field-header () (list field-decl))
-	   preFields fields  postFields))))
+    (-cons* header
+    (-concat
+       (if omit-field-header () (list field-decl))
+       preFields fields  postFields))))
 
   ;; Declare generation source matter.
   (concat
@@ -3721,11 +4093,11 @@ Let's put the pieces together.
 Let's instantiate our test example from earlier to produce a typeclass.
 #+BEGIN_SRC emacs-lisp :var test = test :exports both
 (instantiate test   ;; :new-name "SemigroupT"
-		    :name-suffix "typeclass"
-		    :type "record"
-		    :variation-replacement "(Carrier : Set)"
-		    :carrier "Carrier"
-		    )
+            :name-suffix "typeclass"
+            :type "record"
+            :variation-replacement "(Carrier : Set)"
+            :carrier "Carrier"
+            )
 #+END_SRC
 
 #+RESULTS:
@@ -3765,11 +4137,11 @@ Let's instantiate our test example from earlier to produce a typeclass.
 What about a bundled up record declaration?
 #+BEGIN_SRC emacs-lisp :var test = test :exports both
 (instantiate test   ;; :new-name "SemigroupT"
-		    :name-suffix "semantics"
-		    :type "record"
-		    :carrier "Carrier"
-		    :prefix-fields '("Carrier : Set")
-		    )
+            :name-suffix "semantics"
+            :type "record"
+            :carrier "Carrier"
+            :prefix-fields '("Carrier : Set")
+            )
 #+END_SRC
 
 #+RESULTS:
@@ -3802,8 +4174,8 @@ Let's test it out:
 (-let [package-former-name "Semigroup-syntax"]
 
   (list (s-contains? package-former-name (target "     Id  : Semigroup-syntax"))
-	(s-contains? package-former-name (target "_⨾_ : Semigroup-syntax → Semigroup-syntax → Semigroup-syntax"))
-	(s-contains? package-former-name (target "     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)")))
+    (s-contains? package-former-name (target "_⨾_ : Semigroup-syntax → Semigroup-syntax → Semigroup-syntax"))
+    (s-contains? package-former-name (target "     assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)")))
 )
 #+END_SRC
 
@@ -3815,12 +4187,12 @@ The results are as expected, so let's move to the real use case.
 (-let [package-former-name "Semigroup-syntax"]
 
   (instantiate test  :name-suffix "syntax"
-		     :type "data"
-		     :omit-field-header t
-		       :new-name package-former-name
-		       ;; :carrier package-former-name
-		     :keep-fields (lambda (f) (s-contains? package-former-name (target f)))
-		    )
+             :type "data"
+             :omit-field-header t
+               :new-name package-former-name
+               ;; :carrier package-former-name
+             :keep-fields (lambda (f) (s-contains? package-former-name (target f)))
+            )
 )
 #+END_SRC
 
@@ -3847,11 +4219,11 @@ Let's package these particular toggle configurations into their own functions.
 
   "
   (instantiate decls :new-name new-name
-		     :name-suffix "typeclass"
-		     :type "record"
-		     :variation-replacement (format "(%s : Set)" carrier)
-		     :carrier carrier
-		    )
+             :name-suffix "typeclass"
+             :type "record"
+             :variation-replacement (format "(%s : Set)" carrier)
+             :carrier carrier
+            )
 )
 #+END_SRC
 
@@ -3870,11 +4242,11 @@ Let's package these particular toggle configurations into their own functions.
 
   "
   (instantiate test :new-name new-name
-		    :name-suffix "record"
-		    :type "record"
-		    :carrier carrier
-		    :prefix-fields `(,(format "%s : Set" carrier))
-		    )
+            :name-suffix "record"
+            :type "record"
+            :carrier carrier
+            :prefix-fields `(,(format "%s : Set" carrier))
+            )
 )
 
 #+END_SRC
@@ -3894,16 +4266,16 @@ Let's package these particular toggle configurations into their own functions.
 
   "
   (let* ((pf (cadr (get-children "PackageFormer" decls)))
-	 (header     (car pf))
-	 (pf-name (package-former-name header)))
+     (header     (car pf))
+     (pf-name (package-former-name header)))
 
     (instantiate test  :new-name new-name
-		       :name-suffix "syntax"
-		       :type "data"
-		       :omit-field-header t
-		       :keep-fields (lambda (f) (s-contains? pf-name (target f)))
-		       :alter-fields alter-fields
-		      )
+               :name-suffix "syntax"
+               :type "data"
+               :omit-field-header t
+               :keep-fields (lambda (f) (s-contains? pf-name (target f)))
+               :alter-fields alter-fields
+              )
   )
 )
 #+END_SRC
@@ -4073,6 +4445,51 @@ erase said parameter, then insert it; then we have essentially done nothing.
   | nil |
 
 Excellent 😎
+
+* Referencing Text From Code Blocks ---Attaching prose as doc strings :noexport:ignore:
+
+Sources:
++ John Kitchin https://lists.gnu.org/archive/html/emacs-orgmode/2018-05/msg00350.html
++ https://kdr2.com/tech/emacs/1805-approach-org-ref-code-to-text.html
+
+# NAME: get-named-text
+#+NAME: commentary
+#+BEGIN_SRC emacs-lisp :var name="" :results replace
+(let ((el (org-element-map (org-element-parse-buffer) org-element-all-elements
+        (lambda (el)
+          (when (string= (org-element-property :name el) name)
+        el))
+        nil t)))
+  (let ((s (buffer-substring (org-element-property :contents-begin el)
+                 (org-element-property :contents-end el))))
+    (replace-regexp-in-string "\\\"" "\\\\\"" s)))
+#+END_SRC
+
+** COMMENT Example
+For example:
+#+NAME: ADD
+#+BEGIN_SRC emacs-lisp -n -r :noweb yes :tangle test.el
+(defun add (x y)
+  "One line description of adding X and Y.
+  <<get-named-text("DOC-OF-ADD")>> ;; code to code
+  <<get-named-text("add-options")>>"
+  (+ x y)
+  )
+#+END_SRC
+
+#+NAME: DOC-OF-ADD
+We use the function add to calculate the sum of two numbers.
+
+#+NAME: add-options
+- one
+- two
+- three
+- and of course "optional things"
+
+*** There is a reason we only support two args
+    :PROPERTIES:
+    :ID:       BAD97113-3561-4A4A-BA07-0CD5BF6BA35F
+    :END:
 
 * COMMENT footer
 
