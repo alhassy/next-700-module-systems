@@ -8,11 +8,10 @@ open import Data.Bool
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.String hiding (_++_)
 
+-- variable
+--    ℓ : Level
+
 {-700
-
-variable
-   ℓ : Level
-
 PackageFormer MonoidP : Set₁ where
     Carrier : Set
     _⨾_     : Carrier → Carrier → Carrier
@@ -23,32 +22,46 @@ PackageFormer MonoidP : Set₁ where
 
 -}
 
-{-
-𝒱-identity               =
-𝒱-record                 = :kind record :waist-strings ("field")
-𝒱-whoops                 = :kind recorder :waist-strings ("field")
-𝒱-typeclass-attempt      = :kind record :waist-strings ("field") :waist 2
-𝒱-typeclass₂             = :kind record :waist-strings ("field") :waist 2 :level dec
-𝒱-primed-record          = :kind record :waist-strings ("field") :alter-elements (λ f → (map-name (concat name \"′\") f))
-𝒱-primed                 = :alter-elements (λ f → (map-name (concat name "′") f))
-𝒱-typeclass height level = :kind record :waist-strings ("field") :waist height :level level
-𝒱-data-with carrier      = :kind data :level dec :alter-elements (λ f → (if (s-contains? carrier (target (get-type f))) (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) f) ""))
--}
-
+-- Gives error that 𝒱-doit is not defined (งಠ_ಠ)ง
+-- MonoidR   =  MonoidP doit
 
 {-700
-MonoidR   =  MonoidP record
-MonoidT₂  =  MonoidP typeclass₂
-MonoidT₄  =  MonoidP typeclass :height (4) :level (dec)
-MonoidD   =  MonoidP data-with :carrier ("Carrier")
-
+𝒱-identity               =
+𝒱-record                 = :type record :waist-strings ("field")
+-- 𝒱-record⁷                 = :type record :waist-strings (when (package-former-elements self) '("field"))
+-- 𝒱-whoops                 = :type recorder :waist-strings ("field")
+-- 𝒱-typeclass-attempt      = :type record :waist-strings '("field") :waist 2
+𝒱-typeclass₂             = :type record :waist-strings ("field") :waist 2 :level dec
+-- 𝒱-primed-record          = :type record :waist-strings ("field") :alter-elements (λ f → (map-name (concat name \"′\") f))
+--
+-- TODO: alter-elements needs to actually be a function on the elements list; we currently have :map-elements!
+--
+-- 𝒱-primed                 = :alter-elements (lambda (f) (map-name (concat name "′") f))
+𝒱-typeclass height level = :type record :waist-strings ("field") :waist height :level level
+-- 𝒱-data-with carrier      = :type data :level dec :alter-elements (λ f → (if (s-contains? carrier (target (get-type f))) (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) f) ""))
 -}
+
+{-700
+-- MonoidR   =  MonoidP record
+MonoidT₂  =  MonoidP typeclass₂
+MonoidT₄  =  MonoidP typeclass :height 4 :level 'dec
+MonoidR′   =  MonoidP record ⟴ primed
+
+-- MonoidD   =  MonoidP data-with :carrier ("Carrier")
+
+-- TODO: 7 crashes things --yikes! This is because agda keyword field cannot occur barren --c.f. 𝓥-record⁷.
+MonoidT⁷ = MonoidP record ⟴ :waist 4
+-}
+
+-- (pp package-formers)
 
 {- Click on these, M-., to see the generated code -}
 _ = MonoidR
+-- _ = MonoidR′
 _ = MonoidT₂
-_ = MonoidT₄
-_ = MonoidD
+-- _ = MonoidT₄
+-- _ = MonoidD
+_ = MonoidT⁷
 
 -- TODO
 -- MonoidR′ = MonoidR primed
