@@ -17,8 +17,191 @@ open import Data.Bool
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.String hiding (_++_)
 
--- variable
---    ℓ : Level
+{-700
+
+-- The next two lines are not 700-syntax and so are ported over to the generated file.
+variable
+   ℓ : Level
+
+PackageFormer MonoidP : Set₁ where
+    Carrier : Set
+    _⨾_     : Carrier → Carrier → Carrier
+    Id      : Carrier
+    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
+    rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
+
+PackageFormer M-Set : Set₁ where
+   Scalar  : Set
+   Vector  : Set
+   _·_     : Scalar → Vector → Vector
+   𝟙       : Scalar
+   _×_     : Scalar → Scalar → Scalar
+   leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
+   assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+
+-- Gives error that 𝒱-doit is not defined (งಠ_ಠ)ง
+-- Whoops   =  MonoidP doit
+
+-}
+
+{- Find definition with M-. on the “_ = ⋯” lines to see the generated code -}
+
+{-700
+-- Variational with empty right hand side.
+𝒱-identity =
+MonoidPⁱᵈ = MonoidP identity
+
+-- No variational clauses needed!
+MonoidP⁰  = MonoidP
+
+-- Identity of composition ⟴
+MonoidPᶜ = MonoidP ⟴
+
+-- Operationally: Pf ⟴ v  ≈  Pf v ⟴  ≈  Pf v
+
+-- “⟴” is just forwards composition: We ‘thread’ the Pf through the compositions vᵢ in order.
+
+-}
+
+{-700
+-- 𝒱-whoops              = :type recorder :waist-strings '("field")
+
+𝒱-record                 = :type record :waist-strings '("field")
+𝒱-typeclass-attempt      = :type record :waist-strings '("field") :waist 2
+𝒱-typeclass₂             = :type record :waist-strings '("field") :waist 2 :level dec
+𝒱-typeclass height level = record ⟴ :waist height :level level
+
+MonoidT₃   =  MonoidP record ⟴ :waist 3 :level dec
+MonoidT₂   =  MonoidP typeclass₂
+MonoidT₄   =  MonoidP typeclass :height 4 :level 'dec
+
+M-Set-Record = M-Set record
+M-Set-Typeclass₃ = M-Set-Record typeclass :height 3 :level 'dec
+-}
+
+_ = MonoidT₃
+_ = MonoidT₂
+_ = MonoidT₄
+_ = M-Set-Record
+_ = M-Set-Typeclass₃
+
+
+{-700
+
+-- First one is intensionally erroenous attempt.
+𝒱-primed-attempt = :alter-elements (lambda (fs) (mapcar (lambda (f) (map-name (concat name "′") f)) fs))
+
+𝒱-primedₗₑₜ = :alter-elements (lambda (fs) (-as-> (-unzip (--zip-with `(,other  ,(format "let %s = %s in " (get-name it) (get-name other))) fs (--map (map-name (concat name "′") it) fs))) yup (--zip-with (map-type (concat (s-join "" it) type) other) (-inits (cadr yup)) (car yup))))
+
+M-Set′-attempt = M-Set primed-attempt
+
+MonoidR    =  MonoidP record
+MonoidR′   =  MonoidP record ⟴ primedₗₑₜ
+MonoidR″   =  MonoidR primedₗₑₜ
+
+-- Operationally: Pf v₀ ⟴ ⋯ ⟴ vₙ ≈ ((Pf v₀) v₁) ⋯) vₙ
+-- Note: In the concrete syntax, such parenthisation is not permitted.
+-}
+
+_ = MonoidR
+_ = MonoidR′
+_ = MonoidR″
+
+{-700
+𝒱-map elements = :alter-elements (lambda (fs) (-as-> (-unzip (--zip-with `(,other  ,(format "let %s = %s in " (get-name it) (get-name other))) fs (mapcar elements fs))) yup (--zip-with (map-type (concat (s-join "" it) type) other) (-inits (cadr yup)) (car yup))))
+
+Monoidₘ = MonoidR map :elements (lambda (f) (make-tn (concat (get-name f) "ₘ") (get-type f)))
+
+-- Note the prime on the rhs. MA: Maybe avoid this?
+𝒱-rename₀ elements = map :elements 'elements
+
+𝒱-rename elements = map :elements (lambda (f) (make-tn (rename-mixfix elements (get-name f)) (get-type f)))
+
+Monoidₙ = MonoidR rename :elements (lambda (name) (concat name "ₙ"))
+-}
+
+_ = Monoidₘ   -- Notice the name is “_⨾_ₘ”
+_ = Monoidₙ   -- Notice the name is “_⨾ₙ_”
+              -- The differences are due to the choice of renaming scheme above.
+
+{-700
+
+𝒱-data carrier = :type data :level dec :alter-elements (lambda (fs) (thread-last fs (--filter (s-contains? carrier (target (get-type it)))) (--map (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) it)) ))
+
+-- MonoidD₁ = MonoidP data :carrier "Carrier"
+-}
+-- _ = MonoidD₁
+
+
+
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+-- Experiments follow --
+
+
+
+
+-- Let's generalise one of the core ideas from this venture.
+-- First, a type with multiple sorts to use for examples.
+{-700
+
+
+-- The name “_×_” is in scope since I've imported Data.Product down below for some
+-- experimentation, so using a primed variant “_×′_” ^_^
+-- M-Set-R = M-Set record ⟴ primed
+
+-}
+-- _ = M-Set-R
+
+-- First, we filtered out elements and so this may become a variational.
+
+{- 00
+-- Useful
+-- 𝒱-keepingC = record ⟴ :alter-elements (lambda (fs) (thread-last fs (--filter (or (equal "Carrier" (get-name it)) (s-contains? "Carrier" (target (get-type it)))))))
+
+-- cute, but too brutish.
+𝒱-keeping those = :alter-elements (lambda (fs) (thread-last fs (-filter those)))
+-- instead:
+-- 𝒱-keeping those = generated :by 'those
+--
+-- Passed functions need the quote.
+--
+-- Not ideal due to the let-in clauses.
+
+-- 𝒱-keepingC = record ⟴ :alter-elements (lambda (fs) (thread-last fs (--map (or (equal "_⨾_" (get-name it)) (s-contains? "_⨾_" (target (get-type it))))) (--map (format "%s" it))))
+-}
+
+-- Here's some nifty applications!
+
+{-00
+-- Second not ideal due to the let-in clauses.
+--
+𝒱-sorts = keeping :those (lambda (f) (s-contains? "Set" (target (get-type f))))
+-- 𝒱-sorts = generated :by (lambda (f) (s-contains? "Set" (target (get-type f))))
+
+M-Set-Sorts = M-Set-R sorts
+-}
+-- _ = M-Set-Sorts
+
+{-
+-- 𝒱-data-with-identified carrier = :type data :level dec :alter-elements (lambda (fs) (thread-last fs (--filter (-any? (lambda (c) (s-contains? c (target (get-type it)))) carrier)) (loop for c in carrier do (--map (map-type (s-replace c $𝑛𝑎𝑚𝑒 type) it)) )))
+
+𝒱-data-with-identified carrier = :alter-functions (lambda (f) (message-box "HELLO"))
+
+M-Set′ = M-Set record ⟴ primed
+
+M-Set-Syntax = M-Set′ data-with-identified :carrier (list '(list "Scalar"))
+-}
+
+
+{-00
+
+𝒱-data-with carrier      = map :elements (lambda (f) (when (s-contains? carrier (target (get-type f))) (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) f)))
+
+MonoidD   =  MonoidP data-with :carrier "Carrier"
+
+-}
 
 {- TODO
 PackageFormer MonoidP : Set₁ where
@@ -41,93 +224,6 @@ PackageFormer MonoidP : Set₁ where
 -- MonoidD = data-with :carrier Carrier
 -}
 
-{-700
-PackageFormer MonoidP : Set₁ where
-    Carrier : Set
-    _⨾_     : Carrier → Carrier → Carrier
-    Id      : Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
-    rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
--}
-
--- Gives error that 𝒱-doit is not defined (งಠ_ಠ)ง
--- MonoidR   =  MonoidP doit
-
-{- Find definition with M-. on the “_ = ⋯” lines to see the generated code -}
-
-{-700
--- Variational with empty right hand side.
-𝒱-identity =
-MonoidPⁱᵈ = MonoidP identity
-
--- No variational clauses needed!
-MonoidP⁰  = MonoidP
--}
-
-{-700
--- 𝒱-whoops              = :type recorder :waist-strings '("field")
-
-𝒱-record                 = :type record :waist-strings '("field")
-𝒱-typeclass-attempt      = :type record :waist-strings '("field") :waist 2
-𝒱-typeclass₂             = :type record :waist-strings '("field") :waist 2 :level dec
-𝒱-typeclass height level = record ⟴ :waist height :level level
-
-MonoidT₃   =  MonoidP record ⟴ :waist 3 :level dec
-MonoidT₂   =  MonoidP typeclass₂
-MonoidT₄   =  MonoidP typeclass :height 4 :level 'dec
--}
-
-_ = MonoidT₃
-_ = MonoidT₂
-_ = MonoidT₄
-
-{-700
-
--- First two are intensionally erroenous attempts.
-
--- 𝒱-primed-record          = :type record :waist-strings ("field") :alter-elements (λ f → (map-name (concat name \"′\") f))
-
--- 𝒱-primed-attempt                 = :alter-elements (lambda (fs) (mapcar (lambda (f) (map-name (concat name "′") f)) fs))
-
-𝒱-primed = :alter-elements (lambda (fs) (-as-> (-unzip (--zip-with `(,other  ,(format "let %s = %s in " (get-name it) (get-name other))) fs (--map (map-name (concat name "′") it) fs))) yup (--zip-with (map-type (concat (s-join "" it) type) other) (-inits (cadr yup)) (car yup))))
-
-MonoidR    =  MonoidP record
-MonoidR′   =  MonoidP record ⟴ primed
-MonoidR″   =  MonoidR primed
-
--- Operationally: Pf v₀ ⟴ ⋯ ⟴ vₙ ≈ ((Pf v₀) v₁) ⋯) vₙ
--- Note: In the concrete syntax, such parenthisation is not permitted.
-
--}
-_ = MonoidR
-_ = MonoidR′
-_ = MonoidR″
-
-{-700
-𝒱-map elements = :alter-elements (lambda (fs) (-as-> (-unzip (--zip-with `(,other  ,(format "let %s = %s in " (get-name it) (get-name other))) fs (mapcar elements fs))) yup (--zip-with (map-type (concat (s-join "" it) type) other) (-inits (cadr yup)) (car yup))))
-
-Monoidₘ = MonoidR map :elements (lambda (f) (make-tn (concat (get-name f) "ₘ") (get-type f)))
-
--- Note the prime on the rhs. MA: Maybe avoid this?
-𝒱-rename₀ elements = map :elements 'elements
-
-𝒱-rename elements = map :elements (lambda (f) (make-tn (rename-mixfix elements (get-name f)) (get-type f)))
-
-Monoidₙ = MonoidR rename :elements (lambda (name) (concat name "ₙ"))
--}
-
-_ = Monoidₘ   -- Notice the name is “_⨾_ₘ”
-_ = Monoidₙ   -- Notice the name is “_⨾ₙ_”
-              -- The differences are due to the choice of renaming scheme above.
-
-{-00
-
-𝒱-data-with carrier      = map :elements (lambda (f) (when (s-contains? carrier (target (get-type f))) (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) f)))
-
-MonoidD   =  MonoidP data-with :carrier "Carrier"
-
--}
 
 {- TODO:
 
@@ -221,7 +317,7 @@ MonoidF   = MonoidP filter :by (lambda (f) nil)
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-{- TODO: Eventually; after prototype is done. -}
+{- TODO: Eventually; after prototype is done.
 
 
 
@@ -237,7 +333,7 @@ open import Function using (id)
 open import Data.List using (List; map)
 open import Data.String using () renaming (String to Name)
 open import Data.String using () renaming (String to Type)
-open import Data.Product using (_×_) renaming (map to bimap)
+-- open import Data.Product using (_×_) renaming (map to bimap)
 
 
 {- TODO: Eventually; after prototype is done. -}
@@ -408,5 +504,7 @@ _ = MonoidB ; open MonoidB using (leftfalse)
 {- record MonoidB : Set₀ where … -}
 
 -- _ = MonoidD′
+
+-}
 
 -}

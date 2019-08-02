@@ -1,3 +1,10 @@
+;; [[file:~/thesis-proposal/PackageFormer.org::*Forming%20Syntax%20and%20the%20Special%20~$%F0%9D%91%9B%F0%9D%91%8E%F0%9D%91%9A%F0%9D%91%92~%20Variable][Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable:1]]
+(defun target (thing)
+  " Given a declaration “name : type0 → ⋯ → typeN”, yield “typeN”. "
+  (car (-take-last 1 (s-split "→" thing)))
+)
+;; Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable:1 ends here
+
 ;; [[file:~/thesis-proposal/PackageFormer.org::*Finding%20Children%20in%20the%20Wild][Finding Children in the Wild:3]]
 (defun get-indentation (string)
   "How many spaces are there at the front of ‘string’?
@@ -642,30 +649,19 @@
                      ;; then turn that into Lisp with the first eval
                      ;; then invoke the resulting function call with the second eval.
                      ; (eval (eval `(car (read-from-string (format "(𝒱-%s %s)" (quote ,(car clause)) (mapconcat #'prin1-to-string (quote ,(cdr clause)) " "))))))
-                     (eval `( ,(𝒱- (car clause)) ,@(cdr clause)))
+                     (eval `( ,(𝒱- (car clause)) ,@(cdr clause) :*parent-context* ,context))
                    ;; List of key-value pairs
                    `,(loop for key   in clause by #'cddr
                            for value in (cdr clause) by #'cddr
-                           collect (⟰ key value context args)))  ;; “⟰” is just a fancy “cons”.
+                           collect (700-wf key value context args)))  ;; “700-wf” is just a fancy “cons”.
                    ;; Newer items c₀ ⟴ ⋯ ⟴ cₙ should be at the front of the list;
                    ;; access should then be using assoc.
                    res)))
     res
     ))
-
-(cl-defun 𝒱-test (&key height kind) `( (first . ,height) (second . ,kind)))
-(𝒱𝒸 '(test :height 3 :kind 'three ⟴ :kind 'module))
-(𝒱𝒸 '(test :height 3 ⟴ :kind 'module)) ;; NOTE: :kind is optional
-(𝒱𝒸 '(:height 3 ⟴ :kind 'module))
-
-; DONE
-; (𝒱𝒸 '(test₁ :height 3 ⟴ :kind module)) ;; ⇒ ((:kind . module) ((:kind . record) (:waist . 3)))
-; (𝒱𝒸 '(:height 3 :kind data)) ;; ⇒ ((:height . 3) (:kind . data))
-; (𝒱𝒸 '(:height 3 :type datda) 'noice nil) ;; ⇒ Error along with “noice”.
-; (𝒱𝒸 '(:level 3)) ;; nice error.
 ;; Variational Language:4 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Variational%20Language][Variational Language:5]]
+;; [[file:~/thesis-proposal/PackageFormer.org::*Variational%20Language][Variational Language:6]]
 (defun 𝒱- (name)
   "Prefix the Lisp data ‘name’ with a “𝒱-”
    then yield that as a Lisp datum.
@@ -678,29 +674,59 @@
 )
 
 ; (𝒱- 'nice)
+;; Variational Language:6 ends here
 
+;; [[file:~/thesis-proposal/PackageFormer.org::*Variational%20Language][Variational Language:7]]
 (defmacro 𝒱 (name &rest body)
 
-  (let* ((body₀ body) (args-body (-split-on '= body)) args body res)
+  (let* ((context (mapconcat (lambda (x) (prin1-to-string x t)) (cons name body) " "))
+         (args-body (-split-on '= body)) args body res actual-code)
     (pcase (length args-body)
       (2 (setq args  (car args-body)
                body (cadr args-body)))
       (t (setq body (car args-body))))
 
-    (setq res (𝒱𝒸 body (mapconcat (lambda (x) (prin1-to-string x t)) (cons name body₀) " ") args))
+    (setq res (𝒱𝒸 body context args))
 
-    `(cl-defun ,(𝒱- name) (&key ,@args)
-       ;;
-       ;; To consider: Default value for each item is an error?
+    ;; I want to be able to actually, visually, see the resulting generated definition of a function.
+    ;; Hence, I embed its source code as a string in the code.
+    ;;
+    ;; I'm using strings so that they appear in the docstring via C-h o.
+    ;;
+    (setq actual-code
+    `(cl-defun ,(𝒱- name) (&key ,@args *parent-context*)
 
        ;; Stage the formal names *now*, then evaluate their values at run time.
        ;; Traverse the list of pairs and change the nested formal names with the
        ;; given values. Praise the Lord!
-       (if (not (quote ,args)) (quote ,res)
-      (car (loop for a in (quote ,args)
-            collect (rec-replace a (eval a) (quote ,res))))
+      (let* ((give-goal (quote ,res)) (give-goal₀ give-goal))
+        (when (quote ,args)
 
- ))))
+          "Stage the formal names *now*, then evaluate their values at run time."
+          (loop for a in (quote ,args)
+                do (setq give-goal (rec-replace a (eval a) give-goal)))
+
+          ;; "Check that substituted values are well-typed"
+          ;; (--map (700-wf (car it) (or (cdr it)
+          ;;                             ;; Mention which argument is not supplied.
+          ;;                             (format "No Value for :%s Provided!"
+          ;;                                     (cdr (assoc (car it) (reverse give-goal₀)))))
+          ;;                (s-concat (when *parent-context* (s-concat *parent-context* "\n\t➩\t")) ,context)) give-goal)
+
+          )
+
+         give-goal)))
+
+    ;; Now splice the code as a documentation string in it.
+    (setq actual-code (-concat (-take 3 actual-code)
+                           (list (format "%s\n\n%s" context (pp-to-string actual-code)))
+                           (nthcdr 3 actual-code)))
+    ;; Return value:
+    actual-code))
+
+;; Consequently, any item declared with 𝒱 now has a docstring containing its user-facing
+;; definition as well as its Lisp realisation ^_^ ---simply press “C-h o ENTER” on its name.
+;;
 
 (when nil
 
@@ -714,18 +740,72 @@
 
 (𝒱 test₃ = :type recordd) ;; See a nice error message ^_^
 
-(thread-last "𝒱-typeclass height = :kind 'record :waist height"
+(thread-last "𝒱-ttt this height = :level this :waist height"
   (s-replace "𝒱-" "𝒱 ")
   (format "(%s)")
   read-from-string
   car
   eval)
 
+;; This is okay; the front end supplies a single quote
+;; and here in the backend we need two.
+;;
+(𝒱-ttt :height 9 :this 'inc :*parent-context* "woadh") ;;; NEATO! (Has desired error)
+(𝒱-ttt :height 9 :this 'inc) ;; nice. (Has desired error)
+(𝒱-ttt :height 'hi :this ''inc) ;; yes error ^_^
+(𝒱-ttt :height 9 :this ''inc) ;; no error ^_^
+(𝒱𝒸 '(:a 'b ⟴ ttt :height 1))
+
+
+(load-variational "𝒱-tc hh = :type 'record")
+
 (𝒱-typeclass :height 123) ;; ⇒ ((:kind . record) (:waist . 1))
 )
-;; Variational Language:5 ends here
+;; Variational Language:7 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Variational%20Language][Variational Language:6]]
+;; [[file:~/thesis-proposal/PackageFormer.org::*Variational%20Language][Variational Language:10]]
+(when nil
+ 700-wf-context nil
+  "The context string in which the “attach” 700-wf operation was invoked.
+  ")
+
+(cl-defun 700-wf (key value &optional context args)
+  "Read as “attach”, this operation checks that the ‘value’ of ‘key’
+   is well-formed according to 700-specifications ---which are stated
+   explicitly within this method--- and if it is well-formed we
+   attach the ‘value’ to the ‘key’ componenet of the ‘700-wf-pf’
+   ---provided the latter is non-nil."
+
+  (let ( condition message
+         ; (value (if (-contains? args val) val (eval val)))
+         (wf '( (:type   (-contains? '(record data module PackageFormer) value)
+                         (format "This kind “%s” is not supported by Agda!\n     Valid kinds: record, data, module, PackageFormer." value))
+                (:waist  (numberp value) (format "The waist should be a number; which “%s” is not." value))
+                (:waist-strings (listp value) (format "The waist-strings should be a Lisp list of strings; which “%s” is not." value))
+                (:level (-contains? '(inc dec) value) (format "The “level” must be “inc” or “dec”; which “%s” is not." value))
+                (:alter-elements (functionp value) (format "Componenet alter-elements should be a function; which “%s” is not." value))
+                       )))
+
+    ;; when-let ((it (cdr (assoc (intern (format ":%s" c)) (instance-declaration-alterations id)))))
+    ;;
+    (when-let ((here (assoc key wf)))
+      (setq condition        (eval (nth 1 here))
+            message          (eval (nth 2 here)))
+
+      (unless (or condition (-contains? args value))
+        (error (format "700: %s\n\n\t⇨\t%s" message context))))
+
+    ;; Return the key-value as a pair for further processing.
+    ;; :type and :level values are symbols and so cannot be evaluated furthur.
+    (cons key (if (or (-contains? args value) (-contains? '(:type :level) key)) value (eval value)))))
+
+         ;; Check to see if “c” has a value, if it does then assert it satisfies the property “p” otherwise error with
+         ;; message “m”. If all good, then update the PackageFormer at that component.
+         ;; Property “p” and message “m” are quoted expressions mentioning “it”.
+         ;; “more” is any auxialry code that ought to be run; it is a quoted list.
+;; Variational Language:10 ends here
+
+;; [[file:~/thesis-proposal/PackageFormer.org::*Variational%20Language][Variational Language:11]]
 (defun show-me ()
   "Evaluate a Lisp expression and insert its value
    as a comment at the end of the line.
@@ -741,9 +821,9 @@
            (format " ;; ⇒ %s"))]
     (end-of-line)
     (insert it)))
-;; Variational Language:6 ends here
+;; Variational Language:11 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Variational%20Language][Variational Language:7]]
+;; [[file:~/thesis-proposal/PackageFormer.org::*Variational%20Language][Variational Language:12]]
 (cl-defun load-variational (variation-string)
   "Obtain lines of the buffer that start with “𝒱-”.
    Realise them as Lisp association lists.
@@ -776,7 +856,7 @@
     read-from-string
     car
     eval))
-;; Variational Language:7 ends here
+;; Variational Language:12 ends here
 
 ;; [[file:~/thesis-proposal/PackageFormer.org::*Loading%20an%20Agda%20Buffer][Loading an Agda Buffer:1]]
 (defvar instantiations-remaining nil
@@ -990,7 +1070,7 @@
       (⁉ 'waist-strings)
 
       ;; :level ≈ Either 'inc or 'dec, for increment or decrementing the level.
-      (⁉ 'level 'string-please
+      (⁉ 'level nil ;; 'string-please
          '((let* ((lvl (package-former-level self))
                   (toLevel (lambda (n) (s-join "" (-concat
                         (-repeat n "Level.suc (") (list "Level.zero") (-repeat n ")")))))
@@ -1010,8 +1090,9 @@
 
       ;; :alter-elements ≈ Access the typed name constituents list.
       (when-let ((ae (cdr (assoc ':alter-elements alterations))))
-        (setf (package-former-elements self) (funcall ae (package-former-elements self))))
-      ;; (-map ae (package-former-elements self))
+        (setf (package-former-elements self)
+              (--filter it (funcall ae (package-former-elements self)))))
+              ;; Filter in only the non-nil constituents.
 
     ;; We've just formed a new PackageFormer, which can be modified, specialised, later on.
     (add-to-list 'package-formers (cons $𝑛𝑎𝑚𝑒 self))
@@ -1021,47 +1102,7 @@
 )
 ;; Instantiations Remaining:5 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Instantiations%20Remaining][Instantiations Remaining:7]]
-(when nil
- ⟰-context nil
-  "The context string in which the “attach” ⟰ operation was invoked.
-  ")
-
-(cl-defun ⟰ (key value &optional context args)
-  "Read as “attach”, this operation checks that the ‘value’ of ‘key’
-   is well-formed according to 700-specifications ---which are stated
-   explicitly within this method--- and if it is well-formed we
-   attach the ‘value’ to the ‘key’ componenet of the ‘⟰-pf’
-   ---provided the latter is non-nil."
-
-  (let ( condition message
-         (wf '( (:type   (-contains? '(record data module PackageFormer) (eval value))
-                         (format "This kind “%s” is not supported by Agda!\n     Valid kinds: record, data, module, PackageFormer." value))
-                (:waist  (numberp value) (format "The waist should be a number; which “%s” is not." value))
-                (:waist-strings (listp value) (format "The waist-strings should be a Lisp list of strings; which “%s” is not." value))
-                (:level (-contains? '(inc dec) value) (format "The “level” must be “inc” or “dec”; which “%s” is not." value))
-                (:alter-elements (functionp value) (format "Componenet alter-elements should be a function; which “%s” is not." value))
-                       )))
-
-    ;; when-let ((it (cdr (assoc (intern (format ":%s" c)) (instance-declaration-alterations id)))))
-    ;;
-    (when-let ((here (assoc key wf)))
-      (setq condition        (eval (nth 1 here))
-            message          (eval (nth 2 here)))
-
-      (unless (or condition (-contains? args value))
-        (error (format "700: %s\n\n\t⇨\t%s" message context))))
-
-    ;; Return the key-value as a pair for further processing.
-    (cons key (if (-contains? args value) value (eval value)))))
-
-         ;; Check to see if “c” has a value, if it does then assert it satisfies the property “p” otherwise error with
-         ;; message “m”. If all good, then update the PackageFormer at that component.
-         ;; Property “p” and message “m” are quoted expressions mentioning “it”.
-         ;; “more” is any auxialry code that ought to be run; it is a quoted list.
-;; Instantiations Remaining:7 ends here
-
-;; [[file:~/thesis-proposal/PackageFormer.org::*Instantiations%20Remaining][Instantiations Remaining:12]]
+;; [[file:~/thesis-proposal/PackageFormer.org::*Instantiations%20Remaining][Instantiations Remaining:14]]
 ;; (load-instance-declaration "LHS = PF :arg₀ val₀ ⟴ test₁ :heightish 23")
 
      ;; PackageFormer names are in yellow; instances are are bolded.
@@ -1069,9 +1110,9 @@
      ;; (highlight-phrase (nth 0 pieces) 'bold) ;; 'warning) ;; i.e., orange
      ;;
      ;; MA: Replace with a hook.
-;; Instantiations Remaining:12 ends here
+;; Instantiations Remaining:14 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Instantiations%20Remaining][Instantiations Remaining:13]]
+;; [[file:~/thesis-proposal/PackageFormer.org::*Instantiations%20Remaining][Instantiations Remaining:15]]
 (ert-deftest lid ()
 
   (let (id)
@@ -1104,7 +1145,7 @@
   (should (equal "((some-variational nil (lambda (x) (concat x ′))))" (format "%s" (instance-declaration-alterations (load-instance-declaration
   "LHS = Magma some-variational (λ x → x ++ \"′\")")))))
 ))
-;; Instantiations Remaining:13 ends here
+;; Instantiations Remaining:15 ends here
 
 ;; [[file:~/thesis-proposal/PackageFormer.org::*~load-700-comments~][~load-700-comments~:1]]
 (defvar 700-comments nil
@@ -1256,10 +1297,12 @@
          , (s-join "\n" porting-list)
          ,(reify-instances))))
 
-    ;; TODO
-    (loop for pf in package-formers
-          unless (equal "PackageFormer" (package-former-type (cdr pf)))
-          do (insert (show-package-former (cdr pf))))
+    (thread-last (reverse package-formers)
+      (--map (format (if (equal "PackageFormer" (package-former-type (cdr it)))
+               "{- Kind “PackageFormer” does not correspond to a concrete Agda type. \n%s -}"
+               "%s") (show-package-former (cdr it))))
+      (s-join "\n\n\n")
+      insert)
 
     (write-region (beginning-of-buffer) (end-of-buffer)
           (concat generated-file-name ".agda"))
