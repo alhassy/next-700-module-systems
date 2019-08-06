@@ -1,5 +1,3 @@
- *TODO:* Parse {-lisp -} comments!
-
 # (org-babel-load-file "PackageFormer.org")
 # Export all Lisp blocks into a file then load it.
 #
@@ -30,6 +28,22 @@
 #        Perhaps check that 𝓌𝒾𝓉𝒽 clauses only allow meta-primitives?
 
 * COMMENT Changelog
+
+  [X] Now parsing {-lisp -} comments; which must contain a single Lisp form
+      ---or multiple if enclosed in a progn.
+
+  [X] Updated user manual; improved definition of /derived/ construct ~map~.
+      New derived constructs include: ~renaming, rename, [co]decorated~;
+      as well as ~single-sorted, generated~.
+
+  [X] Composition, ⟴, now actually composes variationals!
+      Non-functional primitives are overwritten,
+      alteration primitive is composed sequentially.
+
+  [X] Introduced reference $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠. Used this to derive primitive ~signature~.
+
+-----------------------------------------------------------------------------------------
+
 1. Dropped the *builtin* variation tags, ‘v’,
    in-favour of *extensible* “variationals”
    ---which may even have arguments! ♥‿♥
@@ -730,16 +744,17 @@ record M-Set-Typeclass₂ (Scalar : Set) (Vector : Set) : Set₁ where
 
    M-Set′-attempt = M-Set primed-attempt -}
 
-{- Kind “PackageFormer” does not correspond to a concrete Agda type.
-{- M-Set′-attempt = M-Set primed-attempt -}
-PackageFormer M-Set′-attempt : Set₁ where
+record M-Set′-attempt : Set₁ where
+ field
    Scalar′ : Set
    Vector′ : Set
    _·′_ : Scalar → Vector → Vector
    𝟙′ : Scalar
    _×′_ : Scalar → Scalar → Scalar
    leftId′ : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
-   assoc′ : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋) -}
+   assoc′ : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+
+{- This is crashing Agda code; as expected. Working improvements below. -}
 #+END_src
 
    There are number of issues to address.
@@ -780,83 +795,21 @@ PackageFormer M-Set′-attempt : Set₁ where
 
    The solution then is to /propogate/ any changes a name has down to its siblings.
 
-*** Variationals with Arguments ---~map, rename, [co]decorated~
+*** Composition ~⟴~ and First-class PackageFormers
 
-    Thus far our variationals have been nullary, let's consider otherwise.
-
-    For example, let's add arguments to the typeclass variational from earlier.
-    #+BEGIN_src results-agda
-{- 𝒱-typeclass height level = :type record :waist-strings '("field") :waist height :level level
-
-M-Set-Typeclass₃ = M-Set-Record typeclass :height 3 :level 'dec -}
-record M-Set-Typeclass₃ (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector) : Set where
- field
-   𝟙       : Scalar
-   _×_     : Scalar → Scalar → Scalar
-   leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
-   assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
-#+END_src
-
-   + Argument come before the ~=~ in a variational's definition and
-     the may be used as if they were constants on the right-hand side.
-     - Above we introduced the named arguments ~height~ and ~level~.
-     - We then passed the /argument/ ~level~ to the /meta-primitive/ ~:level~.
-
-   + Invocation of variationals with arguments uses named invocation, rather than
-     positional application. One supplies an argument in the form ~:argument-name the-value~.
-
-     Consequently, position is irrelevant in such invocations.
-
-     - Supplying ~:key value~ pairs where the ~key~ is not a named argument of
-       the variational yields a error message indicating the allowable keys.
-       * There is an implementation key, ~*parent-context*~, which is used to
-         capture the current context for error-reporting purposes and should
-         not be altered by the user ---otherwise they may obtain less than helpful
-         error messages.
-
-   # + For now, arguments must be enclosed in parenthesis.
-   #  - This is likely to be dropped in a future edition of the system.
-
-   # ➱ If an argument is not supplied or its value is unacceptable, the cute
-   # error-reporting mechanism is activated ---as is the case with other
-   # pertinent aspects of loading such declarations.
-
-   /Anyhow, like ~record~ and ~primed~, this ~typeclass~ variational is actually useful in practice./
-
-*** TODO COMMENT Generalising ~primed~
-   Let's turn to a slightly more complicated example: Generalising ~primed~ to take arguments. Whenever a name ~x~ is primed, all subsequent elements' type should be
-   preprended with ~let x = x′ in~ to propogate this change ---the clause is necessary
-   since it may be difficult in propogating mixfix names.
-
-#+BEGIN_SRC agda
-
-#+END_SRC
-
-
-{-lisp
-(eval (𝒱 primer = :alter-elements (lambda (fs)
-  (-let [fsnew fs]
-  (loop for old in fs
-        for new in (--map (map-name (concat name "′") it) fs)
-  do (setq fsnew (--map (s-replace old new it) fsnew))))))
--}
-
-{-700
-MR′ = M-Set record ⟴ primer
--}
-_ = MR′
-
-*** TODO Primed Decoration, Composition ~⟴~, and First-class PackageFormers :outdated:
-
-    The previous variational duplicated the ~record~'s definition in full.
+    Before we show how to fix the flawed ~primed-attempt~ definition,
+    it is important to note that the previous variational duplicated
+    the ~record~'s definition in full.
 
     Just because we can be silly, does not mean we must.
 
-    Let us drop that repeated porition.
+    Let us drop that repeated portion.
 #+BEGIN_src results-agda
-{- 𝒱-primed = :alter-elements (λ f → (map-name (concat name \"′\") f))"
-   M-Set′ = M-Set primed -}
-PackageFormer M-Set′ : Set₁ where
+{-700
+  𝒱-primed-attempt = :alter-elements (lambda (fs) (mapcar (lambda (f) (map-name (concat name "′") f)) fs))
+  M-Set′-attempt = M-Set record ⟴ primed-attempt -}
+record M-Set′-attempt : Set₁ where
+ field
    Scalar′ : Set
    Vector′ : Set
    _·′_ : Scalar → Vector → Vector
@@ -864,6 +817,8 @@ PackageFormer M-Set′ : Set₁ where
    _×′_ : Scalar → Scalar → Scalar
    leftId′ : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
    assoc′ : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+
+{- This is crashing Agda code; as expected. Working improvements below. -}
 #+END_src
 
     This is interesting: We have not generated a concrete ---legitimate Agda construct---
@@ -909,12 +864,294 @@ record M-Set-Record′ (Scalar′ : Set) (Vector′ : Set) : Set₁ where
    ≈  M-Set-Record primed
 #+END_SRC
 
-*** TODO Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable :outdated:
+*** Variationals with Arguments ---~map, rename, [co]decorated, renaming~
+
+    Thus far our variationals have been nullary, let's consider otherwise.
+
+    For example, let's add arguments to the typeclass variational from earlier.
+    #+BEGIN_src results-agda
+{- 𝒱-typeclass height level = :type record :waist-strings '("field") :waist height :level level
+
+M-Set-Typeclass₃ = M-Set-Record typeclass :height 3 :level 'dec -}
+record M-Set-Typeclass₃ (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector) : Set where
+ field
+   𝟙       : Scalar
+   _×_     : Scalar → Scalar → Scalar
+   leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
+   assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+#+END_src
+
+   + Argument come before the ~=~ in a variational's definition and
+     the may be used as if they were constants on the right-hand side.
+     - Above we introduced the named arguments ~height~ and ~level~.
+     - We then passed the /argument/ ~level~ to the /meta-primitive/ ~:level~.
+
+   + Invocation of variationals with arguments uses named invocation, rather than
+     positional application. One supplies an argument in the form ~:argument-name the-value~.
+
+     Consequently, position is irrelevant in such invocations.
+
+     - Supplying ~:key value~ pairs where the ~key~ is not a named argument of
+       the variational yields a error message indicating the allowable keys.
+       * There is an implementation key, ~*parent-context*~, which is used to
+         capture the current context for error-reporting purposes and should
+         not be altered by the user ---otherwise they may obtain less than helpful
+         error messages.
+
+   # + For now, arguments must be enclosed in parenthesis.
+   #  - This is likely to be dropped in a future edition of the system.
+
+   # ➱ If an argument is not supplied or its value is unacceptable, the cute
+   # error-reporting mechanism is activated ---as is the case with other
+   # pertinent aspects of loading such declarations.
+
+   /Anyhow, like ~record~ and ~primed~, this ~typeclass~ variational is actually useful in practice./
+
+   Let's turn to a slightly more complicated example: Generalising ~primed~ to take arguments. Whenever a name ~x~ is primed, all subsequent elements' type should be
+   preprended with ~let x = x′ in~ to propogate this change.
+
+   Since 700-declarations must be single lines, we are forced to have something like
+   the following ---which you are not expected to understand, but it serves as a nice
+   comparison and motivation for the alternative approach below.
+#+BEGIN_SRC results-agda
+{-700
+
+𝒱-primedₗₑₜ = :alter-elements (lambda (fs) (-as-> (-unzip (--zip-with `(,other  ,(format "let %s = %s in " (get-name it) (get-name other))) fs (--map (map-name (concat name "′") it) fs))) yup (--zip-with (map-type (concat (s-join "" it) type) other) (-inits (cadr yup)) (car yup))))
+
+MonoidR′   =  MonoidP record ⟴ primedₗₑₜ
+-}
+
+record MonoidR′ : Set₁ where
+  field
+    Carrier′ : Set
+    _⨾′_ : let Carrier = Carrier′ in Carrier → Carrier → Carrier
+    Id′ : let Carrier = Carrier′ in let _⨾_ = _⨾′_ in Carrier
+    assoc′ : let Carrier = Carrier′ in let _⨾_ = _⨾′_ in let Id = Id′ in ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId′ : let Carrier = Carrier′ in let _⨾_ = _⨾′_ in let Id = Id′ in let assoc = assoc′ in ∀ {x : Carrier} → Id ⨾ x ≡ x
+    rightId′ : let Carrier = Carrier′ in let _⨾_ = _⨾′_ in let Id = Id′ in let assoc = assoc′ in let leftId = leftId′ in ∀ {x : Carrier} → x ⨾ Id ≡ x
+
+#+END_SRC
+
+  This is a prototype; ideally the variational definition would be rendered in
+  Agda code. Notice that the above incantation is composed of functional combinators
+  ~unzip, map, zip-with~. Anyhow, here is a better approach to doing essentially the
+  same thing; for diversity, the following scheme will not produce ~let…in…~ clauses
+  but instead perform a substitution everywhere and will utilise imperative constructs.
+
+#+BEGIN_SRC results-agda
+{-lisp
+(𝒱 primer = :alter-elements (lambda (fs)
+   (let ((fsnew fs)
+         (names (--map (s-replace "_" "" (get-name it)) fs)))
+     (loop for old in names
+           for new in (--map (concat it "′") names)
+           do
+           ;; (message-box "old %s; new %s" old new)
+           (setq fsnew (--map (s-replace old new it) fsnew)))
+     ;; return value
+     fsnew
+     )))
+-}
+
+{-700
+MR′ = M-Set record ⟴ primer
+-}
+record MR′ : Set₁ where
+ field
+   Scalar′  : Set
+   Vector′  : Set
+   _·′_     : Scalar′ → Vector′ → Vector′
+   𝟙′       : Scalar′
+   _×′_     : Scalar′ → Scalar′ → Scalar′
+   leftId′  : {𝓋 : Vector′}  →  𝟙′ ·′ 𝓋  ≡  𝓋
+   assoc′   : {a b : Scalar′} {𝓋 : Vector′} → (a ×′ b) ·′ 𝓋  ≡  a ·′ (b ·′ 𝓋)
+#+END_SRC
+
+Important distinctions include:
+
+1. The Lisp code now lives in a ~{-lisp ⋯ -}~ block.
+
+2. 700-comments have single-line ~𝒱-name args = rhs~, whereas lisp-blocks
+   have multi-line ~(𝒱 name args = rhs)~ ---the dash after the 𝒱 is gone and outter-most
+   parenthesis are added.
+
+3. To provide minimal accomodation for mixfix names, we simply remove the
+   Agda argument indicator ‘_’ when performing rewrites.
+
+   Let's code this up as a reusable pattern ---call it ~map~.
+#+BEGIN_SRC agda
+{-lisp
+(𝒱 map elements = :alter-elements (lambda (fs)
+   (let* ((fsnew (mapcar elements fs))
+          (names  (--map (s-replace "_" "" (get-name it)) fs))
+          (names′ (--map (s-replace "_" "" (get-name it)) fsnew)))
+     (loop for old in names
+           for new in names′
+           do
+           (setq fsnew (--map (map-type (s-replace old new type) it) fsnew)))
+     ;; return value
+     fsnew
+     )))
+-}
+#+END_SRC
+
+Now for some useful corollaries. For diversity, we render these in lisp-blocks
+and show how using ~progn~ allows mutltiple forms to occur.
+#+BEGIN_SRC agda
+{-lisp
+(progn
+
+(𝒱 rename elements
+  = map :elements
+     (lambda (f) (make-tn (rename-mixfix elements (get-name f)) (get-type f))))
+
+(𝒱 decorated    by  =  rename :elements (lambda (name) (concat name by)))
+
+(𝒱 co-decorated by  =  rename :elements (lambda (name) (concat by name)))
+
+)
+-}
+#+END_SRC
+
+Here are sample uses.
+#+BEGIN_SRC results-agda
+{- MR₁₋₂    = M-Set record ⟴ decorated :by "₁" ⟴ decorated :by "₂" -}
+record MR₁₋₂ : Set₁ where
+ field
+   Scalar₁₂ : Set
+   Vector₁₂ : Set
+   _·₁₂_ : Scalar₁₂ → Vector₁₂ → Vector₁₂
+   𝟙₁₂ : Scalar₁₂
+   _×₁₂_ : Scalar₁₂ → Scalar₁₂ → Scalar₁₂
+   leftId₁₂ : {𝓋 : Vector₁₂}  →  𝟙₁₂ ·₁₂ 𝓋  ≡  𝓋
+   assoc₁₂ : {a b : Scalar₁₂} {𝓋 : Vector₁₂} → (a ×₁₂ b) ·₁₂ 𝓋  ≡  a ·₁₂ (b ·₁₂ 𝓋)
+
+{- the-MR = M-Set record ⟴ co-decorated :by "the-" -}
+record the-MR : Set₁ where
+ field
+   the-Scalar : Set
+   the-Vector : Set
+   _the-·_ : the-Scalar → the-Vector → the-Vector
+   the-𝟙 : the-Scalar
+   _the-×_ : the-Scalar → the-Scalar → the-Scalar
+   the-leftId : {𝓋 : the-Vector}  →  the-𝟙 the-· 𝓋  ≡  𝓋
+   the-assoc : {a b : the-Scalar} {𝓋 : the-Vector} → (a the-× b) the-· 𝓋  ≡  a the-· (b the-· 𝓋)
+#+END_SRC
+
+Example ~M₁₋₂~ demonstrates that composition, ⟴, is sequential from left to right.
+That is, “⟴” is just forwards composition: We thread the given PacakgeFormer
+through the variationals ~vᵢ~ in order. Operationally:
+
+| Pf v₀ ⟴ ⋯ ⟴ vₙ ≈ ((Pf v₀) v₁) ⋯) vₙ |
+| Pf ⟴ v  ≈  Pf v ⟴  ≈  Pf v          |
+
+Note: In the concrete syntax, parenthisation is not permitted.
+
+What if we want Agda-style renaming via ~to~-lists?
+We can simply code that up!
+
+Directly, for a one-time use:
+#+BEGIN_SRC results-agda
+{- MR-oh  = M-Set record ⟴ rename :elements (lambda (name) (pcase name ("Scalar" "S") (x x))) -}
+record MR-oh : Set₁ where
+ field
+   S : Set
+   Vector : Set
+   _·_ : S → Vector → Vector
+   𝟙 : S
+   _×_ : S → S → S
+   leftId : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
+   assoc : {a b : S} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+#+END_SRC
+
+More generally, as a variational pattern:
+#+BEGIN_SRC agda
+{-lisp
+;; “by” should be a “;”-seperated string of “to”-seperated pairs.
+(𝒱 renaming by
+  = rename :elements '(lambda (name)
+      (let (clauses)
+        (thread-last by
+          (s-split ";")
+          (--map (s-split " to " it))
+          (--map (list (s-trim (car it)) (s-trim (cadr it))))
+          (-cons* 'pcase 'name)
+          (setq clauses)
+        )
+      (eval (append clauses '((otherwise otherwise))))
+      )
+))
+-}
+#+END_SRC
+With sample use:
+#+BEGIN_SRC results-agda
+{- NearMonoid = M-Set record ⟴ renaming :by "Scalar to Carrier; Vector to Carrier; · to ×" -}
+record NearMonoid : Set₁ where
+ field
+   Carrier : Set
+   _×_     : Carrier → Carrier → Carrier
+   𝟙       : Carrier
+   leftId  : {𝓋 : Carrier}  →  𝟙 × 𝓋  ≡  𝓋
+   assoc   : {a b : Carrier} {𝓋 : Carrier} → (a × b) × 𝓋  ≡  a × (b × 𝓋)
+#+END_SRC
+
+   This is so cool: We can just extend the system with whatever pattern we prefer!
+   No more bending to the will of language designers! More power to the user!
+
+   For example, we can codify the previous scheme into a top-level pattern.
+#+BEGIN_SRC agda
+{-lisp
+
+(defun is-sort (element) (s-contains? "Set" (target element)))
+
+(𝒱 single-sorted with-sort
+  = map :elements (lambda (e)
+      (if (is-sort e) (map-name with-sort e) e)))
+
+-}
+#+END_SRC
+
+   Then the previous PackageFormer can be obtained with:
+#+BEGIN_SRC results-agda
+{-700
+NearMonoid = M-Set record ⟴ single-sorted :with-sort "Carrier"
+-}
+#+END_SRC
+
+*** TODO COMMENT generated-by / keeping
+
+#+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
+(setq package-formers nil)
+(load-package-former (second (get-children "PackageFormer" test)))
+
+(s-join "\n"
+(funcall
+(lambda (fs)
+  (let* ( fsnew (p (lambda (f) (equal "leftId" (get-name f))))
+               (yeses (--map (funcall p it) fs))
+               (get-yeses (lambda () (--filter it (--zip-with (if it other) yeses fs))))
+               (in-yeses (lambda (e) (--any (s-contains? (s-replace "_" " " (get-name e)) (get-type it)) (funcall get-yeses)))))
+
+    (loop for _ in fs do
+          (loop for f in fs
+                for i from 0
+                do ;; when f in yess, set f to be yes.
+                (when (funcall in-yeses f) (setf (nth i yeses) t))))
+
+    (funcall get-yeses)
+  ))
+  ;; (-as-> (-unzip (--zip-with `(,other  ,(format "let %s = %s in " (get-name it) (get-name other))) fs (--map (map-name (concat name "′") it) fs))) yup
+  ;;          (--zip-with (map-type (concat (s-join "" it) type) other) (-inits (cadr yup)) (car yup))))
+
+(package-former-elements (cdr (assoc "M-Set" package-formers)))))
+#+END_SRC
+
+*** Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable
 
     Records provide a semantics, what if we want the syntax?
 Since ~data~ declarations consist of constructors, whose target type necessarily
 begins with the name of the ~data~-type being defined, let's only keep those fields and drop the rest.
-To do so, we use the helper function ~target~ which takes a declaration ~name : type0 → ⋯ → typeN~~ and yields ~typeN~.
+To do so, we use the helper function ~target~ which takes a declaration ~name : type0 → ⋯ → typeN~ and yields ~typeN~.
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (defun target (thing)
@@ -923,88 +1160,61 @@ To do so, we use the helper function ~target~ which takes a declaration ~name : 
 )
 #+END_SRC
 
-#+BEGIN_src results-agda
-{- 𝒱-data-with carrier = :kind data :level dec :alter-elements (λ f → (if (s-contains? carrier (target (get-type f))) (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) f) ""))
-
-   ScalarSyntax = M-Set data-with :carrier ("Scalar")
+With this in hand, a ~data~ presentation requires a designated ~carrier~ which is used to
+keep only those elements that target it. Finally, as data constructor must target the
+type being defined, we alter the filtered elements by changing every instance of the
+carrier name with the name of the newely defined PackageFormer ---which we may access
+using the special identifier ~$𝑛𝑎𝑚𝑒~.
+#+BEGIN_src agda
+ {-lisp
+(𝒱 data carrier
+  = :type data
+    :level dec
+    :alter-elements (lambda (fs)
+      (thread-last fs
+        (--filter (s-contains? carrier (target (get-type it))))
+        (--map (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) it))))
+)
 -}
+#+END_SRC
+
+For example:
+#+BEGIN_SRC results-agda
+{- ScalarTerm    = M-Set data :carrier "Scalar" ⟴ primer -}
+data ScalarTerm : Set where
+   𝟙′ : ScalarTerm
+   _×′_ : ScalarTerm → ScalarTerm → ScalarTerm
+
+{- ScalarSyntax = M-Set primer ⟴ data :carrier "Scalar′" -}
 data ScalarSyntax : Set where
-
-
-
-   𝟙 : ScalarSyntax
-   _×_ : ScalarSyntax → ScalarSyntax → ScalarSyntax
-
-
+   𝟙′ : ScalarSyntax
+   _×′_ : ScalarSyntax → ScalarSyntax → ScalarSyntax
 #+END_src
 
+Again:
 The meta-primitive ~:alter-elements~ is instructed to map over those
 fields ~f~ that contain the ~carrier~ in their ~target~ type
 by replacing the given ~carrier~ with the newly-minted ~$𝑛𝑎𝑚𝑒~ of
 the grouping mechanism being constructed. Those that do not
-contain the given ~carrier~ in their target type are zeroed out to ~""~,
-whence the extra whitespace in the generated code.
+contain the given ~carrier~ in their target type are filtered out.
 
 Notice that $𝑛𝑎𝑚𝑒 is a special variable that refers to the newly defined PackageFormer's name.
 - It is written using ~\Mi~ with Agda input; e.g., ~\Min~ gives ~𝑛~.
 - The ‘$’ is intended to further mark the special nature of this variable.
 
-*** COMMENT Lisp code that generates the code is the previous subsections
+*Important*: Notice that, in the second example above,
+the name of the carrier is ~Scalar′~ since we changed the
+PackageFormer to prime all elements, including the ~Scalar~, element.
+#+BEGIN_SRC results-agda
+{- No = M-Set primer ⟴ data :carrier "Scalar" -}
+data No : Set where
+   𝟙′ : No′
+   _×′_ : No′ → No′ → No′
 
- #+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
-(let* ((variationals nil)
-       (--map #'eval '(
-      "𝒱-identity = "
-      "𝒱-record  = :kind record :waist-strings (\"field\")"
-      "𝒱-whoops  = :kind recorder :waist-strings (\"field\")"
-      "𝒱-typeclass-attempt  = :kind record :waist-strings (\"field\") :waist 2"
-      "𝒱-typeclass₂  = :kind record :waist-strings (\"field\") :waist 2 :level dec"
-      "𝒱-primed-record = :kind record :waist-strings (\"field\") :alter-elements (λ f → (map-name (concat name \"′\") f))"
-      "𝒱-primed = :alter-elements (λ f → (map-name (concat name \"′\") f))"
-      "𝒱-typeclass height level = :kind record :waist-strings (\"field\") :waist height :level level"
-; TODO:	  ; "𝒱-renamed with = :alter-elements (λ e → (map-name (funcall with name) e))"
-      "𝒱-data-with carrier = :kind data :level dec :alter-elements (λ f → (if (s-contains? carrier (target (get-type f))) (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) f) \"\"))"
-      ))))
-       (pf (load-package-former (second (get-children "PackageFormer" test)))))
+{- Crashes since type No′ is not defined! -}
+#+END_SRC
 
-  (--map (load-instance-declaration it)
-    '(
-
-      ; TODO: "M-Set-PF = M-Set identity :waist 2" ;; nope.
-
-      ; "M-Set-Record = M-Set record"
-      ; "M-Set-Record = M-Set whoops"
-      ; "M-Set-Typeclass = M-Set typeclass-attempt"
-      ; "M-Set-Typeclass₂ = M-Set typeclass₂"
-      ; "M-Set-Record′ = M-Set primed-record"
-      ; "M-Set′ = M-Set primed"
-      ; "M-Set-Record′ = M-Set-Record primed"
-      ; "M-Set-Record′ = M-Set-Record record ⟴ primed"
-      ; "M-Set-Typeclass₃ = M-Set-Record typeclass :height (3) :level (dec) :comment (why hello there)"
-
-      ; TODO: "M-Set₁ = M-Set renamed :with ((λ x → x))"
-
-      "ScalarSyntax = M-Set data-with :carrier (\"Scalar\")"
-      ))
-
-  (reify-instances)
-)
- #+END_SRC
-
- :old:
- Let ~PF~ denote the name of a PackageFormer, then
- ~PF′ = PF Clause~ behaves as follows:
- | _Clause_                 | _Behaviour_                                         |
- | ~data~                   | A data, ADT, is declared                          |
- | ~record~                 | A record having a new field ‘Carrier’             |
- | ~typeclass~              | A record with one parameter ‘Carrier’             |
- | ~v unbundling N~         | Instantiation  ~v~ with first ~N~ items as parameters |
- | ~v exposing (e₀;…;eₙ)~   | Instantiation ~v~ with parameters ~eᵢ~                |
- | ~v hiding (e₀;…;eₙ)~     | Instantiation ~v~ discarding ~eᵢ~                     |
- | ~v renaming (eᵢ to eᵢ′)~ | Instantiation ~v~ with specified renames            |
- | ~v with (eᵢ to eᵢ′)~     | Instantiation ~v~ with specified rewrites           |
- :end:
-
+*** TODO COMMENT List of derivied variationals that are common and useful  :outdated:
 ** Currying for Datatypes
 
    :Lisp_code_that_generates_the_code_for_this_subsection:
@@ -2902,7 +3112,7 @@ record LHS : Set where
 #+end_src
 :End:
 
-** Future Instantiations Remaining
+** Instantiations Remaining
 Herein we define the datatype of ~instance-declaration~, describe how
 to parse such entities, and monitor them within a list.
 
@@ -3039,7 +3249,18 @@ Loading an instantiation into our list is now trivial.
 
    Returns the instance-declaration that was loaded, otherwise nil.
 
-   Whitespace is automatically collopased from ‘line’.
+   ⇒ Whitespace is automatically collopased from ‘line’.
+   ⇒ Nil elements are discarded; e.g., due to a filter.
+   ⇒ Duplicates are discarded; e.g., due to a rename.
+
+   Variational clauses may mention
+   ⇒ $𝑛𝑎𝑚𝑒: The name of the PackageFormer currently being declared; i.e., the LHS name.
+   ⇒ $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠: Many variationals will act on individal elements, but may check a
+              property relative to all elements and this name allows us to avoid
+              having variationals that simply accomodate for binary functions
+              that operate on an individual element while also needing to refer to all
+              elements. For example, a variational that keeps an element if it's related
+              to another element somehow.
 
    TODO: fix docs
   Given an instance-declaration ‘id’, produce a new PackageFormer.
@@ -3055,6 +3276,7 @@ Loading an instantiation into our list is now trivial.
   (letf* (
      (pieces (s-split " " (s-collapse-whitespace line)))
      ($𝑛𝑎𝑚𝑒      (nth 0 pieces))
+     ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠    nil)
      (eqSymb     (nth 1 pieces))
      (parent     (nth 2 pieces))
      (variations (nthcdr 3 pieces))
@@ -3099,6 +3321,7 @@ Loading an instantiation into our list is now trivial.
     ;; as well as its name.
     (setf (package-former-docstring self) line)
     (setf (package-former-name self) $𝑛𝑎𝑚𝑒)
+    (setq $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠 (package-former-elements self))
 
     ;;
      (thread-last  variations
@@ -3142,10 +3365,16 @@ Loading an instantiation into our list is now trivial.
                        ('dec (s-join "suc" (cdr (s-split "suc" lvl :omit-nulls))))))))))
 
       ;; :alter-elements ≈ Access the typed name constituents list.
-      (when-let ((ae (cdr (assoc ':alter-elements alterations))))
-        (setf (package-former-elements self)
-              (--filter it (funcall ae (package-former-elements self)))))
-              ;; Filter in only the non-nil constituents.
+        ;; Perform *all* element alterations, in the left-to-right ⟴ order; if any at all.
+        (loop for ae in (reverse (mapcar #'cdr (--filter (equal ':alter-elements (car it)) alterations)))
+              do
+        (setq $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠
+              (remove-duplicates (--filter it (funcall ae $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)) :test #'equal :from-end t)))
+              ;; Filter in only the non-nil constituents & remove duplicates.
+              ;; We do this each time, rather than at the end, since variationals
+              ;; may loop over all possible elements and we do not want to consider
+              ;; intermediary nils or duplicates.
+        (setf (package-former-elements self) $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)
 
     ;; We've just formed a new PackageFormer, which can be modified, specialised, later on.
     (add-to-list 'package-formers (cons $𝑛𝑎𝑚𝑒 self))
@@ -3179,59 +3408,6 @@ Re: renames/maps
  b′ : let a = a′ in Set
  c′ : let a = a′ in let b = b′ in Set)
 #+END_SRC
-Re: generated-by / keeping
-#+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
-;; Could ty this into renaming, but avoiding such entaglement for now.
-;; Stick all renames “so far” in front of each declaration.
-
-;; (setq x a y b) ⇒ b
-
-; (setq _xs nil)
-;; (push x xs)  ⇒  updated xs
-
-(setq package-formers nil)
-(load-package-former (second (get-children "PackageFormer" test)))
-
-;; MA: TODO: Allow {-lisp -} comments so that code that is long, as follows
-;; needn't be squezzed into one absurdly long line.
-
-(s-join "\n"
-(funcall
-(lambda (fs)
-  (let* ( fsnew (p (lambda (f) (equal "leftId" (get-name f))))
-               (yeses (--map (funcall p it) fs))
-               (get-yeses (lambda () (--filter it (--zip-with (if it other) yeses fs))))
-               (in-yeses (lambda (e) (--any (s-contains? (s-replace "_" " " (get-name e)) (get-type it)) (funcall get-yeses)))))
-
-    (loop for _ in fs do
-          (loop for f in fs
-                for i from 0
-                do ;; when f in yess, set f to be yes.
-                (when (funcall in-yeses f) (setf (nth i yeses) t))))
-
-    (funcall get-yeses)
-  ))
-  ;; (-as-> (-unzip (--zip-with `(,other  ,(format "let %s = %s in " (get-name it) (get-name other))) fs (--map (map-name (concat name "′") it) fs))) yup
-  ;;          (--zip-with (map-type (concat (s-join "" it) type) other) (-inits (cadr yup)) (car yup))))
-
-(package-former-elements (cdr (assoc "M-Set" package-formers)))))
-
-;; the above rendered as 𝒱 function.
-(cl-defun 𝒱-generated (&key by *parent-context*)
-  " See PF.org"
-  (lambda (fs)
-  (let* ( (yeses (--map (funcall by it) fs))
-          (get-yeses (lambda () (--filter it (--zip-with (if it other) yeses fs))))
-          (in-yeses (lambda (e) (--any (s-contains? (s-replace "_" " " (get-name e)) (get-type it)) (funcall get-yeses)))))
-
-    (loop for _ in fs do
-          (loop for f in fs
-                for i from 0
-                do ;; when f in yess, set f to be yes.
-                (when (funcall in-yeses f) (setf (nth i yeses) t))))
-
-    (funcall get-yeses))))
-#+END_SRC
 
 #+RESULTS:
 #+begin_src results-agda
@@ -3262,28 +3438,23 @@ HERE TODO: testing data HERE
 
 ;; TODO: UHOH: Write now I'm overwriting things rather than composing!
 ;; The following are exepcted to be equal but are only the last variational!
-; (load-instance-declaration "M₁  =  M-Set ⟴ primed ⟴ data" 'show-me)
-; (load-instance-declaration "M₂  =  M-Set ⟴ data ⟴ primed" 'show-me)
+; (load-instance-declaration "M₁  =  M-Set ⟴ primed ⟴ data :carrier \"Scalar\"" 'show-me)
+(load-instance-declaration "M₂  =  M-Set ⟴ data :carrier \"Vector\" ⟴ primed" 'show-me)
 
-;; (load-instance-declaration "ScalarD₀ = M-Set data" 'show-me)
-;; ; (load-instance-declaration "ScalarD  = ScalarD₀ data ⟴ rename :elements (lambda (name) (concat name \"D\"))" 'show-me)
-;; (load-instance-declaration "ScalarD  = ScalarD₀ map :elements (lambda (e) (map-name (concat name \"g\") e))" 'show-me)
-;; ; (pp package-formers)
-; (load-instance-declaration "ScalarD  = M-Set primed" 'show-me)
-(load-instance-declaration "Mₑ  =  M-Set" 'show-me)
+(load-instance-declaration "M₁₂  =  M-Set decorated :by \"₁\" ⟴ decorated :by \"₂\"" 'show-me)
 #+END_SRC
 
 #+RESULTS:
 #+begin_src results-agda
-{- Mₑ  =  M-Set -}
-PackageFormer Mₑ : Set₁ where
-   Scalar  : Set
-   Vector  : Set
-   _·_     : Scalar → Vector → Vector
-   𝟙       : Scalar
-   _×_     : Scalar → Scalar → Scalar
-   leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
-   assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+{- M₁₂  =  M-Set decorated :by "₁" ⟴ decorated :by "₂" -}
+PackageFormer M₁₂ : Set₁ where
+   Scalar₁₂ : Set
+   Vector₁₂ : Set
+   _·₁₂_ : Scalar₁₂ → Vector₁₂ → Vector₁₂
+   𝟙₁₂ : Scalar₁₂
+   _×₁₂_ : Scalar₁₂ → Scalar₁₂ → Scalar₁₂
+   leftId₁₂ : {𝓋 : Vector₁₂}  →  𝟙₁₂ ·₁₂ 𝓋  ≡  𝓋
+   assoc₁₂ : {a b : Scalar₁₂} {𝓋 : Vector₁₂} → (a ×₁₂ b) ·₁₂ 𝓋  ≡  a ·₁₂ (b ·₁₂ 𝓋)
 #+end_src
 
 TODO: testing renames
@@ -3343,7 +3514,7 @@ TODO: fix tests.
 #+END_SRC
 {{{end-fold}}}
 
-** ~load-700-comments~
+** ~load-700-comments~ and ~lisp~ blocks
 
    We already two global lists ---for our loaded PackageFormers and instantions
    remaining--- we need two additional lists: One for the contents of 700-comments,
@@ -3371,8 +3542,18 @@ TODO: fix tests.
   "Parse comments of the form “{-700 ⋯ -}” and add all PackageFormer declarations
    to the ‘package-formers’ list and all instantations to the
    ‘instantiations-remaining’ list.
+
+   We also execute any valid Lisp code in “{-lisp -}” comments;
+   which may contain an arbitrary number of Lisp forms ---a ‘progn’ is auto provided.
+   Lisp is executed before any 700-comments are; which is preferable
+   due to Lisp's dynamic scope.
   "
   (interactive)
+
+  ;; First, let's run all the lisp. We enclose each in a progn in-case the user
+  ;; has multiple forms in a single lisp-block.
+  (loop for lispstr in (buffer-substring-delimited-whole-buffer "^\{-lisp" "^-\}")
+        do (eval (car (read-from-string (format "(progn %s)" lispstr)))))
 
   ;; For now, ‘item’ is a PackageFormer, instantiation declaration, or other Agda code.
   (let (item lines 700-cmnts)

@@ -986,7 +986,18 @@
 
    Returns the instance-declaration that was loaded, otherwise nil.
 
-   Whitespace is automatically collopased from ‘line’.
+   ⇒ Whitespace is automatically collopased from ‘line’.
+   ⇒ Nil elements are discarded; e.g., due to a filter.
+   ⇒ Duplicates are discarded; e.g., due to a rename.
+
+   Variational clauses may mention
+   ⇒ $𝑛𝑎𝑚𝑒: The name of the PackageFormer currently being declared; i.e., the LHS name.
+   ⇒ $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠: Many variationals will act on individal elements, but may check a
+              property relative to all elements and this name allows us to avoid
+              having variationals that simply accomodate for binary functions
+              that operate on an individual element while also needing to refer to all
+              elements. For example, a variational that keeps an element if it's related
+              to another element somehow.
 
    TODO: fix docs
   Given an instance-declaration ‘id’, produce a new PackageFormer.
@@ -1002,6 +1013,7 @@
   (letf* (
      (pieces (s-split " " (s-collapse-whitespace line)))
      ($𝑛𝑎𝑚𝑒      (nth 0 pieces))
+     ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠    nil)
      (eqSymb     (nth 1 pieces))
      (parent     (nth 2 pieces))
      (variations (nthcdr 3 pieces))
@@ -1046,6 +1058,7 @@
     ;; as well as its name.
     (setf (package-former-docstring self) line)
     (setf (package-former-name self) $𝑛𝑎𝑚𝑒)
+    (setq $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠 (package-former-elements self))
 
     ;;
      (thread-last  variations
@@ -1089,10 +1102,16 @@
                        ('dec (s-join "suc" (cdr (s-split "suc" lvl :omit-nulls))))))))))
 
       ;; :alter-elements ≈ Access the typed name constituents list.
-      (when-let ((ae (cdr (assoc ':alter-elements alterations))))
-        (setf (package-former-elements self)
-              (--filter it (funcall ae (package-former-elements self)))))
-              ;; Filter in only the non-nil constituents.
+        ;; Perform *all* element alterations, in the left-to-right ⟴ order; if any at all.
+        (loop for ae in (reverse (mapcar #'cdr (--filter (equal ':alter-elements (car it)) alterations)))
+              do
+        (setq $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠
+              (remove-duplicates (--filter it (funcall ae $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)) :test #'equal :from-end t)))
+              ;; Filter in only the non-nil constituents & remove duplicates.
+              ;; We do this each time, rather than at the end, since variationals
+              ;; may loop over all possible elements and we do not want to consider
+              ;; intermediary nils or duplicates.
+        (setf (package-former-elements self) $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)
 
     ;; We've just formed a new PackageFormer, which can be modified, specialised, later on.
     (add-to-list 'package-formers (cons $𝑛𝑎𝑚𝑒 self))
@@ -1102,7 +1121,7 @@
 )
 ;; Instantiations Remaining:5 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Instantiations%20Remaining][Instantiations Remaining:14]]
+;; [[file:~/thesis-proposal/PackageFormer.org::*Instantiations%20Remaining][Instantiations Remaining:13]]
 ;; (load-instance-declaration "LHS = PF :arg₀ val₀ ⟴ test₁ :heightish 23")
 
      ;; PackageFormer names are in yellow; instances are are bolded.
@@ -1110,9 +1129,9 @@
      ;; (highlight-phrase (nth 0 pieces) 'bold) ;; 'warning) ;; i.e., orange
      ;;
      ;; MA: Replace with a hook.
-;; Instantiations Remaining:14 ends here
+;; Instantiations Remaining:13 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Instantiations%20Remaining][Instantiations Remaining:15]]
+;; [[file:~/thesis-proposal/PackageFormer.org::*Instantiations%20Remaining][Instantiations Remaining:14]]
 (ert-deftest lid ()
 
   (let (id)
@@ -1145,9 +1164,9 @@
   (should (equal "((some-variational nil (lambda (x) (concat x ′))))" (format "%s" (instance-declaration-alterations (load-instance-declaration
   "LHS = Magma some-variational (λ x → x ++ \"′\")")))))
 ))
-;; Instantiations Remaining:15 ends here
+;; Instantiations Remaining:14 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*~load-700-comments~][~load-700-comments~:1]]
+;; [[file:~/thesis-proposal/PackageFormer.org::*~load-700-comments~%20and%20~lisp~%20blocks][~load-700-comments~ and ~lisp~ blocks:1]]
 (defvar 700-comments nil
   "The contents of the 700-comments.
 
@@ -1158,15 +1177,25 @@
 (defvar porting-list nil
   "List of items in 700-comments that are neither PackageFormer declarations
    nor instantations, and so are ported to the generated file.")
-;; ~load-700-comments~:1 ends here
+;; ~load-700-comments~ and ~lisp~ blocks:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*~load-700-comments~][~load-700-comments~:2]]
+;; [[file:~/thesis-proposal/PackageFormer.org::*~load-700-comments~%20and%20~lisp~%20blocks][~load-700-comments~ and ~lisp~ blocks:2]]
 (cl-defun load-700-comments ()
   "Parse comments of the form “{-700 ⋯ -}” and add all PackageFormer declarations
    to the ‘package-formers’ list and all instantations to the
    ‘instantiations-remaining’ list.
+
+   We also execute any valid Lisp code in “{-lisp -}” comments;
+   which may contain an arbitrary number of Lisp forms ---a ‘progn’ is auto provided.
+   Lisp is executed before any 700-comments are; which is preferable
+   due to Lisp's dynamic scope.
   "
   (interactive)
+
+  ;; First, let's run all the lisp. We enclose each in a progn in-case the user
+  ;; has multiple forms in a single lisp-block.
+  (loop for lispstr in (buffer-substring-delimited-whole-buffer "^\{-lisp" "^-\}")
+        do (eval (car (read-from-string (format "(progn %s)" lispstr)))))
 
   ;; For now, ‘item’ is a PackageFormer, instantiation declaration, or other Agda code.
   (let (item lines 700-cmnts)
@@ -1211,7 +1240,7 @@
   (message "Finished parsing 700-comments.")
   )
 ))
-;; ~load-700-comments~:2 ends here
+;; ~load-700-comments~ and ~lisp~ blocks:2 ends here
 
 ;; [[file:~/thesis-proposal/PackageFormer.org::*Instantiate%20all%20items%20in%20~instantiations-remaining~][Instantiate all items in ~instantiations-remaining~:1]]
 ;; Function combinators; e.g., -partial/-cut, -const, -compose, -orfn & -andfn for generalised ∃/∀.
