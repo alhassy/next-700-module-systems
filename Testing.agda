@@ -9,9 +9,7 @@
 3. It fills a particular need; the desire to avoid repetitious code.
 -}
 
-
---
-
+-----------------------------------------------------------------------------------------
 
 -- The space causes this block to be treated as a normal comment block.
 -- Having no space between “{-” and “lisp” would cause the block to be executed
@@ -62,7 +60,6 @@ PackageFormer M-Set : Set₁ where
 
 -- Gives error that 𝒱-doit is not defined (งಠ_ಠ)ง
 -- Whoops   =  MonoidP doit
-
 -}
 
 -----------------------------------------------------------------------------------------
@@ -91,17 +88,19 @@ MonoidPᶜ = MonoidP ⟴
 ----- §2. Record-based Variationals
 
 {-700
--- 𝒱-whoops              = :type recorder :waist-strings '("field")
+-- 𝒱-whoops              = :type recorder :waist-strings ("field")
 
-𝒱-record                 = :type record :waist-strings '("field")
-𝒱-typeclass-attempt      = :type record :waist-strings '("field") :waist 2
-𝒱-typeclass₂             = :type record :waist-strings '("field") :waist 2 :level dec
+𝒱-record                 = :type record :waist-strings ("field")
+𝒱-typeclass-attempt      = :type record :waist-strings ("field") :waist 2
+𝒱-typeclass₂             = :type record :waist-strings ("field") :waist 2 :level dec
 𝒱-typeclass height level = record ⟴ :waist height :level level
 
 MonoidT₃   =  MonoidP record ⟴ :waist 3 :level dec
-MonoidT₂   =  MonoidP typeclass₂
+MonoidT₂   =  MonoidP typeclass₂ ⟴ :waist-strings ("private" "extra : Set₁" "extra = Set" "field")
 MonoidT₄   =  MonoidP typeclass :height 4 :level 'dec
+-}
 
+{-700
 M-Set-Record = M-Set record
 M-Set-Typeclass₃ = M-Set-Record typeclass :height 3 :level 'dec
 -}
@@ -179,6 +178,19 @@ MR′ = M-Set record ⟴ primer
 _ = MR′
 
 {-lisp
+;; Underscores are not given any special consideration.
+(𝒱 map_ elements = :alter-elements (lambda (fs)
+   (let* ((fsnew (mapcar elements fs))
+          (names  (--map (get-name it) fs))
+          (names′ (--map (get-name it) fsnew)))
+     (loop for old in names
+           for new in names′
+           do
+           (setq fsnew (--map (map-type (s-replace old new type) it) fsnew)))
+     ;; return value
+     fsnew
+     )))
+
 (𝒱 map elements = :alter-elements (lambda (fs)
    (let* ((fsnew (mapcar elements fs))
           (names  (--map (s-replace "_" "" (get-name it)) fs))
@@ -191,6 +203,15 @@ _ = MR′
      fsnew
      )))
 -}
+--
+-- Note that we cannot form a “map_” that does not rewrite “_” with “”
+-- and expect it to work as desired. Indeed, if we have a name, say, “_⊕_”
+-- but one of its uses is “x ⊕ y” then any alteration would not transpire
+-- since “x ⊕ y” clearly does not mention the literal “_⊕_”.
+-- Agda let's use use opertor names in prefix and mixfix, as such our schemes
+-- need to be more robust ---which the reader may pursue with sufficint Lisp.
+--
+-- We only show this briefly with rename_ and renaming_ below.
 
 -- Now for some useful corollaries.
 
@@ -200,6 +221,13 @@ _ = MR′
 (𝒱 rename elements
   = map :elements
      (lambda (f) (make-tn (rename-mixfix elements (get-name f)) (get-type f))))
+
+
+;; “elements” is a string-to-string function acting on names.
+;; Underscores are not given any special consideration.
+(𝒱 rename_ elements
+  = map :elements
+     (lambda (f) (make-tn (funcall elements (get-name f)) (get-type f))))
 
 (𝒱 decorated    by  =  rename :elements (lambda (name) (concat name by)))
 
@@ -236,15 +264,39 @@ _ = MR-oh
       (eval (append clauses '((otherwise otherwise))))
       )
 ))
+
+;; “by” should be a “;”-seperated string of “to”-seperated pairs.
+(𝒱 renaming_ by
+  = rename_ :elements '(lambda (name)
+      (let (clauses)
+        (thread-last by
+          (s-split ";")
+          (--map (s-split " to " it))
+          (--map (list (s-trim (car it)) (s-trim (cadr it))))
+          (-cons* 'pcase 'name)
+          (setq clauses)
+        )
+      (eval (append clauses '((otherwise otherwise))))
+      )
+))
 -}
 
 {-700
 MRₜₒ = M-Set record ⟴ renaming :by "Scalar to S; Vector to V; · to nice"
+MRₜₒ_ = M-Set record ⟴ renaming_ :by "Scalar to S; Vector to V; _·_ to _nice_"
 NearMonoid = M-Set record ⟴ renaming :by "Scalar to Carrier; Vector to Carrier; · to ×"
 -}
 
 _ = MRₜₒ
+_ = MRₜₒ_
+
+-- As the underscore variant shows, one must ensure that the new names either are the same
+-- fixity or are in prefix form in the PackageFormer being instantiated.
+
 _ = NearMonoid
+
+-- Notice that this example demonstrates multiplicity of PackageFormer elements is irrelevant.
+-- That is, elements are algebraically a list with the axiom xs ++ ys ++ xs  ≈  xs ++ ys.
 
 {-lisp
 
@@ -263,10 +315,74 @@ NearMonoid¹ = M-Set record ⟴ single-sorted :with-sort "Carrier"
 _ = NearMonoid¹
 
 -----------------------------------------------------------------------------------------
---- §6. Sub-PackageFormers: Generated-by and Keeping
+--- §6. Modules: Opening
+
+{-700
+𝒱-empty-module = :type module :level none :waist 999
+Neato = M-Set empty-module
+-}
+
+open Neato using () -- A module where the elements are all params
 
 {-lisp
+;; “with” is a renaming string-to-string function.
+(𝒱 open with
+  = :type module
+    :level none
+    :waist 1
+    :waist-strings ("")
+    :alter-elements  (lambda (fs)
+      (let ((kind "{! !}"))
+        (thread-last
+           (--map (format "%s to %s" (get-name it) (rename-mixfix with (get-name it))) fs)
+           ;; Resulting elements must be a list, so we make a singleton list.
+           (s-join "\n       ; ")
+           (format "    ( %s\n       )")
+           list
 
+           ;; Stick on the renaming, which in turn requires an opening clause;
+           ;; which in turn requires a module parameter.
+           (cons "  renaming")
+           (cons (format "open %s ℛ public" $𝑝𝑎𝑟𝑒𝑛𝑡))
+           (cons (format "ℛ : %s" $𝑝𝑎𝑟𝑒𝑛𝑡)))))
+)
+
+;; “with” should be a “;”-seperated string of “to”-seperated pairs; c.g. ‘𝒱-renaming’.
+(𝒱 opening with
+  = open :with '(lambda (name)
+      (let (clauses)
+        (thread-last with
+          (s-split ";")
+          (--map (s-split " to " it))
+          (--map (list (s-trim (car it)) (s-trim (cadr it))))
+          (-cons* 'pcase 'name)
+          (setq clauses)
+        )
+      (eval (append clauses '((otherwise otherwise))))
+      )
+))
+
+(𝒱 open-with decoration
+  = open :with (lambda (x) (concat x decoration)))
+-}
+
+{-700
+M-Set-R = M-Set record
+M-Set-R₁ = M-Set-R open :with (lambda (x) (concat x "₁"))
+M-Set-R′ = M-Set-R open-with :decoration "′"
+-}
+
+open M-Set-R₁ using ()
+open M-Set-R′ using ()
+
+-- It is important to observe that ‘openings’ are lossy:
+-- They lose the types of the declarations and so cannot be used further to construct
+-- new pacaking mechanisms. They are a terminal construction.
+
+-----------------------------------------------------------------------------------------
+--- §7. Sub-PackageFormers: Generated-by and Keeping
+
+{-lisp
 ;; “by” is a predicate on elements.
 (𝒱 generated by
   = :alter-elements  (lambda (fs)
@@ -313,8 +429,153 @@ MonSig = M-Set record ⟴ signature
 
 _ = MonSig
 
+-- Compare this with “renaming” from above.
+--
+{-lisp
+;; “those” should be a “;”-seperated string of names
+(𝒱 keeping those
+  = generated :by '(lambda (element)
+      (let (clauses)
+        (thread-last by
+          (s-split ";")
+          (--map (cons (s-trim it) t)) ;; t ≈ true
+          (-cons* 'pcase '(get-name element))
+          (setq clauses)
+        )
+      (eval (append clauses '((otherwise nil)))) ;; nil ≈ false
+      )
+))
+-}
+
+-- TODO: FIXME: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+{- 00
+𝟙-et-al = M-Set record ⟴ keeping :those "𝟙; _×_"
+-}
+
+-- _ = 𝟙-et-al
+
 -----------------------------------------------------------------------------------------
---- §7. Algebraic Data Types
+--- §8. Mechanising Homomorphism Formulations
+
+{-lisp
+(defun homify (typed-name sort)
+  "Given a typed name, produce the associating “preservation” formula.
+   E.g.,
+            _·_    : Scalar → Vector → Vector
+            pres-· : {x₁ : Scalar} → {x₂ : Vector} → map₂ (x₁ · x₂) = map₁ x₁ ·′ map₂ x₂
+
+  Type τ gets variable xᵢ provided (i, τ) ∈ sorts; likewise we think of mapᵢ : τ → τ′.
+  Note that we must have i ∈ 0..9, otherwise there'll be unexpected subscripting errors.
+
+  The target name is primed, “·′”.
+ "
+ (letf* ((sorts     (mapcar #'car sort))
+         ((symbol-function 'to-subscript) (lambda (n) (nth n '("₀" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉"))))
+         ((symbol-function 'index) (lambda (s) (to-subscript (cdr (assoc it sort)))))
+
+         (tn→       (s-split " → " (get-type typed-name)))
+         (arg-count (1- (length tn→)))
+
+         (all-indicies  (--map (index it) (--filter (member (s-trim it) sorts) tn→)))
+         (indicies  (-drop-last 1 all-indicies))
+         (tgt-idx   (car (-take-last 1 all-indicies)))
+
+         (op        (get-name typed-name))
+         (args      (--map (concat "x" it) indicies))
+         (lhs       (format "map%s (%s %s)" tgt-idx op (s-join " " args)))
+
+         (op′       (rename-mixfix (lambda (n) (concat n "′")) op))
+         (map-args  (--map (format "(map%s x%s)" it it) indicies))
+         (rhs       (format "%s %s" op′ (s-join " " map-args)))
+
+         (target    (format "  %s   ≡   %s" lhs rhs))
+ )
+
+ ;; Change the target type.
+ (setq tn→ (--map (when (assoc it sort) (format "{x%s : %s}" (index it) it)) tn→))
+ (setf (nth arg-count tn→) target)
+
+ ;; Stick it all together, with an updated name.
+ (make-tn
+   (format "pres-%s" (s-replace "_" "" (get-name typed-name)))
+   (s-join " → " tn→))
+ )
+)
+(homify "_·_    : Scalar → Vector → Vector" '( ("Scalar" . 4) ("Vector" . 1)))
+
+(𝒱 hom
+  = record ⟴
+    :remark "The $𝑝𝑎𝑟𝑒𝑛𝑡 should be defined as a record."
+    :waist 2
+    :waist-strings ((format "open %s  Src" $𝑝𝑎𝑟𝑒𝑛𝑡)
+                    (format "open %s′ Tgt" $𝑝𝑎𝑟𝑒𝑛𝑡)
+                    "field")
+    :alter-elements (lambda (es)
+
+    (let (maps eqns sorts)
+
+      ;; Construct the mapᵢ : sortᵢ → sortᵢ′; keeping track of (sort . i) pairs.
+      (loop for e in es
+            for i from 1
+       do
+
+         (when (is-sort e)
+           (push (cons (get-name e) i) sorts)
+           (push (format "map%s : %s → %s′" (to-subscript i) (get-name e) (get-name e))
+                 maps))
+
+          (when (and (targets-a-sort e) (not (is-sort e)))
+            (push (homify e sorts) eqns)))
+
+    ;; Ensure we have a source and target space as elements.
+    (-cons* "Src : M-Set-R"
+            "Tgt : M-Set-R"
+    (reverse (-concat eqns maps)))
+)))
+-}
+
+{-700
+Hom  = M-Set-R hom
+Hom² = M-Set-R hom ⟴ renaming :by "map₁ to scalar; pres-𝟙 to unity"
+-}
+_ = Hom
+_ = Hom²
+
+-- Here's some cuteness. ;; need to fix porting to happen in-place rather than at the top.
+
+-- Desired:
+{- 00
+variable
+  Src Tgt : M-Set-R
+
+-- this comment should be ignored; why is it being ported!?
+-}
+
+{-
+-- PackageFormer place-holder-so-next-line-doesnt-get-ported : Set where
+
+Remember that ‘opening’ is a lossy operation; it is terminal and so
+something like
+“Hom-D = Hom opening :with "map₁ to _D₀_" ⟴ :waist 3”
+has no meaning. We cannot lift ‘fields’ to ‘parameters’ since an “opening”
+has lost the necessary type information for the elements.
+
+If we want something to be parametersied; we will use Agda's generalised variables mechanism. (For now).
+-}
+
+-- _ = Hom-$
+
+{- works
+
+variable
+  A B : M-Set-R
+
+module Hom-D (ℛ : Hom A B) where
+  ⋯
+-}
+
+-----------------------------------------------------------------------------------------
+--- §9. Algebraic Data Types
 
 {-lisp
 (𝒱 data carrier
@@ -327,7 +588,7 @@ _ = MonSig
 )
 -}
 
-{-700
+{-00
 ScalarSyntax  = M-Set primer ⟴ data :carrier "Scalar′"
 ScalarTerm    = M-Set data :carrier "Scalar" ⟴ primer
 
@@ -336,8 +597,8 @@ ScalarTerm    = M-Set data :carrier "Scalar" ⟴ primer
 -- No = M-Set primer ⟴ data :carrier "Scalar"
 
 -}
-_ = ScalarSyntax
-_ = ScalarTerm
+-- _ = ScalarSyntax
+-- _ = ScalarTerm
 
 -- TODO:
 -- What about syntax of vectors? Well that depends on scalars!
@@ -356,51 +617,9 @@ _ = ScalarTerm
 -- “data with params”
 -- VectorSyntax  = M-Set data :carrier "Vector" ⟴ primer
 
-
 ------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------
 -- Experiments follow --
-
-
-
-{-700
--- MA: TODO: Useful example to know how to do. Maybe fix this whole quotation issue!
-𝒱-try this = decorated :by '(car this)
-Ni = M-Set record ⟴ try :this '(list "ᵢ" "ⱼ" "ₖ")
-
--}
-_ = Ni
-
-
--- Let's generalise one of the core ideas from this venture.
--- First, a type with multiple sorts to use for examples.
-{-700
-
-
--- The name “_×_” is in scope since I've imported Data.Product down below for some
--- experimentation, so using a primed variant “_×′_” ^_^
--- M-Set-R = M-Set record ⟴ primed
-
--}
--- _ = M-Set-R
-
--- First, we filtered out elements and so this may become a variational.
-
-{- 00
--- Useful
--- 𝒱-keepingC = record ⟴ :alter-elements (lambda (fs) (thread-last fs (--filter (or (equal "Carrier" (get-name it)) (s-contains? "Carrier" (target (get-type it)))))))
-
--- cute, but too brutish.
-𝒱-keeping those = :alter-elements (lambda (fs) (thread-last fs (-filter those)))
--- instead:
--- 𝒱-keeping those = generated :by 'those
---
--- Passed functions need the quote.
---
--- Not ideal due to the let-in clauses.
-
--- 𝒱-keepingC = record ⟴ :alter-elements (lambda (fs) (thread-last fs (--map (or (equal "_⨾_" (get-name it)) (s-contains? "_⨾_" (target (get-type it))))) (--map (format "%s" it))))
--}
 
 {-
 -- 𝒱-data-with-identified carrier = :type data :level dec :alter-elements (lambda (fs) (thread-last fs (--filter (-any? (lambda (c) (s-contains? c (target (get-type it)))) carrier)) (loop for c in carrier do (--map (map-type (s-replace c $𝑛𝑎𝑚𝑒 type) it)) )))
@@ -438,291 +657,33 @@ PackageFormer MonoidP : Set₁ where
 - data  ⇒ rewrite [syntax sugar] and possibly global operation afterwards as an additional new method, and possibly adding it in as a constructor to the data-type, eg. See Isabelle's distinctions of definition vs abbrevation where the former rewuires an explicit tactic to apply as in coq's intro and the latter is definitional.
 - module ⇒ local let, or possibly rewrite with local declaration inside module
 
--- MonoidR   =  MonoidP :type record :waist 2 :level dec ⟴ :waist-strings '("private" "n : Set₁" "n = Set" "field")
+-- MonoidR   =  MonoidP :type record :waist 2 :level dec ⟴ :waist-strings ("private" "n : Set₁" "n = Set" "field")
 -- MonoidD = data-with :carrier Carrier
 -}
 
-
-{- TODO:
-
+{-
 𝒱-record⁷             = :type record :waist-strings (when (package-former-elements self) '("field"))
 
--- TODO: alter-elements needs to actually be a function on the elements list; we currently have :map-elements!
---
-
 𝒱-data-with carrier      = :type data :level dec :alter-elements (lambda (f) (if (s-contains? carrier (target (get-type f))) (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) f) ""))
-
--}
-
-{-
-(insert (pp-to-string package-formers))
-
-
-
-(("Monoidₙ" . #s(package-former "Monoidₙ = MonoidR rename :elements (lambda (name) (concat name \"ₙ\"))" "record" "Monoidₙ" "₁" 0
-                                ("field")
-                                4 nil))
- ("Monoidₘ" . #s(package-former "Monoidₘ = MonoidR map :elements (lambda (f) (make-tn (concat (get-name f) \"ₘ\") (get-type f)))" "record" "Monoidₘ" "₁" 0
-                                ("field")
-                                4 nil))
- ("MonoidR″" . #s(package-former "MonoidR″   =  MonoidR primed" "record" "MonoidR″" "₁" 0
-                                 ("field")
-                                 4 nil))
- ("MonoidR′" . #s(package-former "MonoidR′   =  MonoidP record ⟴ primed" "record" "MonoidR′" "₁" 0
-                                 ("field")
-                                 4 nil))
- ("MonoidR" . #s(package-former "MonoidR    =  MonoidP record" "record" "MonoidR" "₁" 0
-                                ("field")
-                                4
-                                ("Carrier : Set" "_⨾_     : Carrier → Carrier → Carrier" "Id      : Carrier" "assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)" "leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x" "rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x")))
- ("MonoidT₄" . #s(package-former "MonoidT₄   =  MonoidP typeclass :height 4 :level 'dec" "record" "MonoidT₄" "" 4
-                                 ("field")
-                                 4
-                                 ("Carrier : Set" "_⨾_     : Carrier → Carrier → Carrier" "Id      : Carrier" "assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)" "leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x" "rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x")))
- ("MonoidT₂" . #s(package-former "MonoidT₂   =  MonoidP typeclass₂" "record" "MonoidT₂" "" 2
-                                 ("field")
-                                 4
-                                 ("Carrier : Set" "_⨾_     : Carrier → Carrier → Carrier" "Id      : Carrier" "assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)" "leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x" "rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x")))
- ("MonoidT₃" . #s(package-former "MonoidT₃   =  MonoidP record ⟴ :waist 3 :level dec" "record" "MonoidT₃" "" 3
-                                 ("field")
-                                 4
-                                 ("Carrier : Set" "_⨾_     : Carrier → Carrier → Carrier" "Id      : Carrier" "assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)" "leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x" "rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x")))
- ("MonoidP⁰" . #s(package-former "MonoidP⁰  = MonoidP" "PackageFormer" "MonoidP⁰" "₁" 0 nil 4
-                                 ("Carrier : Set" "_⨾_     : Carrier → Carrier → Carrier" "Id      : Carrier" "assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)" "leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x" "rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x")))
- ("MonoidPⁱᵈ" . #s(package-former "MonoidPⁱᵈ = MonoidP identity" "PackageFormer" "MonoidPⁱᵈ" "₁" 0 nil 4
-                                  ("Carrier : Set" "_⨾_     : Carrier → Carrier → Carrier" "Id      : Carrier" "assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)" "leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x" "rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x")))
- ("MonoidP" . #s(package-former nil "PackageFormer" "MonoidP" "₁" 0 nil 4
-                                ("Carrier : Set" "_⨾_     : Carrier → Carrier → Carrier" "Id      : Carrier" "assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)" "leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x" "rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x"))))
-
-
--}
-
-{-00
-
 
 𝒱-filter-attempt by = map :elements (lambda (f) (if (funcall by f) f ""))
 MonoidF   = MonoidP filter :by (lambda (f) nil)
 
-
---
-
 -- TODO: 7 crashes things --yikes! This is because agda keyword field cannot occur barren --c.f. 𝓥-record⁷.
 -- MonoidT⁷ = MonoidP record ⟴ :waist 4
-
 -}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-{- TODO: Eventually; after prototype is done.
-
-
-
-
-
-
-
-
-
-
-
-open import Function using (id)
-open import Data.List using (List; map)
-open import Data.String using () renaming (String to Name)
-open import Data.String using () renaming (String to Type)
--- open import Data.Product using (_×_) renaming (map to bimap)
-
-
-{- TODO: Eventually; after prototype is done. -}
-data VarExpr : Set where
-  :kind : String → VarExpr
-  :alter-elements : String → VarExpr
-
-
-{- No lambda's allowed; all arguments must be to the left of the ‘=’. -}
-{- Definition must be one liner. -}
-𝑽-adorn : List (Name × Type) → (Name → Name) → List (Name × Type)
-𝑽-adorn xs f = map (bimap f id) xs
-
-import Data.Maybe as Maybe
-open Maybe using (Maybe; just; nothing)
-import Data.List as List
-open import Data.List using (_++_ ; _∷_)
-data Kind : Set where
-  ‵data ‵record ‵module ‵function ‵packageformer : Kind
-  --
-  -- note that pf's are not necessary, we can work with records then
-  -- reify them as other groupingmechanisms.
-  -- BUT it's preferable to be as unbiased as possible
-  -- hence we keep the generic package-former kind.
-
-record PF : Set where
-  field
-    kind       : Kind
-    name       : Name
-    level      : Level
-    {- The following four are the “constiutents” or “elements” of a PackageFormer -}
-
-    -- old, remove me
-    variation  : Maybe Name
-    carrier    : Maybe Name
-
-    parameters : List (Name × Type)
-    fields     : List (Name × Type)
-
-{-
-pf′ = pf variational (args; otherwise)
-
-variational : (new-name : Name) (args : ⋯) (otherwise : ? → ?) → PF
-variational pf′ args otherwise = ???
--}
-
-_Variational₁ : {ℓ : Level} (X : Set ℓ) → Set ℓ
-X Variational₁ = (new-name : Name) (to-list : List (Name × X)) (otherwise : Name → X)
-               → PF → PF
-
-_Variational₀ : {ℓ : Level} (X : Set ℓ) → Set ℓ
-X Variational₀ = (new-name : Name) (to-list : List X) (otherwise : Name → X)
-               → PF → PF
-
-open import Data.Product using (_,_)
-open import Data.String using (String)
-postulate string-replace : (old new : String) → String → String
-
-𝑽-record : Name Variational₁
-𝑽-record new-name to-list otherwise pf = let open PF pf in
-  record
-    { kind       = ‵record
-    ; name       = new-name
-    ; variation  = nothing
-    ; level      = Level.suc level
-    ; carrier    = just "Carrier"
-    ; parameters = List.[]
-    ; fields     =    parameters
-                   ++ ("Carrier" , "Set level")  -- HACK!
-                   ∷ List.map (bimap (string-replace "name variation" "Carrier") id) fields   -- HACK!
-    }
-
-{- This’ a lot at once; let's instead focus on small combinators. -}
-
--- as-kind : Kind → PF → PF
--- as-kind k
-
-{-
-with-carrier : Name → PF → PF
-with-carrier c pf = let open PF pf in
-  record
-    { kind       = kind
-    ; name       = name
-    ; level      = level
-    ; variation  = variation
-    ; carrier    = just c
-    ; parameters = List.map (bimap f id) parameters
-    ; fields     = List.map (bimap f id) fields
-    }
-
-
-alter-elements : (Name → Name) → PF → PF
-alter-elements f pf = let open PF pf in
-  record
-    { kind       = kind
-    ; name       = name
-    ; level      = level
-    ; variation  = variation
-    ; carrier    = Maybe.map f carrier
-    ; parameters = List.map (bimap f id) parameters
-    ; fields     = List.map (bimap f id) fields
-    }
-
--}
+------------------------------------------------------------------------------------------
+-- Observations
 
 {-00
-
-Woah = Monoid record adorn (λ x → x ++ "ₐ")
-
--}
-
-
-
-
--- Since seven-hundred comments generate code which is imported, we may use their results
--- seemingly before their definition
-
--- _ = MonoidR
--- open MonoidR′
-
-{-00
-MonoidR   = Monoid record
-MonoidR′  = Monoid opening MonoidR (λ x → x ++ "′")
-MonoidR₁  = Monoid opening MonoidR (λ x → x ++ "₁")
-MonoidR₂  = Monoid opening MonoidR (λ x → x ++ "₂")
-
-
-record Monoid-Hom (𝒮 𝒯 : MonoidR) : Set where
-  open MonoidR₁ 𝒮; open MonoidR₂ 𝒯
-  field
-    mor     : Carrier₁ → Carrier₂
-    id-pres : mor Id₁ ≡ Id₂
-    op-pres : ∀ {x y} → mor (x ⨾₁ y) ≡ mor x ⨾₂ mor y
--}
-
-{- Below are other examples, from the past. -}
-
-{-00
-MonoidTypeclass = Monoid typeclass hiding (_⨾_)
-MonoidT         = Monoid typeclass renaming (Carrier to C; _⨾_ to _⊕_)
-MonoidE         = Monoid record exposing (Carrier; Id)
-MonoidB         = Monoid record with (Carrier to Bool; Id to false)
-MonoidD         = Monoid data renaming (_⨾_ to _Δ_)
-
-
--- MonoidR         = Monoid record unbundling 2
--- MonoidD′        = Monoid data decorated (λ it → "╲" ++ it ++ "╱")
-
--- Accidentally “datar” instead of “data”.
--- Whoops = Monoid datar
-
-_ = MonoidTypeclass
-{- record MonoidTypeclass (Carrier : Set) : Set where … -}
-
-_ = MonoidT ; open MonoidT using (_⊕_)
-{- record MonoidT (C : Set) : Set where … -}
-
-_ = MonoidR
-{- record MonoidR (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) : Set where … -}
-
-_ = MonoidD
-{- data MonoidD : Set where … -}
-
-_ = MonoidE
-{- record MonoidE (Carrier : Set) (Id : Carrier) : Set where … -}
-
-_ = MonoidB ; open MonoidB using (leftfalse)
-{- record MonoidB : Set₀ where … -}
-
--- _ = MonoidD′
+-- MA: TODO: Useful example to know how to do. Maybe fix this whole quotation issue!
+𝒱-try this = decorated :by '(car this)
+Ni = M-Set record ⟴ try :this '(list "ᵢ" "ⱼ" "ₖ")
 
 -}
+-- _ = Ni
 
--}
+-- Passed functions need the quote.
+-- E.g.,
+-- 𝒱-keeping those = generated :by 'those

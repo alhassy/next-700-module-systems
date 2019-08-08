@@ -3,6 +3,12 @@
 #
 # (setq test outsidetest)
 
+# Add :precondition key so that variational users can perform a check
+# on the coherency of a variational. E.g., the homomorphism construction
+# needs to be invoked on a record.
+#
+# Maybe not; something to consider.
+
 # To do:
 # + Form library of common or useful variations or combinators, using the meta-primitives.
 #   - renaming :: Given a function f, apply it to all names.
@@ -28,6 +34,22 @@
 #        Perhaps check that 𝓌𝒾𝓉𝒽 clauses only allow meta-primitives?
 
 * COMMENT Changelog
+
+  [X] Updated user manual; new derived constructs include ~open, open-with~.
+      These required we expose a new reference: $𝑝𝑎𝑟𝑒𝑛𝑡.
+
+  [X] Demonstrated how homomorphism constructions may be automated; as well
+      as how /easily/ alter automted names with user-provided names!
+
+  [X] Introduced ~rename_~ and ~renaming_~ for rewrites that provide no special attention to underscores.
+
+  [X] ~waist-strings~ expressions now needen't be quoted /and/ may have
+      arbitrary Lisp expressions as elements (•̀ᴗ•́)و
+
+      This was necessary for the homomorphism construction to be
+      sufficiently generic.
+
+-----------------------------------------------------------------------------------------
 
   [X] Now parsing {-lisp -} comments; which must contain a single Lisp form
       ---or multiple if enclosed in a progn.
@@ -460,7 +482,6 @@ form their self, or await the next edition of this document. ⇋
 the inner two may require some familiarity with the code-base or Lisp.
 #+end_quote
 
-:momentarily_ignore:
 {{{fold(Testing.agda)}}}
 #+INCLUDE: "Testing.agda" src agda
 {{{end-fold}}}
@@ -468,7 +489,6 @@ the inner two may require some familiarity with the code-base or Lisp.
 {{{fold(Testing_Generated.agda)}}}
 #+INCLUDE: "Testing_Generated.agda" src agda
 {{{end-fold}}}
-:End:
 
  For this prototype, we have the following <<<constraints>>>:
 
@@ -608,9 +628,7 @@ by other Agda code, and otherwise leave it free standing.
 
 + Example uses of the variational clauses could be seen in the ~Testing.agda~ listing in the first section above.
 
-** Example Variationals
-
-*** Records and Meta-Primitives ~:kind~ & ~:waist-strings~
+** Records and Meta-Primitives ~:kind~ & ~:waist-strings~
    Let's begin with the simplest thing: Realising these fictitious ‘PackageFormers’ as records.
 
    An Agda ‘record’ is just a PackageFormer where the qualifier ~PackageFormer~ has been
@@ -687,7 +705,7 @@ record M-Set-Record : Set₁ where
        2. Resulting Generation
 #+END_SRC
 
-*** Typeclasses ---Parameterised Records--- and Meta-Primitives ~:waist~ & ~:level~
+** Typeclasses ---Parameterised Records--- and Meta-Primitives ~:waist~ & ~:level~
 
     We mentioned the <<<“waist”>>> before, but what is it exactly?
     I propose that the difference between ‘field’ and ‘parameter’
@@ -733,7 +751,7 @@ record M-Set-Typeclass₂ (Scalar : Set) (Vector : Set) : Set₁ where
   Variationals may have arguments and we will cover this issue in a later subsection
   in preference to continuing our purview of the meta-primitives.
 
-*** Primed Decoration and the Meta-Primitive ~alter-elements~
+** Primed Decoration and the Meta-Primitive ~alter-elements~
 
     When we have two occurances of a structure, we may want one of them to be decorated
     say with a prime so as to disambiguate them easily rather than have to qualify all
@@ -795,7 +813,7 @@ record M-Set′-attempt : Set₁ where
 
    The solution then is to /propogate/ any changes a name has down to its siblings.
 
-*** Composition ~⟴~ and First-class PackageFormers
+** Composition ~⟴~ and First-class PackageFormers
 
     Before we show how to fix the flawed ~primed-attempt~ definition,
     it is important to note that the previous variational duplicated
@@ -864,7 +882,75 @@ record M-Set-Record′ (Scalar′ : Set) (Vector′ : Set) : Set₁ where
    ≈  M-Set-Record primed
 #+END_SRC
 
-*** Variationals with Arguments ---~map, rename, [co]decorated, renaming~
+** Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable
+
+    Records provide a semantics, what if we want the syntax?
+Since ~data~ declarations consist of constructors, whose target type necessarily
+begins with the name of the ~data~-type being defined, let's only keep those fields and drop the rest.
+To do so, we use the helper function ~target~ which takes a declaration ~name : type0 → ⋯ → typeN~ and yields ~typeN~.
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(defun target (thing)
+  " Given a declaration “name : type0 → ⋯ → typeN”, yield “typeN”. "
+  (car (-take-last 1 (s-split "→" thing)))
+)
+#+END_SRC
+
+With this in hand, a ~data~ presentation requires a designated ~carrier~ which is used to
+keep only those elements that target it. Finally, as data constructor must target the
+type being defined, we alter the filtered elements by changing every instance of the
+carrier name with the name of the newely defined PackageFormer ---which we may access
+using the special identifier ~$𝑛𝑎𝑚𝑒~.
+#+BEGIN_src agda
+ {-lisp
+(𝒱 data carrier
+  = :type data
+    :level dec
+    :alter-elements (lambda (fs)
+      (thread-last fs
+        (--filter (s-contains? carrier (target (get-type it))))
+        (--map (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) it))))
+)
+-}
+#+END_SRC
+
+For example:
+#+BEGIN_SRC results-agda
+{- ScalarTerm    = M-Set data :carrier "Scalar" ⟴ primer -}
+data ScalarTerm : Set where
+   𝟙′ : ScalarTerm
+   _×′_ : ScalarTerm → ScalarTerm → ScalarTerm
+
+{- ScalarSyntax = M-Set primer ⟴ data :carrier "Scalar′" -}
+data ScalarSyntax : Set where
+   𝟙′ : ScalarSyntax
+   _×′_ : ScalarSyntax → ScalarSyntax → ScalarSyntax
+#+END_src
+
+Again:
+The meta-primitive ~:alter-elements~ is instructed to map over those
+fields ~f~ that contain the ~carrier~ in their ~target~ type
+by replacing the given ~carrier~ with the newly-minted ~$𝑛𝑎𝑚𝑒~ of
+the grouping mechanism being constructed. Those that do not
+contain the given ~carrier~ in their target type are filtered out.
+
+Notice that $𝑛𝑎𝑚𝑒 is a special variable that refers to the newly defined PackageFormer's name.
+- It is written using ~\Mi~ with Agda input; e.g., ~\Min~ gives ~𝑛~.
+- The ‘$’ is intended to further mark the special nature of this variable.
+
+*Important*: Notice that, in the second example above,
+the name of the carrier is ~Scalar′~ since we changed the
+PackageFormer to prime all elements, including the ~Scalar~, element.
+#+BEGIN_SRC results-agda
+{- No = M-Set primer ⟴ data :carrier "Scalar" -}
+data No : Set where
+   𝟙′ : No′
+   _×′_ : No′ → No′ → No′
+
+{- Crashes since type No′ is not defined! -}
+#+END_SRC
+
+** Variationals with Arguments ---~map, rename, [co]decorated, renaming~
 
     Thus far our variationals have been nullary, let's consider otherwise.
 
@@ -1118,104 +1204,380 @@ NearMonoid = M-Set record ⟴ single-sorted :with-sort "Carrier"
 -}
 #+END_SRC
 
-*** TODO COMMENT generated-by / keeping
+** Shallow Renaming with Agda's ~open ⋯ public ⋯ renaming ⋯~
+    The previous approach to renaming altered field names literly which is not
+    desirable when one only wants to refer to field names of multiple instances
+    of the same record ---e.g., when forming homomorphisms.
 
-#+BEGIN_SRC emacs-lisp :var test = test :exports both :results replace :wrap "src results-agda"
-(setq package-formers nil)
-(load-package-former (second (get-children "PackageFormer" test)))
+    A common pattern in Agda is then to open the record and perform the desired
+    shallow renames. This pattern is so common that the standard library is littered
+    with instances of it. We can codify the pattern as a method rather than as a
+    manual technique.
 
-(s-join "\n"
-(funcall
-(lambda (fs)
-  (let* ( fsnew (p (lambda (f) (equal "leftId" (get-name f))))
-               (yeses (--map (funcall p it) fs))
-               (get-yeses (lambda () (--filter it (--zip-with (if it other) yeses fs))))
-               (in-yeses (lambda (e) (--any (s-contains? (s-replace "_" " " (get-name e)) (get-type it)) (funcall get-yeses)))))
+    Let's go from zero to one-hundred ---again: There's a Lisp Cheat Sheet that should
+    have been consulted at one point.
 
-    (loop for _ in fs do
-          (loop for f in fs
-                for i from 0
-                do ;; when f in yess, set f to be yes.
-                (when (funcall in-yeses f) (setf (nth i yeses) t))))
+    Zero: A module where the elements are all parameters.
+#+BEGIN_SRC results-agda
+{-700
+𝒱-empty-module = :type module :level none :waist 999
+Neato = M-Set empty-module
+-}
 
-    (funcall get-yeses)
-  ))
-  ;; (-as-> (-unzip (--zip-with `(,other  ,(format "let %s = %s in " (get-name it) (get-name other))) fs (--map (map-name (concat name "′") it) fs))) yup
-  ;;          (--zip-with (map-type (concat (s-join "" it) type) other) (-inits (cadr yup)) (car yup))))
-
-(package-former-elements (cdr (assoc "M-Set" package-formers)))))
+module Neato (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector) (𝟙 : Scalar) (_×_ : Scalar → Scalar → Scalar) (leftId : {𝓋 : Vector} → 𝟙 · 𝓋 ≡ 𝓋) (assoc : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋 ≡ a · (b · 𝓋)) where
 #+END_SRC
 
-*** Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable
+   One-hundred: A one-paremeter module where elements may be renamed.
+#+BEGIN_SRC agda
+{-lisp
+;; “with” is a renaming string-to-string function.
+(𝒱 open with
+  = :type module
+    :level none
+    :waist 1
+    :waist-strings '("")
+    :alter-elements  (lambda (fs)
+      (let ((kind "{! !}"))
+        (thread-last
+           (--map (format "%s to %s" (get-name it) (rename-mixfix with (get-name it))) fs)
+           ;; Resulting elements must be a list, so we make a singleton list.
+           (s-join "\n       ; ")
+           (format "    ( %s\n       )")
+           list
 
-    Records provide a semantics, what if we want the syntax?
-Since ~data~ declarations consist of constructors, whose target type necessarily
-begins with the name of the ~data~-type being defined, let's only keep those fields and drop the rest.
-To do so, we use the helper function ~target~ which takes a declaration ~name : type0 → ⋯ → typeN~ and yields ~typeN~.
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-(defun target (thing)
-  " Given a declaration “name : type0 → ⋯ → typeN”, yield “typeN”. "
-  (car (-take-last 1 (s-split "→" thing)))
+           ;; Stick on the renaming, which in turn requires an opening clause;
+           ;; which in turn requires a module parameter.
+           (cons "  renaming")
+           (cons (format "open %s ℛ public" $𝑝𝑎𝑟𝑒𝑛𝑡))
+           (cons (format "ℛ : %s" $𝑝𝑎𝑟𝑒𝑛𝑡)))))
 )
-#+END_SRC
 
-With this in hand, a ~data~ presentation requires a designated ~carrier~ which is used to
-keep only those elements that target it. Finally, as data constructor must target the
-type being defined, we alter the filtered elements by changing every instance of the
-carrier name with the name of the newely defined PackageFormer ---which we may access
-using the special identifier ~$𝑛𝑎𝑚𝑒~.
-#+BEGIN_src agda
- {-lisp
-(𝒱 data carrier
-  = :type data
-    :level dec
-    :alter-elements (lambda (fs)
-      (thread-last fs
-        (--filter (s-contains? carrier (target (get-type it))))
-        (--map (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) it))))
-)
+(𝒱 open-with decoration
+  = open :with (lambda (x) (concat x decoration)))
 -}
 #+END_SRC
 
-For example:
+  Example use.
 #+BEGIN_SRC results-agda
-{- ScalarTerm    = M-Set data :carrier "Scalar" ⟴ primer -}
-data ScalarTerm : Set where
-   𝟙′ : ScalarTerm
-   _×′_ : ScalarTerm → ScalarTerm → ScalarTerm
+{-700
+M-Set-R = M-Set record
+M-Set-R₁ = M-Set-R open :with (lambda (x) (concat x "₁"))
+M-Set-R₂ = M-Set-R open-with :decoration "₂"
+-}
 
-{- ScalarSyntax = M-Set primer ⟴ data :carrier "Scalar′" -}
-data ScalarSyntax : Set where
-   𝟙′ : ScalarSyntax
-   _×′_ : ScalarSyntax → ScalarSyntax → ScalarSyntax
-#+END_src
+module M-Set-R₁ (ℛ : M-Set-R) where
+   open M-Set-R ℛ public
+     renaming
+       ( Scalar to Scalar₁
+       ; Vector to Vector₁
+       ; _·_ to _·₁_
+       ; 𝟙 to 𝟙₁
+       ; _×_ to _×₁_
+       ; leftId to leftId₁
+       ; assoc to assoc₁
+       )
 
-Again:
-The meta-primitive ~:alter-elements~ is instructed to map over those
-fields ~f~ that contain the ~carrier~ in their ~target~ type
-by replacing the given ~carrier~ with the newly-minted ~$𝑛𝑎𝑚𝑒~ of
-the grouping mechanism being constructed. Those that do not
-contain the given ~carrier~ in their target type are filtered out.
-
-Notice that $𝑛𝑎𝑚𝑒 is a special variable that refers to the newly defined PackageFormer's name.
-- It is written using ~\Mi~ with Agda input; e.g., ~\Min~ gives ~𝑛~.
-- The ‘$’ is intended to further mark the special nature of this variable.
-
-*Important*: Notice that, in the second example above,
-the name of the carrier is ~Scalar′~ since we changed the
-PackageFormer to prime all elements, including the ~Scalar~, element.
-#+BEGIN_SRC results-agda
-{- No = M-Set primer ⟴ data :carrier "Scalar" -}
-data No : Set where
-   𝟙′ : No′
-   _×′_ : No′ → No′ → No′
-
-{- Crashes since type No′ is not defined! -}
+module M-Set-R₂ (ℛ : M-Set-R) where
+   open M-Set-R ℛ public
+     renaming
+       ( Scalar to Scalar₂
+       ; Vector to Vector₂
+       ; _·_ to _·₂_
+       ; 𝟙 to 𝟙₂
+       ; _×_ to _×₂_
+       ; leftId to leftId₂
+       ; assoc to assoc₂
+       )
 #+END_SRC
 
-*** TODO COMMENT List of derivied variationals that are common and useful  :outdated:
-** Currying for Datatypes
+   These kind of open-renamings are so common that the tedium
+   is actually acceptable by most users ---it shouldn't be
+   and now it no longer has to be that way.
+
+** Subpacakges with ~generated, sorts, signature~
+
+    A common grouping operation is to zoom-in to the minimal well-formed
+    pacakge that contains only certain specfiied elements. For example,
+    in our ~M-Set~ grouping, we may want to keep only ~𝟙~ but to be well-defined
+    we are forced to also keep the elements on which it depends ---namely, ~Scalar~.
+
+    In particular, the following naive approach only works if the elements are
+    independent of one another ---which is rarely the case for Agda users.
+#+BEGIN_SRC emacs-lisp
+{- cute, but too brutish. -}
+𝒱-generated by = :alter-elements (lambda (fs) (-filter by fs))
+#+END_SRC
+
+    The coherent scheme is straightforward to implement.
+    For clarity, rather than efficieny,
+    the algorithm below forms a list ~yeses~ of the elements that should be kept
+    then traverses the elements list, adding all elements needed to ensure that list
+    is coherent. Moreover, for generality, we consider a predicate rather than an explicit
+    listing of items to be retained.
+
+#+BEGIN_SRC emacs-lisp
+;; “by” is a predicate on elements.
+(𝒱 generated by
+  = :alter-elements  (lambda (fs)
+      (let* ( (yeses (--map (funcall by it) fs))
+              (get-yeses (lambda () (--filter it (--zip-with (if it other) yeses fs))))
+              (in-yeses (lambda (e)
+                          (--any
+                           (s-contains? (s-replace "_" " " (get-name e)) (get-type it))
+                           (funcall get-yeses)))))
+
+        (loop for _ in fs do
+              (loop for f in fs
+                    for i from 0
+                    do ;; when f in yess, set f to be yes.
+                    (when (funcall in-yeses f) (setf (nth i yeses) t))))
+
+        (funcall get-yeses))))
+#+END_SRC
+
+Here's an immediate application: Obtaining the types declared in a grouping mechanism.
+#+BEGIN_SRC results-agda
+{-700
+𝒱-sorts = generated :by (lambda (f) (s-contains? "Set" (target (get-type f))))
+
+M-Set-Sorts = M-Set record ⟴ sorts
+-}
+record M-Set-Sorts : Set₁ where
+ field
+   Scalar  : Set
+   Vector  : Set
+#+END_SRC
+
+We can even obtain a sub-signature wholsesale:
+#+BEGIN_SRC results-agda
+{-700
+MonoidSignature = M-Set record ⟴ generated :by (lambda (f) (and (s-contains? "Scalar" f) (not (s-contains? "Vector" f))))
+-}
+record MonoidSignature : Set₁ where
+ field
+   Scalar  : Set
+   𝟙       : Scalar
+   _×_     : Scalar → Scalar → Scalar
+#+END_SRC
+
+This pattern of having a lawless grouping seems sufficinetly desirable that we may
+codify it.
+#+BEGIN_SRC results-agda
+{-lisp
+(defun targets-a-sort (element)
+  (--any (s-contains? it (target element)) (-map #'get-name (-filter #'is-sort $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠))))
+
+(𝒱 signature = generated :by (lambda (f) (targets-a-sort f)))
+-}
+
+{-700
+MonSig = M-Set record ⟴ signature
+-}
+record MonSig : Set₁ where
+ field
+   Scalar  : Set
+   Vector  : Set
+   _·_     : Scalar → Vector → Vector
+   𝟙       : Scalar
+   _×_     : Scalar → Scalar → Scalar
+#+END_SRC
+
+   Neato!
+
+** Automatically deriving homomorphism definitions ♥‿♥
+
+    The definition of “structure preservation” is, nearly always, mechanical to
+    formulate and that's just what we shall do to avoid having to write it out
+    by hand ever again.
+
+    :Illumniating_yet_overkill_to-subscript_defn:
+#+BEGIN_SRC emacs-lisp
+(defun to-subscript (n)
+  "Subscript numbers 𝓃 have hex-codes #x208𝓃,
+   we realise the codes as characters to obtain the subscripts.
+
+   This is preferable to casing:
+  (pcase i (0 “₀”) (1 “₁”) (2 “₂”) ⋯)
+
+  When ‘n’ ∉ 0..9 an error message halts execution.
+  "
+
+  (when (or (< n 0) (> n 9))
+    (error "to-subscript: n must be in 0..9"))
+
+  (thread-last
+    (format "#x208%s" n)
+    (read-from-string)
+    car
+    (format "%c")))
+#+END_SRC
+    :End:
+
+    The idea is not too complicated:
+    1. Suppose you have an operation ~_·_ : Scalar → Vector → Vector~.
+    2. Suppose you have a numbering of the sorts; e.g., ~sort₁ = Scalar, sort₂ = Vector~.
+    3. Form functions ~mapᵢ : sortᵢ → sortᵢ′~
+    4. Include implicit arguments in the type: ~{x₁ : Scalar} → {x₂ : Vector} → Vector~.
+    5. The target type ~Vector = sort₂~ means we need to apply ~map₂~ to the expression
+       formed from the operation's name along with the arguments.
+       - The left hand side is thus ~map₂ (_·_ x₁ x₂)~.
+    6. For the right hand side, we use the target-space's name, say ~_·′_~,
+       along with ~mapᵢ~ applied to ~xᵢ~ for each ~i~ mentioned in the type.
+
+    7. The result:
+       ~pres-· : {x₁ : Scalar} → {x₂ : Vector} →   map₂ (_·_ x₁ x₂)   ≡   _·′_ (map₁ x₁) (map₂ x₂)~.
+      :RoughIdea:
+    ⇒  _·_ : sort₁ → sort₂ → sort₂
+    ⇒ pres-· : {x₁ : sort₁} {x₂ : sort₂}
+         →   form source expression:  x₁ · x₂
+           ⇒ form target expression: map₁ x₂ ·′ map₂ x₂
+           ⇒ equate them using target sort's map:  map₂ (x₁ · x₂) ≡ map₁ x₂ ·′ map₂ x₂
+    :End:
+
+    First, we need a helper that forms the preservation formulae. In a ~lisp~ block:
+#+BEGIN_SRC emacs-lisp
+(defun homify (typed-name sort)
+  "Given a typed name, produce the associating “preservation” formula.
+   E.g.,
+            _·_    : Scalar → Vector → Vector
+            pres-· : {x₁ : Scalar} → {x₂ : Vector} → map₂ (x₁ · x₂) = map₁ x₁ ·′ map₂ x₂
+
+  Type τ gets variable xᵢ provided (i, τ) ∈ sorts; likewise we think of mapᵢ : τ → τ′.
+  Note that we must have i ∈ 0..9, otherwise there'll be unexpected subscripting errors.
+
+  The target name is primed, “·′”.
+ "
+ (letf* ((sorts     (mapcar #'car sort))
+         ((symbol-function 'to-subscript) (lambda (n) (nth n '("₀" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉"))))
+         ((symbol-function 'index) (lambda (s) (to-subscript (cdr (assoc it sort)))))
+
+         (tn→       (s-split " → " (get-type typed-name)))
+         (arg-count (1- (length tn→)))
+
+         (all-indicies  (--map (index it) (--filter (member (s-trim it) sorts) tn→)))
+         (indicies  (-drop-last 1 all-indicies))
+         (tgt-idx   (car (-take-last 1 all-indicies)))
+
+         (op        (get-name typed-name))
+         (args      (--map (concat "x" it) indicies))
+         (lhs       (format "map%s (%s %s)" tgt-idx op (s-join " " args)))
+
+         (op′       (rename-mixfix (lambda (n) (concat n "′")) op))
+         (map-args  (--map (format "(map%s x%s)" it it) indicies))
+         (rhs       (format "%s %s" op′ (s-join " " map-args)))
+
+         (target    (format "  %s   ≡   %s" lhs rhs))
+ )
+
+ ;; Change the target type.
+ (setq tn→ (--map (when (assoc it sort) (format "{x%s : %s}" (index it) it)) tn→))
+ (setf (nth arg-count tn→) target)
+
+ ;; Stick it all together, with an updated name.
+ (make-tn
+   (format "pres-%s" (s-replace "_" "" (get-name typed-name)))
+   (s-join " → " tn→))
+ )
+)
+
+;; Test it out.
+;; (homify "_·_    : Scalar → Vector → Vector" '( ("Scalar" . 4) ("Vector" . 1)))
+#+END_SRC
+
+    Then, we form the variational as follows ---alos in a ~lisp~ block.
+#+BEGIN_SRC emacs-lisp
+(𝒱 hom
+  = record ⟴
+    :waist 2
+    :waist-strings '("open M-Set-R  Src" "open M-Set-R′ Tgt" "field")
+    :alter-elements (lambda (es)
+
+    (let (maps eqns sorts)
+
+      ;; Construct the mapᵢ : sortᵢ → sortᵢ′; keeping track of (sort . i) pairs.
+      (loop for e in es
+            for i from 1
+       do
+
+         (when (is-sort e)
+           (push (cons (get-name e) i) sorts)
+           (push (format "map%s : %s → %s′" (to-subscript i) (get-name e) (get-name e))
+                 maps))
+
+          (when (and (targets-a-sort e) (not (is-sort e)))
+            (push (homify e sorts) eqns)))
+
+    ;; Ensure we have a source and target space as elements.
+    (-cons* "Src : M-Set-R"
+            "Tgt : M-Set-R"
+    (reverse (-concat eqns maps)))
+)))
+#+END_SRC
+
+    Here are two examples. *Note* that the latter allows us to /rename/ the ~mapᵢ~ as we
+    wish ---which may be preferable to extending the variational to accomodate for new
+    names.
+
+#+BEGIN_SRC results-agda
+{-700
+Hom  = M-Set hom
+Hom² = M-Set hom ⟴ renaming :by "map₁ to scalar; pres-𝟙 to unity"
+-}
+
+record Hom (Src : M-Set-R) (Tgt : M-Set-R) : Set₁ where
+ open M-Set-R  Src
+ open M-Set-R′ Tgt
+ field
+   map₁ : Scalar → Scalar′
+   map₂ : Vector → Vector′
+   pres-· : {x₁ : Scalar} → {x₂ : Vector} →   map₂ (_·_ x₁ x₂)   ≡   _·′_ (map₁ x₁) (map₂ x₂)
+   pres-𝟙 : map₁ (𝟙 )   ≡   𝟙′
+   pres-× : {x₁ : Scalar} → {x₁ : Scalar} →   map₁ (_×_ x₁ x₁)   ≡   _×′_ (map₁ x₁) (map₁ x₁)
+
+record Hom² (Src : M-Set-R) (Tgt : M-Set-R) : Set₁ where
+ open M-Set-R  Src
+ open M-Set-R′ Tgt
+ field
+   scalar : Scalar → Scalar′
+   map₂ : Vector → Vector′
+   pres-· : {x₁ : Scalar} → {x₂ : Vector} →   map₂ (_·_ x₁ x₂)   ≡   _·′_ (scalar x₁) (map₂ x₂)
+   unity : scalar (𝟙 )   ≡   𝟙′
+   pres-× : {x₁ : Scalar} → {x₁ : Scalar} →   scalar (_×_ x₁ x₁)   ≡   _×′_ (scalar x₁) (scalar x₁)
+#+END_SRC
+
+  This is so cool (•̀ᴗ•́)و
+
+  We leave it to the reader to derive other constructs from a theory presentation.
+  Examples can be found in these [[https://github.com/alhassy/next-700-module-systems-proposal/blob/master/JC_Program_Generation_Talk_IFIP.pdf][Metaprogramming Agda]] slides:
+  Homomorpism equality, application to carrier elements, isomorphisms,
+  isomorphisms where only one direction needs to preserve the structure
+  and an automatically derivable proof that the other direction is also
+  structure preserving, endomorphism and automorphism types, kernels,
+  product & sum & other categorical types.
+
+  + Challenge ::
+      Design a scheme to produce simple Cartesian products from a given theory.
+
+    1. The only variable to this problem is an arbitrary record, say it is ~M~.
+
+       For this exercise to be tractable, assume ~M~ consists of declarations
+       of sort symbols, function symbols, and nullary (non-implication) equations
+       which may have implicit arguments.
+
+    2. Ensure you understood the definition of the homomorphism scheme above.
+    3. Mimic the homomorphism scheme to produce a typed ~Prod~ where ~Prod A₀ A₁~
+       consists of a ~M~ value, say ~P~, and two homomorphisms ~Hom P Aᵢ~.
+    4. Write a Lisp code that produces a function ~MakeProduct : (A₀ A₁ : M) → Prod A₀ A₁~.
+
+       - The projection morphisms are straightfoward.
+       - Every /n/-ary function ~f~ could be defined by ~fₚ = zipₙ f₀ f₁~.
+       - Every equation ~e~ could be defined by ~eₚ = cong₂ _,_ e₀ e₁~.
+
+    5. If you have actually attempted this, then go on to include the remaining
+       artefacts to make the construction an actual categorical product.
+
+** TODO COMMENT List of derivied variationals that are common and useful :outdated:
+** COMMENT Currying for Datatypes
 
    :Lisp_code_that_generates_the_code_for_this_subsection:
 #+BEGIN_SRC emacs-lisp :var monoid = monoid :exports both :results replace :wrap "src results-agda"
@@ -1376,7 +1738,7 @@ Neato ^_^ Short and sweet.
 Now for the second problem. Rather than forming a new data-type,
 we hoist up the ~Id~-entity field as a parameter.
 | ~TODO: Write this section~ |
-:TODO:
+
 #+BEGIN_SRC agda
  MonoidId = Monoid record exposing (Carrier; Id)
 #+END_SRC
@@ -1416,7 +1778,6 @@ The full source of this discussion is as follows.
 {{{fold(CaseStudy.agda)}}}
 #+INCLUDE: "CaseStudy.agda" src agda
 {{{end-fold}}}
-:End:
 
 * Strings and Things
 
@@ -2284,12 +2645,12 @@ Conversely, let's have a pretty printer.
 
    See ‘show-package-former’ for their use and how their printed.
   "
-  (--any? (s-contains? it f) '("field" "private")))
+  (--any? (s-contains? it f) '("field" "private" "open")))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp :tangle yes
 (cl-defun show-package-former (p &key extra-waist-strings
-                 (omit-level nil) omit-docstring omit-car-element)
+                 omit-docstring omit-car-element)
   "Pretty print a package-former record value.
 
    -‘waist-strings’: Arbitrary new elements that are input at the location of the
@@ -2305,7 +2666,7 @@ Conversely, let's have a pretty printer.
      (and (not omit-docstring) docstring (format "{- %s -}" docstring))
 
      ;; 1. The schema declaration
-      (s-collapse-whitespace (s-join " " (list type name (s-join " " (--map (concat "(" it ")") parameters)) (unless omit-level (concat ": Set" level))
+      (s-collapse-whitespace (s-join " " (list type name (s-join " " (--map (concat "(" it ")") parameters)) (unless (equal level 'none) (concat ": Set" level))
                     "where")))
 
 
@@ -2403,6 +2764,7 @@ encode it using ert; instead we use a raw assert.
   but the implementation will refer to it with a prefix.
 
 #+BEGIN_SRC emacs-lisp :results replace :tangle yes
+;; This is Lisp's “subst”!?
 (defun rec-replace (old new thing)
   "Traverse ‘thing’ and seek out all, possibly nested, instances
    of ‘old’ and replace them with ‘new’."
@@ -2647,7 +3009,7 @@ PackageFormer LHS : Set₂ where
                          (format "This kind “%s” is not supported by Agda!\n     Valid kinds: record, data, module, PackageFormer." value))
                 (:waist  (numberp value) (format "The waist should be a number; which “%s” is not." value))
                 (:waist-strings (listp value) (format "The waist-strings should be a Lisp list of strings; which “%s” is not." value))
-                (:level (-contains? '(inc dec) value) (format "The “level” must be “inc” or “dec”; which “%s” is not." value))
+                (:level (-contains? '(inc dec none) value) (format "The “level” must be “inc” or “dec” or “none”; which “%s” is not." value))
                 (:alter-elements (functionp value) (format "Componenet alter-elements should be a function; which “%s” is not." value))
                        )))
 
@@ -2662,7 +3024,7 @@ PackageFormer LHS : Set₂ where
 
     ;; Return the key-value as a pair for further processing.
     ;; :type and :level values are symbols and so cannot be evaluated furthur.
-    (cons key (if (or (-contains? args value) (-contains? '(:type :level) key)) value (eval value)))))
+    (cons key (if (or (-contains? args value) (-contains? '(:type :level :waist-strings) key)) value (eval value)))))
 
          ;; Check to see if “c” has a value, if it does then assert it satisfies the property “p” otherwise error with
          ;; message “m”. If all good, then update the PackageFormer at that component.
@@ -3278,10 +3640,10 @@ Loading an instantiation into our list is now trivial.
      ($𝑛𝑎𝑚𝑒      (nth 0 pieces))
      ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠    nil)
      (eqSymb     (nth 1 pieces))
-     (parent     (nth 2 pieces))
+     ($𝑝𝑎𝑟𝑒𝑛𝑡     (nth 2 pieces))
      (variations (nthcdr 3 pieces))
      (alterations nil)
-     (self (copy-package-former (cdr (assoc parent package-formers))))
+     (self (copy-package-former (cdr (assoc $𝑝𝑎𝑟𝑒𝑛𝑡 package-formers))))
      ((symbol-function '⁉)
          ;; Check to see if “c” has a value, if it does then assert it satisfies the property “p” otherwise error with
          ;; message “m”. If all good, then update the PackageFormer at that component.
@@ -3301,7 +3663,7 @@ Loading an instantiation into our list is now trivial.
        ;; We do not crash here since we also arbitrary Agda to flow through the 700-comments as well.
 
    ;; Ensure instance declaration is well-formed.
-   (when (or (s-blank? (s-trim $𝑛𝑎𝑚𝑒)) (not (equal "=" eqSymb)) (not parent))
+   (when (or (s-blank? (s-trim $𝑛𝑎𝑚𝑒)) (not (equal "=" eqSymb)) (not $𝑝𝑎𝑟𝑒𝑛𝑡))
      (error (format "700: %s\n\n\t⇨\t%s"
                     "An instance declaration is of the form “new-name = parent-package-former variational-clauses”."
                     line)))
@@ -3314,7 +3676,7 @@ Loading an instantiation into our list is now trivial.
 
    ;; Ensure the PackageFormer to be instantiated is defined.
     (unless self (error (format "700: %s\n\n\t⇨\t%s"
-                                (format "Parent “%s” not defined." parent)
+                                (format "Parent “%s” not defined." $𝑝𝑎𝑟𝑒𝑛𝑡)
                                 line)))
 
     ;; Update the new PackageFormer with a docstring of its instantiation
@@ -3343,7 +3705,9 @@ Loading an instantiation into our list is now trivial.
 
       ;; :waist-strings ≈ Extra strings to insert at the waist position.
       ; (⁉ 'waist-strings nil '((eval it))) ;; E.g., it might be an expression yielding a list.
-      (⁉ 'waist-strings)
+      (⁉ 'waist-strings nil
+          '((setq it (--map (eval it) it))))
+;;                        '((setq it ((cons (eval (car it)) (cdr it)))))
 
       ;; :level ≈ Either 'inc or 'dec, for increment or decrementing the level.
       (⁉ 'level nil ;; 'string-please
@@ -3362,7 +3726,9 @@ Loading an instantiation into our list is now trivial.
 
                      (pcase it
                        ('inc (format "Level.suc (%s)" lvl))
-                       ('dec (s-join "suc" (cdr (s-split "suc" lvl :omit-nulls))))))))))
+                       ('dec (s-join "suc" (cdr (s-split "suc" lvl :omit-nulls)))))))
+
+             (unless it (setq it 'none)))))
 
       ;; :alter-elements ≈ Access the typed name constituents list.
         ;; Perform *all* element alterations, in the left-to-right ⟴ order; if any at all.
@@ -5047,6 +5413,187 @@ We use the function add to calculate the sum of two numbers.
     :PROPERTIES:
     :ID:       BAD97113-3561-4A4A-BA07-0CD5BF6BA35F
     :END:
+
+* PackageFormers *as* Agda Datatypes      :Eventually::after_prototype_is_done:
+
+#+BEGIN_SRC agda
+open import Function using (id)
+open import Data.List using (List; map)
+open import Data.String using () renaming (String to Name)
+open import Data.String using () renaming (String to Type)
+open import Data.Product using (_×_) renaming (map to bimap)
+
+data VarExpr : Set where
+  :kind : String → VarExpr
+  :alter-elements : String → VarExpr
+
+
+{- No lambda's allowed; all arguments must be to the left of the ‘=’. -}
+{- Definition must be one liner. -}
+𝑽-adorn : List (Name × Type) → (Name → Name) → List (Name × Type)
+𝑽-adorn xs f = map (bimap f id) xs
+
+import Data.Maybe as Maybe
+open Maybe using (Maybe; just; nothing)
+import Data.List as List
+open import Data.List using (_++_ ; _∷_)
+data Kind : Set where
+  ‵data ‵record ‵module ‵function ‵packageformer : Kind
+  --
+  -- note that pf's are not necessary, we can work with records then
+  -- reify them as other groupingmechanisms.
+  -- BUT it's preferable to be as unbiased as possible
+  -- hence we keep the generic package-former kind.
+
+record PF : Set where
+  field
+    kind       : Kind
+    name       : Name
+    level      : Level
+    {- The following four are the “constiutents” or “elements” of a PackageFormer -}
+
+    -- old, remove me
+    variation  : Maybe Name
+    carrier    : Maybe Name
+
+    parameters : List (Name × Type)
+    fields     : List (Name × Type)
+
+{-
+pf′ = pf variational (args; otherwise)
+
+variational : (new-name : Name) (args : ⋯) (otherwise : ? → ?) → PF
+variational pf′ args otherwise = ???
+-}
+
+_Variational₁ : {ℓ : Level} (X : Set ℓ) → Set ℓ
+X Variational₁ = (new-name : Name) (to-list : List (Name × X)) (otherwise : Name → X)
+               → PF → PF
+
+_Variational₀ : {ℓ : Level} (X : Set ℓ) → Set ℓ
+X Variational₀ = (new-name : Name) (to-list : List X) (otherwise : Name → X)
+               → PF → PF
+
+open import Data.Product using (_,_)
+open import Data.String using (String)
+postulate string-replace : (old new : String) → String → String
+
+𝑽-record : Name Variational₁
+𝑽-record new-name to-list otherwise pf = let open PF pf in
+  record
+    { kind       = ‵record
+    ; name       = new-name
+    ; variation  = nothing
+    ; level      = Level.suc level
+    ; carrier    = just "Carrier"
+    ; parameters = List.[]
+    ; fields     =    parameters
+                   ++ ("Carrier" , "Set level")  -- HACK!
+                   ∷ List.map (bimap (string-replace "name variation" "Carrier") id) fields   -- HACK!
+    }
+
+{- This’ a lot at once; let's instead focus on small combinators. -}
+
+-- as-kind : Kind → PF → PF
+-- as-kind k
+
+{-
+with-carrier : Name → PF → PF
+with-carrier c pf = let open PF pf in
+  record
+    { kind       = kind
+    ; name       = name
+    ; level      = level
+    ; variation  = variation
+    ; carrier    = just c
+    ; parameters = List.map (bimap f id) parameters
+    ; fields     = List.map (bimap f id) fields
+    }
+
+
+alter-elements : (Name → Name) → PF → PF
+alter-elements f pf = let open PF pf in
+  record
+    { kind       = kind
+    ; name       = name
+    ; level      = level
+    ; variation  = variation
+    ; carrier    = Maybe.map f carrier
+    ; parameters = List.map (bimap f id) parameters
+    ; fields     = List.map (bimap f id) fields
+    }
+
+-}
+
+{-00
+
+Woah = Monoid record adorn (λ x → x ++ "ₐ")
+
+-}
+
+
+
+
+-- Since seven-hundred comments generate code which is imported, we may use their results
+-- seemingly before their definition
+
+-- _ = MonoidR
+-- open MonoidR′
+
+{-00
+MonoidR   = Monoid record
+MonoidR′  = Monoid opening MonoidR (λ x → x ++ "′")
+MonoidR₁  = Monoid opening MonoidR (λ x → x ++ "₁")
+MonoidR₂  = Monoid opening MonoidR (λ x → x ++ "₂")
+
+
+record Monoid-Hom (𝒮 𝒯 : MonoidR) : Set where
+  open MonoidR₁ 𝒮; open MonoidR₂ 𝒯
+  field
+    mor     : Carrier₁ → Carrier₂
+    id-pres : mor Id₁ ≡ Id₂
+    op-pres : ∀ {x y} → mor (x ⨾₁ y) ≡ mor x ⨾₂ mor y
+-}
+
+{- Below are other examples, from the past. -}
+
+{-00
+MonoidTypeclass = Monoid typeclass hiding (_⨾_)
+MonoidT         = Monoid typeclass renaming (Carrier to C; _⨾_ to _⊕_)
+MonoidE         = Monoid record exposing (Carrier; Id)
+MonoidB         = Monoid record with (Carrier to Bool; Id to false)
+MonoidD         = Monoid data renaming (_⨾_ to _Δ_)
+
+
+-- MonoidR         = Monoid record unbundling 2
+-- MonoidD′        = Monoid data decorated (λ it → "╲" ++ it ++ "╱")
+
+-- Accidentally “datar” instead of “data”.
+-- Whoops = Monoid datar
+
+_ = MonoidTypeclass
+{- record MonoidTypeclass (Carrier : Set) : Set where … -}
+
+_ = MonoidT ; open MonoidT using (_⊕_)
+{- record MonoidT (C : Set) : Set where … -}
+
+_ = MonoidR
+{- record MonoidR (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) : Set where … -}
+
+_ = MonoidD
+{- data MonoidD : Set where … -}
+
+_ = MonoidE
+{- record MonoidE (Carrier : Set) (Id : Carrier) : Set where … -}
+
+_ = MonoidB ; open MonoidB using (leftfalse)
+{- record MonoidB : Set₀ where … -}
+
+-- _ = MonoidD′
+
+-}
+#+END_SRC
+
 
 * COMMENT footer
 

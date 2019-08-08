@@ -4,18 +4,7 @@ open import Level
 open import Data.Bool
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.String hiding (_++_)
--- The name “_×_” is in scope since I've imported Data.Product down below for some
-open import Function using (id)
-open import Data.List using (List; map)
-open import Data.String using () renaming (String to Name)
-open import Data.String using () renaming (String to Type)
--- open import Data.Product using (_×_) renaming (map to bimap)
-import Data.Maybe as Maybe
-import Data.List as List
-open import Data.List using (_++_ ; _∷_)
-open import Data.Product using (_,_)
-open import Data.String using (String)
--- Since seven-hundred comments generate code which is imported, we may use their results
+-- It is important to observe that ‘openings’ are lossy:
 open import Level as Level
 module Testing_Generated where 
 
@@ -85,8 +74,11 @@ record MonoidT₃ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) (Id 
     rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
 
 
-{- MonoidT₂   =  MonoidP typeclass₂ -}
+{- MonoidT₂   =  MonoidP typeclass₂ ⟴ :waist-strings ("private" "extra : Set₁" "extra = Set" "field") -}
 record MonoidT₂ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) : Set where
+  private
+    extra : Set₁
+    extra = Set
   field
     Id      : Carrier
     assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
@@ -237,6 +229,18 @@ record MRₜₒ : Set₁ where
    assoc : {a b : S} {𝓋 : V} → (a × b) nice 𝓋  ≡  a nice (b nice 𝓋)
 
 
+{- MRₜₒ_ = M-Set record ⟴ renaming_ :by "Scalar to S; Vector to V; _·_ to _nice_" -}
+record MRₜₒ_ : Set₁ where
+ field
+   S : Set
+   V : Set
+   _nice_ : S → V → V
+   𝟙 : S
+   _×_ : S → S → S
+   leftId : {𝓋 : V}  →  𝟙 nice 𝓋  ≡  𝓋
+   assoc : {a b : S} {𝓋 : V} → (a × b) nice 𝓋  ≡  a nice (b nice 𝓋)
+
+
 {- NearMonoid = M-Set record ⟴ renaming :by "Scalar to Carrier; Vector to Carrier; · to ×" -}
 record NearMonoid : Set₁ where
  field
@@ -256,6 +260,52 @@ record NearMonoid¹ : Set₁ where
    _×_ : Carrier → Carrier → Carrier
    leftId : {𝓋 : Carrier}  →  𝟙 · 𝓋  ≡  𝓋
    assoc : {a b : Carrier} {𝓋 : Carrier} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+
+
+{- Neato = M-Set empty-module -}
+module Neato (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector) (𝟙 : Scalar) (_×_ : Scalar → Scalar → Scalar) (leftId : {𝓋 : Vector} → 𝟙 · 𝓋 ≡ 𝓋) (assoc : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋 ≡ a · (b · 𝓋)) where
+
+
+{- M-Set-R = M-Set record -}
+record M-Set-R : Set₁ where
+ field
+   Scalar  : Set
+   Vector  : Set
+   _·_     : Scalar → Vector → Vector
+   𝟙       : Scalar
+   _×_     : Scalar → Scalar → Scalar
+   leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
+   assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+
+
+{- M-Set-R₁ = M-Set-R open :with (lambda (x) (concat x "₁")) -}
+module M-Set-R₁ (ℛ : M-Set-R) where
+   
+ open M-Set-R ℛ public
+     renaming
+       ( Scalar to Scalar₁
+       ; Vector to Vector₁
+       ; _·_ to _·₁_
+       ; 𝟙 to 𝟙₁
+       ; _×_ to _×₁_
+       ; leftId to leftId₁
+       ; assoc to assoc₁
+       )
+
+
+{- M-Set-R′ = M-Set-R open-with :decoration "′" -}
+module M-Set-R′ (ℛ : M-Set-R) where
+   
+ open M-Set-R ℛ public
+     renaming
+       ( Scalar to Scalar′
+       ; Vector to Vector′
+       ; _·_ to _·′_
+       ; 𝟙 to 𝟙′
+       ; _×_ to _×′_
+       ; leftId to leftId′
+       ; assoc to assoc′
+       )
 
 
 {- M-Set-Sorts = M-Set record ⟴ sorts -}
@@ -283,25 +333,25 @@ record MonSig : Set₁ where
    _×_     : Scalar → Scalar → Scalar
 
 
-{- ScalarSyntax  = M-Set primer ⟴ data :carrier "Scalar′" -}
-data ScalarSyntax : Set where
-   𝟙′ : ScalarSyntax
-   _×′_ : ScalarSyntax → ScalarSyntax → ScalarSyntax
-
-
-{- ScalarTerm    = M-Set data :carrier "Scalar" ⟴ primer -}
-data ScalarTerm : Set where
-   𝟙′ : ScalarTerm
-   _×′_ : ScalarTerm → ScalarTerm → ScalarTerm
-
-
-{- Ni = M-Set record ⟴ try :this '(list "ᵢ" "ⱼ" "ₖ") -}
-record Ni : Set₁ where
+{- Hom  = M-Set-R hom -}
+record Hom (Src : M-Set-R) (Tgt : M-Set-R) : Set₁ where
+ open M-Set-R  Src
+ open M-Set-R′ Tgt
  field
-   Scalarᵢ : Set
-   Vectorᵢ : Set
-   _·ᵢ_ : Scalarᵢ → Vectorᵢ → Vectorᵢ
-   𝟙ᵢ : Scalarᵢ
-   _×ᵢ_ : Scalarᵢ → Scalarᵢ → Scalarᵢ
-   leftIdᵢ : {𝓋 : Vectorᵢ}  →  𝟙ᵢ ·ᵢ 𝓋  ≡  𝓋
-   assocᵢ : {a b : Scalarᵢ} {𝓋 : Vectorᵢ} → (a ×ᵢ b) ·ᵢ 𝓋  ≡  a ·ᵢ (b ·ᵢ 𝓋)
+   map₁ : Scalar → Scalar′
+   map₂ : Vector → Vector′
+   pres-· : {x₁ : Scalar} → {x₂ : Vector} →   map₂ (_·_ x₁ x₂)   ≡   _·′_ (map₁ x₁) (map₂ x₂)
+   pres-𝟙 : map₁ (𝟙 )   ≡   𝟙′
+   pres-× : {x₁ : Scalar} → {x₁ : Scalar} →   map₁ (_×_ x₁ x₁)   ≡   _×′_ (map₁ x₁) (map₁ x₁)
+
+
+{- Hom² = M-Set-R hom ⟴ renaming :by "map₁ to scalar; pres-𝟙 to unity" -}
+record Hom² (Src : M-Set-R) (Tgt : M-Set-R) : Set₁ where
+ open M-Set-R  Src
+ open M-Set-R′ Tgt
+ field
+   scalar : Scalar → Scalar′
+   map₂ : Vector → Vector′
+   pres-· : {x₁ : Scalar} → {x₂ : Vector} →   map₂ (_·_ x₁ x₂)   ≡   _·′_ (scalar x₁) (map₂ x₂)
+   unity : scalar (𝟙 )   ≡   𝟙′
+   pres-× : {x₁ : Scalar} → {x₁ : Scalar} →   scalar (_×_ x₁ x₁)   ≡   _×′_ (scalar x₁) (scalar x₁)

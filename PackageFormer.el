@@ -539,12 +539,12 @@
 
    See ‘show-package-former’ for their use and how their printed.
   "
-  (--any? (s-contains? it f) '("field" "private")))
+  (--any? (s-contains? it f) '("field" "private" "open")))
 ;; Package Former Parsing and Pretty Printing:3 ends here
 
 ;; [[file:~/thesis-proposal/PackageFormer.org::*Package%20Former%20Parsing%20and%20Pretty%20Printing][Package Former Parsing and Pretty Printing:4]]
 (cl-defun show-package-former (p &key extra-waist-strings
-                 (omit-level nil) omit-docstring omit-car-element)
+                 omit-docstring omit-car-element)
   "Pretty print a package-former record value.
 
    -‘waist-strings’: Arbitrary new elements that are input at the location of the
@@ -560,7 +560,7 @@
      (and (not omit-docstring) docstring (format "{- %s -}" docstring))
 
      ;; 1. The schema declaration
-      (s-collapse-whitespace (s-join " " (list type name (s-join " " (--map (concat "(" it ")") parameters)) (unless omit-level (concat ": Set" level))
+      (s-collapse-whitespace (s-join " " (list type name (s-join " " (--map (concat "(" it ")") parameters)) (unless (equal level 'none) (concat ": Set" level))
                     "where")))
 
 
@@ -578,6 +578,7 @@
 ;; Package Former Parsing and Pretty Printing:4 ends here
 
 ;; [[file:~/thesis-proposal/PackageFormer.org::*Variational%20Language][Variational Language:2]]
+;; This is Lisp's “subst”!?
 (defun rec-replace (old new thing)
   "Traverse ‘thing’ and seek out all, possibly nested, instances
    of ‘old’ and replace them with ‘new’."
@@ -782,7 +783,7 @@
                          (format "This kind “%s” is not supported by Agda!\n     Valid kinds: record, data, module, PackageFormer." value))
                 (:waist  (numberp value) (format "The waist should be a number; which “%s” is not." value))
                 (:waist-strings (listp value) (format "The waist-strings should be a Lisp list of strings; which “%s” is not." value))
-                (:level (-contains? '(inc dec) value) (format "The “level” must be “inc” or “dec”; which “%s” is not." value))
+                (:level (-contains? '(inc dec none) value) (format "The “level” must be “inc” or “dec” or “none”; which “%s” is not." value))
                 (:alter-elements (functionp value) (format "Componenet alter-elements should be a function; which “%s” is not." value))
                        )))
 
@@ -797,7 +798,7 @@
 
     ;; Return the key-value as a pair for further processing.
     ;; :type and :level values are symbols and so cannot be evaluated furthur.
-    (cons key (if (or (-contains? args value) (-contains? '(:type :level) key)) value (eval value)))))
+    (cons key (if (or (-contains? args value) (-contains? '(:type :level :waist-strings) key)) value (eval value)))))
 
          ;; Check to see if “c” has a value, if it does then assert it satisfies the property “p” otherwise error with
          ;; message “m”. If all good, then update the PackageFormer at that component.
@@ -1015,10 +1016,10 @@
      ($𝑛𝑎𝑚𝑒      (nth 0 pieces))
      ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠    nil)
      (eqSymb     (nth 1 pieces))
-     (parent     (nth 2 pieces))
+     ($𝑝𝑎𝑟𝑒𝑛𝑡     (nth 2 pieces))
      (variations (nthcdr 3 pieces))
      (alterations nil)
-     (self (copy-package-former (cdr (assoc parent package-formers))))
+     (self (copy-package-former (cdr (assoc $𝑝𝑎𝑟𝑒𝑛𝑡 package-formers))))
      ((symbol-function '⁉)
          ;; Check to see if “c” has a value, if it does then assert it satisfies the property “p” otherwise error with
          ;; message “m”. If all good, then update the PackageFormer at that component.
@@ -1038,7 +1039,7 @@
        ;; We do not crash here since we also arbitrary Agda to flow through the 700-comments as well.
 
    ;; Ensure instance declaration is well-formed.
-   (when (or (s-blank? (s-trim $𝑛𝑎𝑚𝑒)) (not (equal "=" eqSymb)) (not parent))
+   (when (or (s-blank? (s-trim $𝑛𝑎𝑚𝑒)) (not (equal "=" eqSymb)) (not $𝑝𝑎𝑟𝑒𝑛𝑡))
      (error (format "700: %s\n\n\t⇨\t%s"
                     "An instance declaration is of the form “new-name = parent-package-former variational-clauses”."
                     line)))
@@ -1051,7 +1052,7 @@
 
    ;; Ensure the PackageFormer to be instantiated is defined.
     (unless self (error (format "700: %s\n\n\t⇨\t%s"
-                                (format "Parent “%s” not defined." parent)
+                                (format "Parent “%s” not defined." $𝑝𝑎𝑟𝑒𝑛𝑡)
                                 line)))
 
     ;; Update the new PackageFormer with a docstring of its instantiation
@@ -1080,7 +1081,9 @@
 
       ;; :waist-strings ≈ Extra strings to insert at the waist position.
       ; (⁉ 'waist-strings nil '((eval it))) ;; E.g., it might be an expression yielding a list.
-      (⁉ 'waist-strings)
+      (⁉ 'waist-strings nil
+          '((setq it (--map (eval it) it))))
+;;                        '((setq it ((cons (eval (car it)) (cdr it)))))
 
       ;; :level ≈ Either 'inc or 'dec, for increment or decrementing the level.
       (⁉ 'level nil ;; 'string-please
@@ -1099,7 +1102,9 @@
 
                      (pcase it
                        ('inc (format "Level.suc (%s)" lvl))
-                       ('dec (s-join "suc" (cdr (s-split "suc" lvl :omit-nulls))))))))))
+                       ('dec (s-join "suc" (cdr (s-split "suc" lvl :omit-nulls)))))))
+
+             (unless it (setq it 'none)))))
 
       ;; :alter-elements ≈ Access the typed name constituents list.
         ;; Perform *all* element alterations, in the left-to-right ⟴ order; if any at all.
