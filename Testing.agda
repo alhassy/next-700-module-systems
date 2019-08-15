@@ -36,11 +36,6 @@ open import Data.String hiding (_++_)
 --- §0. Basic PackageFormer declarations
 
 {-700
-
--- The next two lines are not 700-syntax and so are ported over to the generated file.
-variable
-   ℓ : Level
-
 PackageFormer MonoidP : Set₁ where
     Carrier : Set
     _⨾_     : Carrier → Carrier → Carrier

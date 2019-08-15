@@ -4,13 +4,14 @@ open import Level
 open import Data.Bool
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.String hiding (_++_)
--- It is important to observe that ‘openings’ are lossy:
 open import Level as Level
 module Testing_Generated where 
 
 variable
    ℓ : Level
-{- Kind “PackageFormer” does not correspond to a concrete Agda type. 
+
+
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
 
 PackageFormer MonoidP : Set₁ where
     Carrier : Set
@@ -21,7 +22,10 @@ PackageFormer MonoidP : Set₁ where
     rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x -}
 
 
-{- Kind “PackageFormer” does not correspond to a concrete Agda type. 
+
+
+
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
 
 PackageFormer M-Set : Set₁ where
    Scalar  : Set
@@ -33,7 +37,7 @@ PackageFormer M-Set : Set₁ where
    assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋) -}
 
 
-{- Kind “PackageFormer” does not correspond to a concrete Agda type. 
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
 {- MonoidPⁱᵈ = MonoidP identity -}
 PackageFormer MonoidPⁱᵈ : Set₁ where
     Carrier : Set
@@ -44,7 +48,7 @@ PackageFormer MonoidPⁱᵈ : Set₁ where
     rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x -}
 
 
-{- Kind “PackageFormer” does not correspond to a concrete Agda type. 
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
 {- MonoidP⁰  = MonoidP -}
 PackageFormer MonoidP⁰ : Set₁ where
     Carrier : Set
@@ -55,7 +59,7 @@ PackageFormer MonoidP⁰ : Set₁ where
     rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x -}
 
 
-{- Kind “PackageFormer” does not correspond to a concrete Agda type. 
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
 {- MonoidPᶜ = MonoidP ⟴ -}
 PackageFormer MonoidPᶜ : Set₁ where
     Carrier : Set

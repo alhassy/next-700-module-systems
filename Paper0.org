@@ -1,4 +1,5 @@
 #+TITLE: A Language Feature to Unbundle Data at Will
+#+subtitle: ---Draft ;; Work in progress---
 #+DESCRIPTION: Thesis proposal for Musa Al-hassy; McMaster University 2019.
 #+AUTHOR: Musa Al-hassy, Jacques Carette, Wolfram Kahl
 #+EMAIL: alhassy@gmail.com
@@ -127,6 +128,9 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
  (message "acmart has been loaded")
  #+END_SRC
 
+ #+RESULTS: make-acmart-class
+ : acmart has been loaded
+
    The ‘footer’ at the end of this file currently executes only this code block for you
    ---if you enable the local vars. You can easily tweak it to execute the other blocks,
    if you like.
@@ -184,6 +188,10 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   #+LATEX_HEADER: \hypersetup{colorlinks,linkcolor=darkgreen,citecolor=darkgreen,urlcolor=darkgreen}
 
   #+LATEX_HEADER: \usepackage{CheatSheet/UnicodeSymbols}
+
+  #+LATEX_HEADER: \DeclareMathOperator{\VCCompose}{\longrightarrow\hspace{-3ex}\oplus\;}
+  #+LATEX_HEADER: \newunicodechar{⟴}{\ensuremath{\VCCompose}}
+  #+LATEX_HEADER: \newunicodechar{𝓋}{\ensuremath{v}}
 
 * Abstract :ignore:
 #+begin_center
@@ -354,7 +362,7 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   To demonstrate the generality of the notion of package formers we shall demonstrate how other common forms could be ‘derived’ from the single declaration above. It is to be noted that for such a small example, such derived code may be taken for granted, however for much larger theories —for example, a “field” comes with more than 20 fields— the ability to derive different perspectives in a consistent fashion is indispens- able; especially when the package is refactored. More realistically, a symmetric rig groupoid uses about 212 coherence laws [rig_computation], for which case-splitting, to perform proofs, yields over 200 goals thereby making metaprogramming a tempting approach.
   :End:
 
-* \textsf{\upshape PackageFormer}s --- Being non-committal as much as possible
+* TODO \textsf{\upshape PackageFormer}s --- Being non-committal as much as possible :outdated:
   :Remarks:
   Unifying the different perspectives under the same banner. We speak in terms of elaborations,
      but may propose elementary typing rules or semantics. Discuss \textsf{\upshape PackageFormer} polymorphism, from §4 of thesis proposal.
@@ -378,9 +386,10 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
     where ~PackageFormer~ is a keyword with similar syntax as ~record~:
 
       #+begin_src agda
-  PackageFormer MonoidP : Set where
-     _⨾_    : MonoidP → MonoidP → MonoidP
-    Id      : MonoidP
+  PackageFormer MonoidP : Set₁ where
+    Carrier : Set
+     _⨾_    : Carrier → Carrier → Carrier
+    Id      : Carrier
     assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
     leftId  : ∀ {x} → Id ⨾ x ≡ x
     rightId : ∀ {x} → x ⨾ Id ≡ x
@@ -412,20 +421,36 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
  # WK: I currently think that ``Variation'' is not a good name for this type.
  The latter can be built in particular via the following:
     #+begin_src agda
-record      : Variation
-typeclass   : Variation
-termtype    : Variation
-_unbundled_ : Variation → ℕ → Variation
-_exposing_  : Variation → List Name → Variation
+id          :  Variational
+record      :  Variational
+typeclass   :  Variational
+termtype    :  Variational
+unbundled   :  ℕ → Variational
+exposing    :  List Name → Variational
+_⟴_        :  Variational → Variational → Variational
 #+end_src
 #                           -- Syntax as for using
 # # JC proposes ~termlanguage~ for ~termtype~
 \noindent
- The operators ~_unbundled_~ and ~_exposing_~
- have higher precedence than the instantiation juxtaposition.
- While\linebreak ~_exposing_~ explicitly lists the names that should be turned
- into parameters, in that sequence, `` ~_unbundled~ $n$'' exposes the
+ The variationals ~unbundled~ and ~exposing~ have arguments.
+ While\linebreak ~exposing~ explicitly lists the names that should be turned
+ into parameters, in that sequence, `` ~unbundled~ $n$'' exposes the
  first $n$ names declared in the package former.
+
+ An instantiation juxtaposition is written ~PF 𝓋~ to indicate that the PackageFormer
+ named ~PF~ is to be restructred according to scheme ~𝓋~. A /composition/ of variationals
+ is denoted using the symbol ‘⟴’; for example,
+ ~PF 𝓋₁ ⟴ 𝓋₂ ⟴ ⋯ ⟴ 𝓋ₙ~ denotes the forward-composition of iterated instantiations,
+ namely\linebreak ((~(PF 𝓋₁) 𝓋₂) ⋯) 𝓋ₙ~,  since we take prefix instantiation application
+to have lower precedence that variational composition.
+ In particular, an empty composition is the identity
+ scheme, which performs no alteration, and has the explicit name ~id~.
+ \linebreak
+ Since ~PF id ≈ PF~ and ~id~ is the identity of composition, we may
+ write any /instantion/ as a sequence of ⟴-sepearted clauses:
+~PF ⟴ 𝓋₁ ⟴ 𝓋₂ ⟴ ⋯ ⟴ 𝓋ₙ~ ---which is equivalent to \linebreak
+~PF ((((id ⟴ 𝓋₁) ⟴ 𝓋₂) ⋯ )⟴ 𝓋ₙ)~.
+
   # #
   # # We conceive of an extensible type ~Variations~
   # # which includes ~termtype~ and ~record~
@@ -445,8 +470,6 @@ _exposing_  : Variation → List Name → Variation
    #+begin_src agda
  Monoid₀'  = MonoidP record
 #+end_src
-  The package former name is currently by default replaced by the
-  name ~“Carrier”~ in instantiations.
 
   1. [@1] We may obtain the previous formulation of
      ~Monoid₁~ as follows:
@@ -455,8 +478,8 @@ _exposing_  : Variation → List Name → Variation
    # # Monoid₁′  = MonoidP typeclass
    # # Monoid₁″ = MonoidP record exposing (Carrier)
    #+begin_src agda
- Monoid₁'  = MonoidP record exposing (Carrier)
- Monoid₁″ = MonoidP record unbundled 1
+ Monoid₁'  = MonoidP record ⟴ exposing (Carrier)
+ Monoid₁″ = MonoidP record ⟴ unbundled 1
 #+end_src
 # ##  This also
 # ##  Haskell2010-style (single-parameter) type classes then correspond to
@@ -472,9 +495,9 @@ _exposing_  : Variation → List Name → Variation
      to regain the previous formulation of ~Monoid₂~.
         \vspace{0.3em}
     #+begin_src agda
- Monoid₂′  = MonoidP record unbundled 2
+ Monoid₂′  = MonoidP record ⟴ unbundled 2
  Monoid₂″ = MonoidP
-              record exposing (Carrier; _⨾_)
+              record ⟴ exposing (Carrier; _⨾_)
 #+end_src
 
       \vspace{0.3em}
@@ -515,7 +538,7 @@ _exposing_  : Variation → List Name → Variation
    Of course we may want to have terms /over/ a particular variable set, and so declare:
       \vspace{0.3em}
      #+begin_src agda
- Monoid₄ = MonoidP termtype exposing (Vars)
+ Monoid₄ = MonoidP termtype ⟴ renaming (Carrier to Vars) ⟴ exposing (Vars)
 #+end_src
     \vspace{0.3em}
     \noindent
@@ -633,7 +656,7 @@ additional things that can be done.}
   these entities? Are we forced to code along particular instantiations?
   No; unless we desire to do so.
 
-* \textsf{\upshape Variation} Polymorphism
+* TODO \textsf{\upshape Variation} Polymorphism :outdated:
 # # A New Kind of Polymorphism
 
   Suppose we want to produce the function ~concat~, which composes the elements of a list
@@ -693,7 +716,7 @@ additional things that can be done.}
   This is a prime reason for using a dependently-typed language as the
   setting for the \textsf{\upshape PackageFormer} feature.
 
-* Next Steps
+* TODO Next Steps :outdated:
   :Remarks:
   Ignoring the implementation, there are no sound semantics for these constructs.
      Discuss theory presentation combinators and possible extensions.
