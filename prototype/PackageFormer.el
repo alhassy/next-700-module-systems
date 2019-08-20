@@ -1,11 +1,11 @@
-;; [[file:~/thesis-proposal/PackageFormer.org::*Forming%20Syntax%20and%20the%20Special%20~$%F0%9D%91%9B%F0%9D%91%8E%F0%9D%91%9A%F0%9D%91%92~%20Variable][Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Forming%20Syntax%20and%20the%20Special%20~$%F0%9D%91%9B%F0%9D%91%8E%F0%9D%91%9A%F0%9D%91%92~%20Variable][Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable:1]]
 (defun target (thing)
   " Given a declaration “name : type0 → ⋯ → typeN”, yield “typeN”. "
   (car (-take-last 1 (s-split "→" thing)))
 )
 ;; Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Finding%20Children%20in%20the%20Wild][Finding Children in the Wild:3]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Finding%20Children%20in%20the%20Wild][Finding Children in the Wild:3]]
 (defun get-indentation (string)
   "How many spaces are there at the front of ‘string’?
 
@@ -15,7 +15,7 @@
 )
 ;; Finding Children in the Wild:3 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Finding%20Children%20in%20the%20Wild][Finding Children in the Wild:4]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Finding%20Children%20in%20the%20Wild][Finding Children in the Wild:4]]
 (cl-defun get-children (parent the-wild &key (then #'identity))
   "Go into ‘the-wild’ seeking out the first occurence of ‘parent’,
    who once found, ought to have a minimal indentation for its children.
@@ -78,7 +78,7 @@
 )
 ;; Finding Children in the Wild:4 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Finding%20Children%20in%20the%20Wild][Finding Children in the Wild:13]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Finding%20Children%20in%20the%20Wild][Finding Children in the Wild:13]]
 (ert-deftest get-ind ()
   (loop for s in '(nil "" "x" "  x" "  x ")
     do (should (<= (get-indentation s) (length s))))
@@ -115,7 +115,7 @@
 ))
 ;; Finding Children in the Wild:13 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:1]]
 (cl-defun substring-delimited
     (prefix suffix string)
   "Assuming ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle.
@@ -140,7 +140,7 @@
   ))
 ;; Substrings Delimited by Tokens:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:2]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:2]]
 (ert-deftest subst-delimit ()
   (-let [str "𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟜 𝟞"] ;; Intentionally repeated ‘𝟜’.
     ;; Pattern for loop: (prefix postfix expected-needle :comment))
@@ -167,7 +167,7 @@
     ))
 ;; Substrings Delimited by Tokens:2 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:3]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:3]]
 (cl-defun substring-delimited-$
     (context string &key preserve-spaces longest-substring)
   "Assuming ‘context’ = “⟪prefix⟫ $here ⟪suffix⟫”
@@ -221,41 +221,53 @@
     ))
 ;; Substrings Delimited by Tokens:3 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:5]]
-(cl-defun buffer-substring-delimited (start end)
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:5]]
+(cl-defun buffer-substring-delimited (start end &optional more)
   "
   Get the current buffer's /next/ available substring that is delimited
   between the regexp tokens ‘start’ up to ‘end’, exclusively.
 
   If no tokens are found, an error is thrown.
+
+  ‘more’ is a function that is called on the found instance:
+  It is a function of the start and end positions of the occurance.
   "
-  (let (start-pos end-pos content)
+  (let (start-pos end-pos sp ep content)
     (re-search-forward start)
     (setq start-pos (point))
+    (backward-word)
+    (setq sp (point))
 
     (re-search-forward end)
+    (setq ep (point))
     (backward-word)
     (setq end-pos (point))
 
     (setq content  (buffer-substring-no-properties start-pos end-pos))
+
+    (when more (funcall more sp ep))
     (when 700-folding
       (goto-char start-pos)
       (push-mark end-pos)
       (setq mark-active t)
       (fold-active-region start-pos end-pos))
+
     content))
 ;; Substrings Delimited by Tokens:5 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:6]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:6]]
 ; (use-package fold-this :demand t :ensure t)
 (defvar 700-folding nil
   "Should 700 and lisp blocks be folded away when C-c C-l.")
 ;; Substrings Delimited by Tokens:6 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:7]]
-(cl-defun buffer-substring-delimited-whole-buffer (start end)
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Substrings%20Delimited%20by%20Tokens][Substrings Delimited by Tokens:7]]
+(cl-defun buffer-substring-delimited-whole-buffer (start end &optional more)
   "Return a list of all substrings in the current buffer that
    are delimited by regexp tokens ‘start’ and ‘end’, exclusively.
+
+  ‘more’ is a function that is called on the found instance:
+  It is a function of the start and end positions of the occurance.
   "
   ;; Colour 700 keyword red “'error”
   (highlight-phrase start 'error)
@@ -266,18 +278,15 @@
      (while continue
        (condition-case nil
      ;; attemptClause
-     (setq l (cons (buffer-substring-delimited start end) l))
+     (setq l (cons (buffer-substring-delimited start end more) l))
      ;; recoveryBody
      (error (setq continue nil))))
 
      ;; We've collected items as we saw them, so ‘l’ is in reverse.
-    (reverse l)
-    )
-  )
-)
+    (reverse l))))
 ;; Substrings Delimited by Tokens:7 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Agda%20Mixfix%20Renaming%20and%20Imports][Agda Mixfix Renaming and Imports:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Agda%20Mixfix%20Renaming%20and%20Imports][Agda Mixfix Renaming and Imports:1]]
 (defun rename-mixfix (f op)
   "Given an Agda mixfix operator, apply a function on strings ‘f’ on
    the inner-most delimiting tokens of the operator, in-particular ignoring
@@ -302,7 +311,7 @@
    )))
 ;; Agda Mixfix Renaming and Imports:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Agda%20Mixfix%20Renaming%20and%20Imports][Agda Mixfix Renaming and Imports:2]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Agda%20Mixfix%20Renaming%20and%20Imports][Agda Mixfix Renaming and Imports:2]]
 (cl-defun extract-imports ()
   "Return substring of buffer whose lines mention “import”.
    Throw away any that mention the substring “⟪FileName⟫_Generated”.
@@ -317,14 +326,14 @@
 )
 ;; Agda Mixfix Renaming and Imports:2 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*The%20~package-former~%20Datatype][The ~package-former~ Datatype:2]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*The%20~package-former~%20Datatype][The ~package-former~ Datatype:2]]
 (defstruct package-former
   "Record of components that form a PackageFormer.
 
    - ‘docstring’: Relevant documentation about this structure; e.g.,
       what is the instance declaration that generated this type, if any.
 
-   - ‘type’: PackageFormer, record, data, module, function, etc.
+   - ‘kind’: PackageFormer, record, data, module, function, etc.
 
    - ‘name’: The name of the grouping mechanism schema.
 
@@ -340,7 +349,7 @@
    ‼ TODO: Eventually need to support variations?
   "
   docstring
-  type
+  kind
   name
   level
 
@@ -353,17 +362,17 @@
 )
 ;; The ~package-former~ Datatype:2 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*The%20~package-former~%20Datatype][The ~package-former~ Datatype:3]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*The%20~package-former~%20Datatype][The ~package-former~ Datatype:3]]
 (defvar package-formers nil
   "The list of PackageFormer schema declarations in the current Agda buffer.")
 ;; The ~package-former~ Datatype:3 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Locally%20Opening%20a%20PackageFormer][Locally Opening a PackageFormer:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Locally%20Opening%20a%20PackageFormer][Locally Opening a PackageFormer:1]]
 ;; An anaphoric macro ^_^
 (defmacro open-pf (p &rest body)
   `(let*
     ((docstring             (package-former-docstring ,p))
-     (type                  (package-former-type ,p))
+     (kind                  (package-former-kind ,p))
      (name                  (package-former-name ,p))
      (level                 (package-former-level ,p))
      (waist                 (package-former-waist ,p))
@@ -380,7 +389,7 @@
 )
 ;; Locally Opening a PackageFormer:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Typed%20Names][Typed Names:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Typed%20Names][Typed Names:1]]
 (defun make-tn (name type)
   "Produce a typed-name pair; discard all surrounding whitespace."
   (concat (s-trim name) " : " (s-trim type)))
@@ -421,7 +430,7 @@
   )
 ;; Typed Names:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Package%20Former%20Parsing%20and%20Pretty%20Printing][Package Former Parsing and Pretty Printing:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Package%20Former%20Parsing%20and%20Pretty%20Printing][Package Former Parsing and Pretty Printing:1]]
 (defun load-package-former (lines)
   "The input ‘lines’ must be a list of lines forming a full PackageFormer declaration;
    e.g., obtained by calling ‘get-children’.
@@ -446,7 +455,7 @@
 
       (setq pf
             (make-package-former
-             :type                     "PackageFormer"
+             :kind                     "PackageFormer"
              :name                     name
              ;; ‘level’ may be “”, that's okay.
              ;; It may be a subscript or implicitly zero & so no space after ‘Set’.
@@ -463,7 +472,7 @@
       pf)))
 ;; Package Former Parsing and Pretty Printing:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Package%20Former%20Parsing%20and%20Pretty%20Printing][Package Former Parsing and Pretty Printing:3]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Package%20Former%20Parsing%20and%20Pretty%20Printing][Package Former Parsing and Pretty Printing:3]]
 (defun special (f)
   "Special elements, for whatever reason are exceptional, and so
    are maked as singleton lists and their indentation is lessened.
@@ -476,7 +485,7 @@
   (--any? (s-contains? it f) '("field" "private" "open")))
 ;; Package Former Parsing and Pretty Printing:3 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Package%20Former%20Parsing%20and%20Pretty%20Printing][Package Former Parsing and Pretty Printing:4]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Package%20Former%20Parsing%20and%20Pretty%20Printing][Package Former Parsing and Pretty Printing:4]]
 (cl-defun show-package-former (p &key extra-waist-strings
                  omit-docstring omit-car-element)
   "Pretty print a package-former record value.
@@ -498,7 +507,7 @@
        ;; The schema declaration
        (s-collapse-whitespace
         (s-join " "
-                (list type
+                (list kind
                       name
                       (s-join " " (--map (concat "(" it ")") parameters))
                       (unless (equal level 'none) (concat ": Set" level))
@@ -514,7 +523,7 @@
          (funcall (if omit-car-element #'cdr #'identity)))))))
 ;; Package Former Parsing and Pretty Printing:4 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Package%20Former%20Parsing%20and%20Pretty%20Printing][Package Former Parsing and Pretty Printing:8]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Package%20Former%20Parsing%20and%20Pretty%20Printing][Package Former Parsing and Pretty Printing:8]]
 (ert-deftest pf-parse ()
 
   ;; Error on empty list of lines.
@@ -547,7 +556,7 @@
 )
 ;; Package Former Parsing and Pretty Printing:8 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*%F0%9D%92%B1%F0%9D%92%B8,%20%F0%9D%92%B1-,%20and%20%F0%9D%92%B1][𝒱𝒸,  𝒱-, and 𝒱:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*%F0%9D%92%B1%F0%9D%92%B8,%20%F0%9D%92%B1-,%20and%20%F0%9D%92%B1][𝒱𝒸,  𝒱-, and 𝒱:1]]
 (defvar *parent-context* nil
   "For error report; what is the current parent context of a child item.
 
@@ -594,7 +603,7 @@
     res))
 ;; 𝒱𝒸,  𝒱-, and 𝒱:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*%F0%9D%92%B1%F0%9D%92%B8,%20%F0%9D%92%B1-,%20and%20%F0%9D%92%B1][𝒱𝒸,  𝒱-, and 𝒱:2]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*%F0%9D%92%B1%F0%9D%92%B8,%20%F0%9D%92%B1-,%20and%20%F0%9D%92%B1][𝒱𝒸,  𝒱-, and 𝒱:2]]
 (defun 𝒱- (name)
   "Prefix the Lisp data ‘name’ with a “𝒱-”
    then yield that as a Lisp datum.
@@ -606,7 +615,7 @@
     car))
 ;; 𝒱𝒸,  𝒱-, and 𝒱:2 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*%F0%9D%92%B1%F0%9D%92%B8,%20%F0%9D%92%B1-,%20and%20%F0%9D%92%B1][𝒱𝒸,  𝒱-, and 𝒱:3]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*%F0%9D%92%B1%F0%9D%92%B8,%20%F0%9D%92%B1-,%20and%20%F0%9D%92%B1][𝒱𝒸,  𝒱-, and 𝒱:3]]
 (defmacro 𝒱 (name &rest body)
 
   "Reify as Lisp a variational declaration using the following grammar.
@@ -671,7 +680,7 @@
     actual-code))
 ;; 𝒱𝒸,  𝒱-, and 𝒱:3 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Well-formed%20checks%20---Error%20reporting][Well-formed checks ---Error reporting:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Well-formed%20checks%20---Error%20reporting][Well-formed checks ---Error reporting:1]]
 (defun 700-error (condition message context)
   "Ensure ‘condition’ is true, otherwise emit ‘message’
    and indicate the offending ‘context’.
@@ -680,7 +689,7 @@
     (error (format "700: %s\n\n\t⇨\t%s" message context))))
 ;; Well-formed checks ---Error reporting:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Well-formed%20checks%20---Error%20reporting][Well-formed checks ---Error reporting:2]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Well-formed%20checks%20---Error%20reporting][Well-formed checks ---Error reporting:2]]
 (cl-defun 700-wf (key value &optional context args)
   "This operation checks that the ‘value’ of ‘key’
    is well-formed according to 700-specifications ---which are stated
@@ -693,7 +702,7 @@
   "
 
   (let ( condition message
-         (wf '( (:type   (-contains? '(record data module PackageFormer) value)
+         (wf '( (:kind   (-contains? '(record data module PackageFormer) value)
                          (format "This kind “%s” is not supported by Agda!\n     Valid kinds: record, data, module, PackageFormer." value))
                 (:waist  (numberp value) (format "The waist should be a number; which “%s” is not." value))
                 (:waist-strings (listp value) (format "The waist-strings should be a Lisp list of strings; which “%s” is not." value))
@@ -707,15 +716,15 @@
       (700-error (not (or condition (-contains? args value))) message context))
 
     ;; Return the key-value as a pair for further processing.
-    ;; :type and :level values are symbols and so cannot be evaluated furthur.
+    ;; :kind and :level values are symbols and so cannot be evaluated furthur.
     (cons key
           (if
-           (or (-contains? args value) (-contains? '(:type :level :waist-strings) key))
+           (or (-contains? args value) (-contains? '(:kind :level :waist-strings) key))
            value
            (eval value)))))
 ;; Well-formed checks ---Error reporting:2 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Loading%20Variationals:%20Super%20Simple%20Conversion%20From%20String%20to%20Lisp][Loading Variationals: Super Simple Conversion From String to Lisp:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Loading%20Variationals:%20Super%20Simple%20Conversion%20From%20String%20to%20Lisp][Loading Variationals: Super Simple Conversion From String to Lisp:1]]
 (cl-defun load-variational (variation-string)
   "Obtain lines of the buffer that start with “𝒱-”.
    Realise them as Lisp association lists.
@@ -748,7 +757,7 @@
     eval))
 ;; Loading Variationals: Super Simple Conversion From String to Lisp:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Loading%20Variationals:%20Super%20Simple%20Conversion%20From%20String%20to%20Lisp][Loading Variationals: Super Simple Conversion From String to Lisp:2]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Loading%20Variationals:%20Super%20Simple%20Conversion%20From%20String%20to%20Lisp][Loading Variationals: Super Simple Conversion From String to Lisp:2]]
 (ert-deftest variationals-𝒱𝒸 ()
 
   (should (equal (𝒱- 'nice)
@@ -759,7 +768,7 @@
 
 
   ;; Error along with “noice”.
-  (should-error (𝒱𝒸 '(:height 3 :type datda) 'noice nil))
+  (should-error (𝒱𝒸 '(:height 3 :kind datda) 'noice nil))
 
   ;; nice error.
   (should-error (𝒱𝒸 '(:level 3)))
@@ -785,7 +794,7 @@
 )
 ;; Loading Variationals: Super Simple Conversion From String to Lisp:2 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Loading%20Variationals:%20Super%20Simple%20Conversion%20From%20String%20to%20Lisp][Loading Variationals: Super Simple Conversion From String to Lisp:3]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Loading%20Variationals:%20Super%20Simple%20Conversion%20From%20String%20to%20Lisp][Loading Variationals: Super Simple Conversion From String to Lisp:3]]
 (ert-deftest variationals-𝒱 ()
 
   ;; Nullary
@@ -804,11 +813,11 @@
                  '((:kind . record) (:waist . 2) (:kind . data))))
 
   ;; See a nice error message ^_^
-  (should-error (𝒱 test₃ = :type recordd))
+  (should-error (𝒱 test₃ = :kind recordd))
 )
 ;; Loading Variationals: Super Simple Conversion From String to Lisp:3 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Loading%20Variationals:%20Super%20Simple%20Conversion%20From%20String%20to%20Lisp][Loading Variationals: Super Simple Conversion From String to Lisp:4]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Loading%20Variationals:%20Super%20Simple%20Conversion%20From%20String%20to%20Lisp][Loading Variationals: Super Simple Conversion From String to Lisp:4]]
 (ert-deftest variationals-loading ()
 
   (should (load-variational "𝒱-tc this height = :level this :waist height"))
@@ -828,7 +837,7 @@
 )
 ;; Loading Variationals: Super Simple Conversion From String to Lisp:4 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Loading%20an%20Instance%20---The%20Core%20Utility][Loading an Instance ---The Core Utility:2]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Loading%20an%20Instance%20---The%20Core%20Utility][Loading an Instance ---The Core Utility:2]]
 (defstruct instance-declaration
   "Record of components for an PackageFormer instance declaration:
    ⟪name⟫ = ⟪package-former⟫ (⟴ ⟪variation⟫ [⟪args⟫])*
@@ -841,7 +850,7 @@
 )
 ;; Loading an Instance ---The Core Utility:2 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Loading%20an%20Instance%20---The%20Core%20Utility][Loading an Instance ---The Core Utility:3]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Loading%20an%20Instance%20---The%20Core%20Utility][Loading an Instance ---The Core Utility:3]]
 (defun load-instance-declaration (line &optional show-it)
   "If the current ‘line’ string is an instance declaration,
    then produce a new PackageFormer from it. Else, do nothing.
@@ -920,7 +929,7 @@
      ;; the new components of the PackageFormer being made.
 
       ;; :kind ≈ The vocabulary that replaces “PackageFormer”.
-      (⁉ 'type 'string-please)
+      (⁉ 'kind 'string-please)
 
       ;; :waist ≈ The division between parameters and remaining elements.
       (⁉ 'waist)
@@ -968,7 +977,7 @@
     (when show-it (show-package-former self))))
 ;; Loading an Instance ---The Core Utility:3 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*~load-700-comments~%20and%20~lisp~%20blocks][~load-700-comments~ and ~lisp~ blocks:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*~load-700-comments~%20and%20~lisp~%20blocks][~load-700-comments~ and ~lisp~ blocks:1]]
 (defvar 700-comments nil
   "The contents of the 700-comments.
 
@@ -977,7 +986,7 @@
   ")
 ;; ~load-700-comments~ and ~lisp~ blocks:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*~load-700-comments~%20and%20~lisp~%20blocks][~load-700-comments~ and ~lisp~ blocks:2]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*~load-700-comments~%20and%20~lisp~%20blocks][~load-700-comments~ and ~lisp~ blocks:2]]
 (cl-defun load-700-comments ()
   "Parse comments of the form “{-700 ⋯ -}” and add all PackageFormer declarations
    to the ‘package-formers’ list and all instantations to the
@@ -1045,7 +1054,7 @@
         (message "Finished parsing 700-comments."))))
 ;; ~load-700-comments~ and ~lisp~ blocks:2 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Advising%20our%20Beloved%20~C-c%20C-l~][Advising our Beloved ~C-c C-l~:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Advising%20our%20Beloved%20~C-c%20C-l~][Advising our Beloved ~C-c C-l~:1]]
 (defun insert-generated-import (name-of-generated-file)
   "In the current file, find the top-most module declaration
    then insert an import of the generated file.
@@ -1063,7 +1072,7 @@
        (replace-match (concat "\\1\nopen import " name-of-generated-file))))))
 ;; Advising our Beloved ~C-c C-l~:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Advising%20our%20Beloved%20~C-c%20C-l~][Advising our Beloved ~C-c C-l~:2]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Advising%20our%20Beloved%20~C-c%20C-l~][Advising our Beloved ~C-c C-l~:2]]
 (defun reify-package-formers (orig-fun &rest args)
   (interactive)
 
@@ -1100,7 +1109,7 @@
             (--map
              (if (equal 'porting (car it)) (format "%s" (cdr it))
                (format
-                (if (equal "PackageFormer" (package-former-type (cdr it)))
+                (if (equal "PackageFormer" (package-former-kind (cdr it)))
                     (concat "{- Kind “PackageFormer” does not correspond "
                             " to a concrete Agda type. \n%s -}")
                        "%s") (show-package-former (cdr it))))
@@ -1126,24 +1135,23 @@
 ; (advice-add 'agda2-load :around #'reify-package-formers)
 ;; Advising our Beloved ~C-c C-l~:2 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Menu%20matter][Menu matter:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Menu%20matter][Menu matter:1]]
 (defvar 700-menu-bar (make-sparse-keymap "700 PackageFormers"))
 
 (define-key global-map [menu-bar 700menu] (cons "700PackageFormers" 700-menu-bar))
 ;; Menu matter:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Menu%20matter][Menu matter:2]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Menu%20matter][Menu matter:2]]
 (define-key 700-menu-bar [enable-package-formers]
   '(menu-item "Enable PackageFormer Generation" enable-package-formers))
 
 (defun enable-package-formers ()
  (interactive)
  (advice-add 'agda2-load :around #'reify-package-formers)
- (message-box "C-c C-l now reifies “700-comments” into legitimate Agda.")
-)
+ (message-box "C-c C-l now reifies “700-comments” into legitimate Agda."))
 ;; Menu matter:2 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Menu%20matter][Menu matter:3]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Menu%20matter][Menu matter:3]]
 (define-key 700-menu-bar [disable-package-formers]
   '(menu-item "Disable PackageFormer Generation" disable-package-formers))
 
@@ -1151,11 +1159,10 @@
  (interactive)
  (advice-remove 'agda2-load #'reify-package-formers)
  (setq global-mode-string (remove "700 (•̀ᴗ•́)و " global-mode-string))
-  (message-box "C-c C-l now behaves as it always has.")
-)
+  (message-box "C-c C-l now behaves as it always has."))
 ;; Menu matter:3 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Menu%20matter][Menu matter:4]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Menu%20matter][Menu matter:4]]
 (define-key 700-menu-bar [package-formers-about]
   '(menu-item "About PackageFormers" package-formers-about))
 
@@ -1171,12 +1178,39 @@
 
     If you experience anything “going wrong” or have any ideas for improvement,
     please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥
-  "
- )
-)
+  "))
 ;; Menu matter:4 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Menu%20matter][Menu matter:5]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Menu%20matter][Menu matter:5]]
+(define-key 700-menu-bar [700-bare-bones]
+  '(menu-item "Copy file with 700 annotations stripped away" 700-bare-bones))
+
+(defun 700-bare-bones ()
+ (interactive)
+
+ (let* ((src (file-name-sans-extension (buffer-name)))
+        (src-agda (format "%s.agda" src))
+        (bare-agda (format "%s_Bare.agda" src)))
+   (with-temp-buffer
+     (insert-file-contents src-agda)
+     (beginning-of-buffer)
+       (re-search-forward (format "module %s" src))
+       (replace-match (format "module %s_Bare" src))
+     (loop for pre in '("^\{-lisp" "^\{-700")
+      do
+      (beginning-of-buffer)
+      (buffer-substring-delimited-whole-buffer pre "^-\}"
+           (lambda (sp ep)
+             (save-excursion
+             (goto-char (- sp 2))
+             (push-mark ep)
+             (setq mark-active t)
+             (delete-region (- sp 2) ep)))))
+     (write-file bare-agda))
+     (message "%s_Bare.agda has been written." src)))
+;; Menu matter:5 ends here
+
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Menu%20matter][Menu matter:6]]
 (define-key 700-menu-bar [show-variationals]
   '(menu-item "Show all registered variationals" show-variationals))
 
@@ -1190,9 +1224,9 @@
 (defun show-pfs ()
  (interactive)
  (occur "PackageFormer .* where"))
-;; Menu matter:5 ends here
+;; Menu matter:6 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Menu%20matter][Menu matter:6]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Menu%20matter][Menu matter:7]]
 (define-key 700-menu-bar [fold-700-matter]
   '(menu-item "Toggle folding away “700” and “lisp” blocks" fold-700-matter))
 
@@ -1203,9 +1237,9 @@
      (message "C-c C-l will now fold away “700” and “lisp” blocks. Press ENTER to unfold a block. ")
      (fold-this-unfold-all)
      (message "Blocks “700” and “lisp” have been unfolded.")))
-;; Menu matter:6 ends here
+;; Menu matter:7 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Menu%20matter][Menu matter:7]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Menu%20matter][Menu matter:8]]
 (define-minor-mode 700-mode
     "This is an editor extension prototyping “the next 700 module systems” proposed research.
 
@@ -1217,7 +1251,7 @@
     If you experience anything “going wrong” or have any ideas for improvement,
     please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥
   "
-  :lighter " 700 (•̀ᴗ•́)و)" ;; Icon to display indicating the mode is enabled.
+  :lighter " 700 (•̀ᴗ•́)و" ;; Icon to display indicating the mode is enabled.
   :require 'foo
 
   ;; Toggle the menu bar
@@ -1230,18 +1264,15 @@
       (enable-package-formers)
 
       ;; Closing
-      (disable-package-formers)
-  ))
+      (disable-package-formers))))
+;; Menu matter:8 ends here
 
-)
-;; Menu matter:7 ends here
-
-;; [[file:~/thesis-proposal/PackageFormer.org::*Orphan%20content][Orphan content:1]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:1]]
 (defvar variationals nil
   "Association list of Agda-user defined variational operators.")
 ;; Orphan content:1 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Orphan%20content][Orphan content:2]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:2]]
 (defvar 700-highlighting t
   "Should 700 syntactical items be coloured?
 
@@ -1251,7 +1282,7 @@
   ")
 ;; Orphan content:2 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Orphan%20content][Orphan content:3]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:3]]
 (defun show-me ()
   "Evaluate a Lisp expression and insert its value
    as a comment at the end of the line.
@@ -1269,12 +1300,12 @@
     (insert it)))
 ;; Orphan content:3 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Orphan%20content][Orphan content:4]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:4]]
 (defvar variational-composition-operator "⟴"
   "The operator that composes varitionals.")
 ;; Orphan content:4 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Orphan%20content][Orphan content:16]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:16]]
 ;; (load-instance-declaration "LHS = PF :arg₀ val₀ ⟴ test₁ :heightish 23")
 
      ;; PackageFormer names are in yellow; instances are are bolded.
@@ -1284,7 +1315,7 @@
      ;; MA: Replace with a hook.
 ;; Orphan content:16 ends here
 
-;; [[file:~/thesis-proposal/PackageFormer.org::*Orphan%20content][Orphan content:17]]
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:17]]
 (ert-deftest lid ()
 
   (let (id)

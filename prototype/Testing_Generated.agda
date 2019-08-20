@@ -7,9 +7,6 @@ open import Data.String hiding (_++_)
 open import Level as Level
 module Testing_Generated where 
 
-variable
-   ℓ : Level
-
 
 {- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
 
@@ -109,6 +106,16 @@ record M-Set-Record : Set₁ where
    assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
 
 
+{- M-Set-Typeclass₂ = M-Set typeclass₂ -}
+record M-Set-Typeclass₂ (Scalar : Set) (Vector : Set) : Set where
+ field
+   _·_     : Scalar → Vector → Vector
+   𝟙       : Scalar
+   _×_     : Scalar → Scalar → Scalar
+   leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
+   assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+
+
 {- M-Set-Typeclass₃ = M-Set-Record typeclass :height 3 :level 'dec -}
 record M-Set-Typeclass₃ (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector) : Set where
  field
@@ -116,6 +123,18 @@ record M-Set-Typeclass₃ (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vecto
    _×_     : Scalar → Scalar → Scalar
    leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
    assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+
+
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
+{- M-Set′ = M-Set primed-attempt -}
+PackageFormer M-Set′ : Set₁ where
+   Scalar′ : Set
+   Vector′ : Set
+   _·′_ : Scalar → Vector → Vector
+   𝟙′ : Scalar
+   _×′_ : Scalar → Scalar → Scalar
+   leftId′ : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
+   assoc′ : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋) -}
 
 
 {- MonoidR    =  MonoidP record -}
