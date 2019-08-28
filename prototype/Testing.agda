@@ -1,4 +1,4 @@
-{- (load-file "PackageFormer.el")
+{- (progn (load-file "PackageFormer.el") (700-mode))
 
 Strip away the 700 annotations with:
 (progn (700-bare-bones) (find-file "Testing_Bare.agda"))
@@ -250,7 +250,7 @@ MR-oh  = M-Set record ⟴ rename :elements (lambda (name) (pcase name ("Scalar" 
 _ = MR-oh
 
 {-lisp
-;; “by” should be a “;”-seperated string of “to”-seperated pairs.
+;; “by” should be a “;”-separated string of “to”-separated pairs.
 (𝒱 renaming by
   = rename :elements '(lambda (name)
       (let (clauses)
@@ -265,7 +265,7 @@ _ = MR-oh
       )
 ))
 
-;; “by” should be a “;”-seperated string of “to”-seperated pairs.
+;; “by” should be a “;”-separated string of “to”-separated pairs.
 (𝒱 renaming_ by
   = rename_ :elements '(lambda (name)
       (let (clauses)
@@ -347,7 +347,7 @@ open Neato using () -- A module where the elements are all params
            (cons (format "ℛ : %s" $𝑝𝑎𝑟𝑒𝑛𝑡)))))
 )
 
-;; “with” should be a “;”-seperated string of “to”-seperated pairs; c.g. ‘𝒱-renaming’.
+;; “with” should be a “;”-separated string of “to”-separated pairs; c.g. ‘𝒱-renaming’.
 (𝒱 opening with
   = open :with '(lambda (name)
       (let (clauses)

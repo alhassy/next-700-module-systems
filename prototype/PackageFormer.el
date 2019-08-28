@@ -463,7 +463,7 @@
              :waist                    0
              ;; ‼ TODO: Currently no parameter support for arbitrary PackageFormers.
              :indentation              (get-indentation (cadr lines))
-             :elements                 (--map (s-trim it) (cdr lines))
+             :elements  (--remove (s-starts-with? "-- " it) (--map (s-trim it) (cdr lines)))
              ))
 
       (push (cons name pf) package-formers)
@@ -482,7 +482,7 @@
 
    See ‘show-package-former’ for their use and how their printed.
   "
-  (--any? (s-contains? it f) '("field" "private" "open")))
+  (--any? (s-contains? it f) '("field" "private" "open" "top-level" "sibling")))
 ;; Package Former Parsing and Pretty Printing:3 ends here
 
 ;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Package%20Former%20Parsing%20and%20Pretty%20Printing][Package Former Parsing and Pretty Printing:4]]
@@ -519,7 +519,11 @@
          (-concat extra-waist-strings)
 
          ;; Indent all elements, less indentation for the specials.
-         (--map (concat (s-repeat (- indentation (if (special it) 2 0)) " ") it))
+         ;; Regarding “top-level” see the “recordₑ” variational in Paper0.pdf.
+         ;; The extra whitespace is important.
+         (--map (concat (s-repeat (- indentation (if (special it) 2 0)) (if (s-starts-with? "sibling" it) "" " "))
+                        (if (s-starts-with? "top-level" it) (s-chop-prefix "top-level " it)
+                          (if (s-starts-with? "sibling" it) (s-chop-prefix "sibling " it) it))))
          (funcall (if omit-car-element #'cdr #'identity)))))))
 ;; Package Former Parsing and Pretty Printing:4 ends here
 
@@ -620,25 +624,28 @@
 
   "Reify as Lisp a variational declaration using the following grammar.
 
-        𝓋   ::=  identifier (identifier)* = 𝓋𝒸
+        𝓋   ::= [docstring] identifier (identifier)* = 𝓋𝒸
         𝓋𝒸  ::= [identifier] (:key value)* (⟴ 𝓋𝒸)*
 
     The resulting generated function has its code embeded as a docstring viewable
-    with “C-h o”.
+    with “C-h o” ---catented after any provided user documentation.
   "
 
   ;; For beauty, let's colour variational names green.
   ;; Only colour occurances that have a space before or after.
-  (highlight-phrase (format "[- \\| ]%s " `,name) 'hi-green)
+  (when 700-highlighting
+    (highlight-phrase (format "[- \\| ]%s " `,name) 'hi-green))
 
   ;; Main code follows.
   (let* ((context (mapconcat (lambda (x) (prin1-to-string x t)) (cons name body) " "))
-         (args-body (-split-on '= body)) args body res actual-code)
+         (args-body (-split-on '= body)) args docs body res actual-code)
     (pcase (length args-body)
       (2 (setq args (car args-body)
                body (cadr args-body)))
       (t (setq body (car args-body))))
 
+    ;; Set any documentation string and reify the body's variational clauses.
+    (when (stringp (car body)) (setq docs (car body) body (cdr body)))
     (setq res (𝒱𝒸 body context args))
 
     ;; I want to be able to actually, visually, see the resulting
@@ -672,10 +679,25 @@
 
          give-goal)))
 
-    ;; Now splice the code as a documentation string in it.
-    (setq actual-code (-concat (-take 3 actual-code)
-                           (list (format "%s\n\n%s" context (pp-to-string actual-code)))
-                           (nthcdr 3 actual-code)))
+    ;; Now set the code as a documentation string in it, after the fact.
+    (setq docs (format "Arguments:\t%s\n%s" args
+                       (if (not docs) "Undocumented user-defined variational."
+                         ;; Keep paragraph structure, but ignore whitespace otherwise.
+                         (thread-last docs
+                           (s-split "\n\n")
+                           (mapcar #'s-collapse-whitespace)
+                           (mapcar #'s-trim)
+                           (s-join "\n\n")
+                           (s-word-wrap 70)
+                           (format "\n%s\n\n\n")))))
+                    ;; When the user provides documentation, they may not want to see
+                    ;; the raw and expansions, so we pad extra whitespace before them.
+
+    (put (𝒱- name) 'function-documentation
+         (format "%s\n⟪User Definition⟫\n\n%s\n\n⟪Lisp Elaboration⟫\n\n%s"
+                 docs context (pp-to-string actual-code)))
+    ;; Register this new item in our list of variationals.
+    (push (cons name docs) variationals)
     ;; Return value:
     actual-code))
 ;; 𝒱𝒸,  𝒱-, and 𝒱:3 ends here
@@ -965,8 +987,8 @@
         (loop for ae in (reverse (mapcar #'cdr (--filter (equal ':alter-elements (car it)) alterations)))
               do
         (setq $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠
-              (remove-duplicates (--filter it (funcall ae $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)) :test #'equal :from-end t)))
-              ;; Filter in only the non-nil constituents & remove duplicates.
+              (remove-duplicates (--filter (or (s-starts-with? "-- " it) it) (funcall ae $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)) :test #'equal :from-end t)))
+              ;; Filter in only the non-nil constituents & those not starting with “--” & remove duplicates.
               ;; We do this each time, rather than at the end, since variationals
               ;; may loop over all possible elements and we do not want to consider
               ;; intermediary nils or duplicates.
@@ -1031,7 +1053,7 @@
       (while lines
         (setq item (car lines))
 
-        (if (not (s-blank? (s-shared-start "-- " item)))
+        (if (not (s-blank? (s-shared-start "-- " (s-trim item))))
             (setq lines (cdr lines))
 
           (if (not (s-blank? (s-shared-start "𝒱-" item)))
@@ -1053,6 +1075,33 @@
 
         (message "Finished parsing 700-comments."))))
 ;; ~load-700-comments~ and ~lisp~ blocks:2 ends here
+
+;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Tooltips][Tooltips:1]]
+;; Nearly instantaneous display of tooltips.
+(setq tooltip-delay 0)
+
+;; Give user 30 seconds before tooltip automatically disappears.
+(setq tooltip-hide-delay 30)
+
+(defun tooltipify (phrase notification)
+  "Add a tooltip to every instance of “phrase” to show “notification”.
+
+  Useful info on tooltips:
+  http://kitchingroup.cheme.cmu.edu/blog/2013/04/12/Tool-tips-on-text-in-Emacs/
+  https://www.gnu.org/software/emacs/manual/html_node/elisp/Changing-Properties.html
+  http://kitchingroup.cheme.cmu.edu/blog/2016/03/16/Getting-graphical-feedback-as-tooltips-in-Emacs/
+  https://stackoverflow.com/questions/293853/defining-new-tooltips-in-emacs
+
+  The second resource above shows how to alter the phrase's font to indicate that it has
+  a tooltip. It is not desirable for us, since we want to add onto Agda's coluring.
+  "
+  (should (stringp phrase))
+  (should (stringp notification))
+  (save-excursion  ;; Return cursour to current-point afterwards.
+    (goto-char 1)
+    (while (search-forward phrase (point-max) t)
+      (put-text-property (match-beginning 0) (match-end 0) 'help-echo (s-trim notification)))))
+;; Tooltips:1 ends here
 
 ;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Advising%20our%20Beloved%20~C-c%20C-l~][Advising our Beloved ~C-c C-l~:1]]
 (defun insert-generated-import (name-of-generated-file)
@@ -1077,6 +1126,7 @@
   (interactive)
 
   (let (generated-file-name
+        printed-pfs
         (parent-imports (extract-imports)))
 
     ;; Sometimes we may want the full name due to files being in a nested
@@ -1104,8 +1154,8 @@
          ,(format "module %s where " generated-file-name)
          )))
 
-      ;; Print the package-formers
-      (setq package-formers
+     ;; Print the package-formers
+      (setq printed-pfs
             (--map
              (if (equal 'porting (car it)) (format "%s" (cdr it))
                (format
@@ -1115,7 +1165,7 @@
                        "%s") (show-package-former (cdr it))))
              (reverse package-formers)))
       ;;
-      (insert (s-join "\n\n\n" package-formers))
+      (insert (s-join "\n\n\n" printed-pfs))
       ;; (setq package-formers nil) ;; So no accidental
 
       (write-region (beginning-of-buffer) (end-of-buffer)
@@ -1128,6 +1178,19 @@
 
   ;; call agda2-load
   (apply orig-fun args)
+
+  ;; Agda attaches “jump to definition” tooltips; we add to those.
+  ;; For some reason we need a slight delay between when Agda is done checking
+  ;; and when we can add on our tooltips.
+  ;; Attach tooltips only for existing occurrences; update happens with C-c C-l.
+  (sleep-for 0.3)
+  (loop for (name . pf) in package-formers
+        do (unless (equal 'porting name)
+             (tooltipify name (show-package-former pf))))
+
+  ;; Let's also add tooltips for the variationals.
+  (loop for (v . docs) in variationals
+        do  (tooltipify (format "%s" v) docs))
 
   (message "700 ∷ All the best coding! (•̀ᴗ•́)و"))
 
@@ -1266,86 +1329,3 @@
       ;; Closing
       (disable-package-formers))))
 ;; Menu matter:8 ends here
-
-;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:1]]
-(defvar variationals nil
-  "Association list of Agda-user defined variational operators.")
-;; Orphan content:1 ends here
-
-;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:2]]
-(defvar 700-highlighting t
-  "Should 700 syntactical items be coloured?
-
-   ➩ Yellow for PackageFormer content.
-   ➩ Red for delimiters “700” and “lisp”.
-   ➩ Green for names of variationals.
-  ")
-;; Orphan content:2 ends here
-
-;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:3]]
-(defun show-me ()
-  "Evaluate a Lisp expression and insert its value
-   as a comment at the end of the line.
-
-   Useful for documenting values or checking values.
-  "
-  (interactive)
-  (-let [it
-         (thread-last (thing-at-point 'line)
-           read-from-string
-           car
-           eval
-           (format " ;; ⇒ %s"))]
-    (end-of-line)
-    (insert it)))
-;; Orphan content:3 ends here
-
-;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:4]]
-(defvar variational-composition-operator "⟴"
-  "The operator that composes varitionals.")
-;; Orphan content:4 ends here
-
-;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:16]]
-;; (load-instance-declaration "LHS = PF :arg₀ val₀ ⟴ test₁ :heightish 23")
-
-     ;; PackageFormer names are in yellow; instances are are bolded.
-     ;; (highlight-phrase (format "%s " (nth 2 pieces)) 'hi-yellow)
-     ;; (highlight-phrase (nth 0 pieces) 'bold) ;; 'warning) ;; i.e., orange
-     ;;
-     ;; MA: Replace with a hook.
-;; Orphan content:16 ends here
-
-;; [[file:~/thesis-proposal/prototype/PackageFormer.org::*Orphan%20content][Orphan content:17]]
-(ert-deftest lid ()
-
-  (let (id)
-
-  ;; Anonymous variational
-  (setq id (load-instance-declaration "LHS = PF :arg₀ val₀ ⟴ var₁ :arg₁ val₁"))
-
-  ;; Basic invocation shape
-  ;; “to”! (setq id (load-instance-declaration "NewName = PF var₁ :arg (λ x₁ → B₁) ⟴ var₂ :arg (a to b; λ x₂ → B₂)"))
-  (setq id (load-instance-declaration "NewName = PF var₁ :arg₀ (λ x₁ → B₁) :val₀ nice ⟴ var₂ :arg (λ x₂ → B₂)"))
-  (cdr (instance-declaration-alterations id))
-  (should (equal "NewName" (instance-declaration-name id)))
-  (should (equal "PF" (instance-declaration-package-former id)))
-  (should (equal "((var₂ ((a . b)) (lambda (x₂) (concat B₂))) (var₁ nil (lambda (x₁) (concat B₁))))"
-         (format "%s" (instance-declaration-alterations id))))
-
-  ;; Ill-formed: LHS name is empty string.
-  (should (not (load-instance-declaration " = PF var")))
-
-  ;; Ill-formed: Not even a declaration.
-  (should (not (load-instance-declaration "private n : ℕ")))
-
-  ;; Variation has no args.
-  (should (load-instance-declaration "LHS = PF var ()"))
-
-  ;; Arbitrary variational
-  ;; There are parens around each arg since each should be a pair.
-  (should (equal "((some-variational ((arg₀) (…) (argₙ)) identity))" (format "%s" (instance-declaration-alterations (load-instance-declaration
-   "LHS = Magma some-variational (arg₀; …; argₙ)")))))
-  (should (equal "((some-variational nil (lambda (x) (concat x ′))))" (format "%s" (instance-declaration-alterations (load-instance-declaration
-  "LHS = Magma some-variational (λ x → x ++ \"′\")")))))
-))
-;; Orphan content:17 ends here

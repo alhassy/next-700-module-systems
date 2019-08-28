@@ -1,3 +1,16 @@
+# HACK: TODO: MA: URGENT: FIXME:
+# Element  ≈  [qualifier] [lhs] [:] [type] [list-of definitional clauses]
+# Eqn      ≈  [same-lhs-as-before] [args] ≈ [term]
+#
+# One of the allowable “types” should be any PackageFormer kind?
+# That way we have a basic form of nested modules?
+#
+
+# extensions,
+#     and the flattening of hierarchical structures can be formed;
+#
+
+#
 # (org-babel-load-file "PackageFormer.org")
 # Export all Lisp blocks into a file then load it.
 #
@@ -233,6 +246,10 @@ Ni = M-Set record ⟴ try :this '(list "ᵢ" "ⱼ" "ₖ")
 -- E.g.,
 -- 𝒱-keeping those = generated :by 'those
 :End:
+
+# [‼] Nesting of PackageFormers; e.g., data declarations delimited by module declarations.
+#
+# Maybe an element may be an item that begins with PackageFormer/record/data/module?
 
 * COMMENT Changelog
 
@@ -2125,6 +2142,8 @@ First some useful libraries:
 ;; https://github.com/magnars/s.el
 (require 's)               ;; “The long lost Emacs string manipulation library”
 (require 'dash)            ;; “A modern list library for Emacs”
+(require 'fold-this)       ;; Folding away regions of text
+(fold-this-mode)
 #+END_SRC
 
 ** Finding Children in the Wild
@@ -2817,7 +2836,7 @@ With this in hand, let's produce a robust parser.
              :waist                    0
              ;; ‼ TODO: Currently no parameter support for arbitrary PackageFormers.
              :indentation              (get-indentation (cadr lines))
-             :elements                 (--map (s-trim it) (cdr lines))
+             :elements  (--remove (s-starts-with? "-- " it) (--map (s-trim it) (cdr lines)))
              ))
 
       (push (cons name pf) package-formers)
@@ -2845,8 +2864,10 @@ Conversely, let's have a pretty printer.
 
    See ‘show-package-former’ for their use and how their printed.
   "
-  (--any? (s-contains? it f) '("field" "private" "open")))
+  (--any? (s-contains? it f) '("field" "private" "open" "top-level" "sibling")))
 #+END_SRC
+A “sibling” item has no indentation.
+
 #+BEGIN_SRC emacs-lisp :tangle yes
 (cl-defun show-package-former (p &key extra-waist-strings
                  omit-docstring omit-car-element)
@@ -2881,7 +2902,11 @@ Conversely, let's have a pretty printer.
          (-concat extra-waist-strings)
 
          ;; Indent all elements, less indentation for the specials.
-         (--map (concat (s-repeat (- indentation (if (special it) 2 0)) " ") it))
+         ;; Regarding “top-level” see the “recordₑ” variational in Paper0.pdf.
+         ;; The extra whitespace is important.
+         (--map (concat (s-repeat (- indentation (if (special it) 2 0)) (if (s-starts-with? "sibling" it) "" " "))
+                        (if (s-starts-with? "top-level" it) (s-chop-prefix "top-level " it)
+                          (if (s-starts-with? "sibling" it) (s-chop-prefix "sibling " it) it))))
          (funcall (if omit-car-element #'cdr #'identity)))))))
 #+END_SRC
 
@@ -2894,7 +2919,7 @@ to include the ~field~ Agda keyword.
   (setf (package-former-waist pf) 2)
    (show-package-former pf
     :omit-car-element t
-    :extra-waist-strings (list "." "private" "n : ℕ" "n = 3" "field {- elements -} "))
+    :extra-waist-strings (list "." "private" "n : ℕ" "n = 3" "top-level 𝒮ℯ𝓉 = Set" "field {- elements -} "))
    ))
 #+END_SRC
 
@@ -2905,6 +2930,7 @@ PackageFormer M-Set (Scalar : Set) (Vector : Set) : Set₁ where
  private
    n : ℕ
    n = 3
+ 𝒮ℯ𝓉 = Set
  field {- elements -}
    _·_     : Scalar → Vector → Vector
    𝟙       : Scalar
@@ -2912,6 +2938,7 @@ PackageFormer M-Set (Scalar : Set) (Vector : Set) : Set₁ where
    leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
    assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
 #+end_src
+Notice that the $𝒮ℯ𝓉 = Set$ alias is a top-level item, with respect to the current PackageFormer.
 
 The call to ~s-collapse-whitespace~ permits us to phrase an approximation of the opinion
 that parsing and showing should be inverses.
@@ -3056,25 +3083,28 @@ expects the syntax outlined earlier.
 
   "Reify as Lisp a variational declaration using the following grammar.
 
-        𝓋   ::=  identifier (identifier)* = 𝓋𝒸
+        𝓋   ::= [docstring] identifier (identifier)* = 𝓋𝒸
         𝓋𝒸  ::= [identifier] (:key value)* (⟴ 𝓋𝒸)*
 
     The resulting generated function has its code embeded as a docstring viewable
-    with “C-h o”.
+    with “C-h o” ---catented after any provided user documentation.
   "
 
   ;; For beauty, let's colour variational names green.
   ;; Only colour occurances that have a space before or after.
-  (highlight-phrase (format "[- \\| ]%s " `,name) 'hi-green)
+  (when 700-highlighting
+    (highlight-phrase (format "[- \\| ]%s " `,name) 'hi-green))
 
   ;; Main code follows.
   (let* ((context (mapconcat (lambda (x) (prin1-to-string x t)) (cons name body) " "))
-         (args-body (-split-on '= body)) args body res actual-code)
+         (args-body (-split-on '= body)) args docs body res actual-code)
     (pcase (length args-body)
       (2 (setq args (car args-body)
                body (cadr args-body)))
       (t (setq body (car args-body))))
 
+    ;; Set any documentation string and reify the body's variational clauses.
+    (when (stringp (car body)) (setq docs (car body) body (cdr body)))
     (setq res (𝒱𝒸 body context args))
 
     ;; I want to be able to actually, visually, see the resulting
@@ -3108,10 +3138,25 @@ expects the syntax outlined earlier.
 
          give-goal)))
 
-    ;; Now splice the code as a documentation string in it.
-    (setq actual-code (-concat (-take 3 actual-code)
-                           (list (format "%s\n\n%s" context (pp-to-string actual-code)))
-                           (nthcdr 3 actual-code)))
+    ;; Now set the code as a documentation string in it, after the fact.
+    (setq docs (format "Arguments:\t%s\n%s" args
+                       (if (not docs) "Undocumented user-defined variational."
+                         ;; Keep paragraph structure, but ignore whitespace otherwise.
+                         (thread-last docs
+                           (s-split "\n\n")
+                           (mapcar #'s-collapse-whitespace)
+                           (mapcar #'s-trim)
+                           (s-join "\n\n")
+                           (s-word-wrap 70)
+                           (format "\n%s\n\n\n")))))
+                    ;; When the user provides documentation, they may not want to see
+                    ;; the raw and expansions, so we pad extra whitespace before them.
+
+    (put (𝒱- name) 'function-documentation
+         (format "%s\n⟪User Definition⟫\n\n%s\n\n⟪Lisp Elaboration⟫\n\n%s"
+                 docs context (pp-to-string actual-code)))
+    ;; Register this new item in our list of variationals.
+    (push (cons name docs) variationals)
     ;; Return value:
     actual-code))
 #+END_SRC
@@ -3428,8 +3473,8 @@ Loading an instantiation into our list is now trivial.
         (loop for ae in (reverse (mapcar #'cdr (--filter (equal ':alter-elements (car it)) alterations)))
               do
         (setq $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠
-              (remove-duplicates (--filter it (funcall ae $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)) :test #'equal :from-end t)))
-              ;; Filter in only the non-nil constituents & remove duplicates.
+              (remove-duplicates (--filter (or (s-starts-with? "-- " it) it) (funcall ae $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)) :test #'equal :from-end t)))
+              ;; Filter in only the non-nil constituents & those not starting with “--” & remove duplicates.
               ;; We do this each time, rather than at the end, since variationals
               ;; may loop over all possible elements and we do not want to consider
               ;; intermediary nils or duplicates.
@@ -3510,7 +3555,7 @@ Loading an instantiation into our list is now trivial.
       (while lines
         (setq item (car lines))
 
-        (if (not (s-blank? (s-shared-start "-- " item)))
+        (if (not (s-blank? (s-shared-start "-- " (s-trim item))))
             (setq lines (cdr lines))
 
           (if (not (s-blank? (s-shared-start "𝒱-" item)))
@@ -3807,6 +3852,40 @@ nil
 :End:
 
 * Emacs Interface
+** Tooltips
+
+   It gets rather tedious to jump to the generated files to see the elaborations
+   of 700-syntactical items. As such, let's tie existing occurrences of a PackageFormer's
+   name to its elaboration.
+
+ #+BEGIN_SRC emacs-lisp :tangle yes
+;; Nearly instantaneous display of tooltips.
+(setq tooltip-delay 0)
+
+;; Give user 30 seconds before tooltip automatically disappears.
+(setq tooltip-hide-delay 30)
+
+(defun tooltipify (phrase notification)
+  "Add a tooltip to every instance of “phrase” to show “notification”.
+
+  Useful info on tooltips:
+  http://kitchingroup.cheme.cmu.edu/blog/2013/04/12/Tool-tips-on-text-in-Emacs/
+  https://www.gnu.org/software/emacs/manual/html_node/elisp/Changing-Properties.html
+  http://kitchingroup.cheme.cmu.edu/blog/2016/03/16/Getting-graphical-feedback-as-tooltips-in-Emacs/
+  https://stackoverflow.com/questions/293853/defining-new-tooltips-in-emacs
+
+  The second resource above shows how to alter the phrase's font to indicate that it has
+  a tooltip. It is not desirable for us, since we want to add onto Agda's coluring.
+  "
+  (should (stringp phrase))
+  (should (stringp notification))
+  (save-excursion  ;; Return cursour to current-point afterwards.
+    (goto-char 1)
+    (while (search-forward phrase (point-max) t)
+      (put-text-property (match-beginning 0) (match-end 0) 'help-echo (s-trim notification)))))
+ #+END_SRC
+
+ New textual occurrences of a name obtain tooltips when ~C-c C-l~ is invoked.
 ** Advising our Beloved ~C-c C-l~
 
  Let's give the current buffer access to the location of the generated file.
@@ -3837,6 +3916,7 @@ nil
   (interactive)
 
   (let (generated-file-name
+        printed-pfs
         (parent-imports (extract-imports)))
 
     ;; Sometimes we may want the full name due to files being in a nested
@@ -3864,8 +3944,8 @@ nil
          ,(format "module %s where " generated-file-name)
          )))
 
-      ;; Print the package-formers
-      (setq package-formers
+     ;; Print the package-formers
+      (setq printed-pfs
             (--map
              (if (equal 'porting (car it)) (format "%s" (cdr it))
                (format
@@ -3875,7 +3955,7 @@ nil
                        "%s") (show-package-former (cdr it))))
              (reverse package-formers)))
       ;;
-      (insert (s-join "\n\n\n" package-formers))
+      (insert (s-join "\n\n\n" printed-pfs))
       ;; (setq package-formers nil) ;; So no accidental
 
       (write-region (beginning-of-buffer) (end-of-buffer)
@@ -3888,6 +3968,19 @@ nil
 
   ;; call agda2-load
   (apply orig-fun args)
+
+  ;; Agda attaches “jump to definition” tooltips; we add to those.
+  ;; For some reason we need a slight delay between when Agda is done checking
+  ;; and when we can add on our tooltips.
+  ;; Attach tooltips only for existing occurrences; update happens with C-c C-l.
+  (sleep-for 0.3)
+  (loop for (name . pf) in package-formers
+        do (unless (equal 'porting name)
+             (tooltipify name (show-package-former pf))))
+
+  ;; Let's also add tooltips for the variationals.
+  (loop for (v . docs) in variationals
+        do  (tooltipify (format "%s" v) docs))
 
   (message "700 ∷ All the best coding! (•̀ᴗ•́)و"))
 
@@ -4056,24 +4149,6 @@ nil
  #+END_SRC
  {{{end-fold}}}
 
-* TODO COMMENT tooltips
-
-https://stackoverflow.com/questions/293853/defining-new-tooltips-in-emacs
-
-http://kitchingroup.cheme.cmu.edu/blog/2016/03/16/Getting-graphical-feedback-as-tooltips-in-Emacs/
-
-;; List of pairs of strings that denote words and their associated tool tips.
-;; May move to a hash.
-(setq 700-words nil)
-
-(push '("GNUU" . "Editor MACroS") 700-words)
-
-(loop for (key . value) in 700-words
-      do (font-lock-add-keywords nil
-      `(( ,key
-         0
-         '(face font-lock-keyword-face help-echo
-            (lambda (window object position) "t" ,value))))))
 * Future Work
 
 Well, that was a lot of Lisp I had to learn ~(งಠ_ಠ)ง~
@@ -4093,9 +4168,11 @@ Below are some desirable features to work on.
 # to produce a ‘tada’ list of features ;-)
 #
 
-+ [ ] Colouring for 700-syntactical items.
++ [X] Colouring for 700-syntactical items.
 
-+ [ ] Tooltips
++ [X] Tooltips
+
++ [ ] Some menu items are a bit buggy ---this is low-priority.
 
 + [ ] MA: WK: hiding ↦ dropping
 
@@ -4107,15 +4184,16 @@ Below are some desirable features to work on.
       we increase the level component of an instance structure only for those variations that keep the carrier as a field.
       When we move to multi-sorted, as in Graphs, this issue will need to be revisited.
 
-+ [ ] Currently can only perform simple variational clauses; need to support complex clauses.
++ [X] Currently can only perform simple variational clauses; need to support complex clauses.
+
++ [X] Support for equations in PackageFormers: Easy, nothing new needed! Thank-you ~alter-elements~!
 
 + [ ]   Examples from the user-manual
         should be exported into an Agda file which is then easily checked;
         or the resulting generated code should be generated when export happens.
 
-+ [ ] Currently variational clauses apply as follows ~PF v clause~, it would be useful to have them also apply
-  as ~I clause~ where ~I = PF v~ has already been declared. This would requuire we keep a list of instances and their parent PF;
-  our current list is consumed and thrown away.
++ [ ] We can only perform “LHS = PF 𝓋𝒸”, do we also want stand-alone “PF 𝓋𝒸”?
+      - Maybe not? Maybe it suffices to use, say, “_ = PF 𝓋𝒸”?
 
    # TODO: Give an example making use of suffix-fields to ‘extend’ a packageformer with new fields. E.g., PackageFormer B = A extended-by cs ought to be valid but so should I = A vs extended-by cs which is amicable syntax for the instantation (A extended-by cs) vs. Should this automatically yield forgetful coercisions “I⇒A”? For now, maybe yes by default and no if we use, say, fields instead of extended-by. There will be issues of coherency when we add items.
 
@@ -4125,33 +4203,36 @@ Below are some desirable features to work on.
   - Maybe not, the front-end lets users treat them as strings, easily.
   - Maybe such a view is useful for the user? It is provided via ~get-name~ and ~get-type~.
 
-+ [ ] Refactor load-instantions function to make use of an ~alter~ field rather than overloading alter-fields in reify-instances.
++ [X] Refactor load-instantions function to make use of an ~alter~ field rather than overloading alter-fields in reify-instances.
 
-+ [ ] Refactor ~instantiate~ to make use of an ~instance~ structure, rather than 13 arguments.
++ [X] Refactor ~instantiate~ to make use of an ~instance~ structure, rather than 13 arguments.
+      - In my defence, 13 arguments was because I was trying to find out what were the key ingredients
+        necessary to form different variational presentations. It seems I only needed 5 ^_^
 
 + [ ] Why does ‘buffer-substring-delimited-whole-buffer’ return a list of strings? Why not join its result to simply return a list?
 
-+ [ ] Generated.agda needs to inherit all open/import declarations from parent.
++ [X] Generated.agda needs to inherit all open/import declarations from parent.
 
 + [ ] Give an example PackageFormer with some definitions or derived constructs, then hoist-up your waist so that the non-defined items are ~module~ parameters.
 
 + [ ] ~B = cs ⟨+ A ⟨+ cs′~ where each cs is a single name-type declaration and the operation is left-associative, and A is an existing packageformer. This gives us a nice way to build a hierarchy. Note that since only A has a name, we may form a forgetful coercion B⇒A automatically.
   E.g., ~Monoid = Type ⟨+ Pointed ⟨+ (Magma renaming (_⊕_ to _⨾_)) ⟨+ LeftUnital ⟨+ RightUnital ⟨+ assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)~ gives, automatically, ~Monoid⇒Type, Monoid⇒Pointed, Monoid⇒Magma, Monoid⇒LeftUnital, Magma⇒RightUnital~ (•̀ᴗ•́)و MA: To begin with, ignore the rename and work up the sequence one ⟨+ at a time.
 
-+ [ ] PF's should account for equations. For simplicity they become components of a record & module, but derived operations on datatypes.
++ [X] PF's should account for equations. For simplicity they become components of a record & module, but derived operations on datatypes.
 
 + [ ] Demonstrate how generative modules can be emulated.
 
-+ [ ] For now, PackageFormer's have no other parameters besides the variation symbol.
++ [ ] For now, PackageFormer's have no other parameters besides the variation symbol ---not even that atm.
 
 + [ ] The global variables package-formers & instance-declaration should be /buffer/ specific?
 
-+ [ ] Assign to a local var, check equality against global 700-comments,
++ [X] Assign to a local var, check equality against global 700-comments,
       if identical, no more processing since everything already generated.
 
 + [ ] Make use of docstring so that when a user enters a key sequence or selects from a menu, we can show them a listing of all ‘major’ components of a program: An org-mode file is displayed with an enumeration of the items, each being a link to the source, and only their docstring is shown. This is a nice ‘overview’ of the program source.
 
-+ [ ] Currently it looks like we are a minor mode, but this is not true. We only have a menu and the icon (•̀ᴗ•́)و is displayed when our feature is supported.
++ [X] Currently it looks like we are a minor mode, but this is not true. We only have a menu and the icon (•̀ᴗ•́)و is displayed when our feature is supported.
+      - Now a minor mode.
 
 + [ ] Generate all instances of a PackageFormer schema.
 
@@ -4946,7 +5027,7 @@ module Monoid₂ (ℛ : Monoid) where
 We have written this kind of boilerplate so often that we welcome the
 sweet relief provided by the editor tactic being developed herein.
 
-* COMMENT Cool stuffs, but now obsolote -e.g., :itify:
+* COMMENT Cool stuffs, but now obsolete -e.g., :itify:
 ** itify
 
 + ~itify~ :: A macro that generates macros!
