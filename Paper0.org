@@ -293,7 +293,7 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
 
   Library designers want to produce software components that are useful for
   the perceived needs of a variety of users and usage scenarios.  It is therefore
-  natural for designers to aim for a high-level of generality, in the hopes of increased
+  natural for designers to aim for substantial generality, in the hopes of increased
   reusability. One such particular ``choice'' will occupy us here: When creating a
   record to bundle up certain information that “naturally” belongs together, what
   parts of that record should be /parameters/ and what parts should be
@@ -303,18 +303,21 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   The subtlety of what is a ‘parameter’ --- exposed at the type level --- and what is a
   ‘field’ --- a component value --- has led to awkward formulations and
   the duplication of existing types for the sole purpose of different uses.
-
-  :JC:
-  \edcomm{JC}{Incorporate a little bit of the text of Tom Hales' critique of
-  Lean, verbation and cite, here}
-
-  MA: If you mean [[https://jiggerwit.wordpress.com/2018/09/18/a-review-of-the-lean-theorem-prover/][this review]], then you likely mean item 4 regarding the issues
-  of Lean being its own metalanguage. However, this appears to be problematic
-  due to limited man-power working on Lean: “the tools simply are not available”.
-  Item 7 regarding ugly projection chains has already been addressed below, briefly,
-  when mentioning flattening. Re item 9, Agda allows [simulated] diamonds.
-  Re item 10, that's what's being addressed in this work.
-  :End:
+  Tom Hales cite:Hales-blog-post is quite eloquent in his critique of Lean:
+  \begin{quote}
+    Structures are meaninglessly parameterized from a mathematical perspective.
+    [...] I think of the parametric versus bundled variants as analogous to currying 
+    or not; are the arguments to a function presented in succession or as a single 
+    ordered tuple? However, there is a big difference between currying functions 
+    and currying structures. Switching between curried and uncurried functions is 
+    cheap, but it is nearly impossible in Lean to curry a structure. That is, what 
+    is bundled cannot be later opened up as a parameter. (Going the other direction 
+    towards increased bundling of structures is easily achieved with sigma types.) 
+   This means that library designers are forced to take a conservative approach and 
+   expose as a parameter anything that any user might reasonably want exposed, because 
+   once it is bundled, it is not coming back. 
+  \end{quote}
+  This is the problem we are solving.
 
   # For example, the ubiquitous monoid, used to model compositionality,
   # in Haskell, is only allowed one instance per datatype. However, the Booleans,
@@ -378,38 +381,37 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   Moreover, there are other combinations of what is to be exposed and hidden,
   for applications that we might never think of.
 
-  Rather than code with /interface formulations we think people will likely use/, it is far
-  more general to /commit to no particular formulation/ and allow the user to select
+  Rather than code with /interface formulations we think people will likely use/, we can
+  instead try to /commit to no particular formulation/ and allow the user to select
   the form most convenient for their use-cases. This desire for reusability motivates
   a new language feature: The \textsf{\upshape PackageFormer}.
 
   Moreover, it is often the case that one begins working with a record of useful
   semantic data, but then, say, for proof automation, may want to use the associated
-  datatype for syntax. For example, the syntax of closed monoid terms is formalised, using
-  trees, as follows.
+  datatype for syntax. For example, the syntax of closed monoid terms can be expressed, 
+  using trees, as follows.
   #+begin_src agda
     data Monoid₃ : Set where
       _⨾_ : Monoid₃ → Monoid₃ → Monoid₃
       Id  : Monoid₃
   #+end_src
   \noindent
-  We can see that this version can also be
-  mechanically obtained from ~Monoid₀~ by discarding ‘non-simple’
-  fields then turning the remaining fields into constructors.
-  # That would necessitate yet another nearly identical data-structure
-  # --- having constructors rather than field projections.
+  We can see that this can be
+  obtained from ~Monoid₀~ by discarding the
+  fields denoting equations, then turning the remaining fields into constructors.
 
-  We show how all these different
+  We show how these different
   presentations can be derived from a /single/
   \textsf{\upshape PackageFormer} declaration
   via a generative meta-program integrated into the
-  most widely used Agda ``IDE'', the Emacs mode for Agda.
+  the Emacs mode for Agda.
   In particular, a package of $N$ constituents with $M$
   presentations of bundling results in nearly $N × M$ lines of code,
   yet this quadratic count becomes linear $N + M$ by having a single
   package declaration of $N$ constituents with $M$ subsequent instantiations.
-  It is this massive reduction in duplicated efforts and maintenance that we view
-  as the main contribution of our work.
+  We hope that reducing such duplication of effort, and of potential maintenance
+  burden, will be beneficial to the software engineering of large libraries
+  of formal code -- and consider it the main contribution of our work.
 
   :Remarks:
   To demonstrate the generality of the notion of package formers we shall demonstrate how other common forms could be ‘derived’ from the single declaration above. It is to be noted that for such a small example, such derived code may be taken for granted, however for much larger theories —for example, a “field” comes with more than 20 fields— the ability to derive different perspectives in a consistent fashion is indispens- able; especially when the package is refactored. More realistically, a symmetric rig groupoid uses about 212 coherence laws [rig_computation], for which case-splitting, to perform proofs, yields over 200 goals thereby making metaprogramming a tempting approach.
@@ -418,7 +420,8 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
 * \textsf{\upshape PackageFormer}s --- Being non-committal as much as possible
   :Remarks:
   Unifying the different perspectives under the same banner. We speak in terms of elaborations,
-     but may propose elementary typing rules or semantics. Discuss \textsf{\upshape PackageFormer} polymorphism, from §4 of thesis proposal.
+  but may propose elementary typing rules or semantics. Discuss \textsf{\upshape PackageFormer} 
+  polymorphism, from §4 of thesis proposal.
      :End:
 
     # It is notoriously difficult to reconstruct the possible inputs to a function
@@ -434,7 +437,7 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
     # single declaration which does not distinguish between parameters and fields.
     #
     We claim that the previous monoid-related pieces of Agda code
-    can all be unified as a single declaration
+    can be unified as a single declaration
     which does not distinguish between parameters and fields,
     where ~PackageFormer~ is a keyword with similar syntax as ~record~:
 
@@ -455,13 +458,13 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   # #+END_EXPORT
 
     # Superficially, the parameters and fields have been flattened into a single location
-  Coupled with various directives that let one declare
+  Then with various directives that lets one declare
   what should be parameters and what should be fields,
   we can reproduce the above presentations.
   A package former is used via /instantiations/, written as low-precedence
  juxtapositions of a package former name and expression of type
  ~Variational~.
- The latter can be built in particular via the following:
+ The latter can be built from the following grammar:
     #+begin_src agda
 id          :  Variational
 record      :  Variational
@@ -503,27 +506,17 @@ to have lower precedence that variational composition.
 #+end_src
 
   1. [@1] We may obtain the previous formulation of
-     ~Monoid₁~ as follows:
+     ~Monoid₁~ in two different equivalent ways:
         \vspace{0.3em}
-   # # -- WK: typeclass was not shown
-   # # Monoid₁′  = MonoidP typeclass
-   # # Monoid₁″ = MonoidP record exposing (Carrier)
    #+begin_src agda
  Monoid₁′  = MonoidP record ⟴ exposing (Carrier)
  Monoid₁″ = MonoidP record ⟴ unbundled 1
 #+end_src
-# ##  This also
-# ##  Haskell2010-style (single-parameter) type classes then correspond to
-# ##  ~_unbundled 1, and so we define
-# ##    #+begin_src agda
-# ##  MonmoidClass = MonoidP typeclass unbundled 1
-# ## #+end_src
-# ## WK: ?
 
 # #    \vspace{0.3em}
 
-  2. [@2] As for ~Monoid₁~, there are also different ways
-     to regain the previous formulation of ~Monoid₂~.
+  2. [@2] As with ~Monoid₁~, there are also different ways
+     to obtain ~Monoid₂~.
         \vspace{0.3em}
     #+begin_src agda
  Monoid₂′  = MonoidP record ⟴ unbundled 2
@@ -559,22 +552,22 @@ to have lower precedence that variational composition.
 # #
 # #   The name ~Carrier~ is a default and could be renamed; likewise for ~Vars~ below.
 
-  3. [@3] Finally, we mentioned metaprogramming's need to work with terms:
+  3. [@3] Metaprogramming is more clearly needed to produce the term language:
         \vspace{0.3em}
     #+begin_src agda
  Monoid₃′ = MonoidP termtype :carrier "Carrier"
 #+end_src
     \vspace{0.3em}
    \noindent
-   Our main example is the theory of monoids, which are single-sorted.
-   However, a general PackageFormer may have multiple sorts ---as is the case with
+   Our running example uses the theory of monoids, which is a single-sorted theory.
+   In general, a PackageFormer may have multiple sorts ---as is the case with
    graphs--- and so one of the possibly many sorts needs to be designated as the
    universe of discourse, or carrier, of the resulting inductively defined term type.
    This is accomplished with the ~:carrier~ argument.
 
    \vspace{0.3em}
    \noindent
-   Of course we may want to have terms /over/ a particular variable set, and so declare:
+   We may alos want to have terms /over/ a particular variable set, and so declare:
    \vspace{0.3em}
      #+begin_src agda
  Monoid₄ = MonoidP termtype-with-variables
@@ -586,7 +579,7 @@ to have lower precedence that variational composition.
     albeit unique, name for the variable set is introduced along with an embedding
     function from it to the resulting term type. For brevity, the embedding function's
     name is ~inj~ and the user must ensure there is no name-clash.
-    The resulting elaboration essentially is as follows.
+    The resulting elaboration is as follows.
        \vspace{0.3em}
        \noindent
     #+begin_src agda
@@ -599,10 +592,11 @@ to have lower precedence that variational composition.
 
      \vspace{0.3em}
      \noindent
-     Note that only ‘functional’ symbols have been exposed in these
-     instantiations;
-     no ‘proof-matter’ such as the associativity consistent declared
-     in ~MonoidP~.
+     Note that these instantiations implicitly drop equations, such
+     as associativity from ~MonoidP~.  This is what is commonly done
+     in Universal Algebra. If we were instead doing $n$-category
+     theory, these would be kept, but will be the subject of future
+     work.
 
 # ##  WK: Try it:
 # ##       #+begin_src agda
@@ -634,22 +628,16 @@ to have lower precedence that variational composition.
 # #  we have only mentioned two for brevity. The interested reader may consult
 # #  the ‘next 700 module systems’ proposal \cite{alhassy_thesis_proposal};
 # #  which discusses more variations and examples in detail.
-  #+begin_export latex
-  \edcomm{JC}{I would
-instead, especially as you have the room, insert a paragraph naming the
-additional things that can be done.}
-#+end_export
 
-  For brevity, we have only discussed product representations of packages, however
-  the language feature also supports elaborations into nested dependent-sums
-  as in the case where we may have a coherent substructure.
+  We also have elaborations into nested dependent-sums, which is useful
+  when looking at coherent substructures.
   Alongside ~_unbundled_~, we also have infix combinators for extending an
   instantiation with additional fields or constructors, and the renaming of constituents
   according to a user provided String-to-String function.
   Moreover, just as syntactic datatype declarations may be derived, we also
   allow support for the derivation of induction principles and structure-preserving homomorphism types.
   Our envisioned system would be able to derive simple, tedious, uninteresting concepts; leaving difficult,
-  interesting, ones for humans to solve.
+  interesting ones for humans to solve.
 
   :Remarks:
   0. Besides syntax, induction principles are also derived:
@@ -694,35 +682,27 @@ additional things that can be done.}
 
   #+begin_quote
   *Quadratic to Linear:*
-  Notice that the previous 4 monoid presentations, ~Monoidᵢ~, had at least 2 constituents each
-  totalling more than 4 × 2 = 16 lines of user input. However, using ~MonoidP~, above
-  we have obtained the same presentations, ~Monoidᵢ′~, using one definition having
-  at least 2 lines and 4 single-line declarations, for a total of at least 4 + 2 = 8
-  lines of user input.
+  Notice that the previous 5 monoid presentations, ~Monoid₀~ to ~Monoid₄~, spanned 32
+  lines (8 for the original, 24 for the variants). Using ~MonoidP~ and our operators, 
+  this can be done in 7 + 6 = 13 lines.  This corresponds to using a 2-part code,
+  with the initial lines being a model, and then 1-2 lines to specify variants.
   #+end_quote
 
-  The PackageFormer declarations are not legal Agda syntax and as such appear in dedicated comments.
+  The PackageFormer declarations are not legal Agda syntax and thus appear as special comments.
   The comments are read by Emacs Lisp and legitimate Agda is produced in a generated file, which is
-  then automatically imported into the current file.
-  Currently, the user enters commands into special comments from which legitimate Agda
-  is produced in an auxiliary file ---examples are provided in an appendix.
+  then automatically imported into the current file---examples are provided in an appendix.
   The generated file never needs to be consulted,
-  as the declared names are furnished with tooltips rendering the elaborated, legitimate,
+  as the declared names are furnished with tooltips rendering the elaborated
   Agda form. Moreover, we also provide a feature to extract a ‘bare bones’ version
-  of a file that strips out all PackageFormer annotations, leaving only legitimate Agda
+  of a file that strips out all PackageFormer annotations, leaving only Agda
   as well as the import to the generated file. Finally, since the elaborations are
-  legitimate Agda, one only needs to utilise the system once and future users are
+  just Agda, one only needs to use the system once and future users are
   not forced to know about it.
-
-  The \textsf{\upshape PackageFormer} language feature unifies disparate representations of the
-  same concept under a single banner. How does one actually /do/ anything with
-  these entities? Are we forced to code along particular instantiations?
-  No; unless we desire to do so.
 
 * \textsf{\upshape Variational} Polymorphism
 # # A New Kind of Polymorphism
 
-  Suppose we want to produce the function ~concat~, which composes the elements of a list
+  Suppose we want to produce the function ~concat~, which folds over the elements of a list
   according to a compositionality scheme --- examples of this include summing over
   a list, multiplication over a list, checking all items in a list are true, or
   at least one item in the list is true.
@@ -745,25 +725,26 @@ additional things that can be done.}
   \vspace{1em}
 
   \noindent
-  An attempt to unify these declarations is trivial
-  ---provided the variationals are already defined---
-  as one merely appends the aforementioned PackageFormer definition with a new
-  declaration that, unlike the rest, comes equipped with an /equation/.
+  Given our previous work, and providing that the variationals are already
+  defined, we add a new declaration which, unlike the rest, comes
+  equipped with a /definition/.
     \vspace{0.3em}
 #+BEGIN_SRC agda
     concat : List Carrier → Carrier
     concat = foldr _⨾_ Id
 #+END_SRC
+  \noindent This is known as a /definitional extension/ (of a theory), which
+  is known to be conservative (i.e. has the same models).
 
-  The real magic is the variationals. We have alluded that the type of variationals
-  is extensible and this is achieved by having
+  The variationals is where this power comes from.  Furthermore, we have alluded to
+  the fact that the type of variationals
+  is extensible; this is achieved by having
   ~Variational ≅ (PackageFormer → PackageFormer)~.
   Indeed, our implementation relies on 5 meta-primitives to form arbitrary
-  and complex schemes to transforming abstract PackageFormers into
+  complex schemes that transform abstract PackageFormers into
   other grouping mechanisms. The meta-primitives were arrived at by codifying
   a number of structuring mechanisms directly then carefully extracting the minimal
   ingredients that enable them to be well-defined.
-  This approach is reminiscent to that of Haskell's typeclasses.
 
   The details of the implementation and numerous common structuring mechanisms
   derived from the meta-primitives can be found on the prototype's homepage:
@@ -771,15 +752,6 @@ additional things that can be done.}
   https://alhassy.github.io/next-700-module-systems-proposal/prototype/PackageFormer.html
   #+end_center
 
-  \vspace{0.3em}
-  \noindent
-  It is important at this juncture to observe that the type of ~concatP~
-  depends crucially on the variational that is invoked.
-
-  # No longer true.
-  #
-  # This is a prime reason for using a dependently-typed language as the
-  # setting for the \textsf{\upshape PackageFormer} feature.
 
 * Next Steps
   :Remarks:
@@ -787,10 +759,11 @@ additional things that can be done.}
      Discuss theory presentation combinators and possible extensions.
   :End:
 
-  We have outlined a new unifying language feature that is intended to massively reduce
-  duplicated efforts involving different perspectives of datatypes. Moreover, to make
-  this tractable we have also provided a novel form of polymorphism and demonstrated
-  it with minimal examples.
+  We have outlined a new language feature that is intended to reduce
+  duplicated effort involved in taking different perspectives on structures---and to solve
+  Hales' problem of premature commitment to a particular encoding. Moreover, on the road
+  to making this tractable, we have unearthed a novel form of polymorphism and demonstrated
+  its usefulness with some examples.
 
   # We have implemented a meta-program that realises these
   # elaborations in an unobtrusive
@@ -811,7 +784,7 @@ additional things that can be done.}
   provide explicit (elaboration) semantics for ~PackageFormer~ within a
   minimal type theory; cite:types_for_modules.
 
-  Moreover there are a number of auxiliary goals, including:
+  Furthermore, there are additional pieces of future work, including:
 
   1. Explain how generative modules cite:modular_modules
      are supported by this scheme.
@@ -822,8 +795,7 @@ additional things that can be done.}
 
   4. Explore inheritance, coercion, and transport along canonical isomorphisms.
 
-  However, the features of the existing prototype more than make up for the
-  system's shortcoming. The features list currently include:
+  The existing prototype already has the following nice properties:
 
   + Extensible ::
      Users may extend the collection of variationals by providing the intended
@@ -831,9 +803,10 @@ additional things that can be done.}
 
      We have provided a number of auxiliary, derived, combinators
      that can be used to construct complex and common schemes.
-     In doubt, the user has full and direct access to the entirety of Emacs Lisp
+     Furthermore, the user has full and direct access to the entirety of Emacs Lisp
      as a programming language for restructuring PackageFormers into any desired shape
-     ---the well-formedness of which is a matter the user must then worry about.
+     ---the well-formedness of which is a matter the user must then worry about;
+     untyped metaprogramming is not for the faint of heart.
 
   + Practical :: The user manual demonstrates how boilerplate code for
                  renamings, hidings, decorations, and generations
@@ -847,43 +820,29 @@ additional things that can be done.}
                   folded away, or simply extract an Agda file that does not mention
                   them at all.
 
-                  Moreover, it can be tedious to consult generated code for high-level
+                  As it can be tedious to consult generated code for high-level
                   PackageFormer instantiations and so every variational and PackageFormer
                   is tagged with tooltips providing relevant information.
 
   \noindent
   Finally, the careful reader will have noticed
   that our abstract mentions graphs, yet
-  there was no further discussion on that example.
-  We have avoided it for simplicity only.
-  The prototype accommodates multi-sorted structures where
+  there was no further discussion of that example.
+  We have avoided it for simplicity;
+  the prototype accommodates multi-sorted structures where
   sorts may /depend/ on one another, as edge-sets
   depend on the vertex-set chosen. Examples can be found on the prototype's
   webpage.
 
-  # There are many routes to progress on this fruitful endeavour.
-  # However, a prototype capable of supporting the examples mentioned
-  # can be found at
-  # \newline
-  # https://alhassy.github.io/next-700-module-systems-proposal/.
-  :Double_blind:
-  We have a complete
-  prototype available on github, which we will link to once the paper is
-  no longer double-blind.
-  :End:
-
-  # We look forward to this feature reducing the length of our code
-  # and alleviating us of tedious boilerplate constructions.
-
-  This short paper has proposed a unifying language feature that enables users to selectively
+  This short paper proposes a language feature that enables users to selectively
   choose how information is to be organised, such as which parts are exposed as parameters,
-  thereby reducing duplicated efforts involving different perspectives of datatypes.
-  To demonstrate that the proposed feature is promising,
+  thereby reducing effort when taking different perspectives on structures.
+  To demonstrate that this feature seems useful in practice,
   we have implemented a meta-program to generate Agda using special code comments
   that specify how package elements are to be organised, such as their selective exposure
   as parameters which is a common issue with libraries in dependently-typed languages.
 
-  As a prototype witnessing that a generic packaging formalism is possible, our variationals
+  Our variationals
   cannot yet be directly defined in Agda. Instead, we are making use of Emacs Lisp, a language
   close to the Agda ecosystem. Going forward, one of the aims of our work is to have variationals
   definable directly within Agda ---rather than having our users learn yet another language.
