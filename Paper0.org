@@ -4,21 +4,29 @@
 + Also make a proposal/ directory and move stuff there.
 + Ensure the same colouring for all variationals, else possibly confusion for
   readers!
-+ [ ] Page 3, References: URLs and ISSNs are superfluous when a DOI is provided.
-   [Ler00], [Nor07]: add DOIs if available (then remove the URLs).
-
-    Please remove sentences/words that don't add new information:
-   - The URLs in the bibliography.
 
 + The proposed idea is better motivated if the paper provides an example that library users come across in practice.
   Different variants of working with a vertex set in graph applications is a good example.
 :End:
+:WK_concerns:
+# -- WK: typeclass was not shown
+-   # # Monoid₁′  = MonoidP typeclass
+-   # # Monoid₁″ = MonoidP record exposing (Carrier)
+
+   ##  This also
+-# ##  Haskell2010-style (single-parameter) type classes then correspond to
+-# ##  ~_unbundled 1, and so we define
+-# ##    #+begin_src agda
+-# ##  MonmoidClass = MonoidP typeclass unbundled 1
+-# ## #+end_src
+-# ## WK: ?
+:End:
 
 #+TITLE: A Language Feature to Unbundle Data at Will (Short Paper)
 #+DESCRIPTION: Thesis proposal for Musa Al-hassy; McMaster University 2019.
-#+AUTHOR: Musa Al-hassy, Jacques Carette, Wolfram Kahl
+# AUTHOR: Musa Al-hassy, Jacques Carette, Wolfram Kahl
 #+EMAIL: alhassy@gmail.com
-#+OPTIONS: toc:nil d:nil title:t
+#+OPTIONS: toc:nil d:nil title:nil author:nil
 #+PROPERTY: header-args :tangle no :comments link
 #+TODO: TODO | OLD LaTeX README Remarks space
 
@@ -77,6 +85,25 @@ Also consider doubling the code block indentation.
 - You need to save space for related work (can be a short paragraph, but without it, it'll get rejected)
 - Where are the citations? There should be citations throughout!
 :End:
+
+** Headline-Style Capitalisation
+   Headline-Style Capitalisation (according to the Chicago Manual of Style, Sections 8.157, 8.158, and 8.159)
+
+   + Capitalise:
+     - first and last word, first word after a colon (subtitle)
+     - all major words (nouns, pronouns, verbs, adjectives, adverbs)
+
+   + Lowercase:
+     - articles (the, a, an)
+     - prepositions (regardless of length)
+     - conjunctions (and, but, for, or, nor)
+     - to, as
+
+   + Hyphenated Compounds:
+     - always capitalize first element
+     - lowercase second element for articles, prepositions, conjunctions
+       and if the first element is a prefix or combining form that could not stand
+       by itself (unless the second element is a proper noun / proper adjective)
 
 * README COMMENT Dependencies of this org file
 
@@ -147,7 +174,7 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   # LATEX_HEADER: \RequirePackage{fancyvrb}
   # LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
 
- + amart :: Enable acmart latex class.
+ + acmart :: Enable acmart latex class.
 
    #+NAME: make-acmart-class
    #+BEGIN_SRC emacs-lisp
@@ -201,28 +228,29 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
 
 * LaTeX setup                                                        :ignore:
 
-  #+LATEX_CLASS: acmart
-  #+latex_class_options: [sigplan]
-  # latex_class_options: [sigplan,review,anonymous]
-  # latex_class_options: [acmsmall,review,anonymous]
-
-  # ACM uses the natbib package
-  #
-  # LATEX_HEADER: \settopmatter{printfolios=true,printccs=false,printacmref=false}
-
   # Visible editorial comments.
   #+LATEX_HEADER: \usepackage{edcomms}
   #+LATEX_HEADER: \edcommsfalse
 
-  #+LATEX_HEADER: \acmYear{2019}
-  #+LATEX_HEADER: \setcopyright{none}
-  # LATEX_HEADER: \acmJournal{GPCE}
-  # LATEX_HEADER: \acmVolume{1}
-  # LATEX_HEADER: \acmNumber{GPCE}
-  # LATEX_HEADER: \acmArticle{1}
-  # LATEX_HEADER: \acmMonth{1}
-  # LATEX_HEADER: \acmDOI{}
+** Document class options                                            :ignore:
+  #+LATEX_CLASS: acmart
+  #+latex_class_options: [sigplan,screen]
+  # latex_class_options: [sigplan,review,anonymous]
+  # latex_class_options: [acmsmall,review,anonymous]
 
+** Letter size and no page numbers or footers :ignore:
+  # Letter-Size Paper Format, defaults
+  #+latex_header: \pdfpagewidth=8.5in
+  #+latex_header:\pdfpageheight=11in
+
+  # switch off page numbering, “folios”
+  #+latex_header: \pagenumbering{gobble}
+
+  # ACM uses the natbib package
+  #
+  # LATEX: \settopmatter{printacmref=false, printccs=true, printfolios=true}
+
+** Unicode & hyperlinks :ignore:
   # Dark green colour for links.
   #+LATEX_HEADER: \usepackage{color}
   #+LATEX_HEADER: \definecolor{darkgreen}{rgb}{0.0, 0.3, 0.1}
@@ -245,8 +273,88 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   #+LATEX_HEADER: \newunicodechar{⁰}{\ensuremath{^0}}
   #+LATEX_HEADER: \newunicodechar{³}{\ensuremath{^3}}
 
+** LaTeX Authors & maketitle                                         :ignore:
+
+ #+begin_export latex
+ \title{A Language Feature to Unbundle Data at Will (Short Paper)}
+
+ \author{Musa Al-hassy \\ {\small \url{alhassy@gmail.com} \\ McMaster University \\ Computing and Software \\ Hamilton, Ontario, Canada}}
+ \author{Jacques Carette \\ {\small \url{carette@mcmaster.ca} \\ McMaster University \\ Computing and Software \\ Hamilton, Ontario, Canada}}
+ \author{Wolfram Kahl \\ {\small \url{kahl@cas.mcmaster.ca} \\ McMaster University \\ Computing and Software \\ Hamilton, Ontario, Canada}}
+
+ \maketitle
+ #+end_export
+
+** Widows and Orphans                                                :ignore:
+ # An "orphan" is an isolated line of text at the bottom of a page;
+ # an "orphan heading" is a heading without following body text at the bottom of the page;
+ # a "widow" is an isolated line of text at the top of a page.
+ #
+ # LaTeX: In order to eliminate widows and orphans, you can copy the following commands into the LaTeX source before \begin{document} :
+ #
+   #+latex_header:        \clubpenalty = 10000
+   #+latex_header:        \widowpenalty = 10000
+   #+latex_header:        \displaywidowpenalty = 10000
+
+ # Sometimes, orphans and widows will survive these commands, in which case a \vspace command might help.
+
+** Balanced Columns on Last Page                                     :ignore:
+   #+latex_header: \usepackage{balance}
+
+ # The two columns of the last page need to have the same length.
+ #
+ # + LaTeX (Option 1) :: Insert the command \usepackage{flushend} into the LaTeX source before \begin{document}.
+ #
+ # + LaTeX (Option 2) :: Insert \usepackage{balance} into the LaTeX source before \begin{document}
+ #      and the following in the text that would appear as left column on the last page without balancing: \balance.
+ #
+ # + LaTeX (Option 3) :: If the above options do not work, it seems that one of the used packages prevents
+ #      the balancing from working properly. In case you do not want to spend time on finding out which
+ #       package it is, you can manually balance the last page by inserting a \newpage between your
+ #       references in the .bbl file at an appropriate position. (Attention: Running bibtex again
+ #       will overwrite this; alternatively, the contents of the .bbl file can be copy-and-paste'ed
+ #       into the main LaTeX file in place of the \bibliography command.)
+ #
+* TODO COMMENT WAITING ON JC/WK --- GPCE’19 Copyright                        :ignore:
+
+MA: Do we want to pay the open access fee?
+
+# If you see 'ACMUNKNOWN' in the 'setcopyright' statement below,
+# please first submit your publishing-rights agreement with ACM (follow link on submission page).
+# Then please update our instructions page and copy-and-paste the NEW commands into your article.
+# Please contact us in case of questions; allow up to 10 min for the system to propagate the information.
+#
+# The following is specific to GPCE '19 and the paper
+# 'A Language Feature to Unbundle Data at Will (Short Paper)'
+# by Musa Al-hassy, Wolfram Kahl, and Jacques Carette.
+#
+# latex_header: \setcopyright{ACMUNKNOWN}
+#+latex_header: \acmPrice{}
+#+latex_header: \acmDOI{10.1145/3357765.3359523}
+#+latex_header: \acmYear{2019}
+#+latex_header: \copyrightyear{2019}
+#+latex_header: \acmISBN{978-1-4503-6980-0/19/10}
+#+latex_header: \acmConference[GPCE '19]{Proceedings of the 18th ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences}{October 21--22, 2019}{Athens, Greece}
+# latex_header: \acmBooktitle{Proceedings of the 18th ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences (GPCE '19), October 21--22, 2019, Athens, Greece}
+
+* LaTeX COMMENT Rights management information :ignore:
+
+#+begin_export latex
+%% Rights management information.  This information is sent to you
+%% when you complete the rights form.  These commands have SAMPLE
+%% values in them; it is your responsibility as an author to replace
+%% the commands and values with those provided to you when you
+%% complete the rights form.
+\setcopyright{acmcopyright}
+\copyrightyear{2018}
+\acmYear{2018}
+\acmDOI{10.1145/1122445.1122456}
+#+end_export
+
 * Abstract :ignore:
-#+begin_center
+# Do not use footnotes and references in the abstract!
+
+  #+begin_center
 *Abstract*
 #+end_center
 #+begin_small
@@ -282,7 +390,117 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   incorporated into Agda's Emacs ecosystem, in a way that is unobtrusive to Agda users.
 #+end_small
 
-* Introduction --- Selecting the ‘right’ perspective
+* LaTeX CCSXML and Keywords                                          :ignore:
+  #+begin_export latex
+%%
+%% The code below is generated by the tool at http://dl.acm.org/ccs.cfm.
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10011007.10011006.10011008.10011009.10011019</concept_id>
+<concept_desc>Software and its engineering~Extensible languages</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011008.10011024.10011031</concept_id>
+<concept_desc>Software and its engineering~Modules / packages</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011008.10011009.10011012</concept_id>
+<concept_desc>Software and its engineering~Functional languages</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011008.10011024.10011025</concept_id>
+<concept_desc>Software and its engineering~Polymorphism</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011008.10011024.10011028</concept_id>
+<concept_desc>Software and its engineering~Data types and structures</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011041.10011047</concept_id>
+<concept_desc>Software and its engineering~Source code generation</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011060.10011018</concept_id>
+<concept_desc>Software and its engineering~Design languages</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011066.10011069</concept_id>
+<concept_desc>Software and its engineering~Integrated and visual development environments</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011008.10011009.10011010</concept_id>
+<concept_desc>Software and its engineering~Imperative languages</concept_desc>
+<concept_significance>100</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011008.10011024.10003202</concept_id>
+<concept_desc>Software and its engineering~Abstract data types</concept_desc>
+<concept_significance>100</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011008.10011024.10011036</concept_id>
+<concept_desc>Software and its engineering~Patterns</concept_desc>
+<concept_significance>100</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011039.10011040</concept_id>
+<concept_desc>Software and its engineering~Syntax</concept_desc>
+<concept_significance>100</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Software and its engineering~Extensible languages}
+\ccsdesc[500]{Software and its engineering~Modules / packages}
+\ccsdesc[300]{Software and its engineering~Functional languages}
+\ccsdesc[300]{Software and its engineering~Polymorphism}
+\ccsdesc[300]{Software and its engineering~Data types and structures}
+\ccsdesc[300]{Software and its engineering~Source code generation}
+\ccsdesc[300]{Software and its engineering~Design languages}
+\ccsdesc[300]{Software and its engineering~Integrated and visual development environments}
+\ccsdesc[100]{Software and its engineering~Imperative languages}
+\ccsdesc[100]{Software and its engineering~Abstract data types}
+\ccsdesc[100]{Software and its engineering~Patterns}
+\ccsdesc[100]{Software and its engineering~Syntax}
+
+%%
+%% Keywords. The author(s) should pick words that accurately describe
+%% the work being presented. Separate the keywords with commas.
+\keywords{datasets, neural networks, gaze detection, text tagging}
+  #+end_export
+
+  :old:
+
+*CCS CONCEPTS*
+
+• XXX • YYY • ZZZ  • TODO:
+
+*KEYWORDS*
+
+XXX, YYY, ZZZ
+
+#+begin_small org
+*ACM Reference format:*
+
+TODO:
+FirstName Surname, FirstName Surname and FirstName Surname. 2018.
+Insert Your Title Here: Insert Subtitle Here. In Proceedings of ACM
+Woodstock conference (WOODSTOCK’18). ACM, New York, NY, USA, 2
+pages. https://doi.org/10.1145/1234567890
+#+end_small
+:end:
+
+* Introduction --- Selecting the ‘Right’ Perspective
 
   :Ideas:
   Which perspective of semigroups does one select? Semigroup𝒾 from the thesis proposal;
@@ -306,16 +524,16 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   Tom Hales cite:Hales-blog-post is quite eloquent in his critique of Lean:
   \begin{quote}
     Structures are meaninglessly parameterized from a mathematical perspective.
-    [...] I think of the parametric versus bundled variants as analogous to currying 
-    or not; are the arguments to a function presented in succession or as a single 
-    ordered tuple? However, there is a big difference between currying functions 
-    and currying structures. Switching between curried and uncurried functions is 
-    cheap, but it is nearly impossible in Lean to curry a structure. That is, what 
-    is bundled cannot be later opened up as a parameter. (Going the other direction 
-    towards increased bundling of structures is easily achieved with sigma types.) 
-   This means that library designers are forced to take a conservative approach and 
-   expose as a parameter anything that any user might reasonably want exposed, because 
-   once it is bundled, it is not coming back. 
+    [...] I think of the parametric versus bundled variants as analogous to currying
+    or not; are the arguments to a function presented in succession or as a single
+    ordered tuple? However, there is a big difference between currying functions
+    and currying structures. Switching between curried and uncurried functions is
+    cheap, but it is nearly impossible in Lean to curry a structure. That is, what
+    is bundled cannot be later opened up as a parameter. (Going the other direction
+    towards increased bundling of structures is easily achieved with sigma types.)
+   This means that library designers are forced to take a conservative approach and
+   expose as a parameter anything that any user might reasonably want exposed, because
+   once it is bundled, it is not coming back.
   \end{quote}
   This is the problem we are solving.
 
@@ -388,7 +606,7 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
 
   Moreover, it is often the case that one begins working with a record of useful
   semantic data, but then, say, for proof automation, may want to use the associated
-  datatype for syntax. For example, the syntax of closed monoid terms can be expressed, 
+  datatype for syntax. For example, the syntax of closed monoid terms can be expressed,
   using trees, as follows.
   #+begin_src agda
     data Monoid₃ : Set where
@@ -404,7 +622,7 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   presentations can be derived from a /single/
   \textsf{\upshape PackageFormer} declaration
   via a generative meta-program integrated into the
-  the Emacs mode for Agda.
+  most widely used Agda “IDE”, the Emacs mode for Agda.
   In particular, a package of $N$ constituents with $M$
   presentations of bundling results in nearly $N × M$ lines of code,
   yet this quadratic count becomes linear $N + M$ by having a single
@@ -417,10 +635,10 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   To demonstrate the generality of the notion of package formers we shall demonstrate how other common forms could be ‘derived’ from the single declaration above. It is to be noted that for such a small example, such derived code may be taken for granted, however for much larger theories —for example, a “field” comes with more than 20 fields— the ability to derive different perspectives in a consistent fashion is indispens- able; especially when the package is refactored. More realistically, a symmetric rig groupoid uses about 212 coherence laws [rig_computation], for which case-splitting, to perform proofs, yields over 200 goals thereby making metaprogramming a tempting approach.
   :End:
 
-* \textsf{\upshape PackageFormer}s --- Being non-committal as much as possible
+* \textsf{\upshape PackageFormer}s --- Being Non-committal as Much as Possible
   :Remarks:
   Unifying the different perspectives under the same banner. We speak in terms of elaborations,
-  but may propose elementary typing rules or semantics. Discuss \textsf{\upshape PackageFormer} 
+  but may propose elementary typing rules or semantics. Discuss \textsf{\upshape PackageFormer}
   polymorphism, from §4 of thesis proposal.
      :End:
 
@@ -567,7 +785,7 @@ to have lower precedence that variational composition.
 
    \vspace{0.3em}
    \noindent
-   We may alos want to have terms /over/ a particular variable set, and so declare:
+   We may also want to have terms /over/ a particular variable set, and so declare:
    \vspace{0.3em}
      #+begin_src agda
  Monoid₄ = MonoidP termtype-with-variables
@@ -683,14 +901,14 @@ to have lower precedence that variational composition.
   #+begin_quote
   *Quadratic to Linear:*
   Notice that the previous 5 monoid presentations, ~Monoid₀~ to ~Monoid₄~, spanned 32
-  lines (8 for the original, 24 for the variants). Using ~MonoidP~ and our operators, 
+  lines (8 for the original, 24 for the variants). Using ~MonoidP~ and our operators,
   this can be done in 7 + 6 = 13 lines.  This corresponds to using a 2-part code,
   with the initial lines being a model, and then 1-2 lines to specify variants.
   #+end_quote
 
   The PackageFormer declarations are not legal Agda syntax and thus appear as special comments.
   The comments are read by Emacs Lisp and legitimate Agda is produced in a generated file, which is
-  then automatically imported into the current file---examples are provided in an appendix.
+  then automatically imported into the current file --- examples are provided in an appendix.
   The generated file never needs to be consulted,
   as the declared names are furnished with tooltips rendering the elaborated
   Agda form. Moreover, we also provide a feature to extract a ‘bare bones’ version
@@ -698,6 +916,13 @@ to have lower precedence that variational composition.
   as well as the import to the generated file. Finally, since the elaborations are
   just Agda, one only needs to use the system once and future users are
   not forced to know about it.
+
+  :poor_transition:
+    The \textsf{\upshape PackageFormer} language feature unifies disparate representations of the
+same concept under a single banner. How does one actually /do/ anything with
+these entities? Are we forced to code along particular instantiations?
+No; unless we desire to do so.
+:end:
 
 * \textsf{\upshape Variational} Polymorphism
 # # A New Kind of Polymorphism
@@ -752,7 +977,6 @@ to have lower precedence that variational composition.
   https://alhassy.github.io/next-700-module-systems-proposal/prototype/PackageFormer.html
   #+end_center
 
-
 * Next Steps
   :Remarks:
   Ignoring the implementation, there are no sound semantics for these constructs.
@@ -782,7 +1006,7 @@ to have lower precedence that variational composition.
   We have presented our work indirectly by using examples, which we
   hope are sufficiently clear to indicate our intent. We next intend to
   provide explicit (elaboration) semantics for ~PackageFormer~ within a
-  minimal type theory; cite:types_for_modules.
+  minimal type theory; \newline cite:types_for_modules.
 
   Furthermore, there are additional pieces of future work, including:
 
@@ -805,12 +1029,11 @@ to have lower precedence that variational composition.
      that can be used to construct complex and common schemes.
      Furthermore, the user has full and direct access to the entirety of Emacs Lisp
      as a programming language for restructuring PackageFormers into any desired shape
-     ---the well-formedness of which is a matter the user must then worry about;
-     untyped metaprogramming is not for the faint of heart.
+     ---the well-formedness of which is a matter the user must then worry about.
 
   + Practical :: The user manual demonstrates how boilerplate code for
                  renamings, hidings, decorations, and generations
-     of hierarchical structures can be formed;
+     of hierarchical structures can be formed; \newline
      cite:tpc.
 
   + Pragmatic :: The prototype comes equipped with a number of menus
@@ -823,6 +1046,10 @@ to have lower precedence that variational composition.
                   As it can be tedious to consult generated code for high-level
                   PackageFormer instantiations and so every variational and PackageFormer
                   is tagged with tooltips providing relevant information.
+
+
+  # for balance
+  #+latex: \newpage
 
   \noindent
   Finally, the careful reader will have noticed
@@ -871,9 +1098,9 @@ to have lower precedence that variational composition.
  #+latex: \bibliography{References}
  #+latex: \bibliographystyle{plainnat}
 
-* space 2 × \newpage                                                 :ignore:
-   \newpage
-   #+latex: {\color{white}.}
+* space 1 × \newpage                                                 :ignore:
+   # \newpage
+   # latex: {\color{white}.}
    \newpage
 * Appendix: Source code
 
