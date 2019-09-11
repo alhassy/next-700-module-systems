@@ -223,6 +223,9 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
 #+RESULTS:
 : References.bib
 
+#+RESULTS:
+: References.bib
+
   Execute ~M-x helm-bibtex~ and, say, enter ~agda~ and you will be presented with
   all the entries in the bib database that mention ‘agda’. Super cool stuff.
 
@@ -259,8 +262,8 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   #+LATEX_HEADER: \usepackage{CheatSheet/UnicodeSymbols}
 
   #+LATEX_HEADER: \DeclareMathOperator{\VCCompose}{\longrightarrow\hspace{-3ex}\oplus\;}
-  #+LATEX_HEADER: \newunicodechar{⟴}{\ensuremath{\VCCompose}}
-  #+LATEX_HEADER: \newunicodechar{𝓋}{\ensuremath{v}}
+  #+LATEX_HEADER: \newunicodechar{⟴}{\ensuremath{\!\!\VCCompose}}
+  #+LATEX_HEADER: \newunicodechar{𝓋}{\ensuremath{\!\! v}}
   #+LATEX_HEADER: \newunicodechar{𝒱}{\ensuremath{\mathcal{V}}}
   #+LATEX_HEADER: \newunicodechar{α}{\ensuremath{\alpha}}
 
@@ -369,15 +372,15 @@ MA: Do we want to pay the open access fee?
   # which information is exposed dynamically at runtime and which is known statically,
   # respectively.
 
-  Programming languages with sufficiently expressive type theories provide users with
-  different means of data ‘bundling’. Specifically one can choose to encode information
-  in a record either as a parameter or a field, in dependently-typed languages such as
-  Agda, Coq, Lean and Idris.
+  Programming languages with sufficiently expressive type systems provide users with
+  different means of data ‘bundling’. Specifically, in dependently-typed languages such as
+  Agda, Coq, Lean and Idris, one can choose to encode information
+  in a record either as a parameter or a field.
   For example, we can speak of graphs /over/ a particular vertex set, or speak
   of arbitrary graphs where the vertex set is a component.
   These create isomorphic types, but differ with respect to intended use.
   Traditionally, a library designer would make this choice (between parameters and fields);
-  if a user wants a different variant, they are forced to build conversion utilities as well as
+  if a user wants a different variant, they are forced to build conversion utilities, as well as
   duplicate functionality. For a graph data type,
   if a library only provides a Haskell-like typeclass view of graphs /over/ a vertex set,
   yet a user wishes to work with the category of graphs, they must now package a vertex
@@ -555,7 +558,7 @@ pages. https://doi.org/10.1145/1234567890
   For the monoid example,
   it seems that there are three contenders for the monoid interface:
 
-  \newpage
+#    \vspace{-1.5em}\noindent
   #+begin_src agda
   record Monoid₀ : Set₁ where
     field
@@ -573,7 +576,9 @@ pages. https://doi.org/10.1145/1234567890
       assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
       leftId  : ∀ {x} → Id ⨾ x ≡ x
       rightId : ∀ {x} → x ⨾ Id ≡ x
-
+#+end_src
+# \pagebreak
+#+begin_src agda
   record Monoid₂
            (Carrier : Set)
            (_⨾_ : Carrier → Carrier → Carrier)
@@ -622,14 +627,18 @@ pages. https://doi.org/10.1145/1234567890
   presentations can be derived from a /single/
   \textsf{\upshape PackageFormer} declaration
   via a generative meta-program integrated into the
-  most widely used Agda “IDE”, the Emacs mode for Agda.
-  In particular, a package of $N$ constituents with $M$
-  presentations of bundling results in nearly $N × M$ lines of code,
+  most widely-used Agda “IDE”, the Emacs mode for Agda.
+  In particular,
+  if one were to explicitly write $M$ different bundlings of a package
+  with $N$ constants then one would write nearly $N × M$ lines of code,
   yet this quadratic count becomes linear $N + M$ by having a single
   package declaration of $N$ constituents with $M$ subsequent instantiations.
   We hope that reducing such duplication of effort, and of potential maintenance
   burden, will be beneficial to the software engineering of large libraries
-  of formal code -- and consider it the main contribution of our work.
+  of formal code --- and consider it the main contribution of our work.
+  #
+  #   a package of $N$ constituents with $M$ presentations of bundling
+  # results in nearly $N × M$ lines of code,
 
   :Remarks:
   To demonstrate the generality of the notion of package formers we shall demonstrate how other common forms could be ‘derived’ from the single declaration above. It is to be noted that for such a small example, such derived code may be taken for granted, however for much larger theories —for example, a “field” comes with more than 20 fields— the ability to derive different perspectives in a consistent fashion is indispens- able; especially when the package is refactored. More realistically, a symmetric rig groupoid uses about 212 coherence laws [rig_computation], for which case-splitting, to perform proofs, yields over 200 goals thereby making metaprogramming a tempting approach.
@@ -654,7 +663,7 @@ pages. https://doi.org/10.1145/1234567890
     # and so the previous presentations of monoids are unified in the following
     # single declaration which does not distinguish between parameters and fields.
     #
-    We claim that the previous monoid-related pieces of Agda code
+    We claim that the above monoid-related pieces of Agda code
     can be unified as a single declaration
     which does not distinguish between parameters and fields,
     where ~PackageFormer~ is a keyword with similar syntax as ~record~:
@@ -676,13 +685,10 @@ pages. https://doi.org/10.1145/1234567890
   # #+END_EXPORT
 
     # Superficially, the parameters and fields have been flattened into a single location
-  Then with various directives that lets one declare
+  Then, with various directives that let one declare
   what should be parameters and what should be fields,
   we can reproduce the above presentations.
-  A package former is used via /instantiations/, written as low-precedence
- juxtapositions of a package former name and expression of type
- ~Variational~.
- The latter can be built from the following grammar:
+ The directives can be built from the following grammar:
     #+begin_src agda
 id          :  Variational
 record      :  Variational
@@ -695,24 +701,26 @@ _⟴_        :  Variational → Variational → Variational
 #                           -- Syntax as for using
 # # JC proposes ~termlanguage~ for ~termtype~
 \noindent
+  A package former is used via /instantiations/, written as low-precedence
+ juxtapositions of a package former name and expression of type
+ ~Variational~.
  The variationals ~unbundled~ and ~exposing~ have arguments.
- While\linebreak ~exposing~ explicitly lists the names that should be turned
- into parameters, in that sequence, “ ~unbundled~ $n$'' exposes the
+ While ~exposing~ explicitly lists the names that should be turned
+ into parameters, in that sequence, ~“unbundled~ $n$” exposes the
  first $n$ names declared in the package former.
 
- An instantiation juxtaposition is written ~PF 𝓋~ to indicate that the PackageFormer
+ An /instantiation/ juxtaposition is written ~PF 𝓋~ to indicate that the PackageFormer
  named ~PF~ is to be restructred according to scheme ~𝓋~. A /composition/ of variationals
  is denoted using the symbol ‘⟴’; for example,
  ~PF 𝓋₁ ⟴ 𝓋₂ ⟴ ⋯ ⟴ 𝓋ₙ~ denotes the forward-composition of iterated instantiations,
- namely\linebreak ((~(PF 𝓋₁) 𝓋₂) ⋯) 𝓋ₙ~, since we take prefix instantiation application
+ namely ((~(PF 𝓋₁) 𝓋₂) ⋯) 𝓋ₙ~, since we take prefix instantiation application
 to have lower precedence that variational composition.
  In particular, an empty composition is the identity
  scheme, which performs no alteration, and has the explicit name ~id~.
- \linebreak
- Since ~PF id ≈ PF~ and ~id~ is the identity of composition, we may
- write any /instantiation/ as a sequence of ⟴-separated clauses:
-~PF ⟴ 𝓋₁ ⟴ 𝓋₂ ⟴ ⋯ ⟴ 𝓋ₙ~ ---which is equivalent to \linebreak
-~PF ((((id ⟴ 𝓋₁) ⟴ 𝓋₂) ⋯)) 𝓋ₙ)~.
+ Since $\mathsf{PF} \; \mathsf{id} ≈ \mathsf{PF}$ and ~id~ is the identity of composition, we may
+ write any /instantiation/ as a sequence of \hspace{0.2em} ⟴-separated clauses:
+~PF ⟴ 𝓋₁ ⟴ 𝓋₂ ⟴ ⋯ ⟴ 𝓋ₙ~.
+ # ---which is equivalent to \linebreak ~PF ((((id ⟴ 𝓋₁) ⟴ 𝓋₂) ⋯)) 𝓋ₙ)~.
 
   The previous presentations can be obtained as follows.
 
@@ -1047,10 +1055,6 @@ No; unless we desire to do so.
                   PackageFormer instantiations and so every variational and PackageFormer
                   is tagged with tooltips providing relevant information.
 
-
-  # for balance
-  #+latex: \newpage
-
   \noindent
   Finally, the careful reader will have noticed
   that our abstract mentions graphs, yet
@@ -1068,6 +1072,12 @@ No; unless we desire to do so.
   we have implemented a meta-program to generate Agda using special code comments
   that specify how package elements are to be organised, such as their selective exposure
   as parameters which is a common issue with libraries in dependently-typed languages.
+
+
+
+  # for balance
+  #+latex: \newpage
+
 
   Our variationals
   cannot yet be directly defined in Agda. Instead, we are making use of Emacs Lisp, a language
@@ -1097,6 +1107,7 @@ No; unless we desire to do so.
 
  #+latex: \bibliography{References}
  #+latex: \bibliographystyle{plainnat}
+ # latex: \bibliographystyle{ACM-Reference-Format}
 
 * space 1 × \newpage                                                 :ignore:
    # \newpage
