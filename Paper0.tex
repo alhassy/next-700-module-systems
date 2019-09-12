@@ -1,4 +1,4 @@
-% Created 2019-09-11 Wed 15:37
+% Created 2019-09-12 Thu 15:20
 % Intended LaTeX compiler: pdflatex
 \documentclass[sigplan,screen]{acmart}
 \usepackage[utf8]{inputenc}
@@ -17,6 +17,7 @@
 \usepackage{minted}
 \usepackage{edcomms}
 \edcommsfalse
+\usepackage[font=itshape]{quoting}
 \pdfpagewidth=8.5in
 \pdfpageheight=11in
 \usepackage{color}
@@ -25,7 +26,7 @@
 \usepackage{CheatSheet/UnicodeSymbols}
 \DeclareMathOperator{\VCCompose}{\longrightarrow\hspace{-3ex}\oplus\;}
 \newunicodechar{⟴}{\ensuremath{\!\!\VCCompose}}
-\newunicodechar{𝓋}{\ensuremath{\!\! v}}
+\newunicodechar{𝓋}{\ensuremath{\!\!v}}
 \newunicodechar{𝒱}{\ensuremath{\mathcal{V}}}
 \newunicodechar{α}{\ensuremath{\alpha}}
 \newunicodechar{𝑛}{\ensuremath{n}}
@@ -202,7 +203,7 @@ incorporated into Agda's Emacs ecosystem, in a way that is unobtrusive to Agda u
 \maketitle
 
 \section{Introduction --- Selecting the ‘Right’ Perspective}
-\label{sec:orgf86082a}
+\label{sec:orgfe4751e}
 
 Library designers want to produce software components that are useful for
 the perceived needs of a variety of users and usage scenarios.  It is therefore
@@ -217,19 +218,19 @@ The subtlety of what is a ‘parameter’ --- exposed at the type level --- and 
 ‘field’ --- a component value --- has led to awkward formulations and
 the duplication of existing types for the sole purpose of different uses.
 Tom Hales \cite{Hales-blog-post} is quite eloquent in his critique of Lean:
-\begin{quote}
-  Structures are meaninglessly parameterized from a mathematical perspective.
-  [...] I think of the parametric versus bundled variants as analogous to currying
-  or not; are the arguments to a function presented in succession or as a single
-  ordered tuple? However, there is a big difference between currying functions
-  and currying structures. Switching between curried and uncurried functions is
-  cheap, but it is nearly impossible in Lean to curry a structure. That is, what
-  is bundled cannot be later opened up as a parameter. (Going the other direction
-  towards increased bundling of structures is easily achieved with sigma types.)
- This means that library designers are forced to take a conservative approach and
- expose as a parameter anything that any user might reasonably want exposed, because
- once it is bundled, it is not coming back.
-\end{quote}
+\begin{quoting}
+ Structures are meaninglessly parameterized from a mathematical perspective.
+ [\ldots{}] I think of the parametric versus bundled variants as analogous to currying
+ or not; are the arguments to a function presented in succession or as a single
+ ordered tuple? However, there is a big difference between currying functions
+ and currying structures. Switching between curried and uncurried functions is
+ cheap, but it is nearly impossible in Lean to curry a structure. That is, what
+ is bundled cannot be later opened up as a parameter. (Going the other direction
+ towards increased bundling of structures is easily achieved with sigma types.)
+This means that library designers are forced to take a conservative approach and
+expose as a parameter anything that any user might reasonably want exposed, because
+once it is bundled, it is not coming back.
+\end{quoting}
 This is the problem we are solving.
 
 For example, each Haskell typeclass can have only one instance per datatype;
@@ -247,36 +248,35 @@ it seems that there are three contenders for the monoid interface:
 
 \noindent
 \begin{minted}[]{agda}
-record Monoid₀ : Set₁ where
- field
-  Carrier : Set
-  _⨾_     : Carrier → Carrier → Carrier
-  Id      : Carrier
-  assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-  leftId  : ∀ {x} → Id ⨾ x ≡ x
-  rightId : ∀ {x} → x ⨾ Id ≡ x
-\end{minted}
+  record Monoid₀ : Set₁ where
+    field
+      Carrier : Set
+      _⨾_     : Carrier → Carrier → Carrier
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
 
-\begin{minted}[]{agda}
-record Monoid₁ (Carrier : Set) : Set where
-  field
-    _⨾_     : Carrier → Carrier → Carrier
-    Id      : Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftId  : ∀ {x} → Id ⨾ x ≡ x
-    rightId : ∀ {x} → x ⨾ Id ≡ x
-\end{minted}
+  record Monoid₁ (Carrier : Set) : Set where
+    field
+      _⨾_     : Carrier → Carrier → Carrier
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
 
-\begin{minted}[]{agda}
-record Monoid₂
-         (Carrier : Set)
-         (_⨾_ : Carrier → Carrier → Carrier)
-       : Set  where
-  field
-    Id      : Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftId  : ∀ {x} → Id ⨾ x ≡ x
-    rightId : ∀ {x} → x ⨾ Id ≡ x
+  record Monoid₂
+           (Carrier : Set)
+           (_⨾_ : Carrier → Carrier → Carrier)
+         : Set  where
+    field
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
 \end{minted}
 
 \vspace{0.3em}\noindent
@@ -327,7 +327,7 @@ burden, will be beneficial to the software engineering of large libraries
 of formal code --- and consider it the main contribution of our work.
 
 \section{\textsf{\upshape PackageFormer}s --- Being Non-committal as Much as Possible}
-\label{sec:org5f90f47}
+\label{sec:orgc0c4ed5}
 We claim that the above monoid-related pieces of Agda code
 can be unified as a single declaration
 which does not distinguish between parameters and fields,
@@ -338,7 +338,8 @@ where \texttt{PackageFormer} is a keyword with similar syntax as \texttt{record}
     Carrier : Set
      _⨾_    : Carrier → Carrier → Carrier
     Id      : Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    assoc   : ∀ {x y z}
+            → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
     leftId  : ∀ {x} → Id ⨾ x ≡ x
     rightId : ∀ {x} → x ⨾ Id ≡ x
 \end{minted}
@@ -350,35 +351,42 @@ where \texttt{PackageFormer} is a keyword with similar syntax as \texttt{record}
  we can reproduce the above presentations.
 The directives can be built from the following grammar:
 \begin{minted}[]{agda}
-id          :  Variational
-record      :  Variational
-typeclass   :  Variational
-termtype    :  Variational
-unbundled   :  ℕ → Variational
-exposing    :  List Name → Variational
-_⟴_        :  Variational → Variational → Variational
+  id          :  Variational
+  record      :  Variational
+  typeclass   :  Variational
+  termtype    :  String → Variational
+  unbundled   :  ℕ → Variational
+  exposing    :  List Name → Variational
+  _⟴_        :  Variational
+              →  Variational → Variational
 \end{minted}
 
 \noindent
   A package former is used via \emph{instantiations}, written as low-precedence
  juxtapositions of a package former name and expression of type
  \texttt{Variational}.
- The variationals \texttt{unbundled} and \texttt{exposing} have arguments.
- While \texttt{exposing} explicitly lists the names that should be turned
+ Notice that some variationals have arguments.
+ For example, \texttt{exposing} explicitly lists the names that should be turned
  into parameters, in that sequence, \texttt{“unbundled} \(n\)” exposes the
  first \(n\) names declared in the package former.
 
- An \emph{instantiation} juxtaposition is written \texttt{PF 𝓋} to indicate that the PackageFormer
- named \texttt{PF} is to be restructred according to scheme \texttt{𝓋}. A \emph{composition} of variationals
- is denoted using the symbol ‘⟴’; for example,
- \texttt{PF 𝓋₁ ⟴ 𝓋₂ ⟴ ⋯ ⟴ 𝓋ₙ} denotes the forward-composition of iterated instantiations,
+An \emph{instantiation} juxtaposition is written \texttt{PF 𝓋} to indicate that the PackageFormer
+named \texttt{PF} is to be restructred according to scheme \(\hspace{1ex}\!\) \texttt{𝓋}. A \emph{composition} of variationals
+is denoted using the symbol ‘⟴’; for example,
+\begin{center}
+\texttt{PF 𝓋₁ ⟴ 𝓋₂ ⟴ ⋯ ⟴ 𝓋ₙ}
+\end{center}
+\noindent
+ denotes the forward-composition of iterated instantiations,
  namely ((\texttt{(PF 𝓋₁) 𝓋₂) ⋯) 𝓋ₙ}, since we take prefix instantiation application
 to have lower precedence that variational composition.
  In particular, an empty composition is the identity
  scheme, which performs no alteration, and has the explicit name \texttt{id}.
  Since \(\mathsf{PF} \; \mathsf{id} ≈ \mathsf{PF}\) and \texttt{id} is the identity of composition, we may
  write any \emph{instantiation} as a sequence of \hspace{0.2em} ⟴-separated clauses:
-\texttt{PF ⟴ 𝓋₁ ⟴ 𝓋₂ ⟴ ⋯ ⟴ 𝓋ₙ}.
+\begin{center}
+\texttt{PF ⟴ 𝓋₁ ⟴ 𝓋₂ ⟴ ⋯ ⟴ 𝓋ₙ}
+\end{center}
 
 The previous presentations can be obtained as follows.
 
@@ -386,72 +394,75 @@ The previous presentations can be obtained as follows.
 \setcounter{enumi}{-1}
 \item To make \texttt{Monoid₀′} the type of \emph{arbitrary monoids}
 (that is, with arbitrary carrier), we declare:
-     \vspace{0.3em}
-\begin{minted}[]{agda}
+\vspace{0.3em}
+\begin{verbatim}
  Monoid₀′  = MonoidP record
-\end{minted}
+\end{verbatim}
 
 \setcounter{enumi}{0}
 \item We may obtain the previous formulation of
 \texttt{Monoid₁} in two different equivalent ways:
-   \vspace{0.3em}
-\begin{minted}[]{agda}
- Monoid₁′  = MonoidP record ⟴ exposing (Carrier)
- Monoid₁″ = MonoidP record ⟴ unbundled 1
-\end{minted}
+\vspace{0.3em}
+\begin{verbatim}
+ Monoid₁′  = MonoidP record ⟴ unbundled 1
+ Monoid₁″ = Monoid₀′ exposing (Carrier)
+\end{verbatim}
+
+\vspace{0.3em}
+It is interesting to note that \emph{PackageFormer} \texttt{MonoidP} is treated on the same footing
+\emph{record} \texttt{Monoid₀′}: Both may be subjected to variationals.
 \end{enumerate}
 
 \begin{enumerate}
 \setcounter{enumi}{1}
 \item As with \texttt{Monoid₁}, there are also different ways
 to obtain \texttt{Monoid₂}.
-   \vspace{0.3em}
-\begin{minted}[]{agda}
+\vspace{0.3em}
+\begin{verbatim}
  Monoid₂′  = MonoidP record ⟴ unbundled 2
- Monoid₂″ = MonoidP
-              record ⟴ exposing (Carrier; _⨾_)
-\end{minted}
+ Monoid₂″ = Monoid₀′ exposing (Carrier; _⨾_)
+\end{verbatim}
 
 \vspace{0.3em}
 \end{enumerate}
 
 \begin{enumerate}
 \setcounter{enumi}{2}
-\item Metaprogramming is more clearly needed to produce the term language:
+\item Metaprogramming is clearly needed to produce the term language:
 \vspace{0.3em}
-\begin{minted}[]{agda}
- Monoid₃′ = MonoidP termtype :carrier "Carrier"
-\end{minted}
- \vspace{0.3em}
+\begin{verbatim}
+ Monoid₃′ = MonoidP termtype "Carrier"
+\end{verbatim}
+\vspace{0.3em}
 \noindent
 Our running example uses the theory of monoids, which is a single-sorted theory.
 In general, a PackageFormer may have multiple sorts ---as is the case with
 graphs--- and so one of the possibly many sorts needs to be designated as the
 universe of discourse, or carrier, of the resulting inductively defined term type.
-This is accomplished with the \texttt{:carrier} argument.
+Such a purpose is served by the single argument to \texttt{termtype}.
 
 \vspace{0.3em}
 \noindent
 We may also want to have terms \emph{over} a particular variable set, and so declare:
 \vspace{0.3em}
-\begin{minted}[]{agda}
- Monoid₄ = MonoidP termtype-with-variables
-              :carrier "Carrier"
-\end{minted}
+\begin{verbatim}
+ Monoid₄ = MonoidP
+           termtype-with-variables "Carrier"
+\end{verbatim}
 \vspace{0.3em}
 \noindent
 Since a parameter's name does not matter, due to α-equivalence, an arbitrary,
 albeit unique, name for the variable set is introduced along with an embedding
 function from it to the resulting term type. For brevity, the embedding function's
-name is \texttt{inj} and the user must ensure there is no name-clash.
+name is \texttt{inj} and the user must ensure there is no name clash.
 The resulting elaboration is as follows.
-   \vspace{0.3em}
-   \noindent
+\vspace{0.3em}
+\noindent
 \begin{minted}[]{agda}
     data Monoid₄ (Vars : Set) : Set where
       inj : Vars → Monoid₄ Vars
-      _⨾_  : Monoid₄ Vars
-           → Monoid₄ Vars → Monoid₄ Vars
+      _⨾_ : Monoid₄ Vars
+          → Monoid₄ Vars → Monoid₄ Vars
       Id  : Monoid₄ Vars
 \end{minted}
 
@@ -459,14 +470,14 @@ The resulting elaboration is as follows.
 \noindent
 Note that these instantiations implicitly drop equations, such
 as associativity from \texttt{MonoidP}.  This is what is commonly done
-in Universal Algebra. If we were instead doing \$n\$-category
+in Universal Algebra. If we were instead doing \emph{n}-category
 theory, these would be kept, but will be the subject of future
 work.
 \end{enumerate}
 
 We also have elaborations into nested dependent-sums, which is useful
 when looking at coherent substructures.
-Alongside \texttt{\_unbundled\_}, we also have infix combinators for extending an
+Alongside \texttt{unbundled}, we also have infix combinators for extending an
 instantiation with additional fields or constructors, and the renaming of constituents
 according to a user provided String-to-String function.
 Moreover, just as syntactic datatype declarations may be derived, we also
@@ -482,7 +493,64 @@ this can be done in 7 + 6 = 13 lines.  This corresponds to using a 2-part code,
 with the initial lines being a model, and then 1-2 lines to specify variants.
 \end{quote}
 
-The PackageFormer declarations are not legal Agda syntax and thus appear as special comments.
+\section{\textsf{\upshape Variational} Polymorphism}
+\label{sec:org41e7204}
+Suppose we want to produce the function \texttt{concat}, which folds over the elements of a list
+according to a compositionality scheme --- examples of this include summing over
+a list, multiplication over a list, checking all items in a list are true, or
+at least one item in the list is true.
+Depending on the selected instantiation,
+the resulting function may have types such as the following:
+
+\begin{minted}[]{agda}
+  concat₀ : {M : Monoid₀}
+          → let C = Monoid₀.Carrier M
+             in  List C → C
+
+  concat₁ : {C : Set} {M : Monoid₁ C}
+          → List C → C
+
+  concat₂ : {C : Set} {_⨾_ : C → C→ C}
+            {M : Monoid₂ C _⨾_}
+          → List C → C
+
+  concat₃ : let C = Monoid₃
+             in List C → C
+\end{minted}
+
+\noindent
+Given our previous work, and providing that the variationals are already
+defined, we add a new declaration which, unlike the rest, comes
+equipped with a \emph{definition}.
+\vspace{0.3em}
+\begin{minted}[]{agda}
+    concat : List Carrier → Carrier
+    concat = foldr _⨾_ Id
+\end{minted}
+\noindent
+This is known as a \emph{definitional extension} (of a theory), which
+is known to be conservative (i.e. has the same models).
+
+The variationals is where this power comes from.  Furthermore, we have alluded to
+the fact that the type of variationals
+is extensible; this is achieved by having
+\begin{center}
+\texttt{Variational ≅ (PackageFormer → PackageFormer)}
+\end{center}
+\noindent
+Indeed, our implementation relies on 5 meta-primitives to form arbitrarily
+complex schemes that transform abstract PackageFormers into
+other grouping mechanisms. The meta-primitives were arrived at by codifying
+a number of structuring mechanisms directly then carefully extracting the minimal
+ingredients that enable them to be well-defined.
+
+\section{How Does This Work?}
+\label{sec:org3843ed7}
+
+We have implemented our system as an “editor tactic” meta-program.
+
+In actual use, an Agda programmer declares what they want
+using the combinators above (inside special Agda code comments).
 The comments are read by Emacs Lisp and legitimate Agda is produced in a generated file, which is
 then automatically imported into the current file --- examples are provided in an appendix.
 The generated file never needs to be consulted,
@@ -493,90 +561,7 @@ as well as the import to the generated file. Finally, since the elaborations are
 just Agda, one only needs to use the system once and future users are
 not forced to know about it.
 
-\section{\textsf{\upshape Variational} Polymorphism}
-\label{sec:orgac5f537}
-Suppose we want to produce the function \texttt{concat}, which folds over the elements of a list
-according to a compositionality scheme --- examples of this include summing over
-a list, multiplication over a list, checking all items in a list are true, or
-at least one item in the list is true.
-Depending on the selected instantiation,
-the resulting function may have types such as the following:
-
-\vspace{1em}
-\begin{minted}[]{agda}
-  concat₀ : {M : Monoid₀}
-          → let C = Monoid₀.Carrier M
-             in  List C → C
-
-  concat₁ : {C : Set} {M : Monoid₁ C} → List C → C
-
-  concat₂ : {C : Set} {_⨾_ : C → C→ C}
-            {M : Monoid₂ C _⨾_} → List C → C
-
-  concat₃ : List Monoid₃ → Monoid₃
-\end{minted}
-\vspace{1em}
-
-\noindent
-Given our previous work, and providing that the variationals are already
-defined, we add a new declaration which, unlike the rest, comes
-equipped with a \emph{definition}.
-  \vspace{0.3em}
-\begin{minted}[]{agda}
-    concat : List Carrier → Carrier
-    concat = foldr _⨾_ Id
-\end{minted}
-\noindent This is known as a \emph{definitional extension} (of a theory), which
-is known to be conservative (i.e. has the same models).
-
-The variationals is where this power comes from.  Furthermore, we have alluded to
-the fact that the type of variationals
-is extensible; this is achieved by having
-\texttt{Variational ≅ (PackageFormer → PackageFormer)}.
-Indeed, our implementation relies on 5 meta-primitives to form arbitrary
-complex schemes that transform abstract PackageFormers into
-other grouping mechanisms. The meta-primitives were arrived at by codifying
-a number of structuring mechanisms directly then carefully extracting the minimal
-ingredients that enable them to be well-defined.
-
-The details of the implementation and numerous common structuring mechanisms
-derived from the meta-primitives can be found on the prototype's homepage:
-\begin{center}
-\url{https://alhassy.github.io/next-700-module-systems-proposal/prototype/PackageFormer.html}
-\end{center}
-
-\section{Next Steps}
-\label{sec:org99a0c23}
-We have outlined a new language feature that is intended to reduce
-duplicated effort involved in taking different perspectives on structures---and to solve
-Hales' problem of premature commitment to a particular encoding. Moreover, on the road
-to making this tractable, we have unearthed a novel form of polymorphism and demonstrated
-its usefulness with some examples.
-
-We have implemented this as an “editor tactic'' meta-program.
-In actual use, an Agda programmer declares what they want
-using the combinators above (inside special Agda code comments),
-and these are then elaborated into Agda code.
-
-We have presented our work indirectly by using examples, which we
-hope are sufficiently clear to indicate our intent. We next intend to
-provide explicit (elaboration) semantics for \texttt{PackageFormer} within a
-minimal type theory; \newline \cite{types_for_modules}.
-
-Furthermore, there are additional pieces of future work, including:
-
-\begin{enumerate}
-\item Explain how generative modules \cite{modular_modules}
-are supported by this scheme.
-
-\item How do multiple default, or optional, clauses for a constituent fit into this
-language feature.
-
-\item Explore inheritance, coercion, and transport along canonical isomorphisms.
-\end{enumerate}
-
 The existing prototype already has the following nice properties:
-
 \begin{description}
 \item[{Extensible}] Users may extend the collection of variationals by providing the intended
 elaboration scheme.
@@ -604,6 +589,44 @@ PackageFormer instantiations and so every variational and PackageFormer
 is tagged with tooltips providing relevant information.
 \end{description}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.9\linewidth]{./Paper0_MousingOver.png}
+\caption{Hovering to show details. Notice special syntax has default colouring: Red for PackageFormer delimiters, yellow for elements, and green for variationals.}
+\end{figure}
+
+\noindent
+The details of the implementation and numerous common structuring mechanisms
+derived from the meta-primitives can be found on the prototype's homepage:
+\begin{center}
+\url{https://alhassy.github.io/next-700-module-systems-proposal/prototype/PackageFormer.html}
+\end{center}
+
+\section{Next Steps}
+\label{sec:orgcf66414}
+We have outlined a new language feature that is intended to reduce
+duplicated effort involved in taking different perspectives on structures---and to solve
+Hales' problem of premature commitment to a particular encoding. Moreover, on the road
+to making this tractable, we have unearthed a novel form of polymorphism and demonstrated
+its usefulness with some examples.
+
+We have presented our work indirectly by using examples, which we
+hope are sufficiently clear to indicate our intent. We next intend to
+provide explicit (elaboration) semantics for \texttt{PackageFormer} within a
+minimal type theory; \newline \cite{types_for_modules}.
+
+Furthermore, there are additional pieces of future work, including:
+
+\begin{enumerate}
+\item Explain how generative modules \cite{modular_modules}
+are supported by this scheme.
+
+\item How do multiple default, or optional, clauses for a constituent fit into this
+language feature.
+
+\item Explore inheritance, coercion, and transport along canonical isomorphisms.
+\end{enumerate}
+
 \noindent
 Finally, the careful reader will have noticed
 that our abstract mentions graphs, yet
@@ -629,35 +652,63 @@ definable directly within Agda ---rather than having our users learn yet another
 Our exploratory efforts suggest that we may be able to realise PackageFormer's as Agda records
 of ‘elements’ ---a tuple of qualifier, name, type, and definitional clauses---
 and, so, the result is a conservative extension to Agda's underlying type theory.
-However, from a practical standpoint, it is highly likely that we will extend Agda to support
-the new syntax.
+However, from a practical standpoint, it is highly
+likely that we will extend Agda to support the new syntax.
 
-\begin{quote}
-\emph{Structuring schemes tend to be easy to explain, yet the benefit of our}
-\emph{system is that it transports them from design patterns to full-fledged}
-\emph{library methods.}
-\end{quote}
+\emph{Our resulting system has turned hand-written instances of structuring schemes from a design}
+\emph{pattern into full-fledged library methods}. In turn, the system addresses the following
+extremely unsatisfactory points of hand-written instances, mentioned by the “Deriving Via” \cite{deriving_via} group.
+
+\newpage
+\begin{quoting}
+\begin{enumerate}
+\item It is not obvious that we are instantiating a general principle.
+
+\item Because the general principle is not written down in
+code with a name and documentation, it has to be communicated
+through folklore or in comments and is difficult to discover
+and search for. Our code has lost a connection to its origin.
+
+\item There are many such rules, some quite obvious, but
+others more surprising and easy to overlook.
+
+\item While the work required to define instances manually for \texttt{Monoid}
+---which only has 6 constituents--- is perhaps acceptable,
+it quickly becomes extremely tedious and error-prone for packages
+with many constituents.
+\end{enumerate}
+\end{quoting}
+
+
+Paraphrasing \cite{deriving_via},
+we believe that PackageFormers have the potential to dramatically change the way we write instances
+of structuring mechanisms, as it encourages giving names and documentation to recurring patterns
+and reusing them where needed.
 
 \bibliography{References}
 \bibliographystyle{plainnat}
 
+\newpage
 \section{Appendix: Source code}
-\label{sec:org9ef54f2}
+\label{sec:org0c8a7df}
 
 Below is a nearly self-contained source sample for the presented fragments.
 
-\vspace{0.3em}
-\uline{Module Header}
-\begin{footnotesize}
+\subsection{Module Header}
+\label{sec:org8b993d2}
 \begin{minted}[]{agda}
-open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.List hiding (concat)
+open import Relation.Binary.PropositionalEquality
+            using (_≡_)
+
 module Paper0 where
+
 {- Automatically generated & inserted by the prototype -}
 open import Paper0_Generated
 \end{minted}
 
-\uline{Plain \texttt{MonoidP} PackageFormer}
+\subsection{Plain \texttt{MonoidP} PackageFormer}
+\label{sec:org139bfa2}
 \begin{minted}[]{agda}
 {-700
 PackageFormer MonoidP : Set₁ where
@@ -670,7 +721,8 @@ PackageFormer MonoidP : Set₁ where
 -}
 \end{minted}
 
-\uline{The \texttt{record} variational and three instantiations}
+\subsection{The \texttt{record} variational and three instantiations}
+\label{sec:org4aa2fd2}
 \begin{minted}[]{agda}
 {-700
 𝒱-record = :kind record :waist-strings ("field")
@@ -683,8 +735,8 @@ Monoid₂″ = MonoidP record ⟴ :waist 2
 In the paper proper we mentioned “unbundled”, which in the prototype
 takes the form of the meta-primitive \texttt{:waist}.
 
-\vspace{0.3em}
-\uline{Complex variationals in \texttt{lisp} blocks}
+\subsection{Complex variationals in \texttt{lisp} blocks}
+\label{sec:org2da2fbe}
 \begin{small}
 \begin{minted}[]{agda}
 {-lisp
@@ -711,7 +763,8 @@ Monoid₄  = MonoidP termtype-with-variables :carrier "Carrier"
 \end{minted}
 \end{small}
 
-\uline{PackageFormers with Equations}
+\subsection{PackageFormers with Equations}
+\label{sec:orga79b4f3}
 \begin{minted}[]{agda}
 {-700
 PackageFormer MonoidPE : Set₁ where
@@ -733,7 +786,8 @@ PackageFormer MonoidPE : Set₁ where
 -}
 \end{minted}
 
-\uline{concat₀ and concat₃}
+\subsection{\texttt{concat₀} and \texttt{concat₃}}
+\label{sec:org5fef362}
 \begin{minted}[]{agda}
 {-700
 𝒱-decorated by = ⋯
@@ -753,5 +807,4 @@ concat₃ : let C = Monoid³
           in List C → C
 concat₃ = concat³
 \end{minted}
-\end{footnotesize}
 \end{document}
