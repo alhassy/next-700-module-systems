@@ -1,4 +1,4 @@
-% Created 2019-09-12 Thu 15:20
+% Created 2019-09-12 Thu 22:07
 % Intended LaTeX compiler: pdflatex
 \documentclass[sigplan,screen]{acmart}
 \usepackage[utf8]{inputenc}
@@ -47,6 +47,7 @@
 \acmISBN{978-1-4503-6980-0/19/10}
 \acmConference[GPCE '19]{Proceedings of the 18th ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences}{October 21--22, 2019}{Athens, Greece}
 \acmBooktitle{Proceedings of the 18th ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences (GPCE '19), October 21--22, 2019, Athens, Greece}
+\usepackage[toc,page]{appendix}
 \date{\today}
 \title{A Language Feature to Unbundle Data at Will (Short Paper)}
 \hypersetup{
@@ -90,44 +91,14 @@
 <concept_significance>300</concept_significance>
 </concept>
 <concept>
-<concept_id>10011007.10011006.10011008.10011024.10011028</concept_id>
-<concept_desc>Software and its engineering~Data types and structures</concept_desc>
-<concept_significance>300</concept_significance>
-</concept>
-<concept>
 <concept_id>10011007.10011006.10011041.10011047</concept_id>
 <concept_desc>Software and its engineering~Source code generation</concept_desc>
-<concept_significance>300</concept_significance>
-</concept>
-<concept>
-<concept_id>10011007.10011006.10011060.10011018</concept_id>
-<concept_desc>Software and its engineering~Design languages</concept_desc>
 <concept_significance>300</concept_significance>
 </concept>
 <concept>
 <concept_id>10011007.10011006.10011066.10011069</concept_id>
 <concept_desc>Software and its engineering~Integrated and visual development environments</concept_desc>
 <concept_significance>300</concept_significance>
-</concept>
-<concept>
-<concept_id>10011007.10011006.10011008.10011009.10011010</concept_id>
-<concept_desc>Software and its engineering~Imperative languages</concept_desc>
-<concept_significance>100</concept_significance>
-</concept>
-<concept>
-<concept_id>10011007.10011006.10011008.10011024.10003202</concept_id>
-<concept_desc>Software and its engineering~Abstract data types</concept_desc>
-<concept_significance>100</concept_significance>
-</concept>
-<concept>
-<concept_id>10011007.10011006.10011008.10011024.10011036</concept_id>
-<concept_desc>Software and its engineering~Patterns</concept_desc>
-<concept_significance>100</concept_significance>
-</concept>
-<concept>
-<concept_id>10011007.10011006.10011039.10011040</concept_id>
-<concept_desc>Software and its engineering~Syntax</concept_desc>
-<concept_significance>100</concept_significance>
 </concept>
 </ccs2012>
 \end{CCSXML}
@@ -139,19 +110,10 @@
 \ccsdesc[300]{Software and its engineering~Source code generation}
 \ccsdesc[300]{Software and its engineering~Integrated and visual development environments}
 
-%removed
-\ccsdesc[300]{Software and its engineering~Data types and structures}
-\ccsdesc[300]{Software and its engineering~Design languages}
-\ccsdesc[100]{Software and its engineering~Imperative languages}
-\ccsdesc[100]{Software and its engineering~Patterns}
-\ccsdesc[100]{Software and its engineering~Syntax}
-\ccsdesc[100]{Software and its engineering~Abstract data types}
-
-
 %%
 %% Keywords. The author(s) should pick words that accurately describe
 %% the work being presented. Separate the keywords with commas.
-\keywords{Agda, meta-program, extensible, Emacs, pacakges, modules, dependent-types}
+\keywords{Agda, meta-program, extensible, Emacs, packages, modules, dependent-types}
 
  \title{A Language Feature to Unbundle Data at Will}
 \subtitle{ (Short Paper)}
@@ -203,7 +165,7 @@ incorporated into Agda's Emacs ecosystem, in a way that is unobtrusive to Agda u
 \maketitle
 
 \section{Introduction --- Selecting the ‘Right’ Perspective}
-\label{sec:orgfe4751e}
+\label{sec:orgf6704e8}
 
 Library designers want to produce software components that are useful for
 the perceived needs of a variety of users and usage scenarios.  It is therefore
@@ -327,13 +289,13 @@ burden, will be beneficial to the software engineering of large libraries
 of formal code --- and consider it the main contribution of our work.
 
 \section{\textsf{\upshape PackageFormer}s --- Being Non-committal as Much as Possible}
-\label{sec:orgc0c4ed5}
+\label{sec:org9a007a7}
 We claim that the above monoid-related pieces of Agda code
 can be unified as a single declaration
 which does not distinguish between parameters and fields,
-where \texttt{PackageFormer} is a keyword with similar syntax as \texttt{record}:
+where \textsf{PackageFormer} is a keyword with similar syntax as \texttt{record}:
 
-\begin{minted}[]{agda}
+\begin{verbatim}
   PackageFormer MonoidP : Set₁ where
     Carrier : Set
      _⨾_    : Carrier → Carrier → Carrier
@@ -342,9 +304,12 @@ where \texttt{PackageFormer} is a keyword with similar syntax as \texttt{record}
             → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
     leftId  : ∀ {x} → Id ⨾ x ≡ x
     rightId : ∀ {x} → x ⨾ Id ≡ x
-\end{minted}
+\end{verbatim}
 
 \noindent
+\begin{small}
+(For clarity, this and other non-native Agda syntax is left uncoloured.)
+\end{small}
 
  Then, with various directives that let one declare
  what should be parameters and what should be fields,
@@ -370,7 +335,7 @@ The directives can be built from the following grammar:
  into parameters, in that sequence, \texttt{“unbundled} \(n\)” exposes the
  first \(n\) names declared in the package former.
 
-An \emph{instantiation} juxtaposition is written \texttt{PF 𝓋} to indicate that the PackageFormer
+An \emph{instantiation} juxtaposition is written \texttt{PF 𝓋} to indicate that the \textsf{PackageFormer}
 named \texttt{PF} is to be restructred according to scheme \(\hspace{1ex}\!\) \texttt{𝓋}. A \emph{composition} of variationals
 is denoted using the symbol ‘⟴’; for example,
 \begin{center}
@@ -379,7 +344,7 @@ is denoted using the symbol ‘⟴’; for example,
 \noindent
  denotes the forward-composition of iterated instantiations,
  namely ((\texttt{(PF 𝓋₁) 𝓋₂) ⋯) 𝓋ₙ}, since we take prefix instantiation application
-to have lower precedence that variational composition.
+to have higher precedence than variational composition.
  In particular, an empty composition is the identity
  scheme, which performs no alteration, and has the explicit name \texttt{id}.
  Since \(\mathsf{PF} \; \mathsf{id} ≈ \mathsf{PF}\) and \texttt{id} is the identity of composition, we may
@@ -409,8 +374,8 @@ The previous presentations can be obtained as follows.
 \end{verbatim}
 
 \vspace{0.3em}
-It is interesting to note that \emph{PackageFormer} \texttt{MonoidP} is treated on the same footing
-\emph{record} \texttt{Monoid₀′}: Both may be subjected to variationals.
+It is interesting to note that \emph{\textsf{PackageFormer}} \texttt{MonoidP} is treated on
+the same footing as \emph{record} \texttt{Monoid₀′}: Both may be subjected to variationals.
 \end{enumerate}
 
 \begin{enumerate}
@@ -436,14 +401,16 @@ to obtain \texttt{Monoid₂}.
 \vspace{0.3em}
 \noindent
 Our running example uses the theory of monoids, which is a single-sorted theory.
-In general, a PackageFormer may have multiple sorts ---as is the case with
-graphs--- and so one of the possibly many sorts needs to be designated as the
+In general, a \textsf{PackageFormer} may have multiple sorts --- as is the case with
+graphs --- and so one of the possibly many sorts needs to be designated as the
 universe of discourse, or carrier, of the resulting inductively defined term type.
 Such a purpose is served by the single argument to \texttt{termtype}.
 
 \vspace{0.3em}
 \noindent
-We may also want to have terms \emph{over} a particular variable set, and so declare:
+We may also want to have terms \emph{over} a particular variable set, and so declare
+the following after extending the system with a user defined variational \texttt{termtype-with-variables}.
+
 \vspace{0.3em}
 \begin{verbatim}
  Monoid₄ = MonoidP
@@ -494,7 +461,7 @@ with the initial lines being a model, and then 1-2 lines to specify variants.
 \end{quote}
 
 \section{\textsf{\upshape Variational} Polymorphism}
-\label{sec:org41e7204}
+\label{sec:org9ef41a9}
 Suppose we want to produce the function \texttt{concat}, which folds over the elements of a list
 according to a compositionality scheme --- examples of this include summing over
 a list, multiplication over a list, checking all items in a list are true, or
@@ -515,7 +482,7 @@ the resulting function may have types such as the following:
           → List C → C
 
   concat₃ : let C = Monoid₃
-             in List C → C
+            in List C → C
 \end{minted}
 
 \noindent
@@ -539,13 +506,13 @@ is extensible; this is achieved by having
 \end{center}
 \noindent
 Indeed, our implementation relies on 5 meta-primitives to form arbitrarily
-complex schemes that transform abstract PackageFormers into
+complex schemes that transform abstract \textsf{PackageFormer}s into
 other grouping mechanisms. The meta-primitives were arrived at by codifying
 a number of structuring mechanisms directly then carefully extracting the minimal
 ingredients that enable them to be well-defined.
 
 \section{How Does This Work?}
-\label{sec:org3843ed7}
+\label{sec:org4833411}
 
 We have implemented our system as an “editor tactic” meta-program.
 
@@ -555,8 +522,8 @@ The comments are read by Emacs Lisp and legitimate Agda is produced in a generat
 then automatically imported into the current file --- examples are provided in an appendix.
 The generated file never needs to be consulted,
 as the declared names are furnished with tooltips rendering the elaborated
-Agda form. Moreover, we also provide a feature to extract a ‘bare bones’ version
-of a file that strips out all PackageFormer annotations, leaving only Agda
+Agda form, see Figure \ref{mousing-over}. Moreover, we also provide a feature to extract a ‘bare bones’ version
+of a file that strips out all \textsf{PackageFormer} annotations, leaving only Agda
 as well as the import to the generated file. Finally, since the elaborations are
 just Agda, one only needs to use the system once and future users are
 not forced to know about it.
@@ -569,51 +536,46 @@ elaboration scheme.
 We have provided a number of auxiliary, derived, combinators
 that can be used to construct complex and common schemes.
 Furthermore, the user has full and direct access to the entirety of Emacs Lisp
-as a programming language for restructuring PackageFormers into any desired shape
----the well-formedness of which is a matter the user must then worry about.
+as a programming language for restructuring \textsf{PackageFormer}s into any desired shape
+--- the well-formedness of which is a matter the user must then worry about.
 
 \item[{Practical}] The user manual demonstrates how boilerplate code for
-            renamings, hidings, decorations, and generations
-of hierarchical structures can be formed; \newline
-\cite{tpc}.
+renamings, hidings, decorations, and generations
+of hierarchical structures can be formed;~ \cite{tpc}.
 
 \item[{Pragmatic}] The prototype comes equipped with a number of menus
-to display the abstract PackageFormer's defined,
+to display the abstract \textsf{PackageFormer}'s defined,
 as well as the variationals defined, and one may
-enable highlighting for these syntactical items, have
+enable highlighting for these syntactical items, have them
 folded away, or simply extract an Agda file that does not mention
 them at all.
-
-As it can be tedious to consult generated code for high-level
-PackageFormer instantiations and so every variational and PackageFormer
-is tagged with tooltips providing relevant information.
 \end{description}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=.9\linewidth]{./Paper0_MousingOver.png}
-\caption{Hovering to show details. Notice special syntax has default colouring: Red for PackageFormer delimiters, yellow for elements, and green for variationals.}
+\includegraphics[width=.9\linewidth]{./Paper0_MousingOverLarge.png}
+\caption{Hovering to show details. Notice special syntax has default colouring: Red for \textsf{PackageFormer} delimiters, yellow for elements, and green for variationals. \label{mousing-over}}
 \end{figure}
 
 \noindent
 The details of the implementation and numerous common structuring mechanisms
 derived from the meta-primitives can be found on the prototype's homepage:
 \begin{center}
-\url{https://alhassy.github.io/next-700-module-systems-proposal/prototype/PackageFormer.html}
+\url{https://alhassy.github.io/next-700-module-systems/prototype/PackageFormer.html}
 \end{center}
 
-\section{Next Steps}
-\label{sec:orgcf66414}
+\section{Conclusion and Next Steps}
+\label{sec:org42edb19}
 We have outlined a new language feature that is intended to reduce
-duplicated effort involved in taking different perspectives on structures---and to solve
+duplicated effort involved in taking different perspectives on structures --- and to solve
 Hales' problem of premature commitment to a particular encoding. Moreover, on the road
 to making this tractable, we have unearthed a novel form of polymorphism and demonstrated
 its usefulness with some examples.
 
 We have presented our work indirectly by using examples, which we
 hope are sufficiently clear to indicate our intent. We next intend to
-provide explicit (elaboration) semantics for \texttt{PackageFormer} within a
-minimal type theory; \newline \cite{types_for_modules}.
+provide explicit (elaboration) semantics for \textsf{PackageFormer} within a
+minimal type theory; \cite{types_for_modules}.
 
 Furthermore, there are additional pieces of future work, including:
 
@@ -649,7 +611,7 @@ Our variationals
 cannot yet be directly defined in Agda. Instead, we are making use of Emacs Lisp, a language
 close to the Agda ecosystem. Going forward, one of the aims of our work is to have variationals
 definable directly within Agda ---rather than having our users learn yet another language.
-Our exploratory efforts suggest that we may be able to realise PackageFormer's as Agda records
+Our exploratory efforts suggest that we may be able to realise \textsf{PackageFormer}s as Agda records
 of ‘elements’ ---a tuple of qualifier, name, type, and definitional clauses---
 and, so, the result is a conservative extension to Agda's underlying type theory.
 However, from a practical standpoint, it is highly
@@ -657,9 +619,10 @@ likely that we will extend Agda to support the new syntax.
 
 \emph{Our resulting system has turned hand-written instances of structuring schemes from a design}
 \emph{pattern into full-fledged library methods}. In turn, the system addresses the following
-extremely unsatisfactory points of hand-written instances, mentioned by the “Deriving Via” \cite{deriving_via} group.
+extremely unsatisfactory points of hand-written instances, mentioned by the “Deriving Via” \cite{deriving_via} group:
 
 \newpage
+\noindent
 \begin{quoting}
 \begin{enumerate}
 \item It is not obvious that we are instantiating a general principle.
@@ -679,9 +642,8 @@ with many constituents.
 \end{enumerate}
 \end{quoting}
 
-
 Paraphrasing \cite{deriving_via},
-we believe that PackageFormers have the potential to dramatically change the way we write instances
+we believe that \textsf{PackageFormer}s have the potential to dramatically change the way we write instances
 of structuring mechanisms, as it encourages giving names and documentation to recurring patterns
 and reusing them where needed.
 
@@ -689,13 +651,14 @@ and reusing them where needed.
 \bibliographystyle{plainnat}
 
 \newpage
-\section{Appendix: Source code}
-\label{sec:org0c8a7df}
+\begin{appendices}
 
-Below is a nearly self-contained source sample for the presented fragments.
+Full code scripts may be found on the prototype's repository; below are
+snippets for the presented fragments.
 
-\subsection{Module Header}
-\label{sec:org8b993d2}
+\section{Module Header}
+\label{sec:orgf64e26e}
+
 \begin{minted}[]{agda}
 open import Data.List hiding (concat)
 open import Relation.Binary.PropositionalEquality
@@ -703,108 +666,128 @@ open import Relation.Binary.PropositionalEquality
 
 module Paper0 where
 
-{- Automatically generated & inserted by the prototype -}
 open import Paper0_Generated
 \end{minted}
 
-\subsection{Plain \texttt{MonoidP} PackageFormer}
-\label{sec:org139bfa2}
+\vspace{0.3em}
+\noindent
+The import of the generated file is automatically produced and
+inserted by the system, if need be.
+
+\section{Plain \texttt{MonoidP} PackageFormer}
+\label{sec:org2a8d5d6}
 \begin{minted}[]{agda}
 {-700
 PackageFormer MonoidP : Set₁ where
-    Carrier : Set
-    _⨾_     : Carrier → Carrier → Carrier
-    Id      : Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
-    rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
+  Carrier : Set
+  _⨾_     : Carrier → Carrier → Carrier
+  Id      : Carrier
+  assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+  leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
+  rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
 -}
 \end{minted}
 
-\subsection{The \texttt{record} variational and three instantiations}
-\label{sec:org4aa2fd2}
+\section{Variational \texttt{record} and 3 Instantiations}
+\label{sec:org98b0d16}
+   In the paper proper we mentioned “unbundled”, which in the prototype
+takes the form of the meta-primitive \texttt{:waist}.
+\begin{minted}[]{agda}
+{-lisp
+(𝒱 record
+  = "Reify a variational as an Agda “record”.
+
+     Elements with equations are construed as
+     derivatives of fields  ---the elements
+     without any equations.
+    "
+  :kind record
+  :alter-elements
+     (λ es → (--map (map-qualifier
+        (λ _ → (unless (element-equations it)
+           "field")) it) es)))
+-}
+\end{minted}
+
+Notice that the organisational mechanism not only has a name and documentation,
+but also an unambiguous implementation. We may use it as follows.
+
 \begin{minted}[]{agda}
 {-700
-𝒱-record = :kind record :waist-strings ("field")
-
 Monoid₀′  = MonoidP record
 Monoid₁″ = MonoidP record ⟴ :waist 1
 Monoid₂″ = MonoidP record ⟴ :waist 2
 -}
 \end{minted}
-In the paper proper we mentioned “unbundled”, which in the prototype
-takes the form of the meta-primitive \texttt{:waist}.
 
-\subsection{Complex variationals in \texttt{lisp} blocks}
-\label{sec:org2da2fbe}
-\begin{small}
+\newpage
+
+\section{\texttt{termtype} Variationals}
+\label{sec:org24514d0}
+
+We may also have shorter variational definitions directly in \texttt{700}-blocks.
 \begin{minted}[]{agda}
-{-lisp
-(𝒱 termtype carrier
-  = "Reify as parameterless Agda “data” type.
-
-     CARRIER refers to the sort that is designated as the
-     domain of discourse of the resulting single-sorted
-     inductive term data type.
-    "
-    :kind data
-    :level dec
-    :alter-elements (lambda (fs)
-      (thread-last fs
-        (--filter (s-contains? carrier (target (get-type it))))
-        (--map (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) it)))))
-
-(𝒱 termtype-with-variables carrier = ⋯) -}
-
 {-700
-Monoid₃′ = MonoidP termtype :carrier "Carrier"
-Monoid₄  = MonoidP termtype-with-variables :carrier "Carrier"
+𝒱-termtype                carrier  =  ⋯
+𝒱-termtype-with-variables carrier  =  ⋯
+
+Monoid₃′ = MonoidP termtype "Carrier"
+Monoid₄  = MonoidP termtype-with-variables "Carrier"
 -}
 \end{minted}
-\end{small}
 
-\subsection{PackageFormers with Equations}
-\label{sec:orga79b4f3}
+\section{PackageFormers with Equations}
+\label{sec:orge61aa2f}
+
 \begin{minted}[]{agda}
 {-700
 PackageFormer MonoidPE : Set₁ where
-    -- A few declarations
-    Carrier : Set
-    _⨾_     : Carrier → Carrier → Carrier
-    Id      : Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+  -- A few declarations
+  Carrier : Set
+  _⨾_     : Carrier → Carrier → Carrier
+  Id      : Carrier
+  assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
-    -- A few declarations with equations
-    Rid : Carrier → Carrier
-    Rid x = x ⨾ Id
-    concat : List Carrier → Carrier
-    concat = foldr _⨾_ Id
+  -- A few declarations with equations
+  Rid : Carrier → Carrier
+  Rid x = x ⨾ Id
+  concat : List Carrier → Carrier
+  concat = foldr _⨾_ Id
 
-    -- More declarations
-    leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
-    rightId : ∀ {x : Carrier} → Rid x ≡ x
+  -- More declarations
+  leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
+  rightId : ∀ {x : Carrier} → Rid x ≡ x
 -}
 \end{minted}
 
-\subsection{\texttt{concat₀} and \texttt{concat₃}}
-\label{sec:org5fef362}
+\section{\texttt{concat₀} and \texttt{concat₃}}
+\label{sec:orgb28b10e}
+
 \begin{minted}[]{agda}
 {-700
 𝒱-decorated by = ⋯
-Monoid⁰ = MonoidPE decorated :by "⁰" ⟴ recordₑ
-Monoid³ = MonoidPE ⟴ decorated :by "³"
-                   ⟴ termtypeₑ :carrier "Carrier³"
+Monoid⁰ = MonoidPE decorated "⁰" ⟴ record
+Monoid³ = MonoidPE ⟴ decorated "³"
+                   ⟴ termtype "Carrier³"
 -}
+\end{minted}
 
-{- “Concatenation over an arbitrary monoid” -}
+\noindent
+Then, concatenation over an arbitrary monoid:
+\begin{minted}[]{agda}
 concat₀ : {M : Monoid⁰}
          → let C = Monoid⁰.Carrier⁰ M
            in List C → C
 concat₀ {M} = Monoid⁰.concat⁰ M
+\end{minted}
 
-{- Concatenation over an arbitrary *closed* monoid term -}
+\noindent
+As well as, concatenation over an arbitrary \textbf{closed} monoid term:
+\begin{minted}[]{agda}
 concat₃ : let C = Monoid³
           in List C → C
 concat₃ = concat³
 \end{minted}
+
+\end{appendices}
 \end{document}

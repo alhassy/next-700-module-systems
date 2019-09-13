@@ -1,3 +1,7 @@
+#  termtype : String -> Variational
+#
+# (Have you considered `Identifier` instead of `String`?)
+#
 :High_Priority:
 + Rename this paper to: gpce19_a_language_feature_to_unbundle_data_at_will.org
 + Move it into a papers/ directory.
@@ -31,6 +35,7 @@
 #+OPTIONS: toc:nil d:nil title:nil author:nil
 #+PROPERTY: header-args :tangle no :comments link
 #+TODO: TODO | OLD LaTeX README Remarks space
+#+MACRO: PF \textsf{PackageFormer}
 
 :summary:
 In a language with dependent types, the same notion may be formalised several different ways. For instance, a monoid could be:
@@ -238,6 +243,8 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
 
 * LaTeX setup                                                        :ignore:
 
+#+latex_class_options: [10pt]
+
   # Visible editorial comments.
   #+LATEX_HEADER: \usepackage{edcomms}
   #+LATEX_HEADER: \edcommsfalse
@@ -315,44 +322,14 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
  <concept_significance>300</concept_significance>
  </concept>
  <concept>
- <concept_id>10011007.10011006.10011008.10011024.10011028</concept_id>
- <concept_desc>Software and its engineering~Data types and structures</concept_desc>
- <concept_significance>300</concept_significance>
- </concept>
- <concept>
  <concept_id>10011007.10011006.10011041.10011047</concept_id>
  <concept_desc>Software and its engineering~Source code generation</concept_desc>
- <concept_significance>300</concept_significance>
- </concept>
- <concept>
- <concept_id>10011007.10011006.10011060.10011018</concept_id>
- <concept_desc>Software and its engineering~Design languages</concept_desc>
  <concept_significance>300</concept_significance>
  </concept>
  <concept>
  <concept_id>10011007.10011006.10011066.10011069</concept_id>
  <concept_desc>Software and its engineering~Integrated and visual development environments</concept_desc>
  <concept_significance>300</concept_significance>
- </concept>
- <concept>
- <concept_id>10011007.10011006.10011008.10011009.10011010</concept_id>
- <concept_desc>Software and its engineering~Imperative languages</concept_desc>
- <concept_significance>100</concept_significance>
- </concept>
- <concept>
- <concept_id>10011007.10011006.10011008.10011024.10003202</concept_id>
- <concept_desc>Software and its engineering~Abstract data types</concept_desc>
- <concept_significance>100</concept_significance>
- </concept>
- <concept>
- <concept_id>10011007.10011006.10011008.10011024.10011036</concept_id>
- <concept_desc>Software and its engineering~Patterns</concept_desc>
- <concept_significance>100</concept_significance>
- </concept>
- <concept>
- <concept_id>10011007.10011006.10011039.10011040</concept_id>
- <concept_desc>Software and its engineering~Syntax</concept_desc>
- <concept_significance>100</concept_significance>
  </concept>
  </ccs2012>
  \end{CCSXML}
@@ -364,19 +341,10 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
  \ccsdesc[300]{Software and its engineering~Source code generation}
  \ccsdesc[300]{Software and its engineering~Integrated and visual development environments}
 
- %removed
- \ccsdesc[300]{Software and its engineering~Data types and structures}
- \ccsdesc[300]{Software and its engineering~Design languages}
- \ccsdesc[100]{Software and its engineering~Imperative languages}
- \ccsdesc[100]{Software and its engineering~Patterns}
- \ccsdesc[100]{Software and its engineering~Syntax}
- \ccsdesc[100]{Software and its engineering~Abstract data types}
-
-
  %%
  %% Keywords. The author(s) should pick words that accurately describe
  %% the work being presented. Separate the keywords with commas.
- \keywords{Agda, meta-program, extensible, Emacs, pacakges, modules, dependent-types}
+ \keywords{Agda, meta-program, extensible, Emacs, packages, modules, dependent-types}
    #+end_export
 
 ** Authors & title                                                   :ignore:
@@ -655,10 +623,12 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
     We claim that the above monoid-related pieces of Agda code
     can be unified as a single declaration
     which does not distinguish between parameters and fields,
-    where ~PackageFormer~ is a keyword with similar syntax as ~record~:
+    where \textsf{PackageFormer} is a keyword with similar syntax as ~record~:
 
     # (add-to-list 'org-agda-extra-word-colours '("PackageFormer" 0 'font-lock-type-face))
-      #+begin_src agda
+    #+caption:   For clarity, this and other non-native Agda syntax is left uncoloured.
+    # begin_figure
+      #+begin_example
   PackageFormer MonoidP : Set₁ where
     Carrier : Set
      _⨾_    : Carrier → Carrier → Carrier
@@ -667,9 +637,12 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
             → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
     leftId  : ∀ {x} → Id ⨾ x ≡ x
     rightId : ∀ {x} → x ⨾ Id ≡ x
-  #+end_src
-
-  \noindent
+  #+end_example
+    # end_figure
+  #+latex:\noindent
+  #+begin_small
+  (For clarity, this and other non-native Agda syntax is left uncoloured.)
+  #+end_small
 
   # #+BEGIN_EXPORT latex
   # \emph{One uses a \textsf{\upshape PackageFormer} by instantiating the particular presentation that is desired.}
@@ -701,7 +674,7 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
  into parameters, in that sequence, ~“unbundled~ $n$” exposes the
  first $n$ names declared in the package former.
 
- An /instantiation/ juxtaposition is written ~PF 𝓋~ to indicate that the PackageFormer
+ An /instantiation/ juxtaposition is written ~PF 𝓋~ to indicate that the \textsf{PackageFormer}
  named ~PF~ is to be restructred according to scheme $\hspace{1ex}\!$ ~𝓋~. A /composition/ of variationals
  is denoted using the symbol ‘⟴’; for example,
  #+begin_center
@@ -710,7 +683,7 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
  #+latex: \noindent
  denotes the forward-composition of iterated instantiations,
  namely ((~(PF 𝓋₁) 𝓋₂) ⋯) 𝓋ₙ~, since we take prefix instantiation application
-to have lower precedence that variational composition.
+to have higher precedence than variational composition.
  In particular, an empty composition is the identity
  scheme, which performs no alteration, and has the explicit name ~id~.
  Since $\mathsf{PF} \; \mathsf{id} ≈ \mathsf{PF}$ and ~id~ is the identity of composition, we may
@@ -740,8 +713,8 @@ to have lower precedence that variational composition.
 #+end_example
 
      #+latex:   \vspace{0.3em}
-    It is interesting to note that /PackageFormer/ ~MonoidP~ is treated on the same footing
-    /record/ ~Monoid₀′~: Both may be subjected to variationals.
+    It is interesting to note that /\textsf{PackageFormer}/ ~MonoidP~ is treated on
+    the same footing as /record/ ~Monoid₀′~: Both may be subjected to variationals.
 # #    \vspace{0.3em}
 
   2. [@2] As with ~Monoid₁~, there are also different ways
@@ -788,14 +761,16 @@ to have lower precedence that variational composition.
    #+latex:   \vspace{0.3em}
    #+latex: \noindent
    Our running example uses the theory of monoids, which is a single-sorted theory.
-   In general, a PackageFormer may have multiple sorts ---as is the case with
-   graphs--- and so one of the possibly many sorts needs to be designated as the
+   In general, a \textsf{PackageFormer} may have multiple sorts --- as is the case with
+   graphs --- and so one of the possibly many sorts needs to be designated as the
    universe of discourse, or carrier, of the resulting inductively defined term type.
    Such a purpose is served by the single argument to ~termtype~.
 
    #+latex: \vspace{0.3em}
    #+latex: \noindent
-   We may also want to have terms /over/ a particular variable set, and so declare:
+   We may also want to have terms /over/ a particular variable set, and so declare
+   the following after extending the system with a user defined variational ~termtype-with-variables~.
+
    #+latex: \vspace{0.3em}
      #+begin_example
  Monoid₄ = MonoidP
@@ -901,7 +876,7 @@ to have lower precedence that variational composition.
   6. Support multiple defaults.
 
   3. Constitients of package formers give rise to functions ---e.g., by replacing the
-     PackageFormer name with a new fresh variable. See 𝒯, page 42, of thesis-proposal.
+     \textsf{PackageFormer} name with a new fresh variable. See 𝒯, page 42, of thesis-proposal.
 
      In turn, this can be used to produce simple, tedious, induction principles. See (0) above.
 
@@ -948,7 +923,7 @@ No; unless we desire to do so.
           → List C → C
 
   concat₃ : let C = Monoid₃
-             in List C → C
+            in List C → C
 #+END_SRC
   # \vspace{1em}
 
@@ -973,7 +948,7 @@ No; unless we desire to do so.
   #+end_center
   #+latex: \noindent
   Indeed, our implementation relies on 5 meta-primitives to form arbitrarily
-  complex schemes that transform abstract PackageFormers into
+  complex schemes that transform abstract \textsf{PackageFormer}s into
   other grouping mechanisms. The meta-primitives were arrived at by codifying
   a number of structuring mechanisms directly then carefully extracting the minimal
   ingredients that enable them to be well-defined.
@@ -995,8 +970,8 @@ No; unless we desire to do so.
   then automatically imported into the current file --- examples are provided in an appendix.
   The generated file never needs to be consulted,
   as the declared names are furnished with tooltips rendering the elaborated
-  Agda form. Moreover, we also provide a feature to extract a ‘bare bones’ version
-  of a file that strips out all PackageFormer annotations, leaving only Agda
+  Agda form, see Figure ref:mousing-over. Moreover, we also provide a feature to extract a ‘bare bones’ version
+  of a file that strips out all \textsf{PackageFormer} annotations, leaving only Agda
   as well as the import to the generated file. Finally, since the elaborations are
   just Agda, one only needs to use the system once and future users are
   not forced to know about it.
@@ -1010,44 +985,44 @@ No; unless we desire to do so.
      We have provided a number of auxiliary, derived, combinators
      that can be used to construct complex and common schemes.
      Furthermore, the user has full and direct access to the entirety of Emacs Lisp
-     as a programming language for restructuring PackageFormers into any desired shape
-     ---the well-formedness of which is a matter the user must then worry about.
+     as a programming language for restructuring \textsf{PackageFormer}s into any desired shape
+     --- the well-formedness of which is a matter the user must then worry about.
 
   + Practical :: The user manual demonstrates how boilerplate code for
                  renamings, hidings, decorations, and generations
-     of hierarchical structures can be formed; \newline
-     cite:tpc.
+                 of hierarchical structures can be formed;@@latex:~@@ cite:tpc.
 
   + Pragmatic :: The prototype comes equipped with a number of menus
-                  to display the abstract PackageFormer's defined,
+                  to display the abstract \textsf{PackageFormer}'s defined,
                   as well as the variationals defined, and one may
-                  enable highlighting for these syntactical items, have
+                  enable highlighting for these syntactical items, have them
                   folded away, or simply extract an Agda file that does not mention
                   them at all.
 
-                  As it can be tedious to consult generated code for high-level
-                  PackageFormer instantiations and so every variational and PackageFormer
-                  is tagged with tooltips providing relevant information.
+                  # As it can be tedious to consult generated code for high-level
+                  # \textsf{PackageFormer} instantiations and so every variational and \textsf{PackageFormer}
+                  # is tagged with tooltips providing relevant information.
 
-  #+caption: Hovering to show details. Notice special syntax has default colouring: Red for PackageFormer delimiters,
-  #+caption: yellow for elements, and green for variationals.
-  [[file:./Paper0_MousingOver.png]]
+  #+caption: Hovering to show details. Notice special syntax has default colouring: Red for \textsf{PackageFormer} delimiters,
+  #+caption: yellow for elements, and green for variationals. label:mousing-over
+    [[file:./Paper0_MousingOverLarge.png]]
+  # [[file:./Paper0_MousingOver.png]]
 
   #+latex: \noindent
   The details of the implementation and numerous common structuring mechanisms
   derived from the meta-primitives can be found on the prototype's homepage:
   #+begin_center org
-  https://alhassy.github.io/next-700-module-systems-proposal/prototype/PackageFormer.html
+  https://alhassy.github.io/next-700-module-systems/prototype/PackageFormer.html
   #+end_center
 
-* Next Steps
+* Conclusion and Next Steps
   :Remarks:
   Ignoring the implementation, there are no sound semantics for these constructs.
      Discuss theory presentation combinators and possible extensions.
   :End:
 
   We have outlined a new language feature that is intended to reduce
-  duplicated effort involved in taking different perspectives on structures---and to solve
+  duplicated effort involved in taking different perspectives on structures --- and to solve
   Hales' problem of premature commitment to a particular encoding. Moreover, on the road
   to making this tractable, we have unearthed a novel form of polymorphism and demonstrated
   its usefulness with some examples.
@@ -1055,11 +1030,11 @@ No; unless we desire to do so.
   # Thus far we have relied on the reader's understanding of functional programming and
   # algebraic data types to provide an informal and indirect semantics by means of
   # elaborations into existing notions. An immediate next step would be to provide
-  # explicit semantics for \textsf{\upshape PackageFormer}'s within a minimal type theory.
+  # explicit semantics for \textsf{\upshape \textsf{PackageFormer}}'s within a minimal type theory.
   We have presented our work indirectly by using examples, which we
   hope are sufficiently clear to indicate our intent. We next intend to
-  provide explicit (elaboration) semantics for ~PackageFormer~ within a
-  minimal type theory; \newline cite:types_for_modules.
+  provide explicit (elaboration) semantics for \textsf{PackageFormer} within a
+  minimal type theory; cite:types_for_modules.
 
   Furthermore, there are additional pieces of future work, including:
 
@@ -1072,7 +1047,7 @@ No; unless we desire to do so.
 
   4. Explore inheritance, coercion, and transport along canonical isomorphisms.
 
-  \noindent
+  #+latex: \noindent
   Finally, the careful reader will have noticed
   that our abstract mentions graphs, yet
   there was no further discussion of that example.
@@ -1094,7 +1069,7 @@ No; unless we desire to do so.
   cannot yet be directly defined in Agda. Instead, we are making use of Emacs Lisp, a language
   close to the Agda ecosystem. Going forward, one of the aims of our work is to have variationals
   definable directly within Agda ---rather than having our users learn yet another language.
-  Our exploratory efforts suggest that we may be able to realise PackageFormer's as Agda records
+  Our exploratory efforts suggest that we may be able to realise \textsf{PackageFormer}s as Agda records
   of ‘elements’ ---a tuple of qualifier, name, type, and definitional clauses---
   and, so, the result is a conservative extension to Agda's underlying type theory.
   However, from a practical standpoint, it is highly
@@ -1102,9 +1077,10 @@ No; unless we desire to do so.
 
    /Our resulting system has turned hand-written instances of structuring schemes from a design/
    /pattern into full-fledged library methods/. In turn, the system addresses the following
-   extremely unsatisfactory points of hand-written instances, mentioned by the “Deriving Via” cite:deriving_via group.
+   extremely unsatisfactory points of hand-written instances, mentioned by the “Deriving Via” cite:deriving_via group:
 
    #+latex: \newpage
+   #+latex: \noindent
    #+begin_quoting
    0. It is not obvious that we are instantiating a general principle.
 
@@ -1122,9 +1098,8 @@ No; unless we desire to do so.
       with many constituents.
   #+end_quoting
 
-
    Paraphrasing cite:deriving_via,
-   we believe that PackageFormers have the potential to dramatically change the way we write instances
+   we believe that \textsf{PackageFormer}s have the potential to dramatically change the way we write instances
    of structuring mechanisms, as it encourages giving names and documentation to recurring patterns
    and reusing them where needed.
 
@@ -1147,13 +1122,21 @@ No; unless we desire to do so.
    # \newpage
    # latex: {\color{white}.}
    \newpage
-* Appendix: Source code
+* Appendix: Source code :ignore:
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+latex_header: \usepackage[toc,page]{appendix}
+#+Latex: \begin{appendices}
 
-  Below is a nearly self-contained source sample for the presented fragments.
+  # Below is a nearly self-contained source sample for the presented fragments.
+  Full code scripts may be found on the prototype's repository; below are
+  snippets for the presented fragments.
   # We have omitted some variational definitions, using ~⋯~, since they
   # offer little insight but their definitions may be involved.
 
 ** Module Header
+
   #+BEGIN_SRC agda
 open import Data.List hiding (concat)
 open import Relation.Binary.PropositionalEquality
@@ -1161,106 +1144,126 @@ open import Relation.Binary.PropositionalEquality
 
 module Paper0 where
 
-{- Automatically generated & inserted by the prototype -}
 open import Paper0_Generated
 #+END_SRC
+
+#+latex: \vspace{0.3em}
+#+latex: \noindent
+The import of the generated file is automatically produced and
+inserted by the system, if need be.
 
 ** Plain ~MonoidP~ PackageFormer
 #+BEGIN_SRC agda
 {-700
 PackageFormer MonoidP : Set₁ where
-    Carrier : Set
-    _⨾_     : Carrier → Carrier → Carrier
-    Id      : Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
-    rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
+  Carrier : Set
+  _⨾_     : Carrier → Carrier → Carrier
+  Id      : Carrier
+  assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+  leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
+  rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
 -}
 #+END_SRC
 
-** The ~record~ variational and three instantiations
+** Variational ~record~ and 3 Instantiations
+   In the paper proper we mentioned “unbundled”, which in the prototype
+takes the form of the meta-primitive ~:waist~.
+#+BEGIN_SRC agda
+{-lisp
+(𝒱 record
+  = "Reify a variational as an Agda “record”.
+
+     Elements with equations are construed as
+     derivatives of fields  ---the elements
+     without any equations.
+    "
+  :kind record
+  :alter-elements
+     (λ es → (--map (map-qualifier
+        (λ _ → (unless (element-equations it)
+           "field")) it) es)))
+-}
+#+END_SRC
+
+Notice that the organisational mechanism not only has a name and documentation,
+but also an unambiguous implementation. We may use it as follows.
+
 #+BEGIN_SRC agda
 {-700
-𝒱-record = :kind record :waist-strings ("field")
-
 Monoid₀′  = MonoidP record
 Monoid₁″ = MonoidP record ⟴ :waist 1
 Monoid₂″ = MonoidP record ⟴ :waist 2
 -}
 #+END_SRC
-In the paper proper we mentioned “unbundled”, which in the prototype
-takes the form of the meta-primitive ~:waist~.
 
-** Complex variationals in ~lisp~ blocks
-#+begin_small org
+#+latex: \newpage
+
+** ~termtype~ Variationals
+
+   We may also have shorter variational definitions directly in ~700~-blocks.
 #+BEGIN_SRC agda
-{-lisp
-(𝒱 termtype carrier
-  = "Reify as parameterless Agda “data” type.
-
-     CARRIER refers to the sort that is designated as the
-     domain of discourse of the resulting single-sorted
-     inductive term data type.
-    "
-    :kind data
-    :level dec
-    :alter-elements (lambda (fs)
-      (thread-last fs
-        (--filter (s-contains? carrier (target (get-type it))))
-        (--map (map-type (s-replace carrier $𝑛𝑎𝑚𝑒 type) it)))))
-
-(𝒱 termtype-with-variables carrier = ⋯) -}
-
 {-700
-Monoid₃′ = MonoidP termtype :carrier "Carrier"
-Monoid₄  = MonoidP termtype-with-variables :carrier "Carrier"
+𝒱-termtype                carrier  =  ⋯
+𝒱-termtype-with-variables carrier  =  ⋯
+
+Monoid₃′ = MonoidP termtype "Carrier"
+Monoid₄  = MonoidP termtype-with-variables "Carrier"
 -}
 #+END_SRC
-#+end_small
 
 ** PackageFormers with Equations
+
 #+BEGIN_SRC agda
 {-700
 PackageFormer MonoidPE : Set₁ where
-    -- A few declarations
-    Carrier : Set
-    _⨾_     : Carrier → Carrier → Carrier
-    Id      : Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+  -- A few declarations
+  Carrier : Set
+  _⨾_     : Carrier → Carrier → Carrier
+  Id      : Carrier
+  assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
-    -- A few declarations with equations
-    Rid : Carrier → Carrier
-    Rid x = x ⨾ Id
-    concat : List Carrier → Carrier
-    concat = foldr _⨾_ Id
+  -- A few declarations with equations
+  Rid : Carrier → Carrier
+  Rid x = x ⨾ Id
+  concat : List Carrier → Carrier
+  concat = foldr _⨾_ Id
 
-    -- More declarations
-    leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
-    rightId : ∀ {x : Carrier} → Rid x ≡ x
+  -- More declarations
+  leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
+  rightId : ∀ {x : Carrier} → Rid x ≡ x
 -}
 #+END_SRC
 
 ** ~concat₀~ and ~concat₃~
+
 #+BEGIN_SRC agda
 {-700
 𝒱-decorated by = ⋯
-Monoid⁰ = MonoidPE decorated :by "⁰" ⟴ recordₑ
-Monoid³ = MonoidPE ⟴ decorated :by "³"
-                   ⟴ termtypeₑ :carrier "Carrier³"
+Monoid⁰ = MonoidPE decorated "⁰" ⟴ record
+Monoid³ = MonoidPE ⟴ decorated "³"
+                   ⟴ termtype "Carrier³"
 -}
+#+END_SRC
 
-{- “Concatenation over an arbitrary monoid” -}
+#+latex: \noindent
+Then, concatenation over an arbitrary monoid:
+#+BEGIN_SRC agda
 concat₀ : {M : Monoid⁰}
          → let C = Monoid⁰.Carrier⁰ M
            in List C → C
 concat₀ {M} = Monoid⁰.concat⁰ M
+#+END_SRC
 
-{- Concatenation over an arbitrary *closed* monoid term -}
+#+latex: \noindent
+As well as, concatenation over an arbitrary *closed* monoid term:
+#+BEGIN_SRC agda
 concat₃ : let C = Monoid³
           in List C → C
 concat₃ = concat³
 #+END_SRC
 
+** LaTeX end appendix                                                :ignore:
+     #+Latex: \end{appendices}
 * OLD COMMENT other ideas
 
 What about some context at the beginning of the first paragraph?
