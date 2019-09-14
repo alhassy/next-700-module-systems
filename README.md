@@ -41,3 +41,7 @@ A super simple description of this work, for the layman, can be found [here](htt
 ◈ [`translate` code](./proposal/translate_functions.agda.html)
 ◈ [`monoid` code](./proposal/monoid_renditions.agda.html)
 ◆ [Demo](https://www.youtube.com/watch?v=NYOOF9xKBz8&feature=youtu.be)
+
+<h2> Related </h2>
+
+◈ [Metaprogramming Agda --- IFIP Program Generation Talk ](./papers/JC_Program_Generation_Talk_IFIP.pdf)
