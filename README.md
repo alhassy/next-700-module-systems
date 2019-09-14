@@ -22,7 +22,7 @@ under the supervision of Jacques Carette and Wolfram Kahl.
 
 rather than by hand.
 
-◈ [Website](https://alhassy.github.io/next-700-module-systems-proposal/) ◈
+◈ [Website](https://alhassy.github.io/next-700-module-systems/) ◈
 
 A super simple description of this work, for the layman, can be found [here](https://alhassy.github.io/three_minutes/).
 
