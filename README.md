@@ -22,10 +22,20 @@ under the supervision of Jacques Carette and Wolfram Kahl.
 
 rather than by hand.
 
-[Website](https://alhassy.github.io/next-700-module-systems-proposal/) ◈ [PDF](https://alhassy.github.io/next-700-module-systems-proposal/thesis-proposal.pdf) ◈ [HTML](https://alhassy.github.io/next-700-module-systems-proposal/thesis-proposal.html) ◈ [Slides](https://alhassy.github.io/next-700-module-systems-proposal/defence-slides.html) ◈ [`translate` code](https://alhassy.github.io/next-700-module-systems-proposal/translate_functions.agda.html) ◈ [`monoid` code](https://alhassy.github.io/next-700-module-systems-proposal/monoid_renditions.agda.html) ◆ [Demo](https://www.youtube.com/watch?v=NYOOF9xKBz8&feature=youtu.be)
+[Website](https://alhassy.github.io/next-700-module-systems-proposal/)
 
 A super simple description of this work, for the layman, can be found [here](https://alhassy.github.io/three_minutes/).
 
-<center>
-◈ [Prototype](https://alhassy.github.io/next-700-module-systems-proposal/prototype/PackageFormer.html) ◈
-</center>
+<h2> Prototype and a Preprint </h2>
+
+◈ [Prototype](./prototype/PackageFormer.html) ◈
+◈ [A Language Feature to Unbundle Data at Will](./papers/gpce19_a_language_feature_to_unbundle_data_at_will.pdf) ◈
+
+<h2> Proposal </h2>
+
+◈ [PDF](./proposal/thesis-proposal.pdf)
+◈ [HTML](./proposal/thesis-proposal.html)
+◈ [Slides](./proposal/defence-slides.html)
+◈ [`translate` code](./proposal/translate_functions.agda.html)
+◈ [`monoid` code](./proposal/monoid_renditions.agda.html)
+◆ [Demo](https://www.youtube.com/watch?v=NYOOF9xKBz8&feature=youtu.be)
