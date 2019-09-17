@@ -1,3 +1,7 @@
+# ➩ colouring should be whole words only; see tooltipify
+# ➩ [ ] Changing a variational, then loading still has the old tooltip?
+# ➩ [X] Arguments, in tooltip renditions, are in reverse order; c.f. 𝒱-open.
+#    This is becuase 𝒱 lists them in the wrong order!
 # TODO User Manual :Incomplete:
 # TODO: The ~package-former~ Datatype                         :missing_documentation:
 #
@@ -2688,19 +2692,33 @@ variationals for these patterns.
 Likewise, for the casing approach, let's make a “to list”.
 For now, such lists are necessarily enclosed in double-quotes.
 #+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+(defun reify-to-list (str &optional otherwise)
+ "Given a string of “;”-separated items consisting of “to”-separated pairs,
+  interpret it as a Lisp function where “to”-pairs denote mapping clauses.
+
+ E.g., “x₀ to y₀; …; xₙ to yₙ”
+ becomes the function sending value xᵢ to yᵢ, and behaves as the identity function
+ otherwise unless “otherwise” is provided, in which case it acts as a fallback.
+
+ Concretely:
+    (reify-to-list \"1 to x; 2 to y; p to q\")
+  ≈ (λ arg → (pcase arg (\"1\" \"x\") (\"2\" \"y\") (\"p\" \"q\") (otherwise otherwise)))
+ "
+ (let (clauses (fallback (or otherwise 'otherwise)))
+   (thread-last str
+     (s-split ";")
+     (--map (s-split " to " it))
+     (--map (list (s-trim (car it)) (s-trim (cadr it))))
+     (-cons* 'pcase 'arg)
+     (setq clauses))
+   `(lambda (arg) ,(append clauses `((otherwise ,fallback))))))
+
 (𝒱 renaming by
   = "Rename elements using BY, a “;”-separated string of “to”-separated pairs."
-  rename '(lambda (name)
-      (let (clauses)
-        (thread-last by
-          (s-split ";")
-          (--map (s-split " to " it))
-          (--map (list (s-trim (car it)) (s-trim (cadr it))))
-          (-cons* 'pcase 'name)
-          (setq clauses)
-        )
-        (eval (append clauses '((otherwise otherwise)))))))
+    rename '(reify-to-list by))
 #+END_SRC
+It is common in Agda to provide “to”-lists, so we've provide a variant that supports those
+instead of forcing users to produce functions explicitly.
 
 We may also prefer writing ~subscriptedᵢ~ rather than ~decorated "ᵢ"~.
 With a bit of Lisp meta-programming, we can generate these variationals.
@@ -2911,7 +2929,7 @@ data No : Set where
 {- Crashes since type No′ is not defined! -}
 #+END_SRC
 
-** Shallow Renaming with Agda's ~open ⋯ public ⋯ renaming ⋯~      :out_of_date:
+** Shallow Renaming with Agda's ~open ⋯ public ⋯ renaming ⋯~
    :PROPERTIES:
    :CUSTOM_ID: Shallow-Renaming-with-Agda's-~open-⋯-public-⋯-renaming-⋯~
    :END:
@@ -2928,82 +2946,151 @@ data No : Set where
     have been consulted at one point.
 
     Zero: A module where the elements are all parameters.
-#+BEGIN_SRC results-agda :tangle no
+#+BEGIN_SRC agda
 {-700
 𝒱-empty-module = :kind module :level none :waist 999
 Neato = M-Set empty-module
 -}
 
-module Neato (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector) (𝟙 : Scalar) (_×_ : Scalar → Scalar → Scalar) (leftId : {𝓋 : Vector} → 𝟙 · 𝓋 ≡ 𝓋) (assoc : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋 ≡ a · (b · 𝓋)) where
+{- A module where the elements are all parameters -}
+open Neato using ()
+#+END_SRC
+
+#+BEGIN_SRC results-agda :tangle no
+module Neato (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector) (𝟙 : Scalar) (_×_ : Scalar → Scalar → Scalar) (leftId : {𝓋 : Vector} → 𝟙 · 𝓋 ≡ 𝓋) (assoc : ∀ {a b 𝓋} → (a × b) · 𝓋 ≡ a · (b · 𝓋)) where
 #+END_SRC
 
    One-hundred: A one-parameter module where elements may be renamed.
-#+BEGIN_SRC emacs-lisp  :tangle no
-;; “with” is a renaming string-to-string function.
-(𝒱 open with
-  = :kind module
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+(𝒱 open with (avoid-mixfix-renaming nil)
+  =
+    "Reify a given PackageFormer as a *parameterised* Agda “module” declaration.
+
+     WITH is a renaming, string to string, function that is applied to the parent record that will
+     be opened and reexported as a module.
+
+     AVOID-MIXFIX-RENAMING is optional; by default renaming “jumps over” underscores,
+     but providing a non-nil value for this argument leaves underscores alone.
+     It is a matter of having, say, default “_⊕ₙ_” versus “_⊕_ₙ”.
+
+     The resulting module has a parameter, whose name is irrelevant but is
+     of the form “Arg𝒹𝒹𝒹𝒹” for some digits 𝒹 in order to minimise clash with
+     any user-defined names.
+
+     Besides the addition of a new parameter, all element qualifiers are discarded.
+    "
+    :kind module
     :level none
     :waist 1
-    :waist-strings '("")
     :alter-elements  (lambda (fs)
-      (let ((kind "{! !}"))
-        (thread-last
-           (--map (format "%s to %s" (get-name it) (rename-mixfix with (get-name it))) fs)
-           ;; Resulting elements must be a list, so we make a singleton list.
-           (s-join "\n       ; ")
-           (format "    ( %s\n       )")
-           list
-
-           ;; Stick on the renaming, which in turn requires an opening clause;
-           ;; which in turn requires a module parameter.
-           (cons "  renaming")
-           (cons (format "open %s ℛ public" $𝑝𝑎𝑟𝑒𝑛𝑡))
-           (cons (format "ℛ : %s" $𝑝𝑎𝑟𝑒𝑛𝑡)))))
-)
-
-(𝒱 open-with decoration
-  = open :with (lambda (x) (concat x decoration)))
+      (let ((kind "{! !}") (ℛ (format "Ar%s" (gensym))))
+        (cons (make-element :name ℛ :type $𝑝𝑎𝑟𝑒𝑛𝑡)
+          (--map (let ((name (if avoid-mixfix-renaming (with (element-name it)) (rename-mixfix with (element-name it)))))
+            (make-element :name name
+                          :type (format "let open M-Set-R %s in %s" ℛ (element-type it))
+                          :equations (list (format "%s = M-Set-R.%s %s" name (element-name it) ℛ)))) fs)))))
 #+END_SRC
 
-  Here is an example use ---where we first declare a ~record~ perspective of ~M-Set~'s then
-  use that to produce two decorated variants.
-#+BEGIN_SRC results-agda  :tangle no
+  Notice that we do not need any ~open ⋯ public~ since all elements are top-level.
+  We are not making using of Agda's renaming facility. An example may clarify this observation.
+  #+BEGIN_SRC agda
 {-700
 M-Set-R = M-Set record
-M-Set-R₁ = M-Set-R open :with (lambda (x) (concat x "₁"))
-M-Set-R₂ = M-Set-R open-with :decoration "₂"
+M-Set-R₁ = M-Set-R ⟴ open (λ x → (concat x "₁"))
 -}
-
-module M-Set-R₁ (ℛ : M-Set-R) where
-   open M-Set-R ℛ public
-     renaming
-       ( Scalar to Scalar₁
-       ; Vector to Vector₁
-       ; _·_ to _·₁_
-       ; 𝟙 to 𝟙₁
-       ; _×_ to _×₁_
-       ; leftId to leftId₁
-       ; assoc to assoc₁
-       )
-
-module M-Set-R₂ (ℛ : M-Set-R) where
-   open M-Set-R ℛ public
-     renaming
-       ( Scalar to Scalar₂
-       ; Vector to Vector₂
-       ; _·_ to _·₂_
-       ; 𝟙 to 𝟙₂
-       ; _×_ to _×₂_
-       ; leftId to leftId₂
-       ; assoc to assoc₂
-       )
 #+END_SRC
 
+#+BEGIN_SRC results-agda :tangle no
+module M-Set-R₁ (Arg6926 : M-Set-R) where
+   Scalar₁      : let open M-Set-R Arg6926 in Set ; Scalar₁ = M-Set-R.Scalar Arg6926
+   Vector₁      : let open M-Set-R Arg6926 in Set ; Vector₁ = M-Set-R.Vector Arg6926
+   _·₁_     : let open M-Set-R Arg6926 in Scalar → Vector → Vector ;    _·₁_ = M-Set-R._·_ Arg6926
+   𝟙₁       : let open M-Set-R Arg6926 in Scalar ;  𝟙₁ = M-Set-R.𝟙 Arg6926
+   _×₁_     : let open M-Set-R Arg6926 in Scalar → Scalar → Scalar ;    _×₁_ = M-Set-R._×_ Arg6926
+   leftId₁      : let open M-Set-R Arg6926 in {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 ;    leftId₁ = M-Set-R.leftId Arg6926
+   assoc₁       : let open M-Set-R Arg6926 in ∀ {a b 𝓋} → (a × b) · 𝓋  ≡  a · (b · 𝓋) ; assoc₁ = M-Set-R.assoc Arg6926
+  #+END_SRC
+
+  In-case you've skipped over the above source documentation for ~open~, it's time to read it.
+
+  Notice that a module opening depends on a record, whence the first declaration of ~M-Set-R~.
+
+  #+begin_center
    These kind of open-renamings are so common that the tedium
    is actually acceptable by most users ---it shouldn't be
    and now it no longer has to be that way.
+  #+end_center
 
-** Subpacakges with ~generated, sorts, signature~                 :out_of_date:
+  It is common in Agda to provide “to”-lists, so let's provide a variant that supports those
+  instead of forcing users to produce functions explicitly.
+  #+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+(𝒱 opening with
+  = "Open a record as a module exposing only the names mentioned in WITH.
+
+    WITH is a string of “;”-separated items consisting of “to”-separated pairs.
+    "
+    open (λ x → (funcall (reify-to-list with "_") x)) :avoid-mixfix-renaming t)
+
+    ;; Alternatively, we could have used ‘trash’ names,
+    ;; something like (format "%s" (gensym)), instead of "_".
+  #+END_SRC
+
+    #+BEGIN_SRC agda
+{-700
+M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V"
+-}
+    #+END_SRC
+This opens the ~M-Set-R~ record *exposing only* ~S~ and ~V~ ---the rest are ignored using Agda's ~_~ mechanism.
+    #+BEGIN_SRC results-agda :tangle no
+module M-Set-R-SV (Arg6933 : M-Set-R) where
+   S        : let open M-Set-R Arg6933 in Set ; S = M-Set-R.Scalar Arg6933
+   V        : let open M-Set-R Arg6933 in Set ; V = M-Set-R.Vector Arg6933
+   _        : let open M-Set-R Arg6933 in Scalar → Vector → Vector ;    _ = M-Set-R._·_ Arg6933
+   _        : let open M-Set-R Arg6933 in Scalar ;  _ = M-Set-R.𝟙 Arg6933
+   _        : let open M-Set-R Arg6933 in Scalar → Scalar → Scalar ;    _ = M-Set-R._×_ Arg6933
+   _        : let open M-Set-R Arg6933 in {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 ;    _ = M-Set-R.leftId Arg6933
+   _        : let open M-Set-R Arg6933 in ∀ {a b 𝓋} → (a × b) · 𝓋  ≡  a · (b · 𝓋) ; _ = M-Set-R.assoc Arg6933
+#+END_SRC
+
+Let's provide an even more common feature: Opening records with a decoration.
+For example, when we have two algebraic structures, we might want the first to be subscripted with ₁
+and the second with ₂ ---this is different than ~subscriptedᵢ~ from above, which produces a /new/ record
+rather than opening it with renames.
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+(𝒱 open-with-decoration ddd
+  = "Open a record, exposing all elements, with decoration DDD.
+
+    DDD is a string.
+   "
+   open (λ x → (concat x ddd)))
+#+END_SRC
+
+Here's an example.
+#+BEGIN_SRC results-agda
+{-700
+M-Set-R′ = M-Set-R open-with-decoration "′"
+-}
+                          #+END_SRC
+
+                          #+BEGIN_SRC results-agda  :tangle no
+module M-Set-R′ (Arg6938 : M-Set-R) where
+   Scalar′      : let open M-Set-R Arg6938 in Set ; Scalar′ = M-Set-R.Scalar Arg6938
+   Vector′      : let open M-Set-R Arg6938 in Set ; Vector′ = M-Set-R.Vector Arg6938
+   _·′_     : let open M-Set-R Arg6938 in Scalar → Vector → Vector ;    _·′_ = M-Set-R._·_ Arg6938
+   𝟙′       : let open M-Set-R Arg6938 in Scalar ;  𝟙′ = M-Set-R.𝟙 Arg6938
+   _×′_     : let open M-Set-R Arg6938 in Scalar → Scalar → Scalar ;    _×′_ = M-Set-R._×_ Arg6938
+   leftId′      : let open M-Set-R Arg6938 in {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 ;    leftId′ = M-Set-R.leftId Arg6938
+   assoc′       : let open M-Set-R Arg6938 in ∀ {a b 𝓋} → (a × b) · 𝓋  ≡  a · (b · 𝓋) ; assoc′ = M-Set-R.assoc Arg6938
+#+END_SRC
+
+  Neato petito :smile:
+
+#+begin_center
+It is important to observe that ‘openings’ are lossy:
+They lose the types of the declarations and so cannot be used further to construct
+new pacaking mechanisms. They are a terminal construction.
+#+end_center
+** Subpacakges with ~generated, sorts, signature~
    :PROPERTIES:
    :CUSTOM_ID: Subpacakges-with-~generated,-sorts,-signature~
    :END:
@@ -3027,15 +3114,18 @@ module M-Set-R₂ (ℛ : M-Set-R) where
     is coherent. Moreover, for generality, we consider a predicate rather than an explicit
     listing of items to be retained.
 
-#+BEGIN_SRC emacs-lisp  :tangle no
-;; “by” is a predicate on elements.
+#+BEGIN_SRC  emacs-lisp :tangle "variationals.tmp"
 (𝒱 generated by
-  = :alter-elements  (lambda (fs)
+  = "Keep the largest well-formed PackageFormer whose elements satisfy BY.
+
+     BY is a predicate on elements.
+    "
+    :alter-elements  (lambda (fs)
       (let* ( (yeses (--map (funcall by it) fs))
               (get-yeses (lambda () (--filter it (--zip-with (if it other) yeses fs))))
               (in-yeses (lambda (e)
                           (--any
-                           (s-contains? (s-replace "_" " " (get-name e)) (get-type it))
+                           (s-contains? (s-replace "_" " " (element-name e)) (element-type it))
                            (funcall get-yeses)))))
 
         (loop for _ in fs do
@@ -3048,53 +3138,64 @@ module M-Set-R₂ (ℛ : M-Set-R) where
 #+END_SRC
 
 Here's an immediate application: Obtaining the types declared in a grouping mechanism.
-#+BEGIN_SRC results-agda  :tangle no
+#+BEGIN_SRC agda
 {-700
-𝒱-sorts = generated :by (lambda (f) (s-contains? "Set" (target (get-type f))))
+𝒱-sorts = generated (λ e → (s-contains? "Set" (target (element-type e))))
 
 M-Set-Sorts = M-Set record ⟴ sorts
 -}
+    #+END_SRC
+    #+BEGIN_SRC results-agda :tangle no
 record M-Set-Sorts : Set₁ where
- field
-   Scalar  : Set
-   Vector  : Set
+   field Scalar     : Set
+   field Vector     : Set
 #+END_SRC
 
 We can even obtain a sub-signature wholesale:
-#+BEGIN_SRC results-agda  :tangle no
+#+BEGIN_SRC agda
 {-700
-MonoidSignature = M-Set record ⟴ generated :by (lambda (f) (and (s-contains? "Scalar" f) (not (s-contains? "Vector" f))))
+MonoidSignature = M-Set record ⟴ generated (λ e → (and (s-contains? "Scalar" (element-type e)) (not (s-contains? "Vector" (element-type e)))))
 -}
+    #+END_SRC
+    #+BEGIN_SRC results-agda :tangle no
 record MonoidSignature : Set₁ where
- field
-   Scalar  : Set
-   𝟙       : Scalar
-   _×_     : Scalar → Scalar → Scalar
+   field Scalar     : Set
+   field 𝟙      : Scalar
+   field _×_        : Scalar → Scalar → Scalar
 #+END_SRC
 
 This pattern of having a lawless grouping seems sufficiently desirable that we may
 codify it.
-#+BEGIN_SRC results-agda  :tangle no
-{-lisp
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
 (defun targets-a-sort (element)
-  (--any (s-contains? it (target element)) (-map #'get-name (-filter #'is-sort $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠))))
+  "Checks whether the given ‘element’ targets
+   any of the sorts of the *current* PacakgeFormer.
+   "
+  (--any (s-contains? it (target (element-type element)))
+         (-map #'element-name (-filter #'is-sort $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠))))
 
-(𝒱 signature = generated :by (lambda (f) (targets-a-sort f)))
--}
+(𝒱 signature
+  = "Keep only the elements that target a sort, drop all else."
+    generated (λ e → (targets-a-sort e)))
+#+END_SRC
 
+Here's an example.
+#+BEGIN_SRC results-agda  :tangle no
 {-700
 MonSig = M-Set record ⟴ signature
 -}
+    #+END_SRC
+
+    #+BEGIN_SRC results-agda :tangle no
 record MonSig : Set₁ where
- field
-   Scalar  : Set
-   Vector  : Set
-   _·_     : Scalar → Vector → Vector
-   𝟙       : Scalar
-   _×_     : Scalar → Scalar → Scalar
+   field Scalar     : Set
+   field Vector     : Set
+   field _·_        : Scalar → Vector → Vector
+   field 𝟙      : Scalar
+   field _×_        : Scalar → Scalar → Scalar
 #+END_SRC
 
-   Neato!
+   Neato! Those were some nifty applications!
 
 ** Automatically deriving homomorphism definitions ♥‿♥          :out_of_date:
    :PROPERTIES:
@@ -4787,6 +4888,10 @@ expects the syntax outlined earlier.
     ;; Realise the arguments as either 𝒫ositinal or 𝒦ey arguments.
     (loop for a in args
           do (if (consp a) (push a kargs) (push a pargs)))
+
+    ;; The arguments are in reverse now, which doesn't matter for keywords
+    ;; yet is crucial for positional arguments. So let's fix that.
+    (setq pargs (reverse pargs))
 
     ;; Keep track of only the argument names, omitting any default values.
     (setq argnames (append pargs (mapcar #'car kargs)))

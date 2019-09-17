@@ -746,6 +746,10 @@
     (loop for a in args
           do (if (consp a) (push a kargs) (push a pargs)))
 
+    ;; The arguments are in reverse now, which doesn't matter for keywords
+    ;; yet is crucial for positional arguments. So let's fix that.
+    (setq pargs (reverse pargs))
+
     ;; Keep track of only the argument names, omitting any default values.
     (setq argnames (append pargs (mapcar #'car kargs)))
 
@@ -1488,18 +1492,30 @@
      as the name of the new single sort, the universe of discourse.\"
     map (λ e → (if (is-sort e) (map-name (λ _ → with-sort) e) e)))
 
+(defun reify-to-list (str &optional otherwise)
+ \"Given a string of “;”-separated items consisting of “to”-separated pairs,
+  interpret it as a Lisp function where “to”-pairs denote mapping clauses.
+
+ E.g., “x₀ to y₀; …; xₙ to yₙ”
+ becomes the function sending value xᵢ to yᵢ, and behaves as the identity function
+ otherwise unless “otherwise” is provided, in which case it acts as a fallback.
+
+ Concretely:
+    (reify-to-list \\\"1 to x; 2 to y; p to q\\\")
+  ≈ (λ arg → (pcase arg (\\\"1\\\" \\\"x\\\") (\\\"2\\\" \\\"y\\\") (\\\"p\\\" \\\"q\\\") (otherwise otherwise)))
+ \"
+ (let (clauses (fallback (or otherwise 'otherwise)))
+   (thread-last str
+     (s-split \";\")
+     (--map (s-split \" to \" it))
+     (--map (list (s-trim (car it)) (s-trim (cadr it))))
+     (-cons* 'pcase 'arg)
+     (setq clauses))
+   `(lambda (arg) ,(append clauses `((otherwise ,fallback))))))
+
 (𝒱 renaming by
   = \"Rename elements using BY, a “;”-separated string of “to”-separated pairs.\"
-  rename '(lambda (name)
-      (let (clauses)
-        (thread-last by
-          (s-split \";\")
-          (--map (s-split \" to \" it))
-          (--map (list (s-trim (car it)) (s-trim (cadr it))))
-          (-cons* 'pcase 'name)
-          (setq clauses)
-        )
-        (eval (append clauses '((otherwise otherwise)))))))
+    rename '(reify-to-list by))
 
 (defun target (thing)
   \" Given a type-name ‘[name :] τ₀ → ⋯ → τₙ’, yield ‘τₙ’;
@@ -1518,6 +1534,51 @@
       (thread-last es
         (--filter (s-contains? carrier (target (element-type it))))
         (--map (map-type (λ τ → (s-replace carrier $𝑛𝑎𝑚𝑒 τ)) it)))))
+
+(𝒱 open with (avoid-mixfix-renaming nil)
+  =
+    \"Reify a given PackageFormer as a *parameterised* Agda “module” declaration.
+
+     WITH is a renaming, string to string, function that is applied to the parent record that will
+     be opened and reexported as a module.
+
+     AVOID-MIXFIX-RENAMING is optional; by default renaming “jumps over” underscores,
+     but providing a non-nil value for this argument leaves underscores alone.
+     It is a matter of having, say, default “_⊕ₙ_” versus “_⊕_ₙ”.
+
+     The resulting module has a parameter, whose name is irrelevant but is
+     of the form “Arg𝒹𝒹𝒹𝒹” for some digits 𝒹 in order to minimise clash with
+     any user-defined names.
+
+     Besides the addition of a new parameter, all element qualifiers are discarded.
+    \"
+    :kind module
+    :level none
+    :waist 1
+    :alter-elements  (lambda (fs)
+      (let ((kind \"{! !}\") (ℛ (format \"Ar%s\" (gensym))))
+        (cons (make-element :name ℛ :type $𝑝𝑎𝑟𝑒𝑛𝑡)
+          (--map (let ((name (if avoid-mixfix-renaming (with (element-name it)) (rename-mixfix with (element-name it)))))
+            (make-element :name name
+                          :type (format \"let open M-Set-R %s in %s\" ℛ (element-type it))
+                          :equations (list (format \"%s = M-Set-R.%s %s\" name (element-name it) ℛ)))) fs)))))
+
+(𝒱 opening with
+  = \"Open a record as a module exposing only the names mentioned in WITH.
+
+    WITH is a string of “;”-separated items consisting of “to”-separated pairs.
+    \"
+    open (λ x → (funcall (reify-to-list with \"_\") x)) :avoid-mixfix-renaming t)
+
+    ;; Alternatively, we could have used ‘trash’ names,
+    ;; something like (format \"%s\" (gensym)), instead of \"_\".
+
+(𝒱 open-with-decoration ddd
+  = \"Open a record, exposing all elements, with decoration DDD.
+
+    DDD is a string.
+   \"
+   open (λ x → (concat x ddd)))
 ")))
 (setq ♯standard-variationals (s-count-matches-all "(𝒱" it))
 (eval (car (read-from-string (format "(progn %s)" it))))

@@ -262,3 +262,64 @@ record NearMonoid¹ : Set₁ where
    field _×_        : Carrier → Carrier → Carrier
    field leftId     : {𝓋 : Carrier}  →  𝟙 · 𝓋  ≡  𝓋
    field assoc      : {a b : Carrier} {𝓋 : Carrier} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+
+
+{- Neato = M-Set empty-module -}
+module Neato (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector) (𝟙 : Scalar) (_×_ : Scalar → Scalar → Scalar) (leftId : {𝓋 : Vector} → 𝟙 · 𝓋 ≡ 𝓋) (assoc : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋 ≡ a · (b · 𝓋)) where
+
+
+{- M-Set-R = M-Set record -}
+record M-Set-R : Set₁ where
+   field Scalar     : Set
+   field Vector     : Set
+   field _·_        : Scalar → Vector → Vector
+   field 𝟙      : Scalar
+   field _×_        : Scalar → Scalar → Scalar
+   field leftId     : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
+   field assoc      : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+
+
+{- M-Set-R₁ = M-Set-R ⟴ open (λ x → (concat x "₁")) -}
+module M-Set-R₁ (Arg7626 : M-Set-R) where
+   Scalar₁      : let open M-Set-R Arg7626 in Set ; Scalar₁ = M-Set-R.Scalar Arg7626
+   Vector₁      : let open M-Set-R Arg7626 in Set ; Vector₁ = M-Set-R.Vector Arg7626
+   _·₁_     : let open M-Set-R Arg7626 in Scalar → Vector → Vector ;    _·₁_ = M-Set-R._·_ Arg7626
+   𝟙₁       : let open M-Set-R Arg7626 in Scalar ;  𝟙₁ = M-Set-R.𝟙 Arg7626
+   _×₁_     : let open M-Set-R Arg7626 in Scalar → Scalar → Scalar ;    _×₁_ = M-Set-R._×_ Arg7626
+   leftId₁      : let open M-Set-R Arg7626 in {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 ;    leftId₁ = M-Set-R.leftId Arg7626
+   assoc₁       : let open M-Set-R Arg7626 in {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋) ;   assoc₁ = M-Set-R.assoc Arg7626
+
+
+{- M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V" -}
+module M-Set-R-SV (Arg7627 : M-Set-R) where
+   S        : let open M-Set-R Arg7627 in Set ; S = M-Set-R.Scalar Arg7627
+   V        : let open M-Set-R Arg7627 in Set ; V = M-Set-R.Vector Arg7627
+   _        : let open M-Set-R Arg7627 in Scalar → Vector → Vector ;    _ = M-Set-R._·_ Arg7627
+   _        : let open M-Set-R Arg7627 in Scalar ;  _ = M-Set-R.𝟙 Arg7627
+   _        : let open M-Set-R Arg7627 in Scalar → Scalar → Scalar ;    _ = M-Set-R._×_ Arg7627
+   _        : let open M-Set-R Arg7627 in {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 ;    _ = M-Set-R.leftId Arg7627
+   _        : let open M-Set-R Arg7627 in {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋) ;   _ = M-Set-R.assoc Arg7627
+
+
+{- M-Set-Sorts = M-Set record ⟴ sorts -}
+record M-Set-Sorts : Set₁ where
+   field Scalar     : Set
+   field Vector     : Set
+
+
+{- MonoidSignature = M-Set record ⟴ generated (λ e → (and (s-contains? "Scalar" (element-type e)) (not (s-contains? "Vector" (element-type e))))) -}
+record MonoidSignature : Set₁ where
+   field Scalar     : Set
+   field 𝟙      : Scalar
+   field _×_        : Scalar → Scalar → Scalar
+
+
+{- M-Set-R′ = M-Set-R open-with-decoration "′" -}
+module M-Set-R′ (Arg7628 : M-Set-R) where
+   Scalar′      : let open M-Set-R Arg7628 in Set ; Scalar′ = M-Set-R.Scalar Arg7628
+   Vector′      : let open M-Set-R Arg7628 in Set ; Vector′ = M-Set-R.Vector Arg7628
+   _·′_     : let open M-Set-R Arg7628 in Scalar → Vector → Vector ;    _·′_ = M-Set-R._·_ Arg7628
+   𝟙′       : let open M-Set-R Arg7628 in Scalar ;  𝟙′ = M-Set-R.𝟙 Arg7628
+   _×′_     : let open M-Set-R Arg7628 in Scalar → Scalar → Scalar ;    _×′_ = M-Set-R._×_ Arg7628
+   leftId′      : let open M-Set-R Arg7628 in {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 ;    leftId′ = M-Set-R.leftId Arg7628
+   assoc′       : let open M-Set-R Arg7628 in {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋) ;   assoc′ = M-Set-R.assoc Arg7628

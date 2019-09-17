@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- 2019-09-16 Mon 20:40 -->
+<!-- 2019-09-17 Tue 16:51 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Making Modules with Meta-Programmed Meta-Primitives</title>
@@ -231,8 +231,8 @@ To follow along, it may be useful to look at an <a href="https://alhassy.github.
 <li><a href="#Composition-~⟴~-and-First-class-PackageFormers">2.10. First-class PackageFormers</a></li>
 <li><a href="#Variationals-with-Arguments----~map,-rename,-[co]decorated,-renaming~">2.11. Variationals with Arguments ---<code>map, rename, [co]decorated, subscriptedᵢ, renaming</code></a></li>
 <li><a href="#Forming-Syntax-and-the-Special-~$𝑛𝑎𝑚𝑒~-Variable">2.12. Forming Syntax and the Special <code>$𝑛𝑎𝑚𝑒</code> Variable</a></li>
-<li><a href="#Shallow-Renaming-with-Agda's-~open-⋯-public-⋯-renaming-⋯~">2.13. Shallow Renaming with Agda's <code>open ⋯ public ⋯ renaming ⋯</code>&#xa0;&#xa0;&#xa0;<span class="tag"><span class="out_of_date">out_of_date</span></span></a></li>
-<li><a href="#Subpacakges-with-~generated,-sorts,-signature~">2.14. Subpacakges with <code>generated, sorts, signature</code>&#xa0;&#xa0;&#xa0;<span class="tag"><span class="out_of_date">out_of_date</span></span></a></li>
+<li><a href="#Shallow-Renaming-with-Agda's-~open-⋯-public-⋯-renaming-⋯~">2.13. Shallow Renaming with Agda's <code>open ⋯ public ⋯ renaming ⋯</code></a></li>
+<li><a href="#Subpacakges-with-~generated,-sorts,-signature~">2.14. Subpacakges with <code>generated, sorts, signature</code></a></li>
 <li><a href="#Automatically-deriving-homomorphism-definitions-♥‿♥">2.15. Automatically deriving homomorphism definitions ♥‿♥&#xa0;&#xa0;&#xa0;<span class="tag"><span class="out_of_date">out_of_date</span></span></a></li>
 </ul>
 </li>
@@ -277,7 +277,7 @@ To follow along, it may be useful to look at an <a href="https://alhassy.github.
 </div>
 </nav>
 
-<div id="outline-container-org9983ecd" class="outline-2">
+<div id="outline-container-org07841f6" class="outline-2">
 <h2 id="Aim:-/Scrap-the-Repetition/"><span class="section-number-2">1</span> Aim: <i>Scrap the Repetition</i></h2>
 <div class="outline-text-2" id="text-Aim:-/Scrap-the-Repetition/">
 <p>
@@ -290,7 +290,7 @@ into currently legitimate Agda code.
 For example, something like the following, henceforth referred to as <code>test</code>:
 </p>
 <div class="org-src-container">
-<pre class="src src-agda" id="orgaf33fee"><span style="color: #ba2f59; font-weight: bold;">PackageFormer M-Set</span> :<span style="color: #ba2f59; font-weight: bold;"> Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
+<pre class="src src-agda" id="orgb9e77ba"><span style="color: #ba2f59; font-weight: bold;">PackageFormer M-Set</span> :<span style="color: #ba2f59; font-weight: bold;"> Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
   <span style="color: #ba2f59; font-weight: bold;"> Scalar</span>  : <span style="color: #3a81c3; font-weight: bold;">Set</span>
   <span style="color: #ba2f59; font-weight: bold;"> Vector</span>  : <span style="color: #3a81c3; font-weight: bold;">Set</span>
    _&#183;_     :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>
@@ -361,7 +361,7 @@ Will behave as if it were written:
 </pre>
 </div>
 <p>
-This is a more than a <a id="orgbd9e782">200% increase</a> in size; that is, our fictitious code will
+This is a more than a <a id="orgb851841">200% increase</a> in size; that is, our fictitious code will
 save us a lot of repetition.
 </p>
 
@@ -549,6 +549,27 @@ Just look at the following source file and resulting generated code!
 
 <span style="color: #2aa1ae; background-color: #ecf3ec;">{-   </span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
 <span style="color: #2aa1ae; background-color: #ecf3ec;">ScalarTerm = M-Set data "Scalar"</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">&#119985;-empty-module = :kind module :level none :waist 999</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">Neato = M-Set empty-module</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">A module where the elements are all parameters </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+<span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> Neato</span> <span style="color: #3a81c3; font-weight: bold;">using</span> ()
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R = M-Set record</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R&#8321; = M-Set-R &#10228; open (&#955; x &#8594; (concat x "&#8321;"))</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V"</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R&#8242; = M-Set-R open-with-decoration "&#8242;"</span>
 <span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
 </pre>
 </div>
@@ -820,6 +841,54 @@ Just look at the following source file and resulting generated code!
    <span style="color: #3a81c3; font-weight: bold;">field</span> _&#215;_        :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>
    <span style="color: #3a81c3; font-weight: bold;">field</span> <span style="color: #ba2f59; font-weight: bold;">leftId</span>     : {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>}  &#8594;  &#120793; &#183; &#120011;  &#8801;  &#120011;
    <span style="color: #3a81c3; font-weight: bold;">field</span> <span style="color: #ba2f59; font-weight: bold;">assoc</span>      : {<span style="color: #0000cd;">a</span> <span style="color: #0000cd;">b</span> :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>} {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Carrier</span>} &#8594; (<span style="color: #0000cd;">a</span> &#215; <span style="color: #0000cd;">b</span>) &#183; &#120011;  &#8801;  <span style="color: #0000cd;">a</span> &#183; (<span style="color: #0000cd;">b</span> &#183; &#120011;)
+
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Neato = M-Set empty-module </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+<span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">Neato</span><span style="color: #ba2f59; font-weight: bold;"> (Scalar</span> : <span style="color: #3a81c3; font-weight: bold;">Set</span>)<span style="color: #ba2f59; font-weight: bold;"> (Vector</span> : <span style="color: #3a81c3; font-weight: bold;">Set</span>) (_&#183;_ :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>) (&#120793; :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>) (_&#215;_ :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>) (<span style="color: #ba2f59; font-weight: bold;">leftId</span> : {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>} &#8594; &#120793; &#183; &#120011; &#8801; &#120011;) (<span style="color: #ba2f59; font-weight: bold;">assoc</span> : {<span style="color: #0000cd;">a</span> <span style="color: #0000cd;">b</span> :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>} {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>} &#8594; (<span style="color: #0000cd;">a</span> &#215; <span style="color: #0000cd;">b</span>) &#183; &#120011; &#8801; <span style="color: #0000cd;">a</span> &#183; (<span style="color: #0000cd;">b</span> &#183; &#120011;)) <span style="color: #3a81c3; font-weight: bold;">where</span>
+
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R = M-Set record </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+<span style="color: #3a81c3; font-weight: bold;">record</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span> :<span style="color: #ba2f59; font-weight: bold;"> Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span>     : <span style="color: #3a81c3; font-weight: bold;">Set</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span><span style="color: #ba2f59; font-weight: bold;"> Vector</span>     : <span style="color: #3a81c3; font-weight: bold;">Set</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span> _&#183;_        :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span> &#120793;      :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span> _&#215;_        :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span> <span style="color: #ba2f59; font-weight: bold;">leftId</span>     : {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>}  &#8594;  &#120793; &#183; &#120011;  &#8801;  &#120011;
+   <span style="color: #3a81c3; font-weight: bold;">field</span> <span style="color: #ba2f59; font-weight: bold;">assoc</span>      : {<span style="color: #0000cd;">a</span> <span style="color: #0000cd;">b</span> :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>} {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>} &#8594; (<span style="color: #0000cd;">a</span> &#215; <span style="color: #0000cd;">b</span>) &#183; &#120011;  &#8801;  <span style="color: #0000cd;">a</span> &#183; (<span style="color: #0000cd;">b</span> &#183; &#120011;)
+
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R&#8321; = M-Set-R &#10228; open (&#955; x &#8594; (concat x "&#8321;")) </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+<span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">M-Set-R</span>&#8321;<span style="color: #ba2f59; font-weight: bold;"> (Arg7212</span> :<span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>) <span style="color: #3a81c3; font-weight: bold;">where</span>
+  <span style="color: #ba2f59; font-weight: bold;"> Scalar</span>&#8321;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7212</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.S<span style="color: #0000cd;">calar</span><span style="color: #ba2f59; font-weight: bold;"> Arg7212</span>
+  <span style="color: #ba2f59; font-weight: bold;"> Vector</span>&#8321;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7212</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.V<span style="color: #0000cd;">ector</span><span style="color: #ba2f59; font-weight: bold;"> Arg7212</span>
+   _&#183;&#8321;_     : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7212</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> ;    _&#183;&#8321;_ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#183;_<span style="color: #ba2f59; font-weight: bold;"> Arg7212</span>
+   &#120793;&#8321;       : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7212</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;  &#120793;&#8321; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.&#120793;<span style="color: #ba2f59; font-weight: bold;"> Arg7212</span>
+   _&#215;&#8321;_     : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7212</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;    _&#215;&#8321;_ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#215;_<span style="color: #ba2f59; font-weight: bold;"> Arg7212</span>
+   <span style="color: #ba2f59; font-weight: bold;">leftId</span>&#8321;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7212</span> <span style="color: #3a81c3; font-weight: bold;">in</span> {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>}  &#8594;  &#120793; &#183; &#120011;  &#8801;  &#120011; ;    <span style="color: #ba2f59; font-weight: bold;">leftId</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">leftId Arg7212</span>
+   <span style="color: #ba2f59; font-weight: bold;">assoc</span>&#8321;       : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7212</span> <span style="color: #3a81c3; font-weight: bold;">in</span> {<span style="color: #0000cd;">a</span> <span style="color: #0000cd;">b</span> :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>} {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>} &#8594; (<span style="color: #0000cd;">a</span> &#215; <span style="color: #0000cd;">b</span>) &#183; &#120011;  &#8801;  <span style="color: #0000cd;">a</span> &#183; (<span style="color: #0000cd;">b</span> &#183; &#120011;) ;   <span style="color: #ba2f59; font-weight: bold;">assoc</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">assoc Arg7212</span>
+
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V" </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+<span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">M-Set-R-SV</span><span style="color: #ba2f59; font-weight: bold;"> (Arg7213</span> :<span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>) <span style="color: #3a81c3; font-weight: bold;">where</span>
+  <span style="color: #ba2f59; font-weight: bold;"> S</span>        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7213</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> S</span> <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.S<span style="color: #0000cd;">calar</span><span style="color: #ba2f59; font-weight: bold;"> Arg7213</span>
+  <span style="color: #ba2f59; font-weight: bold;"> V</span>        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7213</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> V</span> <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.V<span style="color: #0000cd;">ector</span><span style="color: #ba2f59; font-weight: bold;"> Arg7213</span>
+   _        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7213</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> ;    _ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#183;_<span style="color: #ba2f59; font-weight: bold;"> Arg7213</span>
+   _        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7213</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;  _ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.&#120793;<span style="color: #ba2f59; font-weight: bold;"> Arg7213</span>
+   _        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7213</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;    _ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#215;_<span style="color: #ba2f59; font-weight: bold;"> Arg7213</span>
+   _        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7213</span> <span style="color: #3a81c3; font-weight: bold;">in</span> {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>}  &#8594;  &#120793; &#183; &#120011;  &#8801;  &#120011; ;    _ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">leftId Arg7213</span>
+   _        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7213</span> <span style="color: #3a81c3; font-weight: bold;">in</span> {<span style="color: #0000cd;">a</span> <span style="color: #0000cd;">b</span> :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>} {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>} &#8594; (<span style="color: #0000cd;">a</span> &#215; <span style="color: #0000cd;">b</span>) &#183; &#120011;  &#8801;  <span style="color: #0000cd;">a</span> &#183; (<span style="color: #0000cd;">b</span> &#183; &#120011;) ;   _ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">assoc Arg7213</span>
+
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R&#8242; = M-Set-R open-with-decoration "&#8242;" </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+<span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">M-Set-R</span>&#8242;<span style="color: #ba2f59; font-weight: bold;"> (Arg7214</span> :<span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>) <span style="color: #3a81c3; font-weight: bold;">where</span>
+  <span style="color: #ba2f59; font-weight: bold;"> Scalar</span>&#8242;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7214</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>&#8242; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.S<span style="color: #0000cd;">calar</span><span style="color: #ba2f59; font-weight: bold;"> Arg7214</span>
+  <span style="color: #ba2f59; font-weight: bold;"> Vector</span>&#8242;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7214</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>&#8242; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.V<span style="color: #0000cd;">ector</span><span style="color: #ba2f59; font-weight: bold;"> Arg7214</span>
+   _&#183;&#8242;_     : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7214</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> ;    _&#183;&#8242;_ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#183;_<span style="color: #ba2f59; font-weight: bold;"> Arg7214</span>
+   &#120793;&#8242;       : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7214</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;  &#120793;&#8242; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.&#120793;<span style="color: #ba2f59; font-weight: bold;"> Arg7214</span>
+   _&#215;&#8242;_     : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7214</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;    _&#215;&#8242;_ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#215;_<span style="color: #ba2f59; font-weight: bold;"> Arg7214</span>
+   <span style="color: #ba2f59; font-weight: bold;">leftId</span>&#8242;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7214</span> <span style="color: #3a81c3; font-weight: bold;">in</span> {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>}  &#8594;  &#120793; &#183; &#120011;  &#8801;  &#120011; ;    <span style="color: #ba2f59; font-weight: bold;">leftId</span>&#8242; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">leftId Arg7214</span>
+   <span style="color: #ba2f59; font-weight: bold;">assoc</span>&#8242;       : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg7214</span> <span style="color: #3a81c3; font-weight: bold;">in</span> {<span style="color: #0000cd;">a</span> <span style="color: #0000cd;">b</span> :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>} {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>} &#8594; (<span style="color: #0000cd;">a</span> &#215; <span style="color: #0000cd;">b</span>) &#183; &#120011;  &#8801;  <span style="color: #0000cd;">a</span> &#183; (<span style="color: #0000cd;">b</span> &#183; &#120011;) ;   <span style="color: #ba2f59; font-weight: bold;">assoc</span>&#8242; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">assoc Arg7214</span>
 </pre>
 </div>
 </details>
@@ -832,7 +901,7 @@ The above code is discussed below, in the user manual
 </p>
 
 <p>
-For this prototype, we have the following <a id="org51ebd13">constraints</a>:
+For this prototype, we have the following <a id="orgce00a64">constraints</a>:
 </p>
 
 <ol class="org-ol">
@@ -856,7 +925,7 @@ can be useful.
 </p>
 </div>
 </div>
-<div id="outline-container-org0186648" class="outline-2">
+<div id="outline-container-orgc580d06" class="outline-2">
 <h2 id="user-manual"><span class="section-number-2">2</span> User Manual</h2>
 <div class="outline-text-2" id="text-user-manual">
 <p>
@@ -866,7 +935,7 @@ or <a href="https://alhassy.github.io/next-700-module-systems/">the next 700 mod
 </p>
 </div>
 
-<div id="outline-container-orga035dac" class="outline-3">
+<div id="outline-container-orgc3a74e9" class="outline-3">
 <h3 id="Installation"><span class="section-number-3">2.1</span> Installation</h3>
 <div class="outline-text-3" id="text-Installation">
 <p>
@@ -917,7 +986,7 @@ completely.</li>
 
 <li>The string icon <code>700 (•̀ᴗ•́)و</code> is displayed in the mode line &#x2014;near the bottom of Emacs.</li>
 
-<li>You may use <code>C-c c-l</code> as usual, but it will now recognise <a href="#org70e9d7c">700-comments</a> and generate
+<li>You may use <code>C-c c-l</code> as usual, but it will now recognise <a href="#org0a62b4d">700-comments</a> and generate
 legitimate Agda code from them &#x2014;more on this later.
 
 <ul class="org-ul">
@@ -932,7 +1001,7 @@ If you need any assistance, please contact me!
 </div>
 </div>
 
-<div id="outline-container-orge3c1bfe" class="outline-3">
+<div id="outline-container-org176f044" class="outline-3">
 <h3 id="Syntax"><span class="section-number-3">2.2</span> Syntax</h3>
 <div class="outline-text-3" id="text-Syntax">
 <p>
@@ -940,7 +1009,7 @@ If you need any assistance, please contact me!
 </p>
 
 <p>
-The prototype works by translating fictitious <a href="#org0dfacaf">700-syntax</a> into legitimate Agda;
+The prototype works by translating fictitious <a href="#org157909d">700-syntax</a> into legitimate Agda;
 as follows:
 </p>
 <div class="org-src-container">
@@ -952,8 +1021,8 @@ as follows:
 </pre>
 </div>
 <p>
-Since the first section provides an example source fragment with both <a href="#org70e9d7c">700-comments</a> as well
-as instantiations, we shall only enclose <a href="#org0dfacaf">700-syntax</a> in <a href="#org70e9d7c">700-comments</a> when it is surrounded
+Since the first section provides an example source fragment with both <a href="#org0a62b4d">700-comments</a> as well
+as instantiations, we shall only enclose <a href="#org157909d">700-syntax</a> in <a href="#org0a62b4d">700-comments</a> when it is surrounded
 by other Agda code, and otherwise leave it free standing.
 </p>
 
@@ -962,7 +1031,7 @@ by other Agda code, and otherwise leave it free standing.
 </p>
 
 <p>
-<a id="org0dfacaf">700-syntax</a> is defined informally as follows:
+<a id="org157909d">700-syntax</a> is defined informally as follows:
 </p>
 <pre class="example">
 ⟪700-syntax⟫    ::=  ⟪PackageFormer⟫ | ⟪Instantiation⟫ | ⟪Agda⟫
@@ -1016,7 +1085,7 @@ but instead are passed by name &#x2014;e.g., <code>:key value</code>.</li>
 </div>
 </div>
 
-<div id="outline-container-orgd53767d" class="outline-3">
+<div id="outline-container-orga5bb0bf" class="outline-3">
 <h3 id="Lisp-Interface"><span class="section-number-3">2.3</span> Lisp Interface</h3>
 <div class="outline-text-3" id="text-Lisp-Interface">
 <p>
@@ -1171,7 +1240,7 @@ Let ℰ denote one of <code>qualifier, name, type, equations</code> in the follo
 </div>
 </div>
 
-<div id="outline-container-org30b34c8" class="outline-3">
+<div id="outline-container-org5ab7ea9" class="outline-3">
 <h3 id="User-Manual-Header"><span class="section-number-3">2.4</span> User Manual Header</h3>
 <div class="outline-text-3" id="text-User-Manual-Header">
 <p>
@@ -1264,7 +1333,7 @@ Alternatively, here is a example PackageFormer for monoids as well as that of M-
 </div>
 </div>
 
-<div id="outline-container-org938e664" class="outline-3">
+<div id="outline-container-org3dfbca7" class="outline-3">
 <h3 id="Empty-Variationals"><span class="section-number-3">2.5</span> Empty Variationals</h3>
 <div class="outline-text-3" id="text-Empty-Variationals">
 <p>
@@ -1295,7 +1364,7 @@ serves as a namespace delimiter.
 </p>
 
 <p>
-Indeed, we may now perform the following invocation &#x2014;within <a href="#org70e9d7c">700-comments</a>.
+Indeed, we may now perform the following invocation &#x2014;within <a href="#org0a62b4d">700-comments</a>.
 </p>
 
 <div class="org-src-container">
@@ -1379,7 +1448,7 @@ We are not doing anything with the arguments here; we shall return to this in la
 </div>
 </div>
 
-<div id="outline-container-orgca8fb4c" class="outline-3">
+<div id="outline-container-orga17f329" class="outline-3">
 <h3 id="⇨-Errors"><span class="section-number-3">2.6</span> ⇨ Errors</h3>
 <div class="outline-text-3" id="text-⇨-Errors">
 <p>
@@ -1395,7 +1464,7 @@ immediately. As such, we have implemented a cute little error-reporting system.
 </colgroup>
 <tbody>
 <tr>
-<td class="org-left">If you try to load, <code>C-c C-l</code>, but your <a href="#org0dfacaf">700-syntax</a> is wrong, you get an immediate error explaining why ♥‿♥</td>
+<td class="org-left">If you try to load, <code>C-c C-l</code>, but your <a href="#org157909d">700-syntax</a> is wrong, you get an immediate error explaining why ♥‿♥</td>
 </tr>
 </tbody>
 </table>
@@ -1439,7 +1508,7 @@ error mechanism.
 </div>
 </div>
 
-<div id="outline-container-org42ade75" class="outline-3">
+<div id="outline-container-orgd4a7950" class="outline-3">
 <h3 id="Records-and-Meta-Primitives-~:kind~-&-~:waist-strings~"><span class="section-number-3">2.7</span> Records and Meta-Primitives <code>:kind</code> &amp; <code>:alter-elements</code></h3>
 <div class="outline-text-3" id="text-Records-and-Meta-Primitives-~:kind~-&-~:waist-strings~">
 <p>
@@ -1539,11 +1608,11 @@ a parenthesised (<code>𝒱 ⋯)</code> within <code>lisp</code>-blocks.
 </div>
 </div>
 
-<div id="outline-container-orgaa7cc9e" class="outline-3">
+<div id="outline-container-orgf2d498c" class="outline-3">
 <h3 id="Typeclasses----Parameterised-Records----and-Meta-Primitives-~:waist~-&-~:level~"><span class="section-number-3">2.8</span> Typeclasses &#x2014;Parameterised Records&#x2014; and Meta-Primitives <code>:waist</code> &amp; <code>:level</code></h3>
 <div class="outline-text-3" id="text-Typeclasses----Parameterised-Records----and-Meta-Primitives-~:waist~-&-~:level~">
 <p>
-We mentioned the <a id="org5f48fb1">“waist”</a> before, but what is it exactly?
+We mentioned the <a id="orgc220ee0">“waist”</a> before, but what is it exactly?
 I propose that the difference between ‘field’ and ‘parameter’
 is an illusion &#x2014;as is that of ‘input’ and ‘output’ when one
 considers relations rather than deterministic functions.
@@ -1569,7 +1638,7 @@ and all would continue work.
 
 <p>
 Trying this out, below, one notices that the first two elements of the PackageFormer have been lifted
-into being <a href="#org81bf04d">parameters</a>, while the rest have been construed as <a href="#orgb02c6ff">fields</a>.
+into being <a href="#org11ed243">parameters</a>, while the rest have been construed as <a href="#org2cab6ec">fields</a>.
 </p>
 <div class="org-src-container">
 <pre class="src src-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
@@ -1664,7 +1733,7 @@ Play with it! We'll return to arguments later on.
 </div>
 </div>
 
-<div id="outline-container-org98974bf" class="outline-3">
+<div id="outline-container-org663b91b" class="outline-3">
 <h3 id="Primed-Decoration-and-the-Meta-Primitive-~alter-elements~"><span class="section-number-3">2.9</span> Primed Decoration and <code>rename-mixfix</code></h3>
 <div class="outline-text-3" id="text-Primed-Decoration-and-the-Meta-Primitive-~alter-elements~">
 <p>
@@ -1738,7 +1807,7 @@ If the prime scheme were instead a prepend, we would have obtained the name
 
 <p>
 Notice that
-we have <a href="#orgb02c6ff">fields</a> such as <code>𝟙′ : Scalar</code>
+we have <a href="#org2cab6ec">fields</a> such as <code>𝟙′ : Scalar</code>
 whose type is a free variable: <code>Scalar</code> no longer refers to any field.
 As such, the above code is ill-typed.
 The solution then is to <i>propagate</i> any changes a name has down to its siblings.
@@ -1791,7 +1860,7 @@ Then, for example:
 </div>
 </div>
 
-<div id="outline-container-org08edc8f" class="outline-3">
+<div id="outline-container-org0b4ea94" class="outline-3">
 <h3 id="Composition-~⟴~-and-First-class-PackageFormers"><span class="section-number-3">2.10</span> First-class PackageFormers</h3>
 <div class="outline-text-3" id="text-Composition-~⟴~-and-First-class-PackageFormers">
 <p>
@@ -1894,7 +1963,7 @@ fix-up <code>primed</code>.
 </div>
 </div>
 
-<div id="outline-container-org63703c4" class="outline-3">
+<div id="outline-container-org0ea7db6" class="outline-3">
 <h3 id="Variationals-with-Arguments----~map,-rename,-[co]decorated,-renaming~"><span class="section-number-3">2.11</span> Variationals with Arguments ---<code>map, rename, [co]decorated, subscriptedᵢ, renaming</code></h3>
 <div class="outline-text-3" id="text-Variationals-with-Arguments----~map,-rename,-[co]decorated,-renaming~">
 <p>
@@ -1990,7 +2059,7 @@ Important observations include:
 <ol class="org-ol">
 <li>The Lisp code lives in a <code>{-lisp ⋯ -}</code> block.</li>
 
-<li><a href="#org70e9d7c">700-comments</a> have single-line <code>𝒱-name args = rhs</code>, whereas lisp-blocks
+<li><a href="#org0a62b4d">700-comments</a> have single-line <code>𝒱-name args = rhs</code>, whereas lisp-blocks
 have multi-line <code>(𝒱 name args = rhs)</code> &#x2014;the dash after the 𝒱 is gone and outer-most
 parenthesis are added.</li>
 
@@ -2101,20 +2170,36 @@ Likewise, for the casing approach, let's make a “to list”.
 For now, such lists are necessarily enclosed in double-quotes.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> renaming by
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">defun</span> <span style="color: #6c3163; font-weight: bold;">reify-to-list</span> <span style="color: #6c3163;">(</span>str <span style="color: #ba2f59; font-weight: bold;">&amp;optional</span> otherwise<span style="color: #6c3163;">)</span>
+ <span style="color: #da8b55; background-color: #ecf3ec;">"Given a string of &#8220;;&#8221;-separated items consisting of &#8220;to&#8221;-separated pairs,</span>
+<span style="color: #da8b55; background-color: #ecf3ec;">  interpret it as a Lisp function where &#8220;to&#8221;-pairs denote mapping clauses.</span>
+
+<span style="color: #da8b55; background-color: #ecf3ec;"> E.g., &#8220;x&#8320; to y&#8320;; &#8230;; x&#8345; to y&#8345;&#8221;</span>
+<span style="color: #da8b55; background-color: #ecf3ec;"> becomes the function sending value x&#7522; to y&#7522;, and behaves as the identity function</span>
+<span style="color: #da8b55; background-color: #ecf3ec;"> otherwise unless &#8220;otherwise&#8221; is provided, in which case it acts as a fallback.</span>
+
+<span style="color: #da8b55; background-color: #ecf3ec;"> Concretely:</span>
+<span style="color: #da8b55; background-color: #ecf3ec;">    (reify-to-list \"1 to x; 2 to y; p to q\")</span>
+<span style="color: #da8b55; background-color: #ecf3ec;">  &#8776; (&#955; arg &#8594; (pcase arg (\"1\" \"x\") (\"2\" \"y\") (\"p\" \"q\") (otherwise otherwise)))</span>
+<span style="color: #da8b55; background-color: #ecf3ec;"> "</span>
+ <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #2d9574;">(</span>clauses <span style="color: #67b11d;">(</span>fallback <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">or</span> otherwise 'otherwise<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+   <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">thread-last</span> str
+     <span style="color: #67b11d;">(</span>s-split <span style="color: #2d9574;">";"</span><span style="color: #67b11d;">)</span>
+     <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span> <span style="color: #b1951d;">(</span>s-split <span style="color: #2d9574;">" to "</span> it<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+     <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span> <span style="color: #b1951d;">(</span>list <span style="color: #3a81c3;">(</span>s-trim <span style="color: #6c3163;">(</span>car it<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>s-trim <span style="color: #6c3163;">(</span>cadr it<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+     <span style="color: #67b11d;">(</span>-cons* 'pcase 'arg<span style="color: #67b11d;">)</span>
+     <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">setq</span> clauses<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+   `<span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #67b11d;">(</span>arg<span style="color: #67b11d;">)</span> ,<span style="color: #67b11d;">(</span>append clauses `<span style="color: #b1951d;">(</span><span style="color: #3a81c3;">(</span>otherwise ,fallback<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+
+<span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> renaming by
   = <span style="color: #2d9574;">"Rename elements using BY, a &#8220;;&#8221;-separated string of &#8220;to&#8221;-separated pairs."</span>
-  rename '<span style="color: #6c3163;">(</span>lambda <span style="color: #2d9574;">(</span>name<span style="color: #2d9574;">)</span>
-      <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #67b11d;">(</span>clauses<span style="color: #67b11d;">)</span>
-        <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">thread-last</span> by
-          <span style="color: #b1951d;">(</span>s-split <span style="color: #2d9574;">";"</span><span style="color: #b1951d;">)</span>
-          <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span> <span style="color: #3a81c3;">(</span>s-split <span style="color: #2d9574;">" to "</span> it<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
-          <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span> <span style="color: #3a81c3;">(</span>list <span style="color: #6c3163;">(</span>s-trim <span style="color: #2d9574;">(</span>car it<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span>s-trim <span style="color: #2d9574;">(</span>cadr it<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
-          <span style="color: #b1951d;">(</span>-cons* 'pcase 'name<span style="color: #b1951d;">)</span>
-          <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">setq</span> clauses<span style="color: #b1951d;">)</span>
-        <span style="color: #67b11d;">)</span>
-        <span style="color: #67b11d;">(</span>eval <span style="color: #b1951d;">(</span>append clauses '<span style="color: #3a81c3;">(</span><span style="color: #6c3163;">(</span>otherwise otherwise<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+    rename '<span style="color: #6c3163;">(</span>reify-to-list by<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
+<p>
+It is common in Agda to provide “to”-lists, so we've provide a variant that supports those
+instead of forcing users to produce functions explicitly.
+</p>
 
 <p>
 We may also prefer writing <code>subscriptedᵢ</code> rather than <code>decorated "ᵢ"</code>.
@@ -2284,7 +2369,7 @@ ignore this for now, and we shall return to subgenerated PackageFormers later on
 </p>
 </div>
 </div>
-<div id="outline-container-orgcffc392" class="outline-3">
+<div id="outline-container-orgd5d3353" class="outline-3">
 <h3 id="Forming-Syntax-and-the-Special-~$𝑛𝑎𝑚𝑒~-Variable"><span class="section-number-3">2.12</span> Forming Syntax and the Special <code>$𝑛𝑎𝑚𝑒</code> Variable</h3>
 <div class="outline-text-3" id="text-Forming-Syntax-and-the-Special-~$𝑛𝑎𝑚𝑒~-Variable">
 <table>
@@ -2302,7 +2387,7 @@ ignore this for now, and we shall return to subgenerated PackageFormers later on
 
 <p>
 Since <code>data</code> declarations consist of constructors, whose target type necessarily
-begins with the name of the <code>data</code>-type being defined, let's only keep those <a href="#orgb02c6ff">fields</a> and drop the rest.
+begins with the name of the <code>data</code>-type being defined, let's only keep those <a href="#org2cab6ec">fields</a> and drop the rest.
 To do so, we use the helper function <code>target</code> which takes a declaration <code>name : type0 → ⋯ → typeN</code> and yields <code>typeN</code>.
 </p>
 
@@ -2372,8 +2457,8 @@ Notice that <code>$𝑛𝑎𝑚𝑒</code> is a special variable that refers to 
 </div>
 </div>
 
-<div id="outline-container-org4142fe7" class="outline-3">
-<h3 id="Shallow-Renaming-with-Agda's-~open-⋯-public-⋯-renaming-⋯~"><span class="section-number-3">2.13</span> Shallow Renaming with Agda's <code>open ⋯ public ⋯ renaming ⋯</code>&#xa0;&#xa0;&#xa0;<span class="tag"><span class="out_of_date">out_of_date</span></span></h3>
+<div id="outline-container-orgaef3a02" class="outline-3">
+<h3 id="Shallow-Renaming-with-Agda's-~open-⋯-public-⋯-renaming-⋯~"><span class="section-number-3">2.13</span> Shallow Renaming with Agda's <code>open ⋯ public ⋯ renaming ⋯</code></h3>
 <div class="outline-text-3" id="text-Shallow-Renaming-with-Agda's-~open-⋯-public-⋯-renaming-⋯~">
 <p>
 The previous approach to renaming altered field names literally which is not
@@ -2394,15 +2479,21 @@ have been consulted at one point.
 </p>
 
 <p>
-Zero: A module where the elements are all <a href="#org81bf04d">parameters</a>.
+Zero: A module where the elements are all <a href="#org11ed243">parameters</a>.
 </p>
 <div class="org-src-container">
-<pre class="src src-results-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
+<pre class="src src-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
 <span style="color: #2aa1ae; background-color: #ecf3ec;">&#119985;-empty-module = :kind module :level none :waist 999</span>
 <span style="color: #2aa1ae; background-color: #ecf3ec;">Neato = M-Set empty-module</span>
 <span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
 
-<span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">Neato</span><span style="color: #ba2f59; font-weight: bold;"> (Scalar</span> : <span style="color: #3a81c3; font-weight: bold;">Set</span>)<span style="color: #ba2f59; font-weight: bold;"> (Vector</span> : <span style="color: #3a81c3; font-weight: bold;">Set</span>) (_&#183;_ :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>) (&#120793; :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>) (_&#215;_ :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>) (<span style="color: #ba2f59; font-weight: bold;">leftId</span> : {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>} &#8594; &#120793; &#183; &#120011; &#8801; &#120011;) (<span style="color: #ba2f59; font-weight: bold;">assoc</span> : {<span style="color: #0000cd;">a</span> <span style="color: #0000cd;">b</span> :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>} {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>} &#8594; (<span style="color: #0000cd;">a</span> &#215; <span style="color: #0000cd;">b</span>) &#183; &#120011; &#8801; <span style="color: #0000cd;">a</span> &#183; (<span style="color: #0000cd;">b</span> &#183; &#120011;)) <span style="color: #3a81c3; font-weight: bold;">where</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">A module where the elements are all parameters </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+<span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> Neato</span> <span style="color: #3a81c3; font-weight: bold;">using</span> ()
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-results-agda"><span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">Neato</span><span style="color: #ba2f59; font-weight: bold;"> (Scalar</span> : <span style="color: #3a81c3; font-weight: bold;">Set</span>)<span style="color: #ba2f59; font-weight: bold;"> (Vector</span> : <span style="color: #3a81c3; font-weight: bold;">Set</span>) (_&#183;_ :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>) (&#120793; :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>) (_&#215;_ :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>) (<span style="color: #ba2f59; font-weight: bold;">leftId</span> : {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>} &#8594; &#120793; &#183; &#120011; &#8801; &#120011;) (<span style="color: #ba2f59; font-weight: bold;">assoc</span> : &#8704; {<span style="color: #0000cd;">a</span> <span style="color: #0000cd;">b</span> &#120011;} &#8594; (<span style="color: #0000cd;">a</span> &#215; <span style="color: #0000cd;">b</span>) &#183; &#120011; &#8801; <span style="color: #0000cd;">a</span> &#183; (<span style="color: #0000cd;">b</span> &#183; &#120011;)) <span style="color: #3a81c3; font-weight: bold;">where</span>
 </pre>
 </div>
 
@@ -2410,80 +2501,168 @@ Zero: A module where the elements are all <a href="#org81bf04d">parameters</a>.
 One-hundred: A one-parameter module where elements may be renamed.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8220;with&#8221; is a renaming string-to-string function.</span>
-<span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> open with
-  = <span style="color: #3a81c3;">:kind</span> module
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> open with <span style="color: #6c3163;">(</span>avoid-mixfix-renaming nil<span style="color: #6c3163;">)</span>
+  =
+    <span style="color: #2d9574;">"Reify a given PackageFormer as a *parameterised* Agda &#8220;module&#8221; declaration.</span>
+
+<span style="color: #2d9574;">     WITH is a renaming, string to string, function that is applied to the parent record that will</span>
+<span style="color: #2d9574;">     be opened and reexported as a module.</span>
+
+<span style="color: #2d9574;">     AVOID-MIXFIX-RENAMING is optional; by default renaming &#8220;jumps over&#8221; underscores,</span>
+<span style="color: #2d9574;">     but providing a non-nil value for this argument leaves underscores alone.</span>
+<span style="color: #2d9574;">     It is a matter of having, say, default &#8220;_&#8853;&#8345;_&#8221; versus &#8220;_&#8853;_&#8345;&#8221;.</span>
+
+<span style="color: #2d9574;">     The resulting module has a parameter, whose name is irrelevant but is</span>
+<span style="color: #2d9574;">     of the form &#8220;Arg&#119993;&#119993;&#119993;&#119993;&#8221; for some digits &#119993; in order to minimise clash with</span>
+<span style="color: #2d9574;">     any user-defined names.</span>
+
+<span style="color: #2d9574;">     Besides the addition of a new parameter, all element qualifiers are discarded.</span>
+<span style="color: #2d9574;">    "</span>
+    <span style="color: #3a81c3;">:kind</span> module
     <span style="color: #3a81c3;">:level</span> none
     <span style="color: #3a81c3;">:waist</span> 1
-    <span style="color: #3a81c3;">:waist-strings</span> '<span style="color: #6c3163;">(</span><span style="color: #2d9574;">""</span><span style="color: #6c3163;">)</span>
     <span style="color: #3a81c3;">:alter-elements</span>  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #2d9574;">(</span>fs<span style="color: #2d9574;">)</span>
-      <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span>kind <span style="color: #2d9574;">"{! !}"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
-        <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">thread-last</span>
-           <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span> <span style="color: #3a81c3;">(</span>format <span style="color: #2d9574;">"%s to %s"</span> <span style="color: #6c3163;">(</span>get-name it<span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span>rename-mixfix with <span style="color: #2d9574;">(</span>get-name it<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span> fs<span style="color: #b1951d;">)</span>
-           <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Resulting elements must be a list, so we make a singleton list.</span>
-           <span style="color: #b1951d;">(</span>s-join <span style="color: #2d9574;">"\n       ; "</span><span style="color: #b1951d;">)</span>
-           <span style="color: #b1951d;">(</span>format <span style="color: #2d9574;">"    ( %s\n       )"</span><span style="color: #b1951d;">)</span>
-           list
-
-           <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Stick on the renaming, which in turn requires an opening clause;</span>
-           <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">which in turn requires a module parameter.</span>
-           <span style="color: #b1951d;">(</span>cons <span style="color: #2d9574;">"  renaming"</span><span style="color: #b1951d;">)</span>
-           <span style="color: #b1951d;">(</span>cons <span style="color: #3a81c3;">(</span>format <span style="color: #2d9574;">"open %s &#8475; public"</span> $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905;<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
-           <span style="color: #b1951d;">(</span>cons <span style="color: #3a81c3;">(</span>format <span style="color: #2d9574;">"&#8475; : %s"</span> $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905;<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
-<span style="color: #3a81c3;">)</span>
-
-<span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> open-with decoration
-  = open <span style="color: #3a81c3;">:with</span> <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #2d9574;">(</span>x<span style="color: #2d9574;">)</span> <span style="color: #2d9574;">(</span>concat x decoration<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+      <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span>kind <span style="color: #2d9574;">"{! !}"</span><span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>&#8475; <span style="color: #3a81c3;">(</span>format <span style="color: #2d9574;">"Ar%s"</span> <span style="color: #6c3163;">(</span>gensym<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+        <span style="color: #67b11d;">(</span>cons <span style="color: #b1951d;">(</span>make-element <span style="color: #3a81c3;">:name</span> &#8475; <span style="color: #3a81c3;">:type</span> $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905;<span style="color: #b1951d;">)</span>
+          <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span> <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #6c3163;">(</span><span style="color: #2d9574;">(</span>name <span style="color: #887070;">(</span><span style="color: #3a81c3; font-weight: bold;">if</span> avoid-mixfix-renaming <span style="color: #3a81c3;">(</span>with <span style="color: #6c3163;">(</span>element-name it<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>rename-mixfix with <span style="color: #6c3163;">(</span>element-name it<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #887070;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+            <span style="color: #6c3163;">(</span>make-element <span style="color: #3a81c3;">:name</span> name
+                          <span style="color: #3a81c3;">:type</span> <span style="color: #2d9574;">(</span>format <span style="color: #2d9574;">"let open M-Set-R %s in %s"</span> &#8475; <span style="color: #887070;">(</span>element-type it<span style="color: #887070;">)</span><span style="color: #2d9574;">)</span>
+                          <span style="color: #3a81c3;">:equations</span> <span style="color: #2d9574;">(</span>list <span style="color: #887070;">(</span>format <span style="color: #2d9574;">"%s = M-Set-R.%s %s"</span> name <span style="color: #3a81c3;">(</span>element-name it<span style="color: #3a81c3;">)</span> &#8475;<span style="color: #887070;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span> <span style="color: #dc752f; background-color: #fbf8ef;">fs</span><span style="color: #b1951d; background-color: #fbf8ef;">)</span><span style="color: #67b11d; background-color: #fbf8ef;">)</span><span style="color: #2d9574; background-color: #fbf8ef;">)</span><span style="color: #6c3163; background-color: #fbf8ef;">)</span><span style="color: #3a81c3; background-color: #fbf8ef;">)</span>
 </pre>
 </div>
 
 <p>
-Here is an example use &#x2014;where we first declare a <code>record</code> perspective of <code>M-Set</code>'s then
-use that to produce two decorated variants.
+Notice that we do not need any <code>open ⋯ public</code> since all elements are top-level.
+We are not making using of Agda's renaming facility. An example may clarify this observation.
 </p>
 <div class="org-src-container">
-<pre class="src src-results-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
+<pre class="src src-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
 <span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R = M-Set record</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R&#8321; = M-Set-R open :with (lambda (x) (concat x "&#8321;"))</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R&#8322; = M-Set-R open-with :decoration "&#8322;"</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R&#8321; = M-Set-R &#10228; open (&#955; x &#8594; (concat x "&#8321;"))</span>
 <span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
-
-<span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">M-Set-R</span>&#8321; (&#8475; :<span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>) <span style="color: #3a81c3; font-weight: bold;">where</span>
-   <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span> &#8475; <span style="color: #3a81c3; font-weight: bold;">public</span>
-     <span style="color: #3a81c3; font-weight: bold;">renaming</span>
-       (<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> <span style="color: #0000cd;">to</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span>&#8321;
-       ;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> <span style="color: #0000cd;">to</span><span style="color: #ba2f59; font-weight: bold;"> Vector</span>&#8321;
-       ; _&#183;_ <span style="color: #0000cd;">to</span> _&#183;&#8321;_
-       ; &#120793; <span style="color: #0000cd;">to</span> &#120793;&#8321;
-       ; _&#215;_ <span style="color: #0000cd;">to</span> _&#215;&#8321;_
-       ; <span style="color: #ba2f59; font-weight: bold;">leftId</span> <span style="color: #0000cd;">to</span> <span style="color: #ba2f59; font-weight: bold;">leftId</span>&#8321;
-       ; <span style="color: #ba2f59; font-weight: bold;">assoc</span> <span style="color: #0000cd;">to</span> <span style="color: #ba2f59; font-weight: bold;">assoc</span>&#8321;
-       )
-
-<span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">M-Set-R</span>&#8322; (&#8475; :<span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>) <span style="color: #3a81c3; font-weight: bold;">where</span>
-   <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span> &#8475; <span style="color: #3a81c3; font-weight: bold;">public</span>
-     <span style="color: #3a81c3; font-weight: bold;">renaming</span>
-       (<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> <span style="color: #0000cd;">to</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span>&#8322;
-       ;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> <span style="color: #0000cd;">to</span><span style="color: #ba2f59; font-weight: bold;"> Vector</span>&#8322;
-       ; _&#183;_ <span style="color: #0000cd;">to</span> _&#183;&#8322;_
-       ; &#120793; <span style="color: #0000cd;">to</span> &#120793;&#8322;
-       ; _&#215;_ <span style="color: #0000cd;">to</span> _&#215;&#8322;_
-       ; <span style="color: #ba2f59; font-weight: bold;">leftId</span> <span style="color: #0000cd;">to</span> <span style="color: #ba2f59; font-weight: bold;">leftId</span>&#8322;
-       ; <span style="color: #ba2f59; font-weight: bold;">assoc</span> <span style="color: #0000cd;">to</span> <span style="color: #ba2f59; font-weight: bold;">assoc</span>&#8322;
-       )
 </pre>
 </div>
 
+<div class="org-src-container">
+<pre class="src src-results-agda"><span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">M-Set-R</span>&#8321;<span style="color: #ba2f59; font-weight: bold;"> (Arg6926</span> :<span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>) <span style="color: #3a81c3; font-weight: bold;">where</span>
+  <span style="color: #ba2f59; font-weight: bold;"> Scalar</span>&#8321;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6926</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.S<span style="color: #0000cd;">calar</span><span style="color: #ba2f59; font-weight: bold;"> Arg6926</span>
+  <span style="color: #ba2f59; font-weight: bold;"> Vector</span>&#8321;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6926</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.V<span style="color: #0000cd;">ector</span><span style="color: #ba2f59; font-weight: bold;"> Arg6926</span>
+   _&#183;&#8321;_     : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6926</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> ;    _&#183;&#8321;_ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#183;_<span style="color: #ba2f59; font-weight: bold;"> Arg6926</span>
+   &#120793;&#8321;       : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6926</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;  &#120793;&#8321; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.&#120793;<span style="color: #ba2f59; font-weight: bold;"> Arg6926</span>
+   _&#215;&#8321;_     : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6926</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;    _&#215;&#8321;_ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#215;_<span style="color: #ba2f59; font-weight: bold;"> Arg6926</span>
+   <span style="color: #ba2f59; font-weight: bold;">leftId</span>&#8321;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6926</span> <span style="color: #3a81c3; font-weight: bold;">in</span> {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>}  &#8594;  &#120793; &#183; &#120011;  &#8801;  &#120011; ;    <span style="color: #ba2f59; font-weight: bold;">leftId</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">leftId Arg6926</span>
+   <span style="color: #ba2f59; font-weight: bold;">assoc</span>&#8321;       : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6926</span> <span style="color: #3a81c3; font-weight: bold;">in</span> &#8704; {<span style="color: #0000cd;">a</span> <span style="color: #0000cd;">b</span> &#120011;} &#8594; (<span style="color: #0000cd;">a</span> &#215; <span style="color: #0000cd;">b</span>) &#183; &#120011;  &#8801;  <span style="color: #0000cd;">a</span> &#183; (<span style="color: #0000cd;">b</span> &#183; &#120011;) ; <span style="color: #ba2f59; font-weight: bold;">assoc</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">assoc Arg6926</span>
+</pre>
+</div>
+
+<p>
+In-case you've skipped over the above source documentation for <code>open</code>, it's time to read it.
+</p>
+
+<p>
+Notice that a module opening depends on a record, whence the first declaration of <code>M-Set-R</code>.
+</p>
+
+<div class="org-center">
 <p>
 These kind of open-renamings are so common that the tedium
 is actually acceptable by most users &#x2014;it shouldn't be
 and now it no longer has to be that way.
 </p>
 </div>
+
+<p>
+It is common in Agda to provide “to”-lists, so let's provide a variant that supports those
+instead of forcing users to produce functions explicitly.
+</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> opening with
+  = <span style="color: #2d9574;">"Open a record as a module exposing only the names mentioned in WITH.</span>
+
+<span style="color: #2d9574;">    WITH is a string of &#8220;;&#8221;-separated items consisting of &#8220;to&#8221;-separated pairs.</span>
+<span style="color: #2d9574;">    "</span>
+    open <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">&#955;</span> x &#8594; <span style="color: #2d9574;">(</span>funcall <span style="color: #67b11d;">(</span>reify-to-list with <span style="color: #2d9574;">"_"</span><span style="color: #67b11d;">)</span> x<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span> <span style="color: #3a81c3;">:avoid-mixfix-renaming</span> t<span style="color: #3a81c3;">)</span>
+
+    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Alternatively, we could have used &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">trash</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217; names,</span>
+    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">something like (format "%s" (gensym)), instead of "_".</span>
+</pre>
 </div>
 
-<div id="outline-container-org83346ce" class="outline-3">
-<h3 id="Subpacakges-with-~generated,-sorts,-signature~"><span class="section-number-3">2.14</span> Subpacakges with <code>generated, sorts, signature</code>&#xa0;&#xa0;&#xa0;<span class="tag"><span class="out_of_date">out_of_date</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V"</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+</pre>
+</div>
+<p>
+This opens the <code>M-Set-R</code> record <b>exposing only</b> <code>S</code> and <code>V</code> &#x2014;the rest are ignored using Agda's <code>_</code> mechanism.
+</p>
+<div class="org-src-container">
+<pre class="src src-results-agda"><span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">M-Set-R-SV</span><span style="color: #ba2f59; font-weight: bold;"> (Arg6933</span> :<span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>) <span style="color: #3a81c3; font-weight: bold;">where</span>
+  <span style="color: #ba2f59; font-weight: bold;"> S</span>        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6933</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> S</span> <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.S<span style="color: #0000cd;">calar</span><span style="color: #ba2f59; font-weight: bold;"> Arg6933</span>
+  <span style="color: #ba2f59; font-weight: bold;"> V</span>        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6933</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> V</span> <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.V<span style="color: #0000cd;">ector</span><span style="color: #ba2f59; font-weight: bold;"> Arg6933</span>
+   _        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6933</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> ;    _ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#183;_<span style="color: #ba2f59; font-weight: bold;"> Arg6933</span>
+   _        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6933</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;  _ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.&#120793;<span style="color: #ba2f59; font-weight: bold;"> Arg6933</span>
+   _        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6933</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;    _ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#215;_<span style="color: #ba2f59; font-weight: bold;"> Arg6933</span>
+   _        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6933</span> <span style="color: #3a81c3; font-weight: bold;">in</span> {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>}  &#8594;  &#120793; &#183; &#120011;  &#8801;  &#120011; ;    _ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">leftId Arg6933</span>
+   _        : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6933</span> <span style="color: #3a81c3; font-weight: bold;">in</span> &#8704; {<span style="color: #0000cd;">a</span> <span style="color: #0000cd;">b</span> &#120011;} &#8594; (<span style="color: #0000cd;">a</span> &#215; <span style="color: #0000cd;">b</span>) &#183; &#120011;  &#8801;  <span style="color: #0000cd;">a</span> &#183; (<span style="color: #0000cd;">b</span> &#183; &#120011;) ; _ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">assoc Arg6933</span>
+</pre>
+</div>
+
+<p>
+Let's provide an even more common feature: Opening records with a decoration.
+For example, when we have two algebraic structures, we might want the first to be subscripted with ₁
+and the second with ₂ &#x2014;this is different than <code>subscriptedᵢ</code> from above, which produces a <i>new</i> record
+rather than opening it with renames.
+</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> open-with-decoration ddd
+  = <span style="color: #2d9574;">"Open a record, exposing all elements, with decoration DDD.</span>
+
+<span style="color: #2d9574;">    DDD is a string.</span>
+<span style="color: #2d9574;">   "</span>
+   open <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">&#955;</span> x &#8594; <span style="color: #2d9574;">(</span>concat x ddd<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+</pre>
+</div>
+
+<p>
+Here's an example.
+</p>
+<div class="org-src-container">
+<pre class="src src-results-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-R&#8242; = M-Set-R open-with-decoration "&#8242;"</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-results-agda"><span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">M-Set-R</span>&#8242;<span style="color: #ba2f59; font-weight: bold;"> (Arg6938</span> :<span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>) <span style="color: #3a81c3; font-weight: bold;">where</span>
+  <span style="color: #ba2f59; font-weight: bold;"> Scalar</span>&#8242;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6938</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>&#8242; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.S<span style="color: #0000cd;">calar</span><span style="color: #ba2f59; font-weight: bold;"> Arg6938</span>
+  <span style="color: #ba2f59; font-weight: bold;"> Vector</span>&#8242;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6938</span> <span style="color: #3a81c3; font-weight: bold;">in</span> <span style="color: #3a81c3; font-weight: bold;">Set</span> ;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>&#8242; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.V<span style="color: #0000cd;">ector</span><span style="color: #ba2f59; font-weight: bold;"> Arg6938</span>
+   _&#183;&#8242;_     : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6938</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> ;    _&#183;&#8242;_ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#183;_<span style="color: #ba2f59; font-weight: bold;"> Arg6938</span>
+   &#120793;&#8242;       : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6938</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;  &#120793;&#8242; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.&#120793;<span style="color: #ba2f59; font-weight: bold;"> Arg6938</span>
+   _&#215;&#8242;_     : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6938</span> <span style="color: #3a81c3; font-weight: bold;">in</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> ;    _&#215;&#8242;_ <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>._&#215;_<span style="color: #ba2f59; font-weight: bold;"> Arg6938</span>
+   <span style="color: #ba2f59; font-weight: bold;">leftId</span>&#8242;      : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6938</span> <span style="color: #3a81c3; font-weight: bold;">in</span> {&#120011; :<span style="color: #ba2f59; font-weight: bold;"> Vector</span>}  &#8594;  &#120793; &#183; &#120011;  &#8801;  &#120011; ;    <span style="color: #ba2f59; font-weight: bold;">leftId</span>&#8242; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">leftId Arg6938</span>
+   <span style="color: #ba2f59; font-weight: bold;">assoc</span>&#8242;       : <span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #3a81c3; font-weight: bold;">open</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R Arg6938</span> <span style="color: #3a81c3; font-weight: bold;">in</span> &#8704; {<span style="color: #0000cd;">a</span> <span style="color: #0000cd;">b</span> &#120011;} &#8594; (<span style="color: #0000cd;">a</span> &#215; <span style="color: #0000cd;">b</span>) &#183; &#120011;  &#8801;  <span style="color: #0000cd;">a</span> &#183; (<span style="color: #0000cd;">b</span> &#183; &#120011;) ; <span style="color: #ba2f59; font-weight: bold;">assoc</span>&#8242; <span style="color: #3a81c3; font-weight: bold;">=</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-R</span>.<span style="color: #ba2f59; font-weight: bold;">assoc Arg6938</span>
+</pre>
+</div>
+
+<p>
+Neato petito :smile:
+</p>
+
+<div class="org-center">
+<p>
+It is important to observe that ‘openings’ are lossy:
+They lose the types of the declarations and so cannot be used further to construct
+new pacaking mechanisms. They are a terminal construction.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga797d8e" class="outline-3">
+<h3 id="Subpacakges-with-~generated,-sorts,-signature~"><span class="section-number-3">2.14</span> Subpacakges with <code>generated, sorts, signature</code></h3>
 <div class="outline-text-3" id="text-Subpacakges-with-~generated,-sorts,-signature~">
 <p>
 A common grouping operation is to zoom-in to the minimal well-formed
@@ -2512,14 +2691,17 @@ listing of items to be retained.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8220;by&#8221; is a predicate on elements.</span>
-<span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> generated by
-  = <span style="color: #3a81c3;">:alter-elements</span>  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #2d9574;">(</span>fs<span style="color: #2d9574;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> generated by
+  = <span style="color: #2d9574;">"Keep the largest well-formed PackageFormer whose elements satisfy BY.</span>
+
+<span style="color: #2d9574;">     BY is a predicate on elements.</span>
+<span style="color: #2d9574;">    "</span>
+    <span style="color: #3a81c3;">:alter-elements</span>  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #2d9574;">(</span>fs<span style="color: #2d9574;">)</span>
       <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">let*</span> <span style="color: #67b11d;">(</span> <span style="color: #b1951d;">(</span>yeses <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span> <span style="color: #6c3163;">(</span>funcall by it<span style="color: #6c3163;">)</span> fs<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
               <span style="color: #b1951d;">(</span>get-yeses <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #6c3163;">()</span> <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">--filter</span> it <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">--zip-with</span> <span style="color: #887070;">(</span><span style="color: #3a81c3; font-weight: bold;">if</span> it other<span style="color: #887070;">)</span> yeses fs<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
               <span style="color: #b1951d;">(</span>in-yeses <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #6c3163;">(</span>e<span style="color: #6c3163;">)</span>
                           <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">--any</span>
-                           <span style="color: #2d9574;">(</span>s-contains? <span style="color: #887070;">(</span>s-replace <span style="color: #2d9574;">"_"</span> <span style="color: #2d9574;">" "</span> <span style="color: #3a81c3;">(</span>get-name e<span style="color: #3a81c3;">)</span><span style="color: #887070;">)</span> <span style="color: #887070;">(</span>get-type it<span style="color: #887070;">)</span><span style="color: #2d9574;">)</span>
+                           <span style="color: #2d9574;">(</span>s-contains? <span style="color: #887070;">(</span>s-replace <span style="color: #2d9574;">"_"</span> <span style="color: #2d9574;">" "</span> <span style="color: #3a81c3;">(</span>element-name e<span style="color: #3a81c3;">)</span><span style="color: #887070;">)</span> <span style="color: #887070;">(</span>element-type it<span style="color: #887070;">)</span><span style="color: #2d9574;">)</span>
                            <span style="color: #2d9574;">(</span>funcall get-yeses<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
 
         <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for _ in fs do
@@ -2536,15 +2718,17 @@ listing of items to be retained.
 Here's an immediate application: Obtaining the types declared in a grouping mechanism.
 </p>
 <div class="org-src-container">
-<pre class="src src-results-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">&#119985;-sorts = generated :by (lambda (f) (s-contains? "Set" (target (get-type f))))</span>
+<pre class="src src-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">&#119985;-sorts = generated (&#955; e &#8594; (s-contains? "Set" (target (element-type e))))</span>
 
 <span style="color: #2aa1ae; background-color: #ecf3ec;">M-Set-Sorts = M-Set record &#10228; sorts</span>
 <span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
-<span style="color: #3a81c3; font-weight: bold;">record</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-Sorts</span> :<span style="color: #ba2f59; font-weight: bold;"> Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
- <span style="color: #3a81c3; font-weight: bold;">field</span>
-  <span style="color: #ba2f59; font-weight: bold;"> Scalar</span>  : <span style="color: #3a81c3; font-weight: bold;">Set</span>
-  <span style="color: #ba2f59; font-weight: bold;"> Vector</span>  : <span style="color: #3a81c3; font-weight: bold;">Set</span>
+</pre>
+</div>
+<div class="org-src-container">
+<pre class="src src-results-agda"><span style="color: #3a81c3; font-weight: bold;">record</span><span style="color: #ba2f59; font-weight: bold;"> M-Set-Sorts</span> :<span style="color: #ba2f59; font-weight: bold;"> Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span>     : <span style="color: #3a81c3; font-weight: bold;">Set</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span><span style="color: #ba2f59; font-weight: bold;"> Vector</span>     : <span style="color: #3a81c3; font-weight: bold;">Set</span>
 </pre>
 </div>
 
@@ -2552,14 +2736,16 @@ Here's an immediate application: Obtaining the types declared in a grouping mech
 We can even obtain a sub-signature wholesale:
 </p>
 <div class="org-src-container">
-<pre class="src src-results-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">MonoidSignature = M-Set record &#10228; generated :by (lambda (f) (and (s-contains? "Scalar" f) (not (s-contains? "Vector" f))))</span>
+<pre class="src src-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">MonoidSignature = M-Set record &#10228; generated (&#955; e &#8594; (and (s-contains? "Scalar" (element-type e)) (not (s-contains? "Vector" (element-type e)))))</span>
 <span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
-<span style="color: #3a81c3; font-weight: bold;">record</span><span style="color: #ba2f59; font-weight: bold;"> MonoidSignature</span> :<span style="color: #ba2f59; font-weight: bold;"> Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
- <span style="color: #3a81c3; font-weight: bold;">field</span>
-  <span style="color: #ba2f59; font-weight: bold;"> Scalar</span>  : <span style="color: #3a81c3; font-weight: bold;">Set</span>
-   &#120793;       :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>
-   _&#215;_     :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>
+</pre>
+</div>
+<div class="org-src-container">
+<pre class="src src-results-agda"><span style="color: #3a81c3; font-weight: bold;">record</span><span style="color: #ba2f59; font-weight: bold;"> MonoidSignature</span> :<span style="color: #ba2f59; font-weight: bold;"> Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span>     : <span style="color: #3a81c3; font-weight: bold;">Set</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span> &#120793;      :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span> _&#215;_        :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>
 </pre>
 </div>
 
@@ -2568,33 +2754,46 @@ This pattern of having a lawless grouping seems sufficiently desirable that we m
 codify it.
 </p>
 <div class="org-src-container">
-<pre class="src src-results-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">lisp</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">(defun targets-a-sort (element)</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">  (--any (s-contains? it (target element)) (-map #'get-name (-filter #'is-sort $&#119890;&#119897;&#119890;&#119898;&#119890;&#119899;&#119905;&#119904;))))</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">defun</span> <span style="color: #6c3163; font-weight: bold;">targets-a-sort</span> <span style="color: #6c3163;">(</span>element<span style="color: #6c3163;">)</span>
+  <span style="color: #da8b55; background-color: #ecf3ec;">"Checks whether the given &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">element</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217; targets</span>
+<span style="color: #da8b55; background-color: #ecf3ec;">   any of the sorts of the *current* PacakgeFormer.</span>
+<span style="color: #da8b55; background-color: #ecf3ec;">   "</span>
+  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">--any</span> <span style="color: #2d9574;">(</span>s-contains? it <span style="color: #67b11d;">(</span>target <span style="color: #b1951d;">(</span>element-type element<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+         <span style="color: #2d9574;">(</span>-map #'element-name <span style="color: #67b11d;">(</span>-filter #'is-sort $&#119890;&#119897;&#119890;&#119898;&#119890;&#119899;&#119905;&#119904;<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 
-<span style="color: #2aa1ae; background-color: #ecf3ec;">(&#119985; signature = generated :by (lambda (f) (targets-a-sort f)))</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
-
-<span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">MonSig = M-Set record &#10228; signature</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
-<span style="color: #3a81c3; font-weight: bold;">record</span><span style="color: #ba2f59; font-weight: bold;"> MonSig</span> :<span style="color: #ba2f59; font-weight: bold;"> Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
- <span style="color: #3a81c3; font-weight: bold;">field</span>
-  <span style="color: #ba2f59; font-weight: bold;"> Scalar</span>  : <span style="color: #3a81c3; font-weight: bold;">Set</span>
-  <span style="color: #ba2f59; font-weight: bold;"> Vector</span>  : <span style="color: #3a81c3; font-weight: bold;">Set</span>
-   _&#183;_     :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>
-   &#120793;       :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>
-   _&#215;_     :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>
+<span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> signature
+  = <span style="color: #2d9574;">"Keep only the elements that target a sort, drop all else."</span>
+    generated <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">&#955;</span> e &#8594; <span style="color: #2d9574;">(</span>targets-a-sort e<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
 
 <p>
-Neato!
+Here's an example.
+</p>
+<div class="org-src-container">
+<pre class="src src-results-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">MonSig = M-Set record &#10228; signature</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-results-agda"><span style="color: #3a81c3; font-weight: bold;">record</span><span style="color: #ba2f59; font-weight: bold;"> MonSig</span> :<span style="color: #ba2f59; font-weight: bold;"> Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span><span style="color: #ba2f59; font-weight: bold;"> Scalar</span>     : <span style="color: #3a81c3; font-weight: bold;">Set</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span><span style="color: #ba2f59; font-weight: bold;"> Vector</span>     : <span style="color: #3a81c3; font-weight: bold;">Set</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span> _&#183;_        :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span> &#120793;      :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>
+   <span style="color: #3a81c3; font-weight: bold;">field</span> _&#215;_        :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Scalar</span>
+</pre>
+</div>
+
+<p>
+Neato! Those were some nifty applications!
 </p>
 </div>
 </div>
 
-<div id="outline-container-org7d73c1d" class="outline-3">
+<div id="outline-container-org28c3f87" class="outline-3">
 <h3 id="Automatically-deriving-homomorphism-definitions-♥‿♥"><span class="section-number-3">2.15</span> Automatically deriving homomorphism definitions ♥‿♥&#xa0;&#xa0;&#xa0;<span class="tag"><span class="out_of_date">out_of_date</span></span></h3>
 <div class="outline-text-3" id="text-Automatically-deriving-homomorphism-definitions-♥‿♥">
 <p>
@@ -2792,7 +2991,7 @@ artefacts to make the construction an actual categorical product.</li>
 </div>
 </div>
 
-<div id="outline-container-org8edbcd2" class="outline-2">
+<div id="outline-container-orgb69407e" class="outline-2">
 <h2 id="Strings-and-Things"><span class="section-number-2">3</span> Strings and Things</h2>
 <div class="outline-text-2" id="text-Strings-and-Things">
 <p>
@@ -2833,7 +3032,7 @@ First some useful libraries:
 </div>
 </div>
 
-<div id="outline-container-orgf8aff40" class="outline-3">
+<div id="outline-container-orga283720" class="outline-3">
 <h3 id="Typing-mechanism"><span class="section-number-3">3.1</span> Typing mechanism</h3>
 <div class="outline-text-3" id="text-Typing-mechanism">
 <div class="org-src-container">
@@ -2920,7 +3119,7 @@ First some useful libraries:
 </div>
 </div>
 
-<div id="outline-container-orgb43c745" class="outline-3">
+<div id="outline-container-orgb57f3be" class="outline-3">
 <h3 id="Finding-Children-in-the-Wild"><span class="section-number-3">3.2</span> Finding Children in the Wild</h3>
 <div class="outline-text-3" id="text-Finding-Children-in-the-Wild">
 <p>
@@ -2929,7 +3128,7 @@ with hierarchical phrases.
 For example, consider the following todo list,
 </p>
 <div class="org-src-container">
-<pre class="src src-org" id="orgd7a8ee4">+ item 1
+<pre class="src src-org" id="orge7f04fd">+ item 1
   - subitem 1.1
     * subsubitem 1.1.1
   - subitem 1.2
@@ -3289,7 +3488,7 @@ why tests fail.
 </div>
 </div>
 
-<div id="outline-container-org6e5757a" class="outline-3">
+<div id="outline-container-org53373e1" class="outline-3">
 <h3 id="Substrings-Delimited-by-Tokens"><span class="section-number-3">3.3</span> Substrings Delimited by Tokens</h3>
 <div class="outline-text-3" id="text-Substrings-Delimited-by-Tokens">
 <div class="org-center">
@@ -3449,7 +3648,7 @@ our string manipulation setup is robust enough to get at the constituents:
 <p>
 The aim is to eventually have an interface that interacts with an buffer containing Agda code.
 To that end, we propose that our fictitious syntax be directly embedded via special comments,
-<code>{-700 ⋯ -}</code>, henceforth referred to as “<a id="org70e9d7c">700-comments</a>”.
+<code>{-700 ⋯ -}</code>, henceforth referred to as “<a id="org0a62b4d">700-comments</a>”.
 </p>
 
 <ul class="org-ul">
@@ -3462,7 +3661,7 @@ contained in the ‘parenthesis’ <code>starting-regexp</code> and <code>ending
 
 <ul class="org-ul">
 <li>Cursor position is saved.</li>
-<li>This function let's us obtain the contents of <i>all</i> <a href="#org70e9d7c">700-comments</a>.</li>
+<li>This function let's us obtain the contents of <i>all</i> <a href="#org0a62b4d">700-comments</a>.</li>
 </ul></li>
 </ul>
 
@@ -3564,7 +3763,7 @@ Here are some possible invocations, the last one being our use case.
 </div>
 </div>
 
-<div id="outline-container-org585358a" class="outline-3">
+<div id="outline-container-org713a10f" class="outline-3">
 <h3 id="Agda-Mixfix-Renaming-and-Imports"><span class="section-number-3">3.4</span> Agda Mixfix Renaming and Imports</h3>
 <div class="outline-text-3" id="text-Agda-Mixfix-Renaming-and-Imports">
 <p>
@@ -3628,7 +3827,7 @@ So much string meddling, hopefully no more 🙈 :hear<sub>no</sub><sub>evil</sub
 </div>
 </div>
 
-<div id="outline-container-org6b438a9" class="outline-3">
+<div id="outline-container-org72fb4b3" class="outline-3">
 <h3 id="should-be-at-top"><span class="section-number-3">3.5</span> “λ” for the Agda User</h3>
 <div class="outline-text-3" id="text-should-be-at-top">
 <p>
@@ -3662,11 +3861,11 @@ into the Agda-like syntax <code>(λ x₀ ⋯ xₙ → body)</code>.
 </div>
 </div>
 
-<div id="outline-container-orge325c55" class="outline-2">
+<div id="outline-container-org7c29ce0" class="outline-2">
 <h2 id="The-~package-former~-Datatype"><span class="section-number-2">4</span> The <code>package-former</code> Datatype</h2>
 <div class="outline-text-2" id="text-The-~package-former~-Datatype">
 <p>
-For this prototype's <a href="#org51ebd13">constraints</a>, a PackageFormer will generally declared as
+For this prototype's <a href="#orgce00a64">constraints</a>, a PackageFormer will generally declared as
 </p>
 <div class="org-src-container">
 <pre class="src src-agda"><span style="color: #ba2f59; font-weight: bold;">PackageFormer Name</span> : <span style="color: #3a81c3; font-weight: bold;">Set</span> <span style="color: #0000cd;">level</span> <span style="color: #3a81c3; font-weight: bold;">where</span>
@@ -3726,7 +3925,7 @@ We will keep track of all such declarations in a global list.
 </div>
 </div>
 
-<div id="outline-container-org05942ed" class="outline-3">
+<div id="outline-container-orga00debc" class="outline-3">
 <h3 id="Locally-Opening-a-PackageFormer"><span class="section-number-3">4.1</span> Locally Opening a PackageFormer</h3>
 <div class="outline-text-3" id="text-Locally-Opening-a-PackageFormer">
 <p>
@@ -3765,13 +3964,13 @@ It is crucial to realise that we have just established a convention
 that partitions the elements of a PackageFormer:
 </p>
 <ul class="org-ul">
-<li><a id="org81bf04d">parameters</a> are the elements before the waist line.</li>
-<li><a id="orgb02c6ff">fields</a> are the elements after the waist line.</li>
+<li><a id="org11ed243">parameters</a> are the elements before the waist line.</li>
+<li><a id="org2cab6ec">fields</a> are the elements after the waist line.</li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org1421fe7" class="outline-3">
+<div id="outline-container-org5aa4f30" class="outline-3">
 <h3 id="Typed-Names"><span class="section-number-3">4.2</span> Elements and Typed Names</h3>
 <div class="outline-text-3" id="text-Typed-Names">
 <div class="org-src-container">
@@ -4005,7 +4204,7 @@ so we don't have this extra mental strain and implicit type-checking to ensure.
 </div>
 </div>
 
-<div id="outline-container-org0326fd1" class="outline-3">
+<div id="outline-container-orgbd153be" class="outline-3">
 <h3 id="Package-Former-Parsing-and-Pretty-Printing"><span class="section-number-3">4.3</span> Package Former Parsing and Pretty Printing</h3>
 <div class="outline-text-3" id="text-Package-Former-Parsing-and-Pretty-Printing">
 <p>
@@ -4256,7 +4455,7 @@ should be inverses.
 </div>
 </div>
 
-<div id="outline-container-orgd7159f4" class="outline-2">
+<div id="outline-container-org94cb35b" class="outline-2">
 <h2 id="Variational-Language"><span class="section-number-2">5</span> Variational Language</h2>
 <div class="outline-text-2" id="text-Variational-Language">
 <p>
@@ -4299,7 +4498,7 @@ users are welcome to use any other symbol.
 </div>
 </div>
 
-<div id="outline-container-org9af4597" class="outline-3">
+<div id="outline-container-org633fdc5" class="outline-3">
 <h3 id="𝒱𝒸,--𝒱-,-and-𝒱"><span class="section-number-3">5.1</span> 𝒱𝒸,  𝒱-, and 𝒱</h3>
 <div class="outline-text-3" id="text-𝒱𝒸,--𝒱-,-and-𝒱">
 <p>
@@ -4415,6 +4614,10 @@ expects the syntax outlined earlier.
     <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for a in args
           do <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">if</span> <span style="color: #b1951d;">(</span>consp a<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">push</span> a kargs<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">push</span> a pargs<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
+    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">The arguments are in reverse now, which doesn't matter for keywords</span>
+    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">yet is crucial for positional arguments. So let's fix that.</span>
+    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">setq</span> pargs <span style="color: #67b11d;">(</span>reverse pargs<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Keep track of only the argument names, omitting any default values.</span>
     <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">setq</span> argnames <span style="color: #67b11d;">(</span>append pargs <span style="color: #b1951d;">(</span>mapcar #'car kargs<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
@@ -4494,7 +4697,7 @@ Here's an example.
 </div>
 </div>
 
-<div id="outline-container-org99dcb4f" class="outline-3">
+<div id="outline-container-org7bcc05c" class="outline-3">
 <h3 id="Well-formed-checks----Error-reporting"><span class="section-number-3">5.2</span> Well-formed checks &#x2014;Error reporting</h3>
 <div class="outline-text-3" id="text-Well-formed-checks----Error-reporting">
 <p>
@@ -4560,7 +4763,7 @@ What is the above “fancy cons” we mentioned? Here it is.
 </div>
 </div>
 
-<div id="outline-container-org4aee586" class="outline-3">
+<div id="outline-container-org20260a8" class="outline-3">
 <h3 id="Loading-Variationals:-Super-Simple-Conversion-From-String-to-Lisp"><span class="section-number-3">5.3</span> Loading Variationals: Super Simple Conversion From String to Lisp</h3>
 <div class="outline-text-3" id="text-Loading-Variationals:-Super-Simple-Conversion-From-String-to-Lisp">
 <div class="org-src-container">
@@ -4684,7 +4887,7 @@ What is the above “fancy cons” we mentioned? Here it is.
 </div>
 </div>
 
-<div id="outline-container-orgadd6050" class="outline-2">
+<div id="outline-container-org373b804" class="outline-2">
 <h2 id="Loading-an-Agda-Buffer"><span class="section-number-2">6</span> Loading an Agda Buffer</h2>
 <div class="outline-text-2" id="text-Loading-an-Agda-Buffer">
 <p>
@@ -4693,7 +4896,7 @@ for which we would later generate code.
 </p>
 </div>
 
-<div id="outline-container-org23dff18" class="outline-3">
+<div id="outline-container-org64e3ffb" class="outline-3">
 <h3 id="Loading-an-Instance----The-Core-Utility"><span class="section-number-3">6.1</span> Loading an Instance &#x2014;The Core Utility</h3>
 <div class="outline-text-3" id="text-Loading-an-Instance----The-Core-Utility">
 <p>
@@ -4851,15 +5054,15 @@ Loading an instantiation into our list is now trivial.
 </div>
 </div>
 
-<div id="outline-container-orgba30232" class="outline-3">
+<div id="outline-container-org402bdf6" class="outline-3">
 <h3 id="~load-700-comments~-and-~lisp~-blocks"><span class="section-number-3">6.2</span> <code>load-700-comments</code> and <code>lisp</code> blocks</h3>
 <div class="outline-text-3" id="text-~load-700-comments~-and-~lisp~-blocks">
 <p>
 We already two global lists &#x2014;for our loaded PackageFormers and varitionals
-declarared&#x2014; we need two additional globals: One for the contents of <a href="#org70e9d7c">700-comments</a>,
+declarared&#x2014; we need two additional globals: One for the contents of <a href="#org0a62b4d">700-comments</a>,
 primarily for basic efficiency, and the other to port whatever is within
-<a href="#org70e9d7c">700-comments</a> but is not <a href="#org0dfacaf">700-syntax</a>. The latter is for when we want definitions
-or generalised variables to be accessible in <i>both</i> <a href="#org70e9d7c">700-comments</a> and the
+<a href="#org0a62b4d">700-comments</a> but is not <a href="#org157909d">700-syntax</a>. The latter is for when we want definitions
+or generalised variables to be accessible in <i>both</i> <a href="#org0a62b4d">700-comments</a> and the
 surrounding script. Which is achieved since the matter is exported to
 the generated file in the Elisp stage, then imported at the Agda level.
 </p>
@@ -4958,7 +5161,7 @@ PackageFormers to a generated file.
 </div>
 </div>
 
-<div id="outline-container-org0a8de2e" class="outline-2">
+<div id="outline-container-org7cbc1da" class="outline-2">
 <h2 id="Emacs-Interface"><span class="section-number-2">7</span> Emacs Interface</h2>
 <div class="outline-text-2" id="text-Emacs-Interface">
 <p>
@@ -4977,7 +5180,7 @@ should be coloured or not. Below we use a particular set of default colours.
 </div>
 </div>
 
-<div id="outline-container-org09c79dd" class="outline-3">
+<div id="outline-container-org1262cb7" class="outline-3">
 <h3 id="Tooltips"><span class="section-number-3">7.1</span> Tooltips</h3>
 <div class="outline-text-3" id="text-Tooltips">
 <p>
@@ -5022,7 +5225,7 @@ New textual occurrences of a name obtain tooltips when <code>C-c C-l</code> is i
 </p>
 </div>
 </div>
-<div id="outline-container-org8d53a39" class="outline-3">
+<div id="outline-container-orge9e0468" class="outline-3">
 <h3 id="Advising-our-Beloved-~C-c-C-l~"><span class="section-number-3">7.2</span> Advising our Beloved <code>C-c C-l</code></h3>
 <div class="outline-text-3" id="text-Advising-our-Beloved-~C-c-C-l~">
 <p>
@@ -5152,7 +5355,7 @@ Agda working on the buffer even after it has been killed!
 </div>
 </div>
 
-<div id="outline-container-orgf7b4ec9" class="outline-3">
+<div id="outline-container-org4bdcd81" class="outline-3">
 <h3 id="Menu-matter"><span class="section-number-3">7.3</span> Menu matter</h3>
 <div class="outline-text-3" id="text-Menu-matter">
 <p>
@@ -5322,7 +5525,7 @@ Let's pack these together into a minor mode.
 </div>
 </div>
 
-<div id="outline-container-orgec910ce" class="outline-2">
+<div id="outline-container-orgf486456" class="outline-2">
 <h2 id="Work"><span class="section-number-2">8</span> <span class="done Future">Future</span> Work</h2>
 <div class="outline-text-2" id="text-Work">
 <p>
@@ -5356,7 +5559,7 @@ Below are some desirable features to work on.
 <li class="off"><code>[&#xa0;]</code> MA: WK: hiding ↦ dropping</li>
 
 <li class="off"><code>[&#xa0;]</code> Use buffer-substring-delimited-whole-buffer to parse <i>multiple</i>
-<a href="#org70e9d7c">700-comments</a>!</li>
+<a href="#org0a62b4d">700-comments</a>!</li>
 
 <li class="off"><code>[&#xa0;]</code> Add a level component to an instance structure; reduce it if Carrier is a parameter and otherwise leave it alone.
 Instead, let the level of a PackageFormer denote the level of the typeclass instantiation, then with this in mind
@@ -5384,7 +5587,7 @@ or the resulting generated code should be generated when export happens.</li>
 <li>Maybe such a view is useful for the user? It is provided via <code>get-name</code> and <code>get-type</code>.</li>
 </ul></li>
 
-<li class="on"><code>[X]</code> Refactor load-instantions function to make use of an <code>alter</code> field rather than overloading alter-<a href="#orgb02c6ff">fields</a> in reify-instances.</li>
+<li class="on"><code>[X]</code> Refactor load-instantions function to make use of an <code>alter</code> field rather than overloading alter-<a href="#org2cab6ec">fields</a> in reify-instances.</li>
 
 <li class="on"><code>[X]</code> Refactor <code>instantiate</code> to make use of an <code>instance</code> structure, rather than 13 arguments.
 <ul class="org-ul">
@@ -5396,7 +5599,7 @@ necessary to form different variational presentations. It seems I only needed 5 
 
 <li class="on"><code>[X]</code> Generated.agda needs to inherit all open/import declarations from parent.</li>
 
-<li class="off"><code>[&#xa0;]</code> Give an example PackageFormer with some definitions or derived constructs, then hoist-up your waist so that the non-defined items are <code>module</code> <a href="#org81bf04d">parameters</a>.</li>
+<li class="off"><code>[&#xa0;]</code> Give an example PackageFormer with some definitions or derived constructs, then hoist-up your waist so that the non-defined items are <code>module</code> <a href="#org11ed243">parameters</a>.</li>
 
 <li class="off"><code>[&#xa0;]</code> <code>B = cs ⟨+ A ⟨+ cs′</code> where each cs is a single name-type declaration and the operation is left-associative, and A is an existing packageformer. This gives us a nice way to build a hierarchy. Note that since only A has a name, we may form a forgetful coercion B⇒A automatically.
 E.g., <code>Monoid = Type ⟨+ Pointed ⟨+ (Magma renaming (_⊕_ to _⨾_)) ⟨+ LeftUnital ⟨+ RightUnital ⟨+ assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)</code> gives, automatically, <code>Monoid⇒Type, Monoid⇒Pointed, Monoid⇒Magma, Monoid⇒LeftUnital, Magma⇒RightUnital</code> (•̀ᴗ•́)و MA: To begin with, ignore the rename and work up the sequence one ⟨+ at a time.</li>
@@ -5405,11 +5608,11 @@ E.g., <code>Monoid = Type ⟨+ Pointed ⟨+ (Magma renaming (_⊕_ to _⨾_)) �
 
 <li class="off"><code>[&#xa0;]</code> Demonstrate how generative modules can be emulated.</li>
 
-<li class="off"><code>[&#xa0;]</code> For now, PackageFormer's have no other <a href="#org81bf04d">parameters</a> besides the variation symbol &#x2014;not even that atm.</li>
+<li class="off"><code>[&#xa0;]</code> For now, PackageFormer's have no other <a href="#org11ed243">parameters</a> besides the variation symbol &#x2014;not even that atm.</li>
 
 <li class="off"><code>[&#xa0;]</code> The global variables package-formers &amp; instance-declaration should be <i>buffer</i> specific?</li>
 
-<li class="on"><code>[X]</code> Assign to a local var, check equality against global <a href="#org70e9d7c">700-comments</a>,
+<li class="on"><code>[X]</code> Assign to a local var, check equality against global <a href="#org0a62b4d">700-comments</a>,
 if identical, no more processing since everything already generated.</li>
 
 <li class="off"><code>[&#xa0;]</code> Make use of docstring so that when a user enters a key sequence or selects from a menu, we can show them a listing of all ‘major’ components of a program: An org-mode file is displayed with an enumeration of the items, each being a link to the source, and only their docstring is shown. This is a nice ‘overview’ of the program source.</li>
@@ -5422,7 +5625,7 @@ if identical, no more processing since everything already generated.</li>
 <li class="off"><code>[&#xa0;]</code> Generate all instances of a PackageFormer schema.</li>
 
 <li class="off"><code>[&#xa0;]</code> <p>
-Allow package formers to have explicit <code>Variation</code> <a href="#org81bf04d">parameters</a>; but
+Allow package formers to have explicit <code>Variation</code> <a href="#org11ed243">parameters</a>; but
 how do we then deal with nested invocations? What are the uses of
 having differing invocations?
 </p>

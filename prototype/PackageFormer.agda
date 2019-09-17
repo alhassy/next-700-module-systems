@@ -174,3 +174,34 @@ NearMonoid¹ = M-Set record ⟴ single-sorted "Carrier"
 {-   700
 ScalarTerm = M-Set data "Scalar"
 -}
+
+{-700
+𝒱-empty-module = :kind module :level none :waist 999
+Neato = M-Set empty-module
+-}
+
+{- A module where the elements are all parameters -}
+open Neato using ()
+
+{-700
+M-Set-R = M-Set record
+M-Set-R₁ = M-Set-R ⟴ open (λ x → (concat x "₁"))
+-}
+
+{-700
+M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V"
+-}
+
+{-700
+𝒱-sorts = generated (λ e → (s-contains? "Set" (target (element-type e))))
+
+M-Set-Sorts = M-Set record ⟴ sorts
+-}
+
+{-700
+MonoidSignature = M-Set record ⟴ generated (λ e → (and (s-contains? "Scalar" (element-type e)) (not (s-contains? "Vector" (element-type e)))))
+-}
+
+{-700
+M-Set-R′ = M-Set-R open-with-decoration "′"
+-}
