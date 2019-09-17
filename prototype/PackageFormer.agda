@@ -72,6 +72,10 @@ MonoidPᶜ = MonoidP ⟴
 Monoid-test = MonoidP ⟴ test "positional arg₁" "positional arg₂" :keyword 25
 -}
 
+{-   700
+𝒱-whoops  = tester 1 2 :keyword 3
+-}
+
 {-700
 𝒱-record = :kind record :alter-elements (λ es → (--map (map-qualifier (λ _ → "field") it) es))
 -}
@@ -84,10 +88,6 @@ M-Set-Record = M-Set record
 (𝒱 record = "Reify a variational as an Agda “record”."
             :kind record
             :alter-elements (λ es → (--map (map-qualifier (λ _ → "field") it) es)))
--}
-
-{-   700
-𝒱-whoops  = :kind recorder
 -}
 
 {-700
@@ -171,6 +171,6 @@ NearMonoid = M-Set record ⟴ renaming "Scalar to Carrier; Vector to Carrier; ·
 NearMonoid¹ = M-Set record ⟴ single-sorted "Carrier"
 -}
 
-{-700
+{-   700
 ScalarTerm = M-Set data "Scalar"
 -}

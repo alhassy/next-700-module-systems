@@ -1875,15 +1875,50 @@ by other Agda code, and otherwise leave it free standing.
 
 + Example uses of the variational clauses could be seen in the ~Testing.agda~ listing in the first section above.
 
-** Lisp Interface                                                      :TODO:
+** Lisp Interface
    :PROPERTIES:
    :CUSTOM_ID: Lisp-Interface
    :END:
 {{{goal(Summary of useful functions for programming variationals.)}}}
 
-   Need to explain that a PackageFormer element is a structure consisting of a qualifier, name, type, and list of equational clauses.
+   # Need to explain that a PackageFormer element is a structure consisting of a qualifier, name, type, and list of equational clauses.
+   # Then, need to tersely summarise the operations, projections & maps, on these items.
 
-   Then, need to tersely summarise the operations, projections & maps, on these items.
+   + A ~PackageFormer~ is nothing more than a list of elements.
+   + An ~element~ is a record of 4 items: A qualifier, a name, a type, and
+     a list of equational clauses for that name.
+
+  Below are functions that will be used in subsequent subsections in order to form user-defined
+  variationals. Consult these tables as necessary and look at an [[https://alhassy.github.io/ElispCheatSheet/][Elisp Cheat Sheet]], if need be.
+
+  + *Elements*
+
+    Let ℰ denote one of ~qualifier, name, type, equations~ in the following list of useful functions.
+
+    | ~(make-element 𝓆 𝓃 𝓉 ℯ)~      | An ~element~ value is formed.                                |
+    | ~(element-ℰ e)~               | Project component ℰ from element ~e~.                        |
+    | ~(map-ℰ f e)~                 | Return a copy of ~e~ with component ℰ updated by function ~f~. |
+    | ~(element-replace old new e)~ | Replace all string occurances of ~old~ by ~new~ in element ~e~.  |
+
+  + *Lists*
+
+    | ~(list x₀ … xₙ)~            | Form a list of elements ~xᵢ~.                    |
+    | ~(car xs)~                  | Obtain first element of list ~xs~.               |
+    | ~(cdr xs)~                  | Obtain all but first element of ~xs~.            |
+    | ~(cons x xs)~               | Form a new list with car ~x~ and cdr ~xs~.         |
+    | ~(mapcar (λ it → ⋯it⋯) xs)~ | Map the given function on ~xs.~                  |
+    | ~(--map (⋯it⋯) xs)~         | Map the /implicit/ function ~(λ it → ⋯it⋯)~ on ~xs~. |
+    | ~(-cons* x₀ … xₙ xs)~       | ~(cons x₀ (cons x₁ (⋯ (cons xₙ xs))))~.          |
+    |                           |                                                |
+
+  + *Strings*
+
+    | ~(concat s₀ … sₙ)~      | Concatenate strings ~sᵢ~.                                                 |
+    | ~(s-replace old new s)~ | Replace all string occurrences of ~old~ by ~new~ in string ~e~.               |
+    | ~(rename-mixfix f op)~  | Rename string ~op~ according to function ~f~ by ‘leaping over’ underscores. |
+    |                       | E.g., ~f, op = (λ x → (concat x "′")), _⊕_  ⇒ _⊕′_~.                        |
+
+  {{{goal(*You can always see the documentation of an item with ~C-h o~!*)}}}
 
 ** User Manual Header
    :PROPERTIES:
@@ -1989,7 +2024,7 @@ PackageFormer M-Set : Set₁ where
    :PROPERTIES:
    :CUSTOM_ID: Empty-Variationals
    :END:
-{{{goal(A summary of the key features of 𝒱ariationals/)}}}
+{{{goal(A summary of the key features of 𝒱ariationals)}}}
 
    The simplest user definable variational is the empty one:
 #+BEGIN_SRC agda
@@ -2059,6 +2094,40 @@ Monoid-test = MonoidP ⟴ test "positional arg₁" "positional arg₂" :keyword 
 #+END_SRC
 
 We are not doing anything with the arguments here; we shall return to this in later subsections.
+
+** ⇨ Errors
+   :PROPERTIES:
+   :CUSTOM_ID: ⇨-Errors
+   :END:
+  Even though this is a prototype, we wish it to be useful to ourselves and to others
+  ---especially those who take a quick glance, think they got it, and try things out only to not have them work
+  immediately. As such, we have implemented a cute little error-reporting system.
+  | If you try to load, ~C-c C-l~, but your 700-syntax is wrong, you get an immediate error explaining why ♥‿♥ |
+
+  For example, suppose we accidentally wrote ~tester~ instead of ~test~, which we defined
+  at the end of the previous section, as in the following.
+  ( The space before ~700~ is so that this crashing block is not in effect. )
+#+BEGIN_SRC agda
+{-   700
+𝒱-whoops  = tester 1 2 :keyword 3
+-}
+#+END_SRC
+  When we try to load our Agda file the Agda process is interrupted and we are warned:
+#+BEGIN_SRC text :tangle no
+700: Did you mistype a variational’s name: “tester” is not defined.
+
+    ⇨	whoops = tester 1 2 :keyword 3
+    ⇨	Use the PackageFormer menu to see which variationals are defined.
+#+END_SRC
+  The 700 system informs us of our fault in “quotes”, suggests a solution,
+  and points to the offending declaration hierarchy. Neato (•̀ᴗ•́)و
+
+  The “quotes” help, in this case, when there are multiple variationals being
+  invoked in a clause.
+
+  Of-course, we do not attempt to cover all possible errors ---e.g., wrong number
+  of arguments or division by zero--- instead relying on Emacs Lisp's native
+  error mechanism.
 
 ** Records and Meta-Primitives ~:kind~ & ~:alter-elements~
    :PROPERTIES:
@@ -2135,33 +2204,6 @@ record M-Set-Record : Set₁ where
             :alter-elements (λ es → (--map (map-qualifier (λ _ → "field") it) es)))
 #+END_SRC
 :End:
-
-** ⇨ Errors
-   :PROPERTIES:
-   :CUSTOM_ID: ⇨-Errors
-   :END:
-  Even though this is a prototype, we wish it to be useful to ourselves and to others
-  ---especially those who take a quick glance, think they got it, and try things out only to not have them work
-  immediately. As such, we have implemented a cute little error-reporting system.
-  | If you try to load, ~C-c C-l~, but your 700-syntax is wrong, you get an immediate error explaining why ♥‿♥ |
-
-  For example, suppose we accidentally wrote ~recorder~ instead of ~record~ for the ~:kind~ as in the following.
-  ( The space before ~700~ is so that this crashing block is not in effect. )
-#+BEGIN_SRC agda
-{-   700
-𝒱-whoops  = :kind recorder
--}
-#+END_SRC
-  Even thought we have the correct invocation, say ~M-Set-Record = M-Set whoops~,
-  when we try to load our Agda file the Agda process is interrupted and we are warned:
-#+BEGIN_SRC text :tangle no
- 700: This kind “recorder” is not supported by Agda!
-      Valid kinds: record, data, module, PackageFormer.
-
-    ⇨	whoops  = :kind recorder
-#+END_SRC
-  The 700 system informs us of our fault in “quotes”, suggests a solution,
-  and points to the offending declaration hierarchy. Neato (•̀ᴗ•́)و
 
 ** Typeclasses ---Parameterised Records--- and Meta-Primitives ~:waist~ & ~:level~
    :PROPERTIES:
@@ -2886,7 +2928,7 @@ data No : Set where
     have been consulted at one point.
 
     Zero: A module where the elements are all parameters.
-#+BEGIN_SRC results-agda
+#+BEGIN_SRC results-agda :tangle no
 {-700
 𝒱-empty-module = :kind module :level none :waist 999
 Neato = M-Set empty-module
@@ -2896,7 +2938,7 @@ module Neato (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector)
 #+END_SRC
 
    One-hundred: A one-parameter module where elements may be renamed.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp  :tangle no
 ;; “with” is a renaming string-to-string function.
 (𝒱 open with
   = :kind module
@@ -2925,7 +2967,7 @@ module Neato (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector)
 
   Here is an example use ---where we first declare a ~record~ perspective of ~M-Set~'s then
   use that to produce two decorated variants.
-#+BEGIN_SRC results-agda
+#+BEGIN_SRC results-agda  :tangle no
 {-700
 M-Set-R = M-Set record
 M-Set-R₁ = M-Set-R open :with (lambda (x) (concat x "₁"))
@@ -2973,7 +3015,7 @@ module M-Set-R₂ (ℛ : M-Set-R) where
 
     In particular, the following naive approach only works if the elements are
     independent of one another ---which is rarely the case for Agda users.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp  :tangle no
 ;; cute, but too brutish.
 𝒱-generated by = :alter-elements (lambda (fs) (-filter by fs))
 #+END_SRC
@@ -2985,7 +3027,7 @@ module M-Set-R₂ (ℛ : M-Set-R) where
     is coherent. Moreover, for generality, we consider a predicate rather than an explicit
     listing of items to be retained.
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp  :tangle no
 ;; “by” is a predicate on elements.
 (𝒱 generated by
   = :alter-elements  (lambda (fs)
@@ -3006,7 +3048,7 @@ module M-Set-R₂ (ℛ : M-Set-R) where
 #+END_SRC
 
 Here's an immediate application: Obtaining the types declared in a grouping mechanism.
-#+BEGIN_SRC results-agda
+#+BEGIN_SRC results-agda  :tangle no
 {-700
 𝒱-sorts = generated :by (lambda (f) (s-contains? "Set" (target (get-type f))))
 
@@ -3019,7 +3061,7 @@ record M-Set-Sorts : Set₁ where
 #+END_SRC
 
 We can even obtain a sub-signature wholesale:
-#+BEGIN_SRC results-agda
+#+BEGIN_SRC results-agda  :tangle no
 {-700
 MonoidSignature = M-Set record ⟴ generated :by (lambda (f) (and (s-contains? "Scalar" f) (not (s-contains? "Vector" f))))
 -}
@@ -3032,7 +3074,7 @@ record MonoidSignature : Set₁ where
 
 This pattern of having a lawless grouping seems sufficiently desirable that we may
 codify it.
-#+BEGIN_SRC results-agda
+#+BEGIN_SRC results-agda  :tangle no
 {-lisp
 (defun targets-a-sort (element)
   (--any (s-contains? it (target element)) (-map #'get-name (-filter #'is-sort $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠))))
@@ -3064,7 +3106,7 @@ record MonSig : Set₁ where
     by hand ever again.
 
     :Illuminating_yet_overkill_to-subscript_defn:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp  :tangle no
 (defun to-subscript (n)
   "Subscript numbers 𝓃 have hex-codes #x208𝓃,
    we realise the codes as characters to obtain the subscripts.
@@ -3108,7 +3150,7 @@ record MonSig : Set₁ where
     :End:
 
     First, we need a helper that forms the preservation formulae. In a ~lisp~ block:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp  :tangle no
 (defun to-subscript (n)
   (nth n '("₀" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉")))
 
@@ -3160,7 +3202,7 @@ record MonSig : Set₁ where
 #+END_SRC
 
     Then, we form the variational as follows ---also in a ~lisp~ block.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp  :tangle no
 (𝒱 hom
   = record ⟴
     :waist 2
@@ -3193,7 +3235,7 @@ record MonSig : Set₁ where
     wish ---which may be preferable to extending the variational to accommodate for new
     names.
 
-#+BEGIN_SRC results-agda
+#+BEGIN_SRC results-agda  :tangle no
 {-700
 Hom  = M-Set hom
 Hom² = M-Set hom ⟴ renaming :by "map₁ to scalar; pres-𝟙 to unity"
@@ -4687,7 +4729,13 @@ Parsing variational clauses is then straightforward:
                             ;; prepend the function name with a 𝒱-
                             ;; then turn that into Lisp with the first eval
                             ;; then invoke the resulting function call with the second eval.
-                            (eval `( ,(𝒱- (car clause)) ,@(cdr clause)))
+                            (progn
+                              ;; The variational being called is defined.
+                              (700-ensure (fboundp (𝒱- (car clause)))
+                                        (format "Did you mistype a variational's name: “%s” is not defined." (car clause))
+                                        context
+                                        "Use the PackageFormer menu to see which variationals are defined.")
+                              (eval `( ,(𝒱- (car clause)) ,@(cdr clause))))
                           ;; List of key-value pairs
                           `,(loop for key   in clause by #'cddr
                                   for value in (cdr clause) by #'cddr
@@ -4818,12 +4866,23 @@ Here's an example.
 What is the above “fancy cons” we mentioned? Here it is.
 
 #+BEGIN_SRC emacs-lisp  :tangle yes
-(defun 700-error (condition message context)
-  "Ensure ‘condition’ is true, otherwise emit ‘message’
+(defmacro 700-ensure (condition message context &rest suggestions)
+  "Ensure ‘condition’ is true and defined, otherwise emit ‘message’
    and indicate the offending ‘context’.
+   If there are any ‘suggestions’ to the user, then we show those too.
+
+   ➩ If ‘condition’ is defined and non-nil, whence true, we return it.
   "
-  (when condition
-    (error (format "700: %s\n\n\t⇨\t%s" message context))))
+  `(let* ((ლ\(ಠ益ಠ\)ლ
+          (format "700: %s\n\n\t⇨\t%s%s%s" ,message ,context
+                  (if (quote ,suggestions) "\n" "")
+                  (s-join "\n" (--map (format "\t⇨\t%s" it) (quote ,suggestions)))))
+         ;; Try to evaluate the condition.
+         (res (condition-case nil ,condition (error ლ\(ಠ益ಠ\)ლ))))
+
+    ;; If we've made it here, then the condition is defined.
+    ;; It remains to check that it's true.
+    (or res (error ლ\(ಠ益ಠ\)ლ))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp :tangle yes
@@ -4850,7 +4909,7 @@ What is the above “fancy cons” we mentioned? Here it is.
     (when-let ((here (assoc key wf)))
       (setq condition        (eval (nth 1 here))
             message          (eval (nth 2 here)))
-      (700-error (not (or condition (-contains? args value))) message context))
+      (700-ensure (or condition (-contains? args value)) message context))
 
     ;; Return the key-value as a pair for further processing.
     ;; :kind and :level values are symbols and so cannot be evaluated furthur.
@@ -5060,18 +5119,18 @@ Loading an instantiation into our list is now trivial.
      )
 
    ;; Ensure instance declaration is well-formed.
-    (700-error (or (s-blank? (s-trim $𝑛𝑎𝑚𝑒)) (not (equal "=" eqSymb)) (not $𝑝𝑎𝑟𝑒𝑛𝑡))
+    (700-ensure (and (not (s-blank? (s-trim $𝑛𝑎𝑚𝑒))) (equal "=" eqSymb) $𝑝𝑎𝑟𝑒𝑛𝑡)
                (concat "An instance declaration is of the form "
                        "“new-name = parent-package-former variational-clauses”.")
                line)
 
    ;; Let's not overwrite existing PackageFormers.
-    (700-error (assoc $𝑛𝑎𝑚𝑒 package-formers)
+    (700-ensure (not (assoc $𝑛𝑎𝑚𝑒 package-formers))
                (format "PackageFormer “%s” is already defined; use a new name." $𝑛𝑎𝑚𝑒)
                line)
 
    ;; Ensure the PackageFormer to be instantiated is defined.
-    (700-error (not self)
+    (700-ensure self
                (format "Parent “%s” not defined." $𝑝𝑎𝑟𝑒𝑛𝑡)
                line)
 

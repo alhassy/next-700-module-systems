@@ -262,9 +262,3 @@ record NearMonoid¹ : Set₁ where
    field _×_        : Carrier → Carrier → Carrier
    field leftId     : {𝓋 : Carrier}  →  𝟙 · 𝓋  ≡  𝓋
    field assoc      : {a b : Carrier} {𝓋 : Carrier} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
-
-
-{- ScalarTerm = M-Set data "Scalar" -}
-data ScalarTerm : Set where
-   𝟙        : ScalarTerm
-   _×_      : ScalarTerm → ScalarTerm → ScalarTerm

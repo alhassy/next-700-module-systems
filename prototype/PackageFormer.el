@@ -1,24 +1,3 @@
-(require 'ert)
-
-(defmacro λ (&rest body)
-  "Implementing Agda style, interactive, lambdas; ideally for inline use:
-
-   “λ α β … ω → body”  becomes an interactive function with arguments α, …, ω.
-
-   The args list may be empty, in which case the separator “→” may be omitted
-   entirely, if desired.
-  "
-
-  (let* ((parts (-split-on '→ body)) args rest)
-
-    (if (<= 2 (length parts))
-        (progn (setq args (car parts)) (setq rest (cadr parts)))
-         ;; Otherwise, only one part was found ---no arguments were provided.
-         (setq args nil) (setq rest (car parts)))
-
-   `(lambda ,args (interactive) ,@rest)
-  ))
-
 ;; Crashes if an argument is ":"
 (cl-defmacro declare-type (f key-types &rest types)
   "Attach the given list of types to the function ‘f’
@@ -377,6 +356,25 @@
            (format  "%s_Generated" (file-name-sans-extension (buffer-name))) it))
     (s-join "\n")))
 
+(defmacro λ (&rest body)
+  "Implementing Agda style, interactive, lambdas; ideally for inline use:
+
+   “λ α β … ω → body”  becomes an interactive function with arguments α, …, ω.
+
+   The args list may be empty, in which case the separator “→” may be omitted
+   entirely, if desired.
+  "
+
+  (let* ((parts (-split-on '→ body)) args rest)
+
+    (if (<= 2 (length parts))
+        (progn (setq args (car parts)) (setq rest (cadr parts)))
+         ;; Otherwise, only one part was found ---no arguments were provided.
+         (setq args nil) (setq rest (car parts)))
+
+   `(lambda ,args (interactive) ,@rest)
+  ))
+
 (defstruct package-former
   "Record of components that form a PackageFormer.
 
@@ -654,6 +652,12 @@
 
 )
 
+(defvar variationals nil
+  "Association list of Agda-user defined variational operators.")
+
+(defvar variational-composition-operator "⟴"
+  "The operator that composes varitionals.")
+
 (defvar *parent-context* nil
   "For error report; what is the current parent context of a child item.
 
@@ -689,7 +693,13 @@
                             ;; prepend the function name with a 𝒱-
                             ;; then turn that into Lisp with the first eval
                             ;; then invoke the resulting function call with the second eval.
-                            (eval `( ,(𝒱- (car clause)) ,@(cdr clause)))
+                            (progn
+                              ;; The variational being called is defined.
+                              (700-ensure (fboundp (𝒱- (car clause)))
+                                        (format "Did you mistype a variational's name: “%s” is not defined." (car clause))
+                                        context
+                                        "Use the PackageFormer menu to see which variationals are defined.")
+                              (eval `( ,(𝒱- (car clause)) ,@(cdr clause))))
                           ;; List of key-value pairs
                           `,(loop for key   in clause by #'cddr
                                   for value in (cdr clause) by #'cddr
@@ -796,12 +806,23 @@
     ;; Return value:
     actual-code))
 
-(defun 700-error (condition message context)
-  "Ensure ‘condition’ is true, otherwise emit ‘message’
+(defmacro 700-ensure (condition message context &rest suggestions)
+  "Ensure ‘condition’ is true and defined, otherwise emit ‘message’
    and indicate the offending ‘context’.
+   If there are any ‘suggestions’ to the user, then we show those too.
+
+   ➩ If ‘condition’ is defined and non-nil, whence true, we return it.
   "
-  (when condition
-    (error (format "700: %s\n\n\t⇨\t%s" message context))))
+  `(let* ((ლ\(ಠ益ಠ\)ლ
+          (format "700: %s\n\n\t⇨\t%s%s%s" ,message ,context
+                  (if (quote ,suggestions) "\n" "")
+                  (s-join "\n" (--map (format "\t⇨\t%s" it) (quote ,suggestions)))))
+         ;; Try to evaluate the condition.
+         (res (condition-case nil ,condition (error ლ\(ಠ益ಠ\)ლ))))
+
+    ;; If we've made it here, then the condition is defined.
+    ;; It remains to check that it's true.
+    (or res (error ლ\(ಠ益ಠ\)ლ))))
 
 ;; declare-type cannot yet accomodate optional arguments
 (cl-defun 700-wf (key value &optional context args)
@@ -826,7 +847,7 @@
     (when-let ((here (assoc key wf)))
       (setq condition        (eval (nth 1 here))
             message          (eval (nth 2 here)))
-      (700-error (not (or condition (-contains? args value))) message context))
+      (700-ensure (or condition (-contains? args value)) message context))
 
     ;; Return the key-value as a pair for further processing.
     ;; :kind and :level values are symbols and so cannot be evaluated furthur.
@@ -994,18 +1015,18 @@
      )
 
    ;; Ensure instance declaration is well-formed.
-    (700-error (or (s-blank? (s-trim $𝑛𝑎𝑚𝑒)) (not (equal "=" eqSymb)) (not $𝑝𝑎𝑟𝑒𝑛𝑡))
+    (700-ensure (and (not (s-blank? (s-trim $𝑛𝑎𝑚𝑒))) (equal "=" eqSymb) $𝑝𝑎𝑟𝑒𝑛𝑡)
                (concat "An instance declaration is of the form "
                        "“new-name = parent-package-former variational-clauses”.")
                line)
 
    ;; Let's not overwrite existing PackageFormers.
-    (700-error (assoc $𝑛𝑎𝑚𝑒 package-formers)
+    (700-ensure (not (assoc $𝑛𝑎𝑚𝑒 package-formers))
                (format "PackageFormer “%s” is already defined; use a new name." $𝑛𝑎𝑚𝑒)
                line)
 
    ;; Ensure the PackageFormer to be instantiated is defined.
-    (700-error (not self)
+    (700-ensure self
                (format "Parent “%s” not defined." $𝑝𝑎𝑟𝑒𝑛𝑡)
                line)
 
@@ -1150,6 +1171,14 @@
                     (setq lines (caddr item))))))
 
         (message "Finished parsing 700-comments."))))
+
+(defvar 700-highlighting t
+  "Should 700 syntactical items be coloured?
+
+   ➩ Yellow for PackageFormer content.
+   ➩ Red for delimiters “700” and “lisp”.
+   ➩ Green for names of variationals.
+  ")
 
 ;; Nearly instantaneous display of tooltips.
 (setq tooltip-delay 0)
@@ -1393,91 +1422,7 @@
       ;; Closing
       (disable-package-formers))))
 
-(defvar variationals nil
-  "Association list of Agda-user defined variational operators.")
-
-(defvar 700-highlighting t
-  "Should 700 syntactical items be coloured?
-
-   ➩ Yellow for PackageFormer content.
-   ➩ Red for delimiters “700” and “lisp”.
-   ➩ Green for names of variationals.
-  ")
-
-(defun show-me ()
-  "Evaluate a Lisp expression and insert its value
-   as a comment at the end of the line.
-
-   Useful for documenting values or checking values.
-  "
-  (interactive)
-  (-let [it
-         (thread-last (thing-at-point 'line)
-           read-from-string
-           car
-           eval
-           (format " ;; ⇒ %s"))]
-    (end-of-line)
-    (insert it)))
-
-(defvar variational-composition-operator "⟴"
-  "The operator that composes varitionals.")
-
-;; (load-instance-declaration "LHS = PF :arg₀ val₀ ⟴ test₁ :heightish 23")
-
-     ;; PackageFormer names are in yellow; instances are are bolded.
-     ;; (highlight-phrase (format "%s " (nth 2 pieces)) 'hi-yellow)
-     ;; (highlight-phrase (nth 0 pieces) 'bold) ;; 'warning) ;; i.e., orange
-     ;;
-     ;; MA: Replace with a hook.
-
-(ert-deftest lid ()
-
-  (let (id)
-
-  ;; Anonymous variational
-  (setq id (load-instance-declaration "LHS = PF :arg₀ val₀ ⟴ var₁ :arg₁ val₁"))
-
-  ;; Basic invocation shape
-  ;; “to”! (setq id (load-instance-declaration "NewName = PF var₁ :arg (λ x₁ → B₁) ⟴ var₂ :arg (a to b; λ x₂ → B₂)"))
-  (setq id (load-instance-declaration "NewName = PF var₁ :arg₀ (λ x₁ → B₁) :val₀ nice ⟴ var₂ :arg (λ x₂ → B₂)"))
-  (cdr (instance-declaration-alterations id))
-  (should (equal "NewName" (instance-declaration-name id)))
-  (should (equal "PF" (instance-declaration-package-former id)))
-  (should (equal "((var₂ ((a . b)) (lambda (x₂) (concat B₂))) (var₁ nil (lambda (x₁) (concat B₁))))"
-         (format "%s" (instance-declaration-alterations id))))
-
-  ;; Ill-formed: LHS name is empty string.
-  (should (not (load-instance-declaration " = PF var")))
-
-  ;; Ill-formed: Not even a declaration.
-  (should (not (load-instance-declaration "private n : ℕ")))
-
-  ;; Variation has no args.
-  (should (load-instance-declaration "LHS = PF var ()"))
-
-  ;; Arbitrary variational
-  ;; There are parens around each arg since each should be a pair.
-  (should (equal "((some-variational ((arg₀) (…) (argₙ)) identity))" (format "%s" (instance-declaration-alterations (load-instance-declaration
-   "LHS = Magma some-variational (arg₀; …; argₙ)")))))
-  (should (equal "((some-variational nil (lambda (x) (concat x ′))))" (format "%s" (instance-declaration-alterations (load-instance-declaration
-  "LHS = Magma some-variational (λ x → x ++ \"′\")")))))
-))
-
-(let ((it (quote "(𝒱 renaming by
-  = \"Rename elements using BY, a “;”-separated string of “to”-separated pairs.\"
-  rename '(lambda (name)
-      (let (clauses)
-        (thread-last by
-          (s-split \";\")
-          (--map (s-split \" to \" it))
-          (--map (list (s-trim (car it)) (s-trim (cadr it))))
-          (-cons* 'pcase 'name)
-          (setq clauses)
-        )
-        (eval (append clauses '((otherwise otherwise)))))))
-
-(𝒱 record = \"Reify a variational as an Agda “record”.\"
+(let ((it (quote "(𝒱 record = \"Reify a variational as an Agda “record”.\"
             :kind record
             :alter-elements (λ es → (--map (map-qualifier (λ _ → \"field\") it) es)))
 
@@ -1542,6 +1487,37 @@
   = \"Replace all nullary sorts with the provided WITH-SORT string
      as the name of the new single sort, the universe of discourse.\"
     map (λ e → (if (is-sort e) (map-name (λ _ → with-sort) e) e)))
+
+(𝒱 renaming by
+  = \"Rename elements using BY, a “;”-separated string of “to”-separated pairs.\"
+  rename '(lambda (name)
+      (let (clauses)
+        (thread-last by
+          (s-split \";\")
+          (--map (s-split \" to \" it))
+          (--map (list (s-trim (car it)) (s-trim (cadr it))))
+          (-cons* 'pcase 'name)
+          (setq clauses)
+        )
+        (eval (append clauses '((otherwise otherwise)))))))
+
+(defun target (thing)
+  \" Given a type-name ‘[name :] τ₀ → ⋯ → τₙ’, yield ‘τₙ’;
+    the ‘name’ porition is irrelevant.
+  \"
+  (car (-take-last 1 (s-split \"→\" thing))))
+
+(𝒱 data carrier
+  = \"Reify as an Agda “data” type.
+
+     Only elements targeting CARRIER are kept.
+    \"
+    :kind  data
+    :level dec
+    :alter-elements (lambda (es)
+      (thread-last es
+        (--filter (s-contains? carrier (target (element-type it))))
+        (--map (map-type (λ τ → (s-replace carrier $𝑛𝑎𝑚𝑒 τ)) it)))))
 ")))
 (setq ♯standard-variationals (s-count-matches-all "(𝒱" it))
 (eval (car (read-from-string (format "(progn %s)" it))))
