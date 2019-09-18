@@ -1,9 +1,8 @@
-{- This loads the PackageFormer metaprogram          -}
-{- (progn (load-file "PackageFormer.el") (700-mode)) -}
+{- This loads the PackageFormer metaprogram                      -}
+{- (progn (load-file "package-former.el") (package-former-mode)) -}
 
-module PackageFormer where
-
-open import PackageFormer_Generated
+module package-former where
+open import package-former-generated
 open import Level
 open import Data.Bool
 open import Relation.Binary.PropositionalEquality using (_≡_)
@@ -176,6 +175,18 @@ ScalarTerm = M-Set data "Scalar"
 -}
 
 {-700
+M-Set-Sorts = M-Set record ⟴ sorts
+-}
+
+{-700
+MonoidSignature = M-Set record ⟴ generated (λ e → (and (s-contains? "Scalar" (element-type e)) (not (s-contains? "Vector" (element-type e)))))
+-}
+
+{-700
+MonSig = M-Set record ⟴ signature
+-}
+
+{-700
 𝒱-empty-module = :kind module :level none :waist 999
 Neato = M-Set empty-module
 -}
@@ -193,14 +204,14 @@ M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V"
 -}
 
 {-700
-𝒱-sorts = generated (λ e → (s-contains? "Set" (target (element-type e))))
-
-M-Set-Sorts = M-Set record ⟴ sorts
+Algebra  = M-Set record
+Algebra′ = Algebra open-with-decoration "′"
+Hom  = Algebra hom
+Hom² = Algebra hom ⟴ renaming "map₁ to scalar; pres-𝟙 to unity"
 -}
 
-{-700
-MonoidSignature = M-Set record ⟴ generated (λ e → (and (s-contains? "Scalar" (element-type e)) (not (s-contains? "Vector" (element-type e)))))
--}
+_ : {Src Tgt : Algebra} → Hom² Src Tgt → Algebra.Scalar Src → Algebra.Scalar Tgt
+_ = Hom².scalar
 
 {-700
 M-Set-R′ = M-Set-R open-with-decoration "′"

@@ -1,5 +1,15 @@
+;; String and list manipulation libraries
+;; https://github.com/magnars/dash.el
+;; https://github.com/magnars/s.el
+(require 's)               ;; “The long lost Emacs string manipulation library”
+(require 'dash)            ;; “A modern list library for Emacs”
+(require 'fold-this)       ;; Folding away regions of text
+(fold-this-mode)
+
+(require 'ert) ;; Testing framework
+
 ;; Crashes if an argument is ":"
-(cl-defmacro declare-type (f key-types &rest types)
+(cl-defmacro pf--declare-type (f key-types &rest types)
   "Attach the given list of types to the function ‘f’
    by advising the function to check its arguments’ types
    are equal to the list of given types.
@@ -14,7 +24,7 @@
    ‘key-types’ should be of the shape (:x₀ t₀ ⋯ :xₙ tₙ);
     when there are no optional types, use symbol “:”.
 
-    E.g., (declare-type my-func (:z string :w integer) integer symbol string)
+    E.g., (pf--declare-type my-func (:z string :w integer) integer symbol string)
   "
 
   ;; Basic coherency checks. When there aren't optional types, key-types is the “:” symbol.
@@ -77,16 +87,16 @@
 (deftype list-of (τ)
   `(satisfies (lambda (thing) (list-of-p (quote ,τ) thing))))
 
-(declare-type get-indentation : string integer)
-(defun get-indentation (string)
+(pf--declare-type pf--get-indentation : string integer)
+(defun pf--get-indentation (string)
   "How many spaces are there at the front of ‘string’?
 
   Property: The resulting number is ‘≤ length string’.
   "
   (if string (length (s-shared-start string (s-repeat (length string) " "))) 0))
 
-(declare-type get-children (:then t) string (or string list) cons)
-(cl-defun get-children (parent the-wild &key (then #'identity))
+(pf--declare-type get-children (:then t) string (or string list) cons)
+(cl-defun pf--get-children (parent the-wild &key (then #'identity))
   "Go into ‘the-wild’ seeking out the first occurence of ‘parent’,
    who once found, ought to have a minimal indentation for its children.
 
@@ -116,9 +126,11 @@
   "
 
   (let ((lines (if (stringp the-wild) (s-lines the-wild) the-wild))
-    (indentation -1)
-    prefix
-    parent-line)
+        (indentation -1)
+        unconsidered
+        prefix
+        lines&more
+        parent-line)
 
     ;; Ensure: lines ≈ (cons (not-here-prefix) (cons parent-here more-lines) )
     (setq lines (--split-with (not (s-contains? parent it)) lines))
@@ -132,10 +144,10 @@
     (setq lines (cdr lines))
 
     ;; How far is the first child indented?
-    (setq indentation (get-indentation (car lines)))
+    (setq indentation (pf--get-indentation (car lines)))
 
     ;; Keep only the children that have at least this level of indentation.
-    (setq lines&more (--split-with (<= indentation (get-indentation it)) lines))
+    (setq lines&more (--split-with (<= indentation (pf--get-indentation it)) lines))
     (setq lines (car lines&more))
     (setq unconsidered (cadr lines&more))
 
@@ -147,7 +159,7 @@
 
 (ert-deftest get-ind ()
   (loop for s in '(nil "" "x" "  x" "  x ")
-    do (should (<= (get-indentation s) (length s))))
+    do (should (<= (pf--get-indentation s) (length s))))
   )
 
 (ert-deftest get-child ()
@@ -162,7 +174,7 @@
 
     ;; Consider each line above as a parent, with ‘eh’ as the wild.
     (loop for parent in (s-split "\n" eh) do
-      (let* ((cs (get-children parent eh))
+      (let* ((cs (pf--get-children parent eh))
          (children (cdadr cs)))
 
       ;; Result is a list of lists: Each is either nil or a cons.
@@ -172,7 +184,7 @@
       (should (equal parent (caadr cs)))
 
       ;; The children all have the same indentation.
-      (loop for c in children for d in children do (should (equal (get-indentation c) (get-indentation d))))
+      (loop for c in children for d in children do (should (equal (pf--get-indentation c) (pf--get-indentation d))))
 
       ;; Extensionality: Orginal input can be regained from resulting parts.
       (should (equal eh (s-trim (s-join "\n" (--map (s-join "\n" it) cs)))))
@@ -180,8 +192,8 @@
   )
 ))
 
-;; This may accept argument ":", which “declare-type” cannot currently handle.
-(cl-defun substring-delimited
+;; This may accept argument ":", which “pf--declare-type” cannot currently handle.
+(cl-defun pf--substring-delimited
     (prefix suffix string)
   "Assuming ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle.
 
@@ -192,7 +204,7 @@
   whitespace from the resulting output needle string.
   "
 
-  (unless (stringp string) (error "substring-delimited: Argument ‘string’ must be a string."))
+  (unless (stringp string) (error "pf--substring-delimited: Argument ‘string’ must be a string."))
   (let* ((new (s-collapse-whitespace string)))
 
   (when (not (s-blank? prefix))
@@ -203,8 +215,8 @@
 
   (s-trim new)))
 
-;; This may accept argument ":", which “declare-type” cannot currently handle.
-(cl-defun substring-delimited-here (context string)
+;; This may accept argument ":", which “pf--declare-type” cannot currently handle.
+(cl-defun pf--substring-delimited-here (context string)
   "Assuming ‘context’ = “⟪prefix⟫ $here ⟪suffix⟫”
    and ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle.
 
@@ -216,7 +228,7 @@
   "
 
   (-let [pre-post (s-split "$here" context)]
-    (substring-delimited (s-trim (car pre-post)) (s-trim (cadr pre-post)) string)))
+    (pf--substring-delimited (s-trim (car pre-post)) (s-trim (cadr pre-post)) string)))
 
 (ert-deftest subst-delimit-here ()
   (-let [str "𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟜 𝟞"] ;; Intentionally repeated ‘𝟜’.
@@ -229,30 +241,30 @@
                ( "$here ∞"   ,str          :BogusR)
                ( "𝟠 $here ∞" ,str          :BogusLR)
              )
-      do (should (equal (second it) (substring-delimited-here (first it) str))))
+      do (should (equal (second it) (pf--substring-delimited-here (first it) str))))
 
     ;; Longest substring
-    (should (equal "𝟛" (substring-delimited-here "𝟚 $here 𝟜" str)))
+    (should (equal "𝟛" (pf--substring-delimited-here "𝟚 $here 𝟜" str)))
 
     ;; Identical boundaries.
-    (should (equal "𝟙" (substring-delimited-here "𝟘 $here 𝟘" "𝟘 𝟙 𝟘")))
-    (should (equal ""  (substring-delimited-here "𝟘 $here 𝟘" "𝟘 𝟘")))
-    (should (equal ""  (substring-delimited-here "𝟘 $here 𝟘" "𝟘𝟘")))
+    (should (equal "𝟙" (pf--substring-delimited-here "𝟘 $here 𝟘" "𝟘 𝟙 𝟘")))
+    (should (equal ""  (pf--substring-delimited-here "𝟘 $here 𝟘" "𝟘 𝟘")))
+    (should (equal ""  (pf--substring-delimited-here "𝟘 $here 𝟘" "𝟘𝟘")))
 
     ;; Multiple occurances of prefix or postfix
-    (should (equal "y"  (substring-delimited-here "𝑳 $here 𝑹" "𝑳 x 𝑳 y 𝑹")))
-    (should (equal "x"  (substring-delimited-here "𝑳 $here 𝑹" "𝑳 x 𝑹 y 𝑹")))
+    (should (equal "y"  (pf--substring-delimited-here "𝑳 $here 𝑹" "𝑳 x 𝑳 y 𝑹")))
+    (should (equal "x"  (pf--substring-delimited-here "𝑳 $here 𝑹" "𝑳 x 𝑹 y 𝑹")))
 
     ;; Space irrelevance for keyword ‘$here’:
-    (should (equal "𝟙" (substring-delimited-here "𝑳 $here 𝑹" "𝑳 𝟙 𝑹")))
-    (should (equal "𝟙" (substring-delimited-here "𝑳 $here𝑹" "𝑳 𝟙 𝑹")))
-    (should (equal "𝟙" (substring-delimited-here "𝑳$here 𝑹" "𝑳 𝟙 𝑹")))
-    (should (equal "𝟙" (substring-delimited-here "𝑳$here𝑹" "𝑳 𝟙 𝑹")))
-    (should (equal "𝟙" (substring-delimited-here "𝑳      $here  𝑹" "𝑳 𝟙 𝑹")))
+    (should (equal "𝟙" (pf--substring-delimited-here "𝑳 $here 𝑹" "𝑳 𝟙 𝑹")))
+    (should (equal "𝟙" (pf--substring-delimited-here "𝑳 $here𝑹" "𝑳 𝟙 𝑹")))
+    (should (equal "𝟙" (pf--substring-delimited-here "𝑳$here 𝑹" "𝑳 𝟙 𝑹")))
+    (should (equal "𝟙" (pf--substring-delimited-here "𝑳$here𝑹" "𝑳 𝟙 𝑹")))
+    (should (equal "𝟙" (pf--substring-delimited-here "𝑳      $here  𝑹" "𝑳 𝟙 𝑹")))
     ))
 
-;; declare-type has no support for optionals yet
-(cl-defun buffer-substring-delimited (start end &optional more &key (regexp t))
+;; pf--declare-type has no support for optionals yet
+(cl-defun pf--buffer-substring-delimited (start end &optional more &key (regexp t))
   "
   Get the current buffer's /next/ available substring that is delimited
   between the regexp tokens ‘start’ up to ‘end’, exclusively.
@@ -279,7 +291,7 @@
     (setq content  (buffer-substring-no-properties start-pos end-pos))
 
     (when more (funcall more sp ep))
-    (when 700-folding
+    (when pf-folding
       (goto-char start-pos)
       (push-mark end-pos)
       (setq mark-active t)
@@ -288,11 +300,11 @@
     content))
 
 ; (use-package fold-this :demand t :ensure t)
-(defvar 700-folding nil
+(defvar pf-folding nil
   "Should 700 and lisp blocks be folded away when C-c C-l.")
 
-;; declare-type has no support for optionals yet
-(cl-defun buffer-substring-delimited-whole-buffer (start end &optional more)
+;; pf--declare-type has no support for optionals yet
+(cl-defun pf--buffer-substring-delimited-whole-buffer (start end &optional more)
   "Return a list of all substrings in the current buffer that
    are delimited by regexp tokens ‘start’ and ‘end’, exclusively.
 
@@ -309,7 +321,7 @@
      (while continue
        (condition-case nil
      ;; attemptClause
-     (setq l (cons (buffer-substring-delimited start end more) l))
+     (setq l (cons (pf--buffer-substring-delimited start end more) l))
      ;; recoveryBody
      (error (setq continue nil))))
 
@@ -340,12 +352,12 @@
     (if avoid-mixfix-renaming
         (funcall f op)
       (--> (concat (when front "_") "$here" (when rear "_"))
-           (substring-delimited-here it op)
+           (pf--substring-delimited-here it op)
            (funcall f it)
            (concat (when front "_") it (when rear "_"))))))
 
-(declare-type extract-imports : string)
-(cl-defun extract-imports ()
+(pf--declare-type extract-imports : string)
+(cl-defun pf--extract-imports ()
   "Return substring of buffer whose lines mention “import”.
    Throw away any that mention the substring “⟪FileName⟫_Generated”.
   "
@@ -375,7 +387,7 @@
    `(lambda ,args (interactive) ,@rest)
   ))
 
-(defstruct package-former
+(defstruct pf--package-former
   "Record of components that form a PackageFormer.
 
    - ‘docstring’: Relevant documentation about this structure; e.g.,
@@ -408,19 +420,19 @@
   elements
 )
 
-(defvar package-formers nil
+(defvar pf--package-formers nil
   "The list of PackageFormer schema declarations in the current Agda buffer.")
 
 ;; An anaphoric macro ^_^
-(defmacro open-pf (p &rest body)
+(defmacro pf--open-pf (p &rest body)
   `(let*
-    ((docstring             (package-former-docstring ,p))
-     (kind                  (package-former-kind ,p))
-     (name                  (package-former-name ,p))
-     (level                 (package-former-level ,p))
-     (waist                 (package-former-waist ,p))
-     (indentation           (package-former-indentation ,p))
-     (elements              (package-former-elements ,p))
+    ((docstring             (pf--package-former-docstring ,p))
+     (kind                  (pf--package-former-kind ,p))
+     (name                  (pf--package-former-name ,p))
+     (level                 (pf--package-former-level ,p))
+     (waist                 (pf--package-former-waist ,p))
+     (indentation           (pf--package-former-indentation ,p))
+     (elements              (pf--package-former-elements ,p))
 
     ;; ‼ TODO: MA: Eventually need to support variations?
 
@@ -438,7 +450,6 @@
   equations ;; List of definitional clauses: “same-name-as-above args = term”
 )
 
-;; make map functions
 (loop for place in '(qualifier name type equations)
       do
       (-let [loc (intern (format "element-%s" place))]
@@ -454,7 +465,9 @@
 
   (-let [e′ (copy-element e)]
     (loop for place in '(element-qualifier element-name element-type)
-    do (eval `(setf (,place e′) (replace-regexp-in-string (format "\\b%s\\b" old) new (,place e′) t t))))
+          do (eval `(setf (,place e′)
+                          (replace-regexp-in-string (format "\\b%s\\b" old)
+                                                    new (,place e′) t t))))
     ;; Replacements in the equations as well.
     (setf (element-equations e′)
           (loop for eq in (element-equations e′)
@@ -462,8 +475,7 @@
     ;; return value
     e′))
 
-
-(declare-type parse-name : string string)
+(pf--declare-type parse-name : string string)
 (defun parse-name (element)
   "Given an string representation of an ‘element’, yield the ‘name’ component.
 
@@ -477,7 +489,7 @@
         (cadr lhs)
       (car lhs))))
 
-(declare-type parse-elements : (list-of string) (list-of element))
+(pf--declare-type parse-elements : (list-of string) (list-of element))
 (defun parse-elements (elements)
   "Given a list of PackageFormer ‘elements’, as strings, parse them into the
   ‘element’ datatype. Declarations and equations may be interspersed, as along
@@ -489,42 +501,46 @@
    "
 
   (-let [es (mapcar #'list elements)]
-  ;; Maintain a list of related items.
-  (loop for i from 0
-        for e in es
-        do
+    ;; Maintain a list of related items.
+    (loop for i from 0
+          for e in es
+          do
           (loop for j from 0 to (1- i)
-            do
-              ;; If the name of ‘e’ occurs in the prefix,
-              ;; then move ‘e’ to the location in the prefix,
+                do
+                ;; If the name of ‘e’ occurs in the prefix,
+                ;; then move ‘e’ to the location in the prefix,
               ;; and zero-out the current location.
               (let (lhs name)
                  (setq name (parse-name (car e)))
-                 ; (message-box "%s , %s" name (parse-name (or (car (nth j es)) "")))
+
                  (when (equal name (parse-name (or (car (nth j es)) "")))
                    ;; Use an empty string in-case the location is nil.
                    (setf (nth j es) (append (nth j es) e))
                    (setf (nth i es) nil)))))
 
-   ;; Drop the nils.
-  (setq es (--reject (not it) es))
+    ;; Drop the nils.
+    (setq es (--reject (not it) es))
 
-  ;; We now have a list of related items,
-  ;; with the car of each being a qualified typed-name
-  ;; and the cdr of each being a list of equational clauses associated with that name.
-  (loop for e in es
-        collect
-                 (let* ((τ (s-split " : " (car e))) (nom (parse-name (car τ))) (qual (car (s-split nom (car τ)))))
-                 (make-element :qualifier (unless (s-blank? qual) qual)
-                               :name nom
-                               :type (if (cdr τ) (s-join " : " (cdr τ)) (error (message-box "Error: Type not supplied for %s!" nom)))
-                               :equations (cdr e))))))
+    ;; We now have a list of related items,
+    ;; with the car of each being a qualified typed-name
+    ;; and the cdr of each being a list of equational clauses associated with that name.
+    (loop for e in es
+          collect
+          (let* ((τ (s-split " : " (car e)))
+                 (nom (parse-name (car τ)))
+                 (qual (car (s-split nom (car τ)))))
+            (make-element :qualifier (unless (s-blank? qual) qual)
+                          :name nom
+                          :type (if (cdr τ) (s-join " : " (cdr τ))
+                                  (error (message-box
+                                          "Error: Type not supplied for %s!" nom)))
+                          :equations (cdr e))))))
 
-; (declare-type load-package-former : (list-of string) package-former)
-(declare-type load-package-former : t t)
-(defun load-package-former (lines)
+; (pf--declare-type pf--load-package-former : (list-of string) package-former)
+(pf--declare-type pf--load-package-former : t t)
+(defun pf--load-package-former (lines)
   "The input ‘lines’ must be a list of lines forming a full PackageFormer declaration;
-   e.g., obtained by calling ‘get-children’.
+   e.g., obtained by calling ‘pf--get-children’.
 
    It is parsed and a ‘package-former’ value is returned.
 
@@ -533,18 +549,18 @@
   "
 
   (when (not lines)
-      (error "load-package-former: Error: Input must be non-empty list."))
+      (error "pf--load-package-former: Error: Input must be non-empty list."))
 
   (let* (pf
          (header (car lines))
-         (name (substring-delimited-here "PackageFormer $here :" header))
-         (level (substring-delimited-here "Set $here where" header)))
+         (name (pf--substring-delimited-here "PackageFormer $here :" header))
+         (level (pf--substring-delimited-here "Set $here where" header)))
 
-    (when 700-highlighting
+    (when pf-highlighting
       (--map (highlight-phrase (s-trim it) 'hi-yellow) (cdr lines)))
 
     (setq pf
-          (make-package-former
+          (make-pf--package-former
            :kind                     "PackageFormer"
            :name                     name
            ;; ‘level’ may be “”, that's okay.
@@ -552,17 +568,17 @@
            :level                    level
            :waist                    0
            ;; ‼ TODO: Currently no parameter support for arbitrary PackageFormers.
-           :indentation              (get-indentation (cadr lines))
+           :indentation              (pf--get-indentation (cadr lines))
            :elements  (parse-elements (--remove (s-starts-with? "-- " it)
                                                 (--map (s-trim it) (cdr lines))))))
 
-      (push (cons name pf) package-formers)
+      (push (cons name pf) pf--package-formers)
 
       ;; return value
       pf))
 
-(declare-type special : string t)
-(defun special (f)
+(pf--declare-type special : string t)
+(defun pf--special (f)
   "Special elements, for whatever reason are exceptional, and so
    are maked as singleton lists and their indentation is lessened.
    That is, these denote sibling fields rather than more children.
@@ -573,7 +589,7 @@
   "
   (--any? (s-contains? it f) '("field" "private" "open" "top-level" "sibling")))
 
-(declare-type show-element (:omit-qualifier t) element string)
+(pf--declare-type show-element (:omit-qualifier t) element string)
 (cl-defun show-element (e &optional omit-qualifier)
   "Render an ‘element’ value in the form
 
@@ -587,12 +603,12 @@
                          (element-type e))
                  (element-equations e))))
 
-(declare-type show-package-former : package-former string)
-(cl-defun show-package-former (p)
+(pf--declare-type pf--show-package-former : pf--package-former string)
+(cl-defun pf--show-package-former (p)
   "Pretty print a package-former record value.
   "
 
-  (open-pf p
+  (pf--open-pf p
     (s-join "\n"
       (-cons*
 
@@ -617,48 +633,48 @@
          ;; Indent all elements, less indentation for the specials.
          ;; Regarding “top-level” see the “recordₑ” variational in Paper0.pdf.
          ;; The extra whitespace is important.
-         ;; (--map (concat (s-repeat (- indentation (if (special it) 2 0)) (if (s-starts-with? "sibling" it) "" " "))
+         ;; (--map (concat (s-repeat (- indentation (if (pf--special it) 2 0)) (if (s-starts-with? "sibling" it) "" " "))
          ;;                (if (s-starts-with? "top-level" it) (s-chop-prefix "top-level " it)
          ;;                 (if (s-starts-with? "sibling" it) (s-chop-prefix "sibling " it) it))))
 
 (ert-deftest pf-parse ()
 
   ;; Error on empty list of lines.
-   (should-error (load-package-former nil))
+   (should-error (pf--load-package-former nil))
 
    ;; No crash on empty line.
-   (should (load-package-former (list "")))
+   (should (pf--load-package-former (list "")))
 
    ;; No crash on PackageFormer with no elements.
-   (should (load-package-former (list "PackageFormer PF : Set ℓ where")))
+   (should (pf--load-package-former (list "PackageFormer PF : Set ℓ where")))
 
    ;; Levels
-   (should (equal "ℓ" (package-former-level (load-package-former (list "PackageFormer PF : Set ℓ where")))))
+   (should (equal "ℓ" (pf--package-former-level (pf--load-package-former (list "PackageFormer PF : Set ℓ where")))))
    ;;
-   (should (equal "" (package-former-level (load-package-former (list "PackageFormer PF : Set  where")))))
+   (should (equal "" (pf--package-former-level (pf--load-package-former (list "PackageFormer PF : Set  where")))))
    ;;
-   (should (equal "₃" (package-former-level (load-package-former (list "PackageFormer PF : Set₃ where")))))
+   (should (equal "₃" (pf--package-former-level (pf--load-package-former (list "PackageFormer PF : Set₃ where")))))
    ;;
-   (should (equal "(Level.suc ℓ)" (package-former-level (load-package-former (list "PackageFormer PF : Set (Level.suc ℓ) where")))))
+   (should (equal "(Level.suc ℓ)" (pf--package-former-level (pf--load-package-former (list "PackageFormer PF : Set (Level.suc ℓ) where")))))
 
    ;; Full parsing.
-   (-let [pf (load-package-former (cadr (get-children "PackageFormer" test)))]
+   (-let [pf (pf--load-package-former (cadr (pf--get-children "PackageFormer" test)))]
      (equal (format "%s" pf)
-            "#s(package-former nil PackageFormer M-Set ₁ 0 nil 3 (Scalar  : Set Vector  : Set _·_     : Scalar → Vector → Vector 𝟙       : Scalar _×_     : Scalar → Scalar → Scalar leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)))"))
+            "#s(pf--package-former nil PackageFormer M-Set ₁ 0 nil 3 (Scalar  : Set Vector  : Set _·_     : Scalar → Vector → Vector 𝟙       : Scalar _×_     : Scalar → Scalar → Scalar leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)))"))
 
-  (-let [pf (cadr (get-children "PackageFormer" test))]
+  (-let [pf (cadr (pf--get-children "PackageFormer" test))]
     (should (equal (s-concat "\n" (s-join "\n" pf))
-                   (show-package-former (load-package-former pf)))))
+                   (pf--show-package-former (pf--load-package-former pf)))))
 
 )
 
-(defvar variationals nil
-  "Association list of Agda-user defined variational operators.")
+(setq pf--variationals nil)
+;;  "Association list of Agda-user defined variational operators."
 
-(defvar variational-composition-operator "⟴"
+(defvar pf-variational-composition-operator "⟴"
   "The operator that composes varitionals.")
 
-(defvar *parent-context* nil
+(when nil *parent-context* nil
   "For error report; what is the current parent context of a child item.
 
    Should be set whenver a parent invokes a child.
@@ -695,7 +711,7 @@
                             ;; then invoke the resulting function call with the second eval.
                             (progn
                               ;; The variational being called is defined.
-                              (700-ensure (fboundp (𝒱- (car clause)))
+                              (pf--ensure (fboundp (𝒱- (car clause)))
                                         (format "Did you mistype a variational's name: “%s” is not defined." (car clause))
                                         context
                                         "Use the PackageFormer menu to see which variationals are defined.")
@@ -703,7 +719,7 @@
                           ;; List of key-value pairs
                           `,(loop for key   in clause by #'cddr
                                   for value in (cdr clause) by #'cddr
-                                  collect (700-wf key value context args)))  ;; “700-wf” is just a fancy “cons”.
+                                  collect (pf--wf key value context args)))  ;; “pf--wf” is just a fancy “cons”.
                         ;; Newer items c₀ ⟴ ⋯ ⟴ cₙ should be at the front of the list;
                         ;; access should then be using assoc.
                         res)))
@@ -778,7 +794,7 @@
 
           ;; TODO, maybe.
           ;; "Check that substituted values are well-typed"
-          ;; (--map (700-wf (car it) (or (cdr it)
+          ;; (--map (pf--wf (car it) (or (cdr it)
           ;;                             ;; Mention which argument is not supplied.
           ;;                             (format "No Value for :%s Provided!"
           ;;                                     (cdr (assoc (car it) (reverse give-goal₀)))))
@@ -806,11 +822,11 @@
          (format "%s\n⟪User Definition⟫\n\n%s\n\n⟪Lisp Elaboration⟫\n\n%s"
                  docs context (pp-to-string actual-code)))
     ;; Register this new item in our list of variationals.
-    (push (cons name docs) variationals)
+    (push (cons name docs) pf--variationals)
     ;; Return value:
     actual-code))
 
-(defmacro 700-ensure (condition message context &rest suggestions)
+(defmacro pf--ensure (condition message context &rest suggestions)
   "Ensure ‘condition’ is true and defined, otherwise emit ‘message’
    and indicate the offending ‘context’.
    If there are any ‘suggestions’ to the user, then we show those too.
@@ -828,8 +844,8 @@
     ;; It remains to check that it's true.
     (or res (error ლ\(ಠ益ಠ\)ლ))))
 
-;; declare-type cannot yet accomodate optional arguments
-(cl-defun 700-wf (key value &optional context args)
+;; pf--declare-type cannot yet accomodate optional arguments
+(cl-defun pf--wf (key value &optional context args)
   "This operation checks that the ‘value’ of ‘key’
    is well-formed according to 700-specifications ---which are stated
    explicitly within this method--- and if it is well-formed we
@@ -851,7 +867,7 @@
     (when-let ((here (assoc key wf)))
       (setq condition        (eval (nth 1 here))
             message          (eval (nth 2 here)))
-      (700-ensure (or condition (-contains? args value)) message context))
+      (pf--ensure (or condition (-contains? args value)) message context))
 
     ;; Return the key-value as a pair for further processing.
     ;; :kind and :level values are symbols and so cannot be evaluated furthur.
@@ -861,7 +877,7 @@
            value
            (eval value)))))
 
-(cl-defun load-variational (variation-string)
+(cl-defun pf--load-variational (variation-string)
   "Obtain lines of the buffer that start with “𝒱-”.
    Realise them as Lisp association lists.
 
@@ -950,7 +966,7 @@
 
 (ert-deftest variationals-loading ()
 
-  (should (load-variational "𝒱-tc this height = :level this :waist height"))
+  (should (pf--load-variational "𝒱-tc this height = :level this :waist height"))
 
   ;; NEATO! (Has desired error)
   ;; (-let [*parent-context* "woadh"]
@@ -966,7 +982,7 @@
 ;
 )
 
-(defstruct instance-declaration
+(defstruct pf-instance-declaration
   "Record of components for an PackageFormer instance declaration:
    ⟪name⟫ = ⟪package-former⟫ (⟴ ⟪variation⟫ [⟪args⟫])*
   "
@@ -977,7 +993,7 @@
   alterations    ;; List of variationals along with their arguments.
 )
 
-(defun load-instance-declaration (line &optional show-it)
+(defun pf--load-instance-declaration (line &optional show-it)
   "If the current ‘line’ string is an instance declaration,
    then produce a new PackageFormer from it. Else, do nothing.
 
@@ -1003,7 +1019,7 @@
      ($𝑝𝑎𝑟𝑒𝑛𝑡     (nth 2 pieces))
      (variations (nthcdr 3 pieces))
      (alterations nil)
-     (self (copy-package-former (cdr (assoc $𝑝𝑎𝑟𝑒𝑛𝑡 package-formers))))
+     (self (copy-pf--package-former (cdr (assoc $𝑝𝑎𝑟𝑒𝑛𝑡 pf--package-formers))))
      ((symbol-function '⁉)
       ;; If componenet ‘c’ is in the ‘alterations’ list of the instance declaration,
       ;; then evalaute any given ‘more’ code, get the value for ‘c’ and turn it
@@ -1013,33 +1029,30 @@
          (lambda (c &optional str more) (when-let ((it (cdr (assoc (intern (format ":%s" c)) alterations))))
                            (eval `(progn ,@more))
                            (when str (setq it (format "%s" it)))
-                           (eval `(setf (,(car (read-from-string (format "package-former-%s" c))) self) it))))
-
-        )
-     )
+                           (eval `(setf (,(car (read-from-string (format "pf--package-former-%s" c))) self) it))))))
 
    ;; Ensure instance declaration is well-formed.
-    (700-ensure (and (not (s-blank? (s-trim $𝑛𝑎𝑚𝑒))) (equal "=" eqSymb) $𝑝𝑎𝑟𝑒𝑛𝑡)
+    (pf--ensure (and (not (s-blank? (s-trim $𝑛𝑎𝑚𝑒))) (equal "=" eqSymb) $𝑝𝑎𝑟𝑒𝑛𝑡)
                (concat "An instance declaration is of the form "
                        "“new-name = parent-package-former variational-clauses”.")
                line)
 
    ;; Let's not overwrite existing PackageFormers.
-    (700-ensure (not (assoc $𝑛𝑎𝑚𝑒 package-formers))
+    (pf--ensure (not (assoc $𝑛𝑎𝑚𝑒 pf--package-formers))
                (format "PackageFormer “%s” is already defined; use a new name." $𝑛𝑎𝑚𝑒)
                line)
 
    ;; Ensure the PackageFormer to be instantiated is defined.
-    (700-ensure self
+    (pf--ensure self
                (format "Parent “%s” not defined." $𝑝𝑎𝑟𝑒𝑛𝑡)
                line)
 
     ;; Update the new PackageFormer with a docstring of its instantiation
     ;; as well as its name.
-    (setf (package-former-docstring self) line)
-    (setf (package-former-name self) $𝑛𝑎𝑚𝑒)
+    (setf (pf--package-former-docstring self) line)
+    (setf (pf--package-former-name self) $𝑛𝑎𝑚𝑒)
     (setq $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠 ; Copy so that user does not inadvertently alter shared memory locations!
-          (loop for e in (package-former-elements self)
+          (loop for e in (pf--package-former-elements self)
                  collect (copy-element e)))
 
     ;; Parse the “𝓋₀ ⟴ ⋯ ⟴ 𝓋ₙ” portion of an instance declaration.
@@ -1064,7 +1077,7 @@
 
       ;; :level ≈ Either 'inc or 'dec, for increment or decrementing the level.
       (⁉ 'level nil ;; 'string-please
-         '((let* ((lvl (package-former-level self))
+         '((let* ((lvl (pf--package-former-level self))
                   (toLevel (lambda (n) (s-join "" (-concat
                         (-repeat n "Level.suc (") (list "Level.zero") (-repeat n ")")))))
                  (subs `("" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉" ,(funcall toLevel 10)))
@@ -1093,28 +1106,28 @@
               ;; We do this each time, rather than at the end, since variationals
               ;; may loop over all possible elements and we do not want to consider
               ;; intermediary nils or duplicates.
-        (setf (package-former-elements self) $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)
+        (setf (pf--package-former-elements self) $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)
 
     ;; We've just formed a new PackageFormer, which can be modified, specialised, later on.
-    (add-to-list 'package-formers (cons $𝑛𝑎𝑚𝑒 self))
-    (when show-it (show-package-former self))))
+    (add-to-list 'pf--package-formers (cons $𝑛𝑎𝑚𝑒 self))
+    (when show-it (pf--show-package-former self))))
 
-(defvar 700-comments nil
-  "The contents of the 700-comments.
+(defvar pf--annotations nil
+  "The contents of the pf--annotations.
 
    If this variable does not change, we short-circut all processing.
   ")
 
 ;; ("^\\\\begin{lisp}" . "^\\\\end{lisp}"))
 
-(cl-defun load-700-comments ()
+(cl-defun pf--load-pf--annotations ()
   "Parse comments of the form “{-700 ⋯ -}” and add all PackageFormer declarations
    to the ‘package-formers’ list and all instantations to the
    ‘instantiations-remaining’ list.
 
    We also execute any valid Lisp code in “{-lisp -}” comments;
    which may contain an arbitrary number of Lisp forms ---a ‘progn’ is auto provided.
-   Lisp is executed before any 700-comments are; which is preferable
+   Lisp is executed before any pf--annotations are; which is preferable
    due to Lisp's dynamic scope.
   "
   (interactive)
@@ -1122,30 +1135,30 @@
   ;; First, let's run all the lisp. We enclose each in a progn in-case the user
   ;; has multiple forms in a single lisp-block.
   (loop for (lispstart . lispend) in '(("^\{-lisp" . "^-\}"))
-        do (loop for lispstr in (buffer-substring-delimited-whole-buffer lispstart lispend)
+        do (loop for lispstr in (pf--buffer-substring-delimited-whole-buffer lispstart lispend)
                  do (eval (car (read-from-string (format "(progn %s)" lispstr))))))
 
   ;; For now, ‘item’ is a PackageFormer, instantiation declaration, or other Agda code.
   (let (item lines 700-cmnts)
 
-    ;; Catenate all 700-comments into a single string.
+    ;; Catenate all pf--annotations into a single string.
     (setq 700-cmnts
-          (s-join "\n" (buffer-substring-delimited-whole-buffer "^\{-700" "^-\}")))
+          (s-join "\n" (pf--buffer-substring-delimited-whole-buffer "^\{-700" "^-\}")))
     ;; (setq 700-cmnts (append 700-cmnts
-    ;;                         (s-join "\n" (buffer-substring-delimited-whole-buffer "700}" "end"))))
+    ;;                         (s-join "\n" (pf--buffer-substring-delimited-whole-buffer "700}" "end"))))
 
-    (if (equal 700-comments 700-cmnts)
+    (if (equal pf--annotations 700-cmnts)
 
-        (message "700-comments Unchanged.")
+        (message "pf--annotations Unchanged.")
 
       ;; Update global.
-      (setq 700-comments 700-cmnts)
+      (setq pf--annotations 700-cmnts)
 
       ;; View comments as a sequence of lines, ignore empty lines
       ;; ---which are not in our grammar.
-      (setq lines (--remove (s-blank? (s-collapse-whitespace it)) (s-lines 700-comments)))
+      (setq lines (--remove (s-blank? (s-collapse-whitespace it)) (s-lines pf--annotations)))
 
-      ;; Traverse the 700-comments:
+      ;; Traverse the pf--annotations:
       ;; ➩ Skip comments; lines starting with “-- ”.
       ;; ➩ If we see a “𝒱-lhs = rhs” equation, then load it as a variational.
       ;; ➩ If we view a “lhs = rhs” equation, then load it as an instance delcaration.
@@ -1158,26 +1171,26 @@
             (setq lines (cdr lines))
 
           (if (not (s-blank? (s-shared-start "𝒱-" item)))
-              (progn (load-variational item) (setq lines (cdr lines)))
+              (progn (pf--load-variational item) (setq lines (cdr lines)))
 
             (if (s-contains? " = " item)
-                (progn (load-instance-declaration item) (setq lines (cdr lines)))
+                (progn (pf--load-instance-declaration item) (setq lines (cdr lines)))
 
               ;; Else we have a PackageFormer declaration
               ;; and other possiblly-non-700 items.
-              (setq item (get-children "PackageFormer" lines))
+              (setq item (pf--get-children "PackageFormer" lines))
               ;; port non-700 items to generated file
-              (push (cons 'porting (s-join "\n" (car item))) package-formers)
+              (push (cons 'porting (s-join "\n" (car item))) pf--package-formers)
                     ;; acknowledge PackageFormer declaration, if any
-                    (when (cadr item) (load-package-former (cadr item)))
+                    (when (cadr item) (pf--load-package-former (cadr item)))
                     ;; Update lines to be the unconsidered porition
                     ;; of the wild comments.
                     (setq lines (caddr item))))))
 
-        (message "Finished parsing 700-comments."))))
+        (message "Finished parsing pf--annotations."))))
 
-(defvar 700-highlighting t
-  "Should 700 syntactical items be coloured?
+(defvar pf-highlighting t
+  "Should PackageFormer syntactical items be coloured?
 
    ➩ Yellow for PackageFormer content.
    ➩ Red for delimiters “700” and “lisp”.
@@ -1190,7 +1203,7 @@
 ;; Give user 30 seconds before tooltip automatically disappears.
 (setq tooltip-hide-delay 30)
 
-(defun tooltipify (phrase notification)
+(defun pf--tooltipify (phrase notification)
   "Add a tooltip to every instance of “phrase” to show “notification”.
 
    We only add tooltips to “phrase” as a standalone word, not as a subword.
@@ -1212,12 +1225,11 @@
     (while (search-forward-regexp (format "\\b%s\\b" phrase) (point-max) t)
       (put-text-property (match-beginning 0) (match-end 0) 'help-echo (s-trim notification)))))
 
-(defun insert-generated-import (name-of-generated-file)
+(defun pf--insert-generated-import (name-of-generated-file)
   "In the current file, find the top-most module declaration
    then insert an import of the generated file.
   "
   (interactive)
-
   (save-excursion
     (beginning-of-buffer)
     (condition-case the-err
@@ -1228,26 +1240,26 @@
        (re-search-forward "\\(module.*\\)")
        (replace-match (concat "\\1\nopen import " name-of-generated-file))))))
 
-(defun reify-package-formers (orig-fun &rest args)
+(defun pf--reify-package-formers (orig-fun &rest args)
   (interactive)
 
   (let (generated-file-name
         printed-pfs
-        (parent-imports (extract-imports)))
+        (parent-imports (pf--extract-imports)))
 
     ;; Sometimes we may want the full name due to files being in a nested
     ;; directory hierarchy: (file-name-sans-extension buffer-file-name)
     (setq generated-file-name
           (concat(file-name-sans-extension (buffer-name))
-                 "_Generated"))
+                 "-generated"))
 
     ;; Load variationals, PackageFormers, instantiations, and porting list.
     ;; Setting the following to nil each time is not ideal.
-    (setq	variationals (-take-last ♯standard-variationals variationals) ;; take last n items, those being exported into the .el.
-            package-formers           nil
-            700-comments              nil)
+    (setq	pf--variationals (-take-last ♯standard-variationals pf--variationals) ;; take last n items, those being exported into the .el.
+            pf--package-formers       nil
+            pf--annotations           nil)
 
-    (load-700-comments)
+    (pf--load-pf--annotations)
 
     (with-temp-buffer
       (beginning-of-buffer)
@@ -1265,11 +1277,11 @@
             (--map
              (if (equal 'porting (car it)) (format "%s" (cdr it))
                (format
-                (if (equal "PackageFormer" (package-former-kind (cdr it)))
+                (if (equal "PackageFormer" (pf--package-former-kind (cdr it)))
                     (concat "{- Kind “PackageFormer” does not correspond "
                             " to a concrete Agda type. \n%s -}")
-                       "%s") (show-package-former (cdr it))))
-             (reverse package-formers)))
+                       "%s") (pf--show-package-former (cdr it))))
+             (reverse pf--package-formers)))
       ;;
       (insert (s-join "\n\n\n" printed-pfs))
       ;; (setq package-formers nil) ;; So no accidental
@@ -1280,7 +1292,7 @@
       (write-region (beginning-of-buffer) (end-of-buffer)
                     (concat generated-file-name ".agda")))
 
-    (insert-generated-import generated-file-name))
+    (pf--insert-generated-import generated-file-name))
 
   ;; Need to revert buffer to discard old colours.
   ;; (save-buffer) (revert-buffer t t t)
@@ -1292,66 +1304,68 @@
   ;; For some reason we need a slight delay between when Agda is done checking
   ;; and when we can add on our tooltips.
   ;; Attach tooltips only for existing occurrences; update happens with C-c C-l.
-  (sleep-for 0.5)
-  (loop for (name . pf) in package-formers
+  ;; Wait until Agda is finished highlighting, then do ours (งಠ_ಠ)ง
+  (while agda2-highlight-in-progress
+    (sleep-for 0.5))
+  (loop for (name . pf) in pf--package-formers
         do (unless (equal 'porting name)
-             (tooltipify name (show-package-former pf))))
+             (pf--tooltipify name (pf--show-package-former pf))))
 
   ;; Let's also add tooltips for the variationals & colour them.
-  (loop for (v . docs) in variationals
-        do (tooltipify (format "%s" v) docs)
+  (loop for (v . docs) in pf--variationals
+        do (pf--tooltipify (format "%s" v) docs)
         ;; For beauty, let's colour variational names green.
         ;; Only colour occurances that have a space before or after.
-        (when 700-highlighting
+        (when pf-highlighting
           (highlight-phrase (format "[- \\| ]%s " v) 'hi-green)))
 
   (message "700 ∷ All the best coding! (•̀ᴗ•́)و"))
 
 ; Users can enable this feature if they're interested in using it; disbale it otherwise.
-; (advice-add 'agda2-load :around #'reify-package-formers)
+; (advice-add 'agda2-load :around #'pf--reify-package-formers)
 
-(defvar 700-menu-bar (make-sparse-keymap "700 PackageFormers"))
+(defvar pf--menu-bar (make-sparse-keymap "PackageFormers"))
 
-(define-key global-map [menu-bar 700menu] (cons "700PackageFormers" 700-menu-bar))
+(define-key global-map [menu-bar pf--menu] (cons "PackageFormers" pf--menu-bar))
 
-(define-key 700-menu-bar [enable-package-formers]
-  '(menu-item "Enable PackageFormer Generation" enable-package-formers))
+(define-key pf--menu-bar [pf-enable-package-formers]
+  '(menu-item "Enable PackageFormer Generation" pf-enable-package-formers))
 
-(defun enable-package-formers ()
+(defun pf-enable-package-formers ()
  (interactive)
- (advice-add 'agda2-load :around #'reify-package-formers)
- (message-box "C-c C-l now reifies “700-comments” into legitimate Agda."))
+ (advice-add 'agda2-load :around #'pf--reify-package-formers)
+ (message-box "C-c C-l now reifies PackageFormer annotations into legitimate Agda."))
 
-(define-key 700-menu-bar [disable-package-formers]
-  '(menu-item "Disable PackageFormer Generation" disable-package-formers))
+(define-key pf--menu-bar [pf-disable-package-formers]
+  '(menu-item "Disable PackageFormer Generation" pf-disable-package-formers))
 
-(defun disable-package-formers ()
+(defun pf-disable-package-formers ()
  (interactive)
- (advice-remove 'agda2-load #'reify-package-formers)
- (setq global-mode-string (remove "700 (•̀ᴗ•́)و " global-mode-string))
+ (advice-remove 'agda2-load #'pf--reify-package-formers)
+ (setq global-mode-string (remove "PackageFormer (•̀ᴗ•́)و " global-mode-string))
   (message-box "C-c C-l now behaves as it always has."))
 
-(define-key 700-menu-bar [package-formers-about]
-  '(menu-item "About PackageFormers" package-formers-about))
+(define-key pf--menu-bar [pf-package-formers-about]
+  '(menu-item "About PackageFormers" pf-package-formers-about))
 
-(defun package-formers-about ()
+(defun pf-package-formers-about ()
  (interactive)
  (switch-to-buffer "*PackageFormer-About*") (insert
   " This is an editor extension prototyping “the next 700 module systems” proposed research.
 
     An informal documentation, with examples, page can be found at
-    https://alhassy.github.io/next-700-module-systems-proposal/PackageFormer.html
+    https://alhassy.github.io/next-700-module-systems/prototype/package-former.html
 
-    The technical matter can be found at https://alhassy.github.io/next-700-module-systems-proposal/
+    The technical matter can be found at https://alhassy.github.io/next-700-module-systems/
 
     If you experience anything “going wrong” or have any ideas for improvement,
     please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥
   "))
 
-(define-key 700-menu-bar [700-bare-bones]
-  '(menu-item "Copy file with 700 annotations stripped away" 700-bare-bones))
+(define-key pf--menu-bar [pf--bare-bones]
+  '(menu-item "Copy file with PackageFormer annotations stripped away" pf--bare-bones))
 
-(defun 700-bare-bones ()
+(defun pf-bare-bones ()
  (interactive)
 
  (let* ((src (file-name-sans-extension (buffer-name)))
@@ -1365,7 +1379,7 @@
      (loop for pre in '("^\{-lisp" "^\{-700")
       do
       (beginning-of-buffer)
-      (buffer-substring-delimited-whole-buffer pre "^-\}"
+      (pf--buffer-substring-delimited-whole-buffer pre "^-\}"
            (lambda (sp ep)
              (save-excursion
              (goto-char (- sp 2))
@@ -1375,32 +1389,32 @@
      (write-file bare-agda))
      (message "%s_Bare.agda has been written." src)))
 
-(define-key 700-menu-bar [show-variationals]
-  '(menu-item "Show all registered variationals" show-variationals))
+(define-key pf--menu-bar [pf-show-variationals]
+  '(menu-item "Show all registered variationals" pf-show-variationals))
 
-(defun show-variationals ()
+(defun pf-show-variationals ()
  (interactive)
  (occur "𝒱[ \\|-]"))
 
-(define-key 700-menu-bar [show-pfs]
-  '(menu-item "Show all concrete PackageFormers" show-pfs))
+(define-key pf--menu-bar [pf-show-pfs]
+  '(menu-item "Show all concrete PackageFormers" pf-show-pfs))
 
-(defun show-pfs ()
+(defun pf-show-pfs ()
  (interactive)
  (occur "PackageFormer .* where"))
 
-(define-key 700-menu-bar [fold-700-matter]
-  '(menu-item "Toggle folding away “700” and “lisp” blocks" fold-700-matter))
+(define-key pf--menu-bar [pf-fold-annotations]
+  '(menu-item "Toggle folding away “700” and “lisp” blocks" pf-fold-annotations))
 
-(defun fold-700-matter ()
+(defun pf-fold-annotations ()
  (interactive)
- (setq 700-folding (not 700-folding))
- (if 700-folding
+ (setq pf-folding (not pf-folding))
+ (if pf-folding
      (message "C-c C-l will now fold away “700” and “lisp” blocks. Press ENTER to unfold a block. ")
      (fold-this-unfold-all)
      (message "Blocks “700” and “lisp” have been unfolded.")))
 
-(define-minor-mode 700-mode
+(define-minor-mode package-former-mode
     "This is an editor extension prototyping “the next 700 module systems” proposed research.
 
     An informal documentation, with examples, page can be found at
@@ -1411,20 +1425,20 @@
     If you experience anything “going wrong” or have any ideas for improvement,
     please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥
   "
-  :lighter " 700 (•̀ᴗ•́)و" ;; Icon to display indicating the mode is enabled.
+  :lighter " PackageFormer (•̀ᴗ•́)و" ;; Icon to display indicating the mode is enabled.
   :require 'foo
 
   ;; Toggle the menu bar
   ;; (define-key global-map [menu-bar 700menu] t)(not 700-mode))
-  (define-key global-map [menu-bar 700menu] (and 700-mode (cons "700PackageFormers" 700-menu-bar)))
+  (define-key global-map [menu-bar pf--menu] (and package-former-mode (cons "PackageFormer" pf--menu-bar)))
 
   (letf (( (symbol-function 'message-box) #'message))
-  (if 700-mode
+  (if package-former-mode
       ;; Initilisation
-      (enable-package-formers)
+      (pf-enable-package-formers)
 
       ;; Closing
-      (disable-package-formers))))
+      (pf-disable-package-formers))))
 
 (let ((it (quote "(𝒱 record = \"Reify a variational as an Agda “record”.\"
             :kind record
@@ -1535,6 +1549,38 @@
         (--filter (s-contains? carrier (target (element-type it))))
         (--map (map-type (λ τ → (s-replace carrier $𝑛𝑎𝑚𝑒 τ)) it)))))
 
+(𝒱 generated by
+  = \"Keep the largest well-formed PackageFormer whose elements satisfy BY.
+
+     BY is a predicate on elements.
+    \"
+    :alter-elements  (lambda (fs)
+      (let* ( (yeses (--map (funcall by it) fs))
+              (get-yeses (lambda () (--filter it (--zip-with (if it other) yeses fs))))
+              (in-yeses (lambda (e)
+                          (--any
+                           (s-contains? (s-replace \"_\" \" \" (element-name e)) (element-type it))
+                           (funcall get-yeses)))))
+
+        (loop for _ in fs do
+              (loop for f in fs
+                    for i from 0
+                    do ;; when f in yess, set f to be yes.
+                    (when (funcall in-yeses f) (setf (nth i yeses) t))))
+
+        (funcall get-yeses))))
+
+(defun targets-a-sort (element)
+  \"Checks whether the given ‘element’ targets
+   any of the sorts of the *current* PacakgeFormer.
+   \"
+  (--any (s-contains? it (target (element-type element)))
+         (-map #'element-name (-filter #'is-sort $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠))))
+
+(𝒱 signature
+  = \"Keep only the elements that target a sort, drop all else.\"
+    generated (λ e → (targets-a-sort e)))
+
 (𝒱 open with (avoid-mixfix-renaming nil)
   =
     \"Reify a given PackageFormer as a *parameterised* Agda “module” declaration.
@@ -1560,8 +1606,8 @@
         (cons (make-element :name ℛ :type $𝑝𝑎𝑟𝑒𝑛𝑡)
           (--map (let ((name (if avoid-mixfix-renaming (with (element-name it)) (rename-mixfix with (element-name it)))))
             (make-element :name name
-                          :type (format \"let open M-Set-R %s in %s\" ℛ (element-type it))
-                          :equations (list (format \"%s = M-Set-R.%s %s\" name (element-name it) ℛ)))) fs)))))
+                          :type (format \"let open %s %s in %s\" $𝑝𝑎𝑟𝑒𝑛𝑡 ℛ (element-type it))
+                          :equations (list (format \"%s = %s.%s %s\" name $𝑝𝑎𝑟𝑒𝑛𝑡 (element-name it) ℛ)))) fs)))))
 
 (𝒱 opening with
   = \"Open a record as a module exposing only the names mentioned in WITH.
@@ -1579,6 +1625,86 @@
     DDD is a string.
    \"
    open (λ x → (concat x ddd)))
+
+(defun to-subscript (n)
+  \"If i ∈ 0..9, then yield ᵢ, else i.\"
+  (if (not (< -1 i 10))
+      (format \"%s\" i)
+    (nth n '(\"₀\" \"₁\" \"₂\" \"₃\" \"₄\" \"₅\" \"₆\" \"₇\" \"₈\" \"₉\"))))
+
+(defun homify (element sort)
+  \"Given a typed name, produce the associating “preservation” formula.
+   E.g.,
+          _·_    : Scalar → Vector → Vector
+          pres-· : {x₁ : Scalar} → {x₂ : Vector} → map₂ (x₁ · x₂) = map₁ x₁ ·′ map₂ x₂
+
+  Type τ gets variable xᵢ provided (i, τ) ∈ sorts; likewise we think of mapᵢ : τ → τ′.
+  Notice that the target name is primed, “·′”.
+  \"
+  (letf* ((sorts     (mapcar #'car sort))
+          ((symbol-function 'index) (lambda (s) (to-subscript (cdr (assoc it sort)))))
+
+          (tn→       (s-split \" → \" (element-type element)))
+          (arg-count (1- (length tn→)))
+
+          (all-indicies  (--map (index it) (--filter (member (s-trim it) sorts) tn→)))
+          (indicies  (-drop-last 1 all-indicies))
+          (tgt-idx   (car (-take-last 1 all-indicies)))
+
+          (op        (element-name element))
+          (args      (--map (concat \"x\" it) indicies))
+          (lhs       (format \"map%s (%s %s)\" tgt-idx op (s-join \" \" args)))
+
+          (op′       (rename-mixfix (lambda (n) (concat n \"′\")) op))
+          (map-args  (--map (format \"(map%s x%s)\" it it) indicies))
+          (rhs       (format \"%s %s\" op′ (s-join \" \" map-args)))
+
+          (target    (format \"  %s   ≡   %s\" lhs rhs)))
+
+    ;; Change the target type.
+    (setq tn→ (--map (when (assoc it sort) (format \"{x%s : %s}\" (index it) it)) tn→))
+    (setf (nth arg-count tn→) target)
+
+    ;; Stick it all together, with an updated name.
+    (make-element
+     :name (format \"pres-%s\" (s-replace \"_\" \"\" (element-name element)))
+     :type (s-join \" → \" tn→))))
+
+(𝒱 hom
+  = \"Formulate the notion of homomorphism of $𝑝𝑎𝑟𝑒𝑛𝑡 algebras.
+
+     ➩ $𝑝𝑎𝑟𝑒𝑛𝑡 must be an existing record type used in the resulting formulation.
+    \"
+    record ⟴
+    :waist 2
+    :alter-elements (lambda (es)
+
+      (let (maps eqns sorts (𝒮𝓇𝒸 \"Src\") (𝒯ℊ𝓉 \"Tgt\"))
+
+        ;; Construct the mapᵢ : sortᵢ → sortᵢ′; keeping track of (sort . i) pairs.
+        (loop for e in es
+              for i from 1
+         do
+           (when (is-sort e)
+             (push (cons (element-name e) i) sorts)
+             (push (make-element
+                      :qualifier \"field\"
+                      :name (format \"map%s\" (to-subscript i))
+                      :type (format \"%s → %s′\" (element-name e) (element-name e)))
+                   maps))
+
+            (when (and (targets-a-sort e) (not (is-sort e)))
+              (push (homify e sorts) eqns)))
+
+      ;; Ensure we have a source and target space as elements.
+      (-cons*
+       (make-element :qualifier \"field\" :name 𝒮𝓇𝒸 :type $𝑝𝑎𝑟𝑒𝑛𝑡)
+       (make-element :qualifier \"field\" :name 𝒯ℊ𝓉 :type $𝑝𝑎𝑟𝑒𝑛𝑡)
+       (--map
+        (map-type (λ τ → (format \"let open %s %s; open %s′ %s in %s\"
+                                 $𝑝𝑎𝑟𝑒𝑛𝑡 𝒮𝓇𝒸 $𝑝𝑎𝑟𝑒𝑛𝑡 𝒯ℊ𝓉 τ))
+                  (map-qualifier (λ _ → \"field\") it))
+        (reverse (-concat eqns maps)))))))
 ")))
 (setq ♯standard-variationals (s-count-matches-all "(𝒱" it))
 (eval (car (read-from-string (format "(progn %s)" it))))
