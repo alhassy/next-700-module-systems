@@ -2,6 +2,7 @@
 {- (progn (load-file "package-former.el") (package-former-mode)) -}
 
 module package-former where
+
 open import package-former-generated
 open import Level
 open import Data.Bool

@@ -356,6 +356,15 @@
            (funcall f it)
            (concat (when front "_") it (when rear "_"))))))
 
+(defvar pf-generated-suffix "-generated"
+  "The suffix applied to a file's name to produce it's generated counterpart.")
+
+;; Sometimes we may want the full name due to files being in a nested
+;; directory hierarchy: (file-name-sans-extension buffer-file-name)
+(defvar pf--generated-file-name
+  (concat (file-name-sans-extension (buffer-name)) pf-generated-suffix)
+  "Name of the generated file.")
+
 (pf--declare-type extract-imports : string)
 (cl-defun pf--extract-imports ()
   "Return substring of buffer whose lines mention “import”.
@@ -364,8 +373,7 @@
   (thread-last (buffer-substring-no-properties (point-min) (point-max))
     (s-split "\n")
     (--filter (s-contains? "import " it))
-    (--remove (s-contains?
-           (format  "%s_Generated" (file-name-sans-extension (buffer-name))) it))
+    (--remove (s-contains? pf--generated-file-name it))
     (s-join "\n")))
 
 (defmacro λ (&rest body)
@@ -1243,15 +1251,8 @@
 (defun pf--reify-package-formers (orig-fun &rest args)
   (interactive)
 
-  (let (generated-file-name
-        printed-pfs
+  (let (printed-pfs
         (parent-imports (pf--extract-imports)))
-
-    ;; Sometimes we may want the full name due to files being in a nested
-    ;; directory hierarchy: (file-name-sans-extension buffer-file-name)
-    (setq generated-file-name
-          (concat(file-name-sans-extension (buffer-name))
-                 "-generated"))
 
     ;; Load variationals, PackageFormers, instantiations, and porting list.
     ;; Setting the following to nil each time is not ideal.
@@ -1269,8 +1270,7 @@
          "{- This file is generated ;; do not alter. -}\n"
          ,parent-imports
          "open import Level as Level"
-         ,(format "module %s where " generated-file-name)
-         )))
+         ,(format "module %s where " pf--generated-file-name))))
 
      ;; Print the package-formers
       (setq printed-pfs
@@ -1290,9 +1290,9 @@
       (untabify (point-min) (point-max))
 
       (write-region (beginning-of-buffer) (end-of-buffer)
-                    (concat generated-file-name ".agda")))
+                    (concat pf--generated-file-name ".agda")))
 
-    (pf--insert-generated-import generated-file-name))
+    (pf--insert-generated-import pf--generated-file-name)
 
   ;; Need to revert buffer to discard old colours.
   ;; (save-buffer) (revert-buffer t t t)
@@ -1319,7 +1319,7 @@
         (when pf-highlighting
           (highlight-phrase (format "[- \\| ]%s " v) 'hi-green)))
 
-  (message "700 ∷ All the best coding! (•̀ᴗ•́)و"))
+  (message "700 ∷ All the best coding! (•̀ᴗ•́)و")))
 
 ; Users can enable this feature if they're interested in using it; disbale it otherwise.
 ; (advice-add 'agda2-load :around #'pf--reify-package-formers)
@@ -1569,6 +1569,13 @@
                     (when (funcall in-yeses f) (setf (nth i yeses) t))))
 
         (funcall get-yeses))))
+
+(𝒱 sorts
+ = \"Obtaining the types declared in a grouping mechanism.
+
+   For now, only base types; i.e., items targeting “Set”.
+   \"
+   generated (λ e → (s-contains? \"Set\" (target (element-type e)))))
 
 (defun targets-a-sort (element)
   \"Checks whether the given ‘element’ targets

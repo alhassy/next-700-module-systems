@@ -1635,6 +1635,16 @@ after that is a ‘[[User Manual][user manual]]’, then the remainder of
 the article serves as literate documentation of the prototype;
 as well as an opportunity for me to explore emojis.
 To follow along, it may be useful to look at an [[https://alhassy.github.io/ElispCheatSheet/][Elisp Cheat Sheet]].
+
+The user manual, among other things, shows how we can avoid the
+~open ⋯ public ⋯ renaming ⋯~ pattern which [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#2757][plagues]] Agda's standard library
+---and is much more pronounced in the [[http://relmics.mcmaster.ca/RATH-Agda/RATH-Agda-2.2.pdf][RATH-Agda]], which devotes p27-39 for simple setoid renaming
+and does much more elsewhere---,
+as well as showing how to avoid [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Morphism.html#1][laborious]], yet tedious, definitions of homomorphisms
+in Agda's library. Moreover, the motivating factor of this work is to avoid
+the pattern of [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#1][defining a predicate]] ~IsX c₀ ⋯ cₙ~ on constituents ~cᵢ~
+[[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#1][then packaging]] the constituents along with a proof of this predicate as a record ~X~.
+
 #+end_quote
 
 # In some sense, we are “continuing” the story of Z's schemas.
@@ -2001,7 +2011,7 @@ by other Agda code, and otherwise leave it free standing.
 
 module package-former where
 
-open import package-former_Generated
+open import package-former-generated
 open import Level
 open import Data.Bool
 open import Relation.Binary.PropositionalEquality using (_≡_)
@@ -2593,9 +2603,6 @@ fix-up ~primed~.
    :PROPERTIES:
    :CUSTOM_ID: Variationals-with-Arguments-----map--rename---co-decorated--subscriptedᵢ--renaming-
    :END:
-   :PROPERTIES:
-
-   :END:
 
     Thus far our variationals have been nullary, let's consider otherwise.
 
@@ -3143,8 +3150,9 @@ record MonSig : Set₁ where
     of the same record ---e.g., when forming homomorphisms.
 
     A common pattern in Agda is then to open the record and perform the desired
-    shallow renames. This pattern is so common that the standard library is littered
-    with instances of it. We can codify the pattern as a method rather than as a
+    shallow renames. This pattern is so common that the standard library is [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#2757][littered]]
+    with instances of it.
+    We can codify the pattern as a method rather than as a
     manual technique.
 
     Let's go from zero to one-hundred ---again: There's a Lisp Cheat Sheet that should
@@ -3311,7 +3319,7 @@ new pacaking mechanisms. They are a terminal construction.
 
     The definition of “structure preservation” is, nearly always, mechanical to
     formulate and that's just what we shall do to avoid having to write it out
-    by hand ever again.
+    by hand ever again ---which the [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Morphism.html#586][current approach]] in the Agda standard library.
 
     :Illuminating_yet_overkill_to-subscript_defn:
 #+BEGIN_SRC emacs-lisp  :tangle no
@@ -4384,6 +4392,15 @@ Here are some possible invocations, the last one being our use case.
 We also want to prefix the generated file with the imports of the current file.
 {{{fold(extract-imports Implementation)}}}
 #+BEGIN_SRC emacs-lisp :tangle yes
+(defvar pf-generated-suffix "-generated"
+  "The suffix applied to a file's name to produce it's generated counterpart.")
+
+;; Sometimes we may want the full name due to files being in a nested
+;; directory hierarchy: (file-name-sans-extension buffer-file-name)
+(defvar pf--generated-file-name
+  (concat (file-name-sans-extension (buffer-name)) pf-generated-suffix)
+  "Name of the generated file.")
+
 (pf--declare-type extract-imports : string)
 (cl-defun pf--extract-imports ()
   "Return substring of buffer whose lines mention “import”.
@@ -4392,8 +4409,7 @@ We also want to prefix the generated file with the imports of the current file.
   (thread-last (buffer-substring-no-properties (point-min) (point-max))
     (s-split "\n")
     (--filter (s-contains? "import " it))
-    (--remove (s-contains?
-           (format  "%s_Generated" (file-name-sans-extension (buffer-name))) it))
+    (--remove (s-contains? pf--generated-file-name it))
     (s-join "\n")))
 #+END_SRC
 {{{end-fold}}}
@@ -5935,15 +5951,8 @@ should be coloured or not. Below we use a particular set of default colours.
 (defun pf--reify-package-formers (orig-fun &rest args)
   (interactive)
 
-  (let (generated-file-name
-        printed-pfs
+  (let (printed-pfs
         (parent-imports (pf--extract-imports)))
-
-    ;; Sometimes we may want the full name due to files being in a nested
-    ;; directory hierarchy: (file-name-sans-extension buffer-file-name)
-    (setq generated-file-name
-          (concat(file-name-sans-extension (buffer-name))
-                 "-generated"))
 
     ;; Load variationals, PackageFormers, instantiations, and porting list.
     ;; Setting the following to nil each time is not ideal.
@@ -5961,8 +5970,7 @@ should be coloured or not. Below we use a particular set of default colours.
          "{- This file is generated ;; do not alter. -}\n"
          ,parent-imports
          "open import Level as Level"
-         ,(format "module %s where " generated-file-name)
-         )))
+         ,(format "module %s where " pf--generated-file-name))))
 
      ;; Print the package-formers
       (setq printed-pfs
@@ -5982,9 +5990,9 @@ should be coloured or not. Below we use a particular set of default colours.
       (untabify (point-min) (point-max))
 
       (write-region (beginning-of-buffer) (end-of-buffer)
-                    (concat generated-file-name ".agda")))
+                    (concat pf--generated-file-name ".agda")))
 
-    (pf--insert-generated-import generated-file-name))
+    (pf--insert-generated-import pf--generated-file-name)
 
   ;; Need to revert buffer to discard old colours.
   ;; (save-buffer) (revert-buffer t t t)
@@ -6011,7 +6019,7 @@ should be coloured or not. Below we use a particular set of default colours.
         (when pf-highlighting
           (highlight-phrase (format "[- \\| ]%s " v) 'hi-green)))
 
-  (message "700 ∷ All the best coding! (•̀ᴗ•́)و"))
+  (message "700 ∷ All the best coding! (•̀ᴗ•́)و")))
 
 ; Users can enable this feature if they're interested in using it; disbale it otherwise.
 ; (advice-add 'agda2-load :around #'pf--reify-package-formers)
@@ -6190,9 +6198,6 @@ should be coloured or not. Below we use a particular set of default colours.
   :PROPERTIES:
   :CUSTOM_ID: Work
   :END:
-  :PROPERTIES:
-
-  :END:
 
 Well, that was a lot of Lisp I had to learn ~(งಠ_ಠ)ง~
 
@@ -6206,15 +6211,11 @@ any feedback or pointers!
 
 Below are some desirable features to work on.
 
-#
-# Check them off, rather than deleting them,
-# to produce a ‘tada’ list of features ;-)
-#
+We check them off, rather than deleting them,
+to produce a ‘tada’ list of features ;-)
 
-
-   # + For now, arguments must be enclosed in parenthesis.
-   #  - This is likely to be dropped in a future edition of the system.
-
++ [X] For now, arguments must be enclosed in parenthesis.
+   - [X] This is likely to be dropped in a future edition of the system.
 
 + [X] Colouring for 700-syntactical items.
 
@@ -6236,14 +6237,14 @@ Below are some desirable features to work on.
 
 + [X] Support for equations in PackageFormers: Easy, nothing new needed! Thank-you ~alter-elements~!
 
-+ [ ]   Examples from the user-manual
++ [X]   Examples from the user-manual
         should be exported into an Agda file which is then easily checked;
         or the resulting generated code should be generated when export happens.
 
 + [ ] We can only perform “LHS = PF 𝓋𝒸”, do we also want stand-alone “PF 𝓋𝒸”?
-      - Maybe not? Maybe it suffices to use, say, “_ = PF 𝓋𝒸”?
+  - Maybe not? Maybe it suffices to use, say, “_ = PF 𝓋𝒸”?
 
-   # TODO: Give an example making use of suffix-fields to ‘extend’ a packageformer with new fields. E.g., PackageFormer B = A extended-by cs ought to be valid but so should I = A vs extended-by cs which is amicable syntax for the instantation (A extended-by cs) vs. Should this automatically yield forgetful coercisions “I⇒A”? For now, maybe yes by default and no if we use, say, fields instead of extended-by. There will be issues of coherency when we add items.
+  # TODO: Give an example making use of suffix-fields to ‘extend’ a packageformer with new fields. E.g., PackageFormer B = A extended-by cs ought to be valid but so should I = A vs extended-by cs which is amicable syntax for the instantation (A extended-by cs) vs. Should this automatically yield forgetful coercisions “I⇒A”? For now, maybe yes by default and no if we use, say, fields instead of extended-by. There will be issues of coherency when we add items.
 
 + [X] Need to implement a *front-end* system to extend variational clauses.
 
@@ -6254,8 +6255,8 @@ Below are some desirable features to work on.
 + [X] Refactor load-instantions function to make use of an ~alter~ field rather than overloading alter-fields in reify-instances.
 
 + [X] Refactor ~instantiate~ to make use of an ~instance~ structure, rather than 13 arguments.
-      - In my defence, 13 arguments was because I was trying to find out what were the key ingredients
-        necessary to form different variational presentations. It seems I only needed 5 ^_^
+  - In my defence, 13 arguments was because I was trying to find out what were the key ingredients
+    necessary to form different variational presentations. It seems I only needed 5 ^_^
 
 + [ ] Why does ‘pf--buffer-substring-delimited-whole-buffer’ return a list of strings? Why not join its result to simply return a list?
 
@@ -6263,14 +6264,9 @@ Below are some desirable features to work on.
 
 + [ ] Give an example PackageFormer with some definitions or derived constructs, then hoist-up your waist so that the non-defined items are ~module~ parameters.
 
-+ [ ] ~B = cs ⟨+ A ⟨+ cs′~ where each cs is a single name-type declaration and the operation is left-associative, and A is an existing packageformer. This gives us a nice way to build a hierarchy. Note that since only A has a name, we may form a forgetful coercion B⇒A automatically.
-  E.g., ~Monoid = Type ⟨+ Pointed ⟨+ (Magma renaming (_⊕_ to _⨾_)) ⟨+ LeftUnital ⟨+ RightUnital ⟨+ assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)~ gives, automatically, ~Monoid⇒Type, Monoid⇒Pointed, Monoid⇒Magma, Monoid⇒LeftUnital, Magma⇒RightUnital~ (•̀ᴗ•́)و MA: To begin with, ignore the rename and work up the sequence one ⟨+ at a time.
-
 + [X] PF's should account for equations. For simplicity they become components of a record & module, but derived operations on datatypes.
 
 + [ ] Demonstrate how generative modules can be emulated.
-
-+ [ ] For now, PackageFormer's have no other parameters besides the variation symbol ---not even that atm.
 
 + [ ] The global variables package-formers & instance-declaration should be /buffer/ specific?
 
@@ -6280,23 +6276,46 @@ Below are some desirable features to work on.
 + [ ] Make use of docstring so that when a user enters a key sequence or selects from a menu, we can show them a listing of all ‘major’ components of a program: An org-mode file is displayed with an enumeration of the items, each being a link to the source, and only their docstring is shown. This is a nice ‘overview’ of the program source.
 
 + [X] Currently it looks like we are a minor mode, but this is not true. We only have a menu and the icon (•̀ᴗ•́)و is displayed when our feature is supported.
-      - Now a minor mode.
+  - Now a minor mode.
 
 + [ ] Generate all instances of a PackageFormer schema.
 
-+ [ ] Allow package formers to have explicit ~Variation~ parameters; but
-      how do we then deal with nested invocations? What are the uses of
-      having differing invocations?
++ ~MR = M-Set primed~ crashes!
 
-      For example,
-      #+BEGIN_SRC agda
++ [ ] Look into [[https://github.com/KestrelInstitute/Specware][*Specware*]].
+
+  - Structures are created using colimits.
+  - Are hierarchical considerations leaked by the resulting structures?
+
+** Equality: From ≡ to ≈ to ≈′
+   :PROPERTIES:
+   :CUSTOM_ID: Equality--From---to---to---
+   :END:
+   One may start from a basic ≡-equality, then *mechanically* move to a setoid one
+   by including congruence laws.
+   + Interestingly, sometimes such constructions are invariant under equivalent equalities.
+     - http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Props.Lattice.html#2531
+
+** PackageFormers with variational parameters
+   :PROPERTIES:
+   :CUSTOM_ID: PackageFormers-with-variational-parameters
+   :END:
+
+    + [ ] For now, PackageFormer's have no other parameters besides the variation symbol ---not even that atm.
+
+ Allow package formers to have explicit ~Variation~ parameters; but
+       how do we then deal with nested invocations? What are the uses of
+       having differing invocations?
+
+       For example,
+       #+BEGIN_SRC agda
 PackageFormer LawfullyPointed (v : Variation) : Set where
    point : LawfullyPointed v
    law   : LawfullyPointed FOL {- Concrete variation -}
 
-                         #+END_SRC
-      Would elaborate to something like:
-      #+BEGIN_SRC agda
+                          #+END_SRC
+       Would elaborate to something like:
+       #+BEGIN_SRC agda
        data LP-Term (Vars : Set) : Set where
         {- Abstract fields from constituents of packageformer -}
         Point    : LP-Term
@@ -6311,21 +6330,21 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
         Carrier : Set
         point   : Carrier
         law     : LP-Term Carrier
-#+END_SRC
+ #+END_SRC
 
-      With the following example uses.
-      #+BEGIN_SRC agda
+       With the following example uses.
+       #+BEGIN_SRC agda
       Contractable : (A : Set) (a : A) → LP
       Contractable A a =  A , a , ∀′ (λ x → x ≈ a ′)
 
       Indistinguishable : (A : Set)  →  LP hiding point
       Indistinguishable A a =  A , ∀′ (λ x → ∀′ (λ y → x ≈ y))
-      #+END_SRC
-      Where ~PF hiding c~ is the largest sub-PackageFormer of ~PF~ with constituent ~c~
-      removed ---in particular, constituents that depend on ~c~ would also be dropped.
+       #+END_SRC
+       Where ~PF hiding c~ is the largest sub-PackageFormer of ~PF~ with constituent ~c~
+       removed ---in particular, constituents that depend on ~c~ would also be dropped.
 
-      :Hide:
-    #+BEGIN_SRC emacs-lisp
+       :Hide:
+     #+BEGIN_SRC emacs-lisp
 (defun generate-all-instances () ;; TODO
   "For each PackageFormer ‘pf’, produce the default instances:
    ‘pf-record’, ‘pf-typeclass’, ‘pf-data’.
@@ -6352,10 +6371,65 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
   ;;  (setq ll (cons (make-typeclass decls (concat pf-name "-" variation)) ll)))
 
   )
-#+END_SRC
-      :End:
+ #+END_SRC
+       :End:
 
-+ ~MR = M-Set primed~ crashes!
+** Flip Combinator
+   :PROPERTIES:
+   :CUSTOM_ID: Flip-Combinator
+   :END:
+
+   Some properties are merely the syntactic mirror of other
+   ---it would make sense to have this relationship explicit.
+   For example:
+   + Left units/zeros/distributively are mirrors of the right ones.
+     - http://www.cse.chalmers.se/~nad/listings/lib/Algebra.FunctionProperties.html#1
+     - Additionally, in the presence of commutativity, such mirrored definitions are provably identically.
+
+   With duality, we can even derive more structure!    For example,
+   + Join semilattices are dual to meet semilattices.
+   + As such, /position/ of the operators is symmetric wrt the definition of a join-&-meet lattice.
+     - http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Props.Lattice.html#1029
+     - See RATH for a fine-grained approach to lattices.
+
+** Extensions
+   :PROPERTIES:
+   :CUSTOM_ID: Extensions
+   :END:
+   Mathematical structures naturally come in related hierarchies.
+   Agda users' current solution is to manually declare such relationships
+   by means of conversion functions. An extension *variational* could be formed
+   to make this process mechanical ---using tiny theories.
+   + Examples: http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#2533
+     - C.f., every abelian group /is a/ group.
+
+   *Theory graphs:*
+   Incidentally, as it stands, the current prototype allows arbitrary Emacs Lisp to be
+   used and so such a variational could potentially produce ~dot~ specifications
+   in the current directory, which can be used to obtain *visually* the relationships
+   between structures. Such “mathematical knowledge management” is underway with the MMT setup.
+
+   + [ ] ~B = cs ⟨+ A ⟨+ cs′~ where each cs is a single name-type declaration and the operation is left-associative, and A is an existing packageformer. This gives us a nice way to build a hierarchy. Note that since only A has a name, we may form a forgetful coercion B⇒A automatically.
+  E.g., ~Monoid = Type ⟨+ Pointed ⟨+ (Magma renaming (_⊕_ to _⨾_)) ⟨+ LeftUnital ⟨+ RightUnital ⟨+ assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)~ gives, automatically, ~Monoid⇒Type, Monoid⇒Pointed, Monoid⇒Magma, Monoid⇒LeftUnital, Magma⇒RightUnital~ (•̀ᴗ•́)و MA: To begin with, ignore the rename and work up the sequence one ⟨+ at a time.
+
+** Sharoda's “Leveraging the information contained in theory presentations”
+   :PROPERTIES:
+   :CUSTOM_ID: Sharoda-s--Leveraging-the-information-contained-in-theory-presentations-
+   :END:
+
+   In her PhD proposal, pages 1-3, she shows how an explicit definition of monoid can mechanically gives rise
+   to:
+   + [X] signatures
+   + [X] termtypes
+     - Covered in our gpce_19 paper.
+   + [X] open termtypes, those with variables
+     - Covered in our gpce_19 paper.
+   + [ ] Interpretation functions from termtypes to recordtypes ---which give terms meaning.
+         - [ ] With an environment argument for open termtypes.
+   + [ ] Staged terms and partial evaluators
+
+   She proposes that universal algebra ---a uniform approach to studying different algebras---
+   is currently performed on-demand and manually in computing, which it needn't be.
 
 * Appending PackageFormer.el with the useful variationals :ignore:noexport:
   :PROPERTIES:
@@ -6377,6 +6451,9 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
    :End:
 
 * COMMENT Cool stuffs, but now obsolete -e.g., :itify:
+  :PROPERTIES:
+  :CUSTOM_ID: COMMENT-Cool-stuffs--but-now-obsolete--e-g--
+  :END:
 ** recursively replacement; i.e., Lisps' subst
    :PROPERTIES:
    :CUSTOM_ID: recursively-replacement--i-e---Lisps--subst
@@ -6437,6 +6514,9 @@ Accidentally_reimplemented_Lisps_subst
 #+END_SRC
 
 ** update-state
+   :PROPERTIES:
+   :CUSTOM_ID: update-state
+   :END:
 
 #+begin_src emacs-lisp :tangle yes :results replace
 (cl-defun update-state (xs ys)

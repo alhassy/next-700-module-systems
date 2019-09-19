@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- 2019-09-18 Wed 14:36 -->
+<!-- 2019-09-19 Thu 12:13 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Making Modules with Meta-Programmed Meta-Primitives</title>
@@ -191,6 +191,17 @@ the article serves as literate documentation of the prototype;
 as well as an opportunity for me to explore emojis.
 To follow along, it may be useful to look at an <a href="https://alhassy.github.io/ElispCheatSheet/">Elisp Cheat Sheet</a>.
 </p>
+
+<p>
+The user manual, among other things, shows how we can avoid the
+<code>open ⋯ public ⋯ renaming ⋯</code> pattern which <a href="http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#2757">plagues</a> Agda's standard library
+&#x2014;and is much more pronounced in the <a href="http://relmics.mcmaster.ca/RATH-Agda/RATH-Agda-2.2.pdf">RATH-Agda</a>, which devotes p27-39 for simple setoid renaming
+and does much more elsewhere&#x2014;,
+as well as showing how to avoid <a href="http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Morphism.html#1">laborious</a>, yet tedious, definitions of homomorphisms
+in Agda's library. Moreover, the motivating factor of this work is to avoid
+the pattern of <a href="http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#1">defining a predicate</a> <code>IsX c₀ ⋯ cₙ</code> on constituents <code>cᵢ</code>
+<a href="http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#1">then packaging</a> the constituents along with a proof of this predicate as a record <code>X</code>.
+</p>
 </blockquote>
 
 <div class="org-center">
@@ -272,12 +283,20 @@ To follow along, it may be useful to look at an <a href="https://alhassy.github.
 <li><a href="#Menu-matter">7.3. Menu matter</a></li>
 </ul>
 </li>
-<li><a href="#Work">8. <span class="done Future">Future</span> Work</a></li>
+<li><a href="#Work">8. <span class="done Future">Future</span> Work</a>
+<ul>
+<li><a href="#Equality--From---to---to---">8.1. Equality: From ≡ to ≈ to ≈′</a></li>
+<li><a href="#PackageFormers-with-variational-parameters">8.2. PackageFormers with variational parameters</a></li>
+<li><a href="#Flip-Combinator">8.3. Flip Combinator</a></li>
+<li><a href="#Extensions">8.4. Extensions</a></li>
+<li><a href="#Sharoda-s--Leveraging-the-information-contained-in-theory-presentations-">8.5. Sharoda's “Leveraging the information contained in theory presentations”</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </nav>
 
-<div id="outline-container-org1c81ab8" class="outline-2">
+<div id="outline-container-org3d39b35" class="outline-2">
 <h2 id="Aim---Scrap-the-Repetition-"><span class="section-number-2">1</span> Aim: <i>Scrap the Repetition</i></h2>
 <div class="outline-text-2" id="text-Aim---Scrap-the-Repetition-">
 <p>
@@ -290,7 +309,7 @@ into currently legitimate Agda code.
 For example, something like the following, henceforth referred to as <code>test</code>:
 </p>
 <div class="org-src-container">
-<pre class="src src-agda" id="orga7f4b98"><span style="color: #ba2f59; font-weight: bold;">PackageFormer M-Set</span> :<span style="color: #ba2f59; font-weight: bold;"> Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
+<pre class="src src-agda" id="orgee04ddf"><span style="color: #ba2f59; font-weight: bold;">PackageFormer M-Set</span> :<span style="color: #ba2f59; font-weight: bold;"> Set</span>&#8321; <span style="color: #3a81c3; font-weight: bold;">where</span>
   <span style="color: #ba2f59; font-weight: bold;"> Scalar</span>  : <span style="color: #3a81c3; font-weight: bold;">Set</span>
   <span style="color: #ba2f59; font-weight: bold;"> Vector</span>  : <span style="color: #3a81c3; font-weight: bold;">Set</span>
    _&#183;_     :<span style="color: #ba2f59; font-weight: bold;"> Scalar</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> Vector</span>
@@ -361,7 +380,7 @@ Will behave as if it were written:
 </pre>
 </div>
 <p>
-This is a more than a <a id="orgeb30b60">200% increase</a> in size; that is, our fictitious code will
+This is a more than a <a id="orgfd699b3">200% increase</a> in size; that is, our fictitious code will
 save us a lot of repetition.
 </p>
 
@@ -378,6 +397,7 @@ Just look at the following source file and resulting generated code!
 <span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(progn (load-file "package-former.el") (package-former-mode)) </span><span style="color: #2aa1ae; background-color: #ecf3ec;">-}</span>
 
 <span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">package-former</span> <span style="color: #3a81c3; font-weight: bold;">where</span>
+
 <span style="color: #3a81c3; font-weight: bold;">open</span> <span style="color: #3a81c3; font-weight: bold;">import</span> <span style="color: #a020f0;">package-former-generated</span>
 <span style="color: #3a81c3; font-weight: bold;">open</span> <span style="color: #3a81c3; font-weight: bold;">import</span> <span style="color: #a020f0;">Level</span>
 <span style="color: #3a81c3; font-weight: bold;">open</span> <span style="color: #3a81c3; font-weight: bold;">import</span> <span style="color: #a020f0;">Data.Bool</span>
@@ -984,7 +1004,7 @@ The above code is discussed below, in the user manual
 </p>
 
 <p>
-For this prototype, we have the following <a id="org2a09871">constraints</a>:
+For this prototype, we have the following <a id="org29d51ab">constraints</a>:
 </p>
 
 <ol class="org-ol">
@@ -1008,7 +1028,7 @@ can be useful.
 </p>
 </div>
 </div>
-<div id="outline-container-org42e58a5" class="outline-2">
+<div id="outline-container-org5e5000b" class="outline-2">
 <h2 id="User-Manual"><span class="section-number-2">2</span> User Manual</h2>
 <div class="outline-text-2" id="text-User-Manual">
 <p>
@@ -1018,7 +1038,7 @@ or <a href="https://alhassy.github.io/next-700-module-systems/">the next 700 mod
 </p>
 </div>
 
-<div id="outline-container-org7d3530f" class="outline-3">
+<div id="outline-container-org555c13f" class="outline-3">
 <h3 id="Installation"><span class="section-number-3">2.1</span> Installation</h3>
 <div class="outline-text-3" id="text-Installation">
 <p>
@@ -1069,7 +1089,7 @@ completely.</li>
 
 <li>The string icon <code>700 (•̀ᴗ•́)و</code> is displayed in the mode line &#x2014;near the bottom of Emacs.</li>
 
-<li>You may use <code>C-c c-l</code> as usual, but it will now recognise <a href="#org7d4888d">700-comments</a> and generate
+<li>You may use <code>C-c c-l</code> as usual, but it will now recognise <a href="#orge9b539f">700-comments</a> and generate
 legitimate Agda code from them &#x2014;more on this later.
 
 <ul class="org-ul">
@@ -1084,7 +1104,7 @@ If you need any assistance, please contact me!
 </div>
 </div>
 
-<div id="outline-container-org90b058d" class="outline-3">
+<div id="outline-container-org55cfa80" class="outline-3">
 <h3 id="Syntax"><span class="section-number-3">2.2</span> Syntax</h3>
 <div class="outline-text-3" id="text-Syntax">
 <p>
@@ -1092,7 +1112,7 @@ If you need any assistance, please contact me!
 </p>
 
 <p>
-The prototype works by translating fictitious <a href="#org68c9b79">700-syntax</a> into legitimate Agda;
+The prototype works by translating fictitious <a href="#orgeeb6968">700-syntax</a> into legitimate Agda;
 as follows:
 </p>
 <div class="org-src-container">
@@ -1104,8 +1124,8 @@ as follows:
 </pre>
 </div>
 <p>
-Since the first section provides an example source fragment with both <a href="#org7d4888d">700-comments</a> as well
-as instantiations, we shall only enclose <a href="#org68c9b79">700-syntax</a> in <a href="#org7d4888d">700-comments</a> when it is surrounded
+Since the first section provides an example source fragment with both <a href="#orge9b539f">700-comments</a> as well
+as instantiations, we shall only enclose <a href="#orgeeb6968">700-syntax</a> in <a href="#orge9b539f">700-comments</a> when it is surrounded
 by other Agda code, and otherwise leave it free standing.
 </p>
 
@@ -1114,7 +1134,7 @@ by other Agda code, and otherwise leave it free standing.
 </p>
 
 <p>
-<a id="org68c9b79">700-syntax</a> is defined informally as follows:
+<a id="orgeeb6968">700-syntax</a> is defined informally as follows:
 </p>
 <pre class="example">
 ⟪700-syntax⟫    ::=  ⟪PackageFormer⟫ | ⟪Instantiation⟫ | ⟪Agda⟫
@@ -1168,7 +1188,7 @@ but instead are passed by name &#x2014;e.g., <code>:key value</code>.</li>
 </div>
 </div>
 
-<div id="outline-container-org72d977b" class="outline-3">
+<div id="outline-container-org6ef8a20" class="outline-3">
 <h3 id="Lisp-Interface"><span class="section-number-3">2.3</span> Lisp Interface</h3>
 <div class="outline-text-3" id="text-Lisp-Interface">
 <p>
@@ -1323,7 +1343,7 @@ Let ℰ denote one of <code>qualifier, name, type, equations</code> in the follo
 </div>
 </div>
 
-<div id="outline-container-orgeb7a00d" class="outline-3">
+<div id="outline-container-org95f5b00" class="outline-3">
 <h3 id="User-Manual-Header"><span class="section-number-3">2.4</span> User Manual Header</h3>
 <div class="outline-text-3" id="text-User-Manual-Header">
 <p>
@@ -1345,7 +1365,7 @@ Let's start-off with a usual Agda header:
 
 <span style="color: #3a81c3; font-weight: bold;">module</span> <span style="color: #a020f0;">package-former</span> <span style="color: #3a81c3; font-weight: bold;">where</span>
 
-<span style="color: #3a81c3; font-weight: bold;">open</span> <span style="color: #3a81c3; font-weight: bold;">import</span> <span style="color: #a020f0;">package-former_Generated</span>
+<span style="color: #3a81c3; font-weight: bold;">open</span> <span style="color: #3a81c3; font-weight: bold;">import</span> <span style="color: #a020f0;">package-former-generated</span>
 <span style="color: #3a81c3; font-weight: bold;">open</span> <span style="color: #3a81c3; font-weight: bold;">import</span> <span style="color: #a020f0;">Level</span>
 <span style="color: #3a81c3; font-weight: bold;">open</span> <span style="color: #3a81c3; font-weight: bold;">import</span> <span style="color: #a020f0;">Data.Bool</span>
 <span style="color: #3a81c3; font-weight: bold;">open</span> <span style="color: #3a81c3; font-weight: bold;">import</span> <span style="color: #a020f0;">Relation.Binary.PropositionalEquality</span> <span style="color: #3a81c3; font-weight: bold;">using</span> (_&#8801;_)
@@ -1416,7 +1436,7 @@ Alternatively, here is a example PackageFormer for monoids as well as that of M-
 </div>
 </div>
 
-<div id="outline-container-org4c04c12" class="outline-3">
+<div id="outline-container-org09a976b" class="outline-3">
 <h3 id="Empty-Variationals"><span class="section-number-3">2.5</span> Empty Variationals</h3>
 <div class="outline-text-3" id="text-Empty-Variationals">
 <p>
@@ -1447,7 +1467,7 @@ serves as a namespace delimiter.
 </p>
 
 <p>
-Indeed, we may now perform the following invocation &#x2014;within <a href="#org7d4888d">700-comments</a>.
+Indeed, we may now perform the following invocation &#x2014;within <a href="#orge9b539f">700-comments</a>.
 </p>
 
 <div class="org-src-container">
@@ -1531,7 +1551,7 @@ We are not doing anything with the arguments here; we shall return to this in la
 </div>
 </div>
 
-<div id="outline-container-org6a43b7e" class="outline-3">
+<div id="outline-container-org9cc1795" class="outline-3">
 <h3 id="--Errors"><span class="section-number-3">2.6</span> ⇨ Errors</h3>
 <div class="outline-text-3" id="text---Errors">
 <p>
@@ -1547,7 +1567,7 @@ immediately. As such, we have implemented a cute little error-reporting system.
 </colgroup>
 <tbody>
 <tr>
-<td class="org-left">If you try to load, <code>C-c C-l</code>, but your <a href="#org68c9b79">700-syntax</a> is wrong, you get an immediate error explaining why ♥‿♥</td>
+<td class="org-left">If you try to load, <code>C-c C-l</code>, but your <a href="#orgeeb6968">700-syntax</a> is wrong, you get an immediate error explaining why ♥‿♥</td>
 </tr>
 </tbody>
 </table>
@@ -1591,7 +1611,7 @@ error mechanism.
 </div>
 </div>
 
-<div id="outline-container-orgfd9b7f9" class="outline-3">
+<div id="outline-container-org3062a2d" class="outline-3">
 <h3 id="Records-and-Meta-Primitives---kind------alter-elements-"><span class="section-number-3">2.7</span> Records and Meta-Primitives <code>:kind</code> &amp; <code>:alter-elements</code></h3>
 <div class="outline-text-3" id="text-Records-and-Meta-Primitives---kind------alter-elements-">
 <p>
@@ -1691,11 +1711,11 @@ a parenthesised (<code>𝒱 ⋯)</code> within <code>lisp</code>-blocks.
 </div>
 </div>
 
-<div id="outline-container-orgdacf890" class="outline-3">
+<div id="outline-container-org016086b" class="outline-3">
 <h3 id="Typeclasses----Parameterised-Records----and-Meta-Primitives---waist------level-"><span class="section-number-3">2.8</span> Typeclasses &#x2014;Parameterised Records&#x2014; and Meta-Primitives <code>:waist</code> &amp; <code>:level</code></h3>
 <div class="outline-text-3" id="text-Typeclasses----Parameterised-Records----and-Meta-Primitives---waist------level-">
 <p>
-We mentioned the <a id="org02ab3e3">“waist”</a> before, but what is it exactly?
+We mentioned the <a id="org448e08a">“waist”</a> before, but what is it exactly?
 I propose that the difference between ‘field’ and ‘parameter’
 is an illusion &#x2014;as is that of ‘input’ and ‘output’ when one
 considers relations rather than deterministic functions.
@@ -1721,7 +1741,7 @@ and all would continue work.
 
 <p>
 Trying this out, below, one notices that the first two elements of the PackageFormer have been lifted
-into being <a href="#org3ae9470">parameters</a>, while the rest have been construed as <a href="#org579e72f">fields</a>.
+into being <a href="#org79c67dd">parameters</a>, while the rest have been construed as <a href="#org65a0ae7">fields</a>.
 </p>
 <div class="org-src-container">
 <pre class="src src-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
@@ -1816,7 +1836,7 @@ Play with it! We'll return to arguments later on.
 </div>
 </div>
 
-<div id="outline-container-orgca0ca3a" class="outline-3">
+<div id="outline-container-org476d70c" class="outline-3">
 <h3 id="Primed-Decoration-and--rename-mixfix-"><span class="section-number-3">2.9</span> Primed Decoration and <code>rename-mixfix</code></h3>
 <div class="outline-text-3" id="text-Primed-Decoration-and--rename-mixfix-">
 <p>
@@ -1890,7 +1910,7 @@ If the prime scheme were instead a prepend, we would have obtained the name
 
 <p>
 Notice that
-we have <a href="#org579e72f">fields</a> such as <code>𝟙′ : Scalar</code>
+we have <a href="#org65a0ae7">fields</a> such as <code>𝟙′ : Scalar</code>
 whose type is a free variable: <code>Scalar</code> no longer refers to any field.
 As such, the above code is ill-typed.
 The solution then is to <i>propagate</i> any changes a name has down to its siblings.
@@ -1943,7 +1963,7 @@ Then, for example:
 </div>
 </div>
 
-<div id="outline-container-org0985e3d" class="outline-3">
+<div id="outline-container-org76d6133" class="outline-3">
 <h3 id="First-class-PackageFormers"><span class="section-number-3">2.10</span> First-class PackageFormers</h3>
 <div class="outline-text-3" id="text-First-class-PackageFormers">
 <p>
@@ -2046,7 +2066,7 @@ fix-up <code>primed</code>.
 </div>
 </div>
 
-<div id="outline-container-org26df6d5" class="outline-3">
+<div id="outline-container-org265d027" class="outline-3">
 <h3 id="Variationals-with-Arguments-----map--rename---co-decorated--subscriptedᵢ--renaming-"><span class="section-number-3">2.11</span> Variationals with Arguments ---<code>map, rename, [co]decorated, subscriptedᵢ, renaming</code></h3>
 <div class="outline-text-3" id="text-Variationals-with-Arguments-----map--rename---co-decorated--subscriptedᵢ--renaming-">
 <p>
@@ -2142,7 +2162,7 @@ Important observations include:
 <ol class="org-ol">
 <li>The Lisp code lives in a <code>{-lisp ⋯ -}</code> block.</li>
 
-<li><a href="#org7d4888d">700-comments</a> have single-line <code>𝒱-name args = rhs</code>, whereas lisp-blocks
+<li><a href="#orge9b539f">700-comments</a> have single-line <code>𝒱-name args = rhs</code>, whereas lisp-blocks
 have multi-line <code>(𝒱 name args = rhs)</code> &#x2014;the dash after the 𝒱 is gone and outer-most
 parenthesis are added.</li>
 
@@ -2274,7 +2294,7 @@ For now, such lists are necessarily enclosed in double-quotes.
      <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">setq</span> clauses<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
    `<span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #67b11d;">(</span>arg<span style="color: #67b11d;">)</span> ,<span style="color: #67b11d;">(</span>append clauses `<span style="color: #b1951d;">(</span><span style="color: #3a81c3;">(</span>otherwise ,fallback<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 
-<span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> renaming by
+<span style="color: #3a81c3;">(</span>&#119985; renaming by
   = <span style="color: #2d9574;">"Rename elements using BY, a &#8220;;&#8221;-separated string of &#8220;to&#8221;-separated pairs."</span>
     rename '<span style="color: #6c3163;">(</span>reify-to-list by<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
@@ -2452,7 +2472,7 @@ ignore this for now, and we shall return to subgenerated PackageFormers later on
 </p>
 </div>
 </div>
-<div id="outline-container-org93547da" class="outline-3">
+<div id="outline-container-org59e2161" class="outline-3">
 <h3 id="Forming-Syntax-and-the-Special---𝑛𝑎𝑚𝑒--Variable"><span class="section-number-3">2.12</span> Forming Syntax and the Special <code>$𝑛𝑎𝑚𝑒</code> Variable</h3>
 <div class="outline-text-3" id="text-Forming-Syntax-and-the-Special---𝑛𝑎𝑚𝑒--Variable">
 <table>
@@ -2470,7 +2490,7 @@ ignore this for now, and we shall return to subgenerated PackageFormers later on
 
 <p>
 Since <code>data</code> declarations consist of constructors, whose target type necessarily
-begins with the name of the <code>data</code>-type being defined, let's only keep those <a href="#org579e72f">fields</a> and drop the rest.
+begins with the name of the <code>data</code>-type being defined, let's only keep those <a href="#org65a0ae7">fields</a> and drop the rest.
 To do so, we use the helper function <code>target</code> which takes a declaration <code>name : type0 → ⋯ → typeN</code> and yields <code>typeN</code>.
 </p>
 
@@ -2491,7 +2511,7 @@ carrier name with the name of the newly defined PackageFormer &#x2014;which we m
 using the special identifier <code>$𝑛𝑎𝑚𝑒</code>. In a <code>lisp</code> block, we formalise this algorithm as follows.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> data carrier
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>&#119985; data carrier
   = <span style="color: #2d9574;">"Reify as an Agda &#8220;data&#8221; type.</span>
 
 <span style="color: #2d9574;">     Only elements targeting CARRIER are kept.</span>
@@ -2501,7 +2521,7 @@ using the special identifier <code>$𝑛𝑎𝑚𝑒</code>. In a <code>lisp</co
     <span style="color: #3a81c3;">:alter-elements</span> <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #2d9574;">(</span>es<span style="color: #2d9574;">)</span>
       <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">thread-last</span> es
         <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">--filter</span> <span style="color: #b1951d;">(</span>s-contains? carrier <span style="color: #3a81c3;">(</span>target <span style="color: #6c3163;">(</span>element-type it<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
-        <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span> <span style="color: #b1951d;">(</span>map-type <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#955;</span> &#964; &#8594; <span style="color: #6c3163;">(</span>s-replace carrier $&#119899;&#119886;&#119898;&#119890; &#964;<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span> it<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+        <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span> <span style="color: #b1951d;">(</span>map-type <span style="color: #3a81c3;">(</span>&#955; &#964; &#8594; <span style="color: #6c3163;">(</span>s-replace carrier $&#119899;&#119886;&#119898;&#119890; &#964;<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span> it<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
 
@@ -2540,7 +2560,7 @@ Notice that <code>$𝑛𝑎𝑚𝑒</code> is a special variable that refers to 
 </div>
 </div>
 
-<div id="outline-container-orgc31b0ec" class="outline-3">
+<div id="outline-container-org33ebb62" class="outline-3">
 <h3 id="Subpacakges-with--generated--sorts--signature-"><span class="section-number-3">2.13</span> Subpacakges with <code>generated, sorts, signature</code></h3>
 <div class="outline-text-3" id="text-Subpacakges-with--generated--sorts--signature-">
 <p>
@@ -2556,7 +2576,7 @@ independent of one another &#x2014;which is rarely the case for Agda users.
 </p>
 <div class="org-src-container">
 <pre class="src src-emacs-lisp"><span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">cute, but too brutish.</span>
-<span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> generated by = <span style="color: #3a81c3;">:alter-elements</span> <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #2d9574;">(</span>es<span style="color: #2d9574;">)</span> <span style="color: #2d9574;">(</span>-filter by es<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+<span style="color: #3a81c3;">(</span>&#119985; generated by = <span style="color: #3a81c3;">:alter-elements</span> <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #2d9574;">(</span>es<span style="color: #2d9574;">)</span> <span style="color: #2d9574;">(</span>-filter by es<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
 
@@ -2569,7 +2589,7 @@ is coherent. Moreover, for generality, we consider a predicate rather than an ex
 listing of items to be retained.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> generated by
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>&#119985; generated by
   = <span style="color: #2d9574;">"Keep the largest well-formed PackageFormer whose elements satisfy BY.</span>
 
 <span style="color: #2d9574;">     BY is a predicate on elements.</span>
@@ -2596,12 +2616,12 @@ listing of items to be retained.
 Here's an immediate application: Obtaining the types declared in a grouping mechanism.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> sorts
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>&#119985; sorts
  = <span style="color: #2d9574;">"Obtaining the types declared in a grouping mechanism.</span>
 
 <span style="color: #2d9574;">   For now, only base types; i.e., items targeting &#8220;Set&#8221;.</span>
 <span style="color: #2d9574;">   "</span>
-   generated <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">&#955;</span> e &#8594; <span style="color: #2d9574;">(</span>s-contains? <span style="color: #2d9574;">"Set"</span> <span style="color: #67b11d;">(</span>target <span style="color: #b1951d;">(</span>element-type e<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+   generated <span style="color: #6c3163;">(</span>&#955; e &#8594; <span style="color: #2d9574;">(</span>s-contains? <span style="color: #2d9574;">"Set"</span> <span style="color: #67b11d;">(</span>target <span style="color: #b1951d;">(</span>element-type e<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
 <div class="org-src-container">
@@ -2646,9 +2666,9 @@ codify it.
   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">--any</span> <span style="color: #2d9574;">(</span>s-contains? it <span style="color: #67b11d;">(</span>target <span style="color: #b1951d;">(</span>element-type element<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
          <span style="color: #2d9574;">(</span>-map #'element-name <span style="color: #67b11d;">(</span>-filter #'is-sort $&#119890;&#119897;&#119890;&#119898;&#119890;&#119899;&#119905;&#119904;<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 
-<span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> signature
+<span style="color: #3a81c3;">(</span>&#119985; signature
   = <span style="color: #2d9574;">"Keep only the elements that target a sort, drop all else."</span>
-    generated <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">&#955;</span> e &#8594; <span style="color: #2d9574;">(</span>targets-a-sort e<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+    generated <span style="color: #6c3163;">(</span>&#955; e &#8594; <span style="color: #2d9574;">(</span>targets-a-sort e<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
 
@@ -2678,7 +2698,7 @@ Neato! Those were some nifty applications!
 </div>
 </div>
 
-<div id="outline-container-org99cfc87" class="outline-3">
+<div id="outline-container-orgfa009ba" class="outline-3">
 <h3 id="Shallow-Renaming-with-Agda-s--open---public---renaming---"><span class="section-number-3">2.14</span> Shallow Renaming with Agda's <code>open ⋯ public ⋯ renaming ⋯</code></h3>
 <div class="outline-text-3" id="text-Shallow-Renaming-with-Agda-s--open---public---renaming---">
 <p>
@@ -2689,8 +2709,9 @@ of the same record &#x2014;e.g., when forming homomorphisms.
 
 <p>
 A common pattern in Agda is then to open the record and perform the desired
-shallow renames. This pattern is so common that the standard library is littered
-with instances of it. We can codify the pattern as a method rather than as a
+shallow renames. This pattern is so common that the standard library is <a href="http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#2757">littered</a>
+with instances of it.
+We can codify the pattern as a method rather than as a
 manual technique.
 </p>
 
@@ -2700,7 +2721,7 @@ have been consulted at one point.
 </p>
 
 <p>
-Zero: A module where the elements are all <a href="#org3ae9470">parameters</a>.
+Zero: A module where the elements are all <a href="#org79c67dd">parameters</a>.
 </p>
 <div class="org-src-container">
 <pre class="src src-agda"><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #2aa1ae; background-color: #ecf3ec;">700</span>
@@ -2722,7 +2743,7 @@ Zero: A module where the elements are all <a href="#org3ae9470">parameters</a>.
 One-hundred: A one-parameter module where elements may be renamed.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> open with <span style="color: #6c3163;">(</span>avoid-mixfix-renaming nil<span style="color: #6c3163;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>&#119985; open with <span style="color: #6c3163;">(</span>avoid-mixfix-renaming nil<span style="color: #6c3163;">)</span>
   =
     <span style="color: #2d9574;">"Reify a given PackageFormer as a *parameterised* Agda &#8220;module&#8221; declaration.</span>
 
@@ -2797,12 +2818,12 @@ It is common in Agda to provide “to”-lists, so let's provide a variant that 
 instead of forcing users to produce functions explicitly.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> opening with
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>&#119985; opening with
   = <span style="color: #2d9574;">"Open a record as a module exposing only the names mentioned in WITH.</span>
 
 <span style="color: #2d9574;">    WITH is a string of &#8220;;&#8221;-separated items consisting of &#8220;to&#8221;-separated pairs.</span>
 <span style="color: #2d9574;">    "</span>
-    open <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">&#955;</span> x &#8594; <span style="color: #2d9574;">(</span>funcall <span style="color: #67b11d;">(</span>reify-to-list with <span style="color: #2d9574;">"_"</span><span style="color: #67b11d;">)</span> x<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span> <span style="color: #3a81c3;">:avoid-mixfix-renaming</span> t<span style="color: #3a81c3;">)</span>
+    open <span style="color: #6c3163;">(</span>&#955; x &#8594; <span style="color: #2d9574;">(</span>funcall <span style="color: #67b11d;">(</span>reify-to-list with <span style="color: #2d9574;">"_"</span><span style="color: #67b11d;">)</span> x<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span> <span style="color: #3a81c3;">:avoid-mixfix-renaming</span> t<span style="color: #3a81c3;">)</span>
 
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Alternatively, we could have used &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">trash</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217; names,</span>
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">something like (format "%s" (gensym)), instead of "_".</span>
@@ -2837,12 +2858,12 @@ and the second with ₂ &#x2014;this is different than <code>subscriptedᵢ</cod
 rather than opening it with renames.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> open-with-decoration ddd
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>&#119985; open-with-decoration ddd
   = <span style="color: #2d9574;">"Open a record, exposing all elements, with decoration DDD.</span>
 
 <span style="color: #2d9574;">    DDD is a string.</span>
 <span style="color: #2d9574;">   "</span>
-   open <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">&#955;</span> x &#8594; <span style="color: #2d9574;">(</span>concat x ddd<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+   open <span style="color: #6c3163;">(</span>&#955; x &#8594; <span style="color: #2d9574;">(</span>concat x ddd<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
 
@@ -2887,13 +2908,13 @@ homomorphism constructions.
 </div>
 </div>
 
-<div id="outline-container-org6ddccf8" class="outline-3">
+<div id="outline-container-org4eb88bd" class="outline-3">
 <h3 id="Automatically-deriving-homomorphism-definitions----"><span class="section-number-3">2.15</span> Automatically deriving homomorphism definitions ♥‿♥</h3>
 <div class="outline-text-3" id="text-Automatically-deriving-homomorphism-definitions----">
 <p>
 The definition of “structure preservation” is, nearly always, mechanical to
 formulate and that's just what we shall do to avoid having to write it out
-by hand ever again.
+by hand ever again &#x2014;which the <a href="http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Morphism.html#586">current approach</a> in the Agda standard library.
 </p>
 
 <p>
@@ -2983,7 +3004,7 @@ With this as a specification, in a <code>lisp</code> block:
 Then, we form the variational as follows &#x2014;also in a <code>lisp</code> block.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> hom
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>&#119985; hom
   = <span style="color: #2d9574;">"Formulate the notion of homomorphism of $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905; algebras.</span>
 
 <span style="color: #2d9574;">     &#10153; $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905; must be an existing record type used in the resulting formulation.</span>
@@ -3014,9 +3035,9 @@ Then, we form the variational as follows &#x2014;also in a <code>lisp</code> blo
        <span style="color: #b1951d;">(</span>make-element <span style="color: #3a81c3;">:qualifier</span> <span style="color: #2d9574;">"field"</span> <span style="color: #3a81c3;">:name</span> &#119982;&#120007;&#119992; <span style="color: #3a81c3;">:type</span> $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905;<span style="color: #b1951d;">)</span>
        <span style="color: #b1951d;">(</span>make-element <span style="color: #3a81c3;">:qualifier</span> <span style="color: #2d9574;">"field"</span> <span style="color: #3a81c3;">:name</span> &#119983;&#8458;&#120009; <span style="color: #3a81c3;">:type</span> $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905;<span style="color: #b1951d;">)</span>
        <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span>
-        <span style="color: #3a81c3;">(</span>map-type <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">&#955;</span> &#964; &#8594; <span style="color: #2d9574;">(</span>format <span style="color: #2d9574;">"let open %s %s; open %s&#8242; %s in %s"</span>
+        <span style="color: #3a81c3;">(</span>map-type <span style="color: #6c3163;">(</span>&#955; &#964; &#8594; <span style="color: #2d9574;">(</span>format <span style="color: #2d9574;">"let open %s %s; open %s&#8242; %s in %s"</span>
                                  $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905; &#119982;&#120007;&#119992; $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905; &#119983;&#8458;&#120009; &#964;<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
-                  <span style="color: #6c3163;">(</span>map-qualifier <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">&#955;</span> _ &#8594; <span style="color: #2d9574;">"field"</span><span style="color: #2d9574;">)</span> it<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+                  <span style="color: #6c3163;">(</span>map-qualifier <span style="color: #2d9574;">(</span>&#955; _ &#8594; <span style="color: #2d9574;">"field"</span><span style="color: #2d9574;">)</span> it<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
         <span style="color: #3a81c3;">(</span>reverse <span style="color: #6c3163;">(</span>-concat eqns maps<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
@@ -3107,7 +3128,7 @@ artefacts to make the construction an actual categorical product.</li>
 </div>
 </div>
 
-<div id="outline-container-org22bf827" class="outline-2">
+<div id="outline-container-orgbebf143" class="outline-2">
 <h2 id="Strings-and-Things"><span class="section-number-2">3</span> Strings and Things</h2>
 <div class="outline-text-2" id="text-Strings-and-Things">
 <p>
@@ -3148,7 +3169,7 @@ First some useful libraries:
 </div>
 </div>
 
-<div id="outline-container-org9655687" class="outline-3">
+<div id="outline-container-org7d88fb1" class="outline-3">
 <h3 id="Typing-mechanism"><span class="section-number-3">3.1</span> Typing mechanism</h3>
 <div class="outline-text-3" id="text-Typing-mechanism">
 <div class="org-src-container">
@@ -3172,7 +3193,7 @@ First some useful libraries:
 <span style="color: #da8b55; background-color: #ecf3ec;">  "</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Basic coherency checks. When there aren't optional types, key-types is the &#8220;:&#8221; symbol.</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">and</span> <span style="color: #67b11d;">(</span>listp types<span style="color: #67b11d;">)</span> <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">or</span> <span style="color: #b1951d;">(</span>listp key-types<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>symbolp key-types<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">and</span> <span style="color: #67b11d;">(</span>listp types<span style="color: #67b11d;">)</span> <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">or</span> <span style="color: #b1951d;">(</span>listp key-types<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>symbolp key-types<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">letf*</span> <span style="color: #2d9574;">(</span><span style="color: #67b11d;">(</span>pairify <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">lambda</span> <span style="color: #3a81c3;">(</span>xs<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for i in xs by #'cddr         <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Turn a list of flattenned pairs</span>
                                       for j in <span style="color: #6c3163;">(</span>cdr xs<span style="color: #6c3163;">)</span> by #'cddr   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">into a list of explicit pairs.</span>
@@ -3235,7 +3256,7 @@ First some useful libraries:
 </div>
 </div>
 
-<div id="outline-container-orgd3ef035" class="outline-3">
+<div id="outline-container-orgdf97fa3" class="outline-3">
 <h3 id="Finding-Children-in-the-Wild"><span class="section-number-3">3.2</span> Finding Children in the Wild</h3>
 <div class="outline-text-3" id="text-Finding-Children-in-the-Wild">
 <p>
@@ -3244,7 +3265,7 @@ with hierarchical phrases.
 For example, consider the following todo list,
 </p>
 <div class="org-src-container">
-<pre class="src src-org" id="org9cfb848">+ item 1
+<pre class="src src-org" id="org99bb2b0">+ item 1
   - subitem 1.1
     * subsubitem 1.1.1
   - subitem 1.2
@@ -3282,7 +3303,7 @@ then all subsequent lines with at least that much indentation have the same ance
 
 <details class="code-details"> <summary> <strong> <font face="Courier" size="3" color="green"> get-indentation Implementation </font> </strong> </summary>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--declare-type</span> pf--get-indentation : string integer<span style="color: #3a81c3;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>pf--declare-type pf--get-indentation : string integer<span style="color: #3a81c3;">)</span>
 <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">defun</span> <span style="color: #6c3163; font-weight: bold;">pf--get-indentation</span> <span style="color: #6c3163;">(</span>string<span style="color: #6c3163;">)</span>
   <span style="color: #da8b55; background-color: #ecf3ec;">"How many spaces are there at the front of &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">string</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217;?</span>
 
@@ -3295,7 +3316,7 @@ then all subsequent lines with at least that much indentation have the same ance
 
 <details class="code-details"> <summary> <strong> <font face="Courier" size="3" color="green"> get-children Implementation </font> </strong> </summary>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--declare-type</span> get-children <span style="color: #6c3163;">(</span><span style="color: #3a81c3;">:then</span> t<span style="color: #6c3163;">)</span> string <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">or</span> string list<span style="color: #6c3163;">)</span> cons<span style="color: #3a81c3;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>pf--declare-type get-children <span style="color: #6c3163;">(</span><span style="color: #3a81c3;">:then</span> t<span style="color: #6c3163;">)</span> string <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">or</span> string list<span style="color: #6c3163;">)</span> cons<span style="color: #3a81c3;">)</span>
 <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">pf--get-children</span> <span style="color: #6c3163;">(</span>parent the-wild <span style="color: #ba2f59; font-weight: bold;">&amp;key</span> <span style="color: #2d9574;">(</span>then #'identity<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
   <span style="color: #da8b55; background-color: #ecf3ec;">"Go into &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">the-wild</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217; seeking out the first occurence of &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">parent</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217;,</span>
 <span style="color: #da8b55; background-color: #ecf3ec;">   who once found, ought to have a minimal indentation for its children.</span>
@@ -3568,7 +3589,7 @@ why tests fail.
 <div class="org-src-container">
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">ert-deftest</span> <span style="color: #6c3163; font-weight: bold;">get-ind</span> <span style="color: #6c3163;">()</span>
   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for s in '<span style="color: #2d9574;">(</span>nil <span style="color: #2d9574;">""</span> <span style="color: #2d9574;">"x"</span> <span style="color: #2d9574;">"  x"</span> <span style="color: #2d9574;">"  x "</span><span style="color: #2d9574;">)</span>
-    do <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>&lt;= <span style="color: #b1951d;">(</span>pf--get-indentation s<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>length s<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+    do <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>&lt;= <span style="color: #b1951d;">(</span>pf--get-indentation s<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>length s<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
   <span style="color: #3a81c3;">)</span>
 
 <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">ert-deftest</span> <span style="color: #6c3163; font-weight: bold;">get-child</span> <span style="color: #6c3163;">()</span>
@@ -3587,16 +3608,16 @@ why tests fail.
          <span style="color: #3a81c3;">(</span>children <span style="color: #6c3163;">(</span>cdadr cs<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
 
       <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Result is a list of lists: Each is either nil or a cons.</span>
-      <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for r in cs do <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #6c3163;">(</span>listp r<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
+      <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for r in cs do <span style="color: #3a81c3;">(</span>should <span style="color: #6c3163;">(</span>listp r<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
 
       <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">The parent line contains the parent.</span>
-      <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #3a81c3;">(</span>equal parent <span style="color: #6c3163;">(</span>caadr cs<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
+      <span style="color: #b1951d;">(</span>should <span style="color: #3a81c3;">(</span>equal parent <span style="color: #6c3163;">(</span>caadr cs<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
 
       <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">The children all have the same indentation.</span>
-      <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for c in children for d in children do <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #6c3163;">(</span>equal <span style="color: #2d9574;">(</span>pf--get-indentation c<span style="color: #2d9574;">)</span> <span style="color: #2d9574;">(</span>pf--get-indentation d<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
+      <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for c in children for d in children do <span style="color: #3a81c3;">(</span>should <span style="color: #6c3163;">(</span>equal <span style="color: #2d9574;">(</span>pf--get-indentation c<span style="color: #2d9574;">)</span> <span style="color: #2d9574;">(</span>pf--get-indentation d<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
 
       <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Extensionality: Orginal input can be regained from resulting parts.</span>
-      <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #3a81c3;">(</span>equal eh <span style="color: #6c3163;">(</span>s-trim <span style="color: #2d9574;">(</span>s-join <span style="color: #2d9574;">"\n"</span> <span style="color: #887070;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span> <span style="color: #3a81c3;">(</span>s-join <span style="color: #2d9574;">"\n"</span> it<span style="color: #3a81c3;">)</span> cs<span style="color: #887070;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
+      <span style="color: #b1951d;">(</span>should <span style="color: #3a81c3;">(</span>equal eh <span style="color: #6c3163;">(</span>s-trim <span style="color: #2d9574;">(</span>s-join <span style="color: #2d9574;">"\n"</span> <span style="color: #887070;">(</span><span style="color: #3a81c3; font-weight: bold;">--map</span> <span style="color: #3a81c3;">(</span>s-join <span style="color: #2d9574;">"\n"</span> it<span style="color: #3a81c3;">)</span> cs<span style="color: #887070;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
     <span style="color: #67b11d;">)</span>
   <span style="color: #2d9574;">)</span>
 <span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
@@ -3606,7 +3627,7 @@ why tests fail.
 </div>
 </div>
 
-<div id="outline-container-orgf3447fc" class="outline-3">
+<div id="outline-container-orgb3672c6" class="outline-3">
 <h3 id="Substrings-Delimited-by-Tokens"><span class="section-number-3">3.3</span> Substrings Delimited by Tokens</h3>
 <div class="outline-text-3" id="text-Substrings-Delimited-by-Tokens">
 <div class="org-center">
@@ -3666,18 +3687,18 @@ this operation takes a string of the form  <code>⋯‘prefix’⟪needle⟫‘s
                <span style="color: #b1951d;">(</span> <span style="color: #2d9574;">""</span> <span style="color: #2d9574;">"&#8734;"</span>  ,str          <span style="color: #3a81c3;">:BogusR</span><span style="color: #b1951d;">)</span>
                <span style="color: #b1951d;">(</span> <span style="color: #2d9574;">"&#120800;"</span> <span style="color: #2d9574;">"&#8734;"</span> ,str          <span style="color: #3a81c3;">:BogusLR</span><span style="color: #b1951d;">)</span>
              <span style="color: #67b11d;">)</span>
-      do <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #b1951d;">(</span>equal <span style="color: #3a81c3;">(</span>third it<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>pf--substring-delimited <span style="color: #6c3163;">(</span>first it<span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span>second it<span style="color: #6c3163;">)</span> str<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+      do <span style="color: #67b11d;">(</span>should <span style="color: #b1951d;">(</span>equal <span style="color: #3a81c3;">(</span>third it<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>pf--substring-delimited <span style="color: #6c3163;">(</span>first it<span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span>second it<span style="color: #6c3163;">)</span> str<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120795;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#120794;"</span> <span style="color: #2d9574;">"&#120796;"</span> str<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120795;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#120794;"</span> <span style="color: #2d9574;">"&#120796;"</span> str<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Identical boundaries.</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119923;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">""</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923; &#119923;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">""</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923;&#119923;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119923;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">""</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923; &#119923;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">""</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119923;&#119923;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Multiple occurances of prefix or postfix</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"y"</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119929;"</span> <span style="color: #2d9574;">"&#119923; x &#119923; y &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"x"</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119929;"</span> <span style="color: #2d9574;">"&#119923; x &#119929; y &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"y"</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119929;"</span> <span style="color: #2d9574;">"&#119923; x &#119923; y &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"x"</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited <span style="color: #2d9574;">"&#119923;"</span> <span style="color: #2d9574;">"&#119929;"</span> <span style="color: #2d9574;">"&#119923; x &#119929; y &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 </pre>
 </div>
 </details>
@@ -3710,26 +3731,26 @@ this operation takes a string of the form  <code>⋯‘prefix’⟪needle⟫‘s
                <span style="color: #b1951d;">(</span> <span style="color: #2d9574;">"$here &#8734;"</span>   ,str          <span style="color: #3a81c3;">:BogusR</span><span style="color: #b1951d;">)</span>
                <span style="color: #b1951d;">(</span> <span style="color: #2d9574;">"&#120800; $here &#8734;"</span> ,str          <span style="color: #3a81c3;">:BogusLR</span><span style="color: #b1951d;">)</span>
              <span style="color: #67b11d;">)</span>
-      do <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #b1951d;">(</span>equal <span style="color: #3a81c3;">(</span>second it<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>pf--substring-delimited-here <span style="color: #6c3163;">(</span>first it<span style="color: #6c3163;">)</span> str<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+      do <span style="color: #67b11d;">(</span>should <span style="color: #b1951d;">(</span>equal <span style="color: #3a81c3;">(</span>second it<span style="color: #3a81c3;">)</span> <span style="color: #3a81c3;">(</span>pf--substring-delimited-here <span style="color: #6c3163;">(</span>first it<span style="color: #6c3163;">)</span> str<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Longest substring</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120795;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#120794; $here &#120796;"</span> str<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120795;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#120794; $here &#120796;"</span> str<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Identical boundaries.</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#120792; $here &#120792;"</span> <span style="color: #2d9574;">"&#120792; &#120793; &#120792;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">""</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#120792; $here &#120792;"</span> <span style="color: #2d9574;">"&#120792; &#120792;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">""</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#120792; $here &#120792;"</span> <span style="color: #2d9574;">"&#120792;&#120792;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#120792; $here &#120792;"</span> <span style="color: #2d9574;">"&#120792; &#120793; &#120792;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">""</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#120792; $here &#120792;"</span> <span style="color: #2d9574;">"&#120792; &#120792;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">""</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#120792; $here &#120792;"</span> <span style="color: #2d9574;">"&#120792;&#120792;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Multiple occurances of prefix or postfix</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"y"</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923; $here &#119929;"</span> <span style="color: #2d9574;">"&#119923; x &#119923; y &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"x"</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923; $here &#119929;"</span> <span style="color: #2d9574;">"&#119923; x &#119929; y &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"y"</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923; $here &#119929;"</span> <span style="color: #2d9574;">"&#119923; x &#119923; y &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"x"</span>  <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923; $here &#119929;"</span> <span style="color: #2d9574;">"&#119923; x &#119929; y &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Space irrelevance for keyword &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">$here</span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8217;:</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923; $here &#119929;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923; $here&#119929;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923;$here &#119929;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923;$here&#119929;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923;      $here  &#119929;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923; $here &#119929;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923; $here&#119929;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923;$here &#119929;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923;$here&#119929;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #2d9574;">"&#120793;"</span> <span style="color: #b1951d;">(</span>pf--substring-delimited-here <span style="color: #2d9574;">"&#119923;      $here  &#119929;"</span> <span style="color: #2d9574;">"&#119923; &#120793; &#119929;"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
     <span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
@@ -3766,7 +3787,7 @@ our string manipulation setup is robust enough to get at the constituents:
 <p>
 The aim is to eventually have an interface that interacts with an buffer containing Agda code.
 To that end, we propose that our fictitious syntax be directly embedded via special comments,
-<code>{-700 ⋯ -}</code>, henceforth referred to as “<a id="org7d4888d">700-comments</a>”.
+<code>{-700 ⋯ -}</code>, henceforth referred to as “<a id="orge9b539f">700-comments</a>”.
 </p>
 
 <ul class="org-ul">
@@ -3779,7 +3800,7 @@ contained in the ‘parenthesis’ <code>starting-regexp</code> and <code>ending
 
 <ul class="org-ul">
 <li>Cursor position is saved.</li>
-<li>This function let's us obtain the contents of <i>all</i> <a href="#org7d4888d">700-comments</a>.</li>
+<li>This function let's us obtain the contents of <i>all</i> <a href="#orge9b539f">700-comments</a>.</li>
 </ul></li>
 </ul>
 
@@ -3881,7 +3902,7 @@ Here are some possible invocations, the last one being our use case.
 </div>
 </div>
 
-<div id="outline-container-orge9f78e5" class="outline-3">
+<div id="outline-container-org36e9251" class="outline-3">
 <h3 id="Agda-Mixfix-Renaming-and-Imports"><span class="section-number-3">3.4</span> Agda Mixfix Renaming and Imports</h3>
 <div class="outline-text-3" id="text-Agda-Mixfix-Renaming-and-Imports">
 <p>
@@ -3924,7 +3945,16 @@ We also want to prefix the generated file with the imports of the current file.
 </p>
 <details class="code-details"> <summary> <strong> <font face="Courier" size="3" color="green"> extract-imports Implementation </font> </strong> </summary>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--declare-type</span> extract-imports : string<span style="color: #3a81c3;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">defvar</span> <span style="color: #715ab1;">pf-generated-suffix</span> <span style="color: #2d9574;">"-generated"</span>
+  <span style="color: #da8b55; background-color: #ecf3ec;">"The suffix applied to a file's name to produce it's generated counterpart."</span><span style="color: #3a81c3;">)</span>
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Sometimes we may want the full name due to files being in a nested</span>
+<span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">directory hierarchy: (file-name-sans-extension buffer-file-name)</span>
+<span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">defvar</span> <span style="color: #715ab1;">pf--generated-file-name</span>
+  <span style="color: #6c3163;">(</span>concat <span style="color: #2d9574;">(</span>file-name-sans-extension <span style="color: #67b11d;">(</span>buffer-name<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span> pf-generated-suffix<span style="color: #6c3163;">)</span>
+  <span style="color: #da8b55; background-color: #ecf3ec;">"Name of the generated file."</span><span style="color: #3a81c3;">)</span>
+
+<span style="color: #3a81c3;">(</span>pf--declare-type extract-imports : string<span style="color: #3a81c3;">)</span>
 <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">pf--extract-imports</span> <span style="color: #6c3163;">()</span>
   <span style="color: #da8b55; background-color: #ecf3ec;">"Return substring of buffer whose lines mention &#8220;import&#8221;.</span>
 <span style="color: #da8b55; background-color: #ecf3ec;">   Throw away any that mention the substring &#8220;&#10218;FileName&#10219;_Generated&#8221;.</span>
@@ -3932,8 +3962,7 @@ We also want to prefix the generated file with the imports of the current file.
   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">thread-last</span> <span style="color: #2d9574;">(</span>buffer-substring-no-properties <span style="color: #67b11d;">(</span>point-min<span style="color: #67b11d;">)</span> <span style="color: #67b11d;">(</span>point-max<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
     <span style="color: #2d9574;">(</span>s-split <span style="color: #2d9574;">"\n"</span><span style="color: #2d9574;">)</span>
     <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">--filter</span> <span style="color: #67b11d;">(</span>s-contains? <span style="color: #2d9574;">"import "</span> it<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">--remove</span> <span style="color: #67b11d;">(</span>s-contains?
-           <span style="color: #b1951d;">(</span>format  <span style="color: #2d9574;">"%s_Generated"</span> <span style="color: #3a81c3;">(</span>file-name-sans-extension <span style="color: #6c3163;">(</span>buffer-name<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span> it<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">--remove</span> <span style="color: #67b11d;">(</span>s-contains? pf--generated-file-name it<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
     <span style="color: #2d9574;">(</span>s-join <span style="color: #2d9574;">"\n"</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
@@ -3945,7 +3974,7 @@ So much string meddling, hopefully no more 🙈 :hear<sub>no</sub><sub>evil</sub
 </div>
 </div>
 
-<div id="outline-container-org66e2ca1" class="outline-3">
+<div id="outline-container-org13f8b27" class="outline-3">
 <h3 id="-λ--for-the-Agda-User"><span class="section-number-3">3.5</span> “λ” for the Agda User</h3>
 <div class="outline-text-3" id="text--λ--for-the-Agda-User">
 <p>
@@ -3979,11 +4008,11 @@ into the Agda-like syntax <code>(λ x₀ ⋯ xₙ → body)</code>.
 </div>
 </div>
 
-<div id="outline-container-org1d22b9d" class="outline-2">
+<div id="outline-container-orgcb6a9a9" class="outline-2">
 <h2 id="The--package-former--Datatype"><span class="section-number-2">4</span> The <code>package-former</code> Datatype</h2>
 <div class="outline-text-2" id="text-The--package-former--Datatype">
 <p>
-For this prototype's <a href="#org2a09871">constraints</a>, a PackageFormer will generally declared as
+For this prototype's <a href="#org29d51ab">constraints</a>, a PackageFormer will generally declared as
 </p>
 <div class="org-src-container">
 <pre class="src src-agda"><span style="color: #ba2f59; font-weight: bold;">PackageFormer Name</span> : <span style="color: #3a81c3; font-weight: bold;">Set</span> <span style="color: #0000cd;">level</span> <span style="color: #3a81c3; font-weight: bold;">where</span>
@@ -4043,7 +4072,7 @@ We will keep track of all such declarations in a global list.
 </div>
 </div>
 
-<div id="outline-container-org48e1c36" class="outline-3">
+<div id="outline-container-orgcfc1407" class="outline-3">
 <h3 id="Locally-Opening-a-PackageFormer"><span class="section-number-3">4.1</span> Locally Opening a PackageFormer</h3>
 <div class="outline-text-3" id="text-Locally-Opening-a-PackageFormer">
 <p>
@@ -4082,13 +4111,13 @@ It is crucial to realise that we have just established a convention
 that partitions the elements of a PackageFormer:
 </p>
 <ul class="org-ul">
-<li><a id="org3ae9470">parameters</a> are the elements before the waist line.</li>
-<li><a id="org579e72f">fields</a> are the elements after the waist line.</li>
+<li><a id="org79c67dd">parameters</a> are the elements before the waist line.</li>
+<li><a id="org65a0ae7">fields</a> are the elements after the waist line.</li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org8cefbb5" class="outline-3">
+<div id="outline-container-org0ceca0d" class="outline-3">
 <h3 id="Elements"><span class="section-number-3">4.2</span> Elements</h3>
 <div class="outline-text-3" id="text-Elements">
 <p>
@@ -4146,7 +4175,7 @@ Now a method for replacing textual strings within an element structure.
 Given a typed name, return the name.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--declare-type</span> parse-name : string string<span style="color: #3a81c3;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>pf--declare-type parse-name : string string<span style="color: #3a81c3;">)</span>
 <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">defun</span> <span style="color: #6c3163; font-weight: bold;">parse-name</span> <span style="color: #6c3163;">(</span>element<span style="color: #6c3163;">)</span>
   <span style="color: #da8b55; background-color: #ecf3ec;">"Given an string representation of an &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">element</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217;, yield the &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">name</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217; component.</span>
 
@@ -4166,7 +4195,7 @@ Given a typed name, return the name.
 Parsing a list of interleaved elements in concrete syntax.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--declare-type</span> parse-elements : <span style="color: #6c3163;">(</span>list-of string<span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span>list-of element<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>pf--declare-type parse-elements : <span style="color: #6c3163;">(</span>list-of string<span style="color: #6c3163;">)</span> <span style="color: #6c3163;">(</span>list-of element<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">defun</span> <span style="color: #6c3163; font-weight: bold;">parse-elements</span> <span style="color: #6c3163;">(</span>elements<span style="color: #6c3163;">)</span>
   <span style="color: #da8b55; background-color: #ecf3ec;">"Given a list of PackageFormer &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">elements</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217;, as strings, parse them into the</span>
 <span style="color: #da8b55; background-color: #ecf3ec;">  &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">element</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217; datatype. Declarations and equations may be interspersed, as along</span>
@@ -4221,7 +4250,7 @@ Notice that the equations do not necessarily immediately follow their associated
 </div>
 </div>
 
-<div id="outline-container-orgaf33386" class="outline-3">
+<div id="outline-container-org6d1fe97" class="outline-3">
 <h3 id="Package-Former-Parsing-and-Pretty-Printing"><span class="section-number-3">4.3</span> Package Former Parsing and Pretty Printing</h3>
 <div class="outline-text-3" id="text-Package-Former-Parsing-and-Pretty-Printing">
 <p>
@@ -4229,7 +4258,7 @@ With this in hand, let's produce a robust parser.
 </p>
 <div class="org-src-container">
 <pre class="src src-emacs-lisp"><span style="color: #2aa1ae; background-color: #ecf3ec;">; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(pf--declare-type pf--load-package-former : (list-of string) package-former)</span>
-<span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--declare-type</span> pf--load-package-former : t t<span style="color: #3a81c3;">)</span>
+<span style="color: #3a81c3;">(</span>pf--declare-type pf--load-package-former : t t<span style="color: #3a81c3;">)</span>
 <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">defun</span> <span style="color: #6c3163; font-weight: bold;">pf--load-package-former</span> <span style="color: #6c3163;">(</span>lines<span style="color: #6c3163;">)</span>
   <span style="color: #da8b55; background-color: #ecf3ec;">"The input &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">lines</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217; must be a list of lines forming a full PackageFormer declaration;</span>
 <span style="color: #da8b55; background-color: #ecf3ec;">   e.g., obtained by calling &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">pf--get-children</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217;.</span>
@@ -4296,7 +4325,7 @@ Let's try this out.
 Conversely, let's have a pretty printer.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--declare-type</span> special : string t<span style="color: #3a81c3;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>pf--declare-type special : string t<span style="color: #3a81c3;">)</span>
 <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">defun</span> <span style="color: #6c3163; font-weight: bold;">pf--special</span> <span style="color: #6c3163;">(</span>f<span style="color: #6c3163;">)</span>
   <span style="color: #da8b55; background-color: #ecf3ec;">"Special elements, for whatever reason are exceptional, and so</span>
 <span style="color: #da8b55; background-color: #ecf3ec;">   are maked as singleton lists and their indentation is lessened.</span>
@@ -4314,7 +4343,7 @@ A “sibling” item has no indentation.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--declare-type</span> show-element <span style="color: #6c3163;">(</span><span style="color: #3a81c3;">:omit-qualifier</span> t<span style="color: #6c3163;">)</span> element string<span style="color: #3a81c3;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>pf--declare-type show-element <span style="color: #6c3163;">(</span><span style="color: #3a81c3;">:omit-qualifier</span> t<span style="color: #6c3163;">)</span> element string<span style="color: #3a81c3;">)</span>
 <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">show-element</span> <span style="color: #6c3163;">(</span>e <span style="color: #ba2f59; font-weight: bold;">&amp;optional</span> omit-qualifier<span style="color: #6c3163;">)</span>
   <span style="color: #da8b55; background-color: #ecf3ec;">"Render an &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">element</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217; value in the form</span>
 
@@ -4328,12 +4357,12 @@ A “sibling” item has no indentation.
                          <span style="color: #b1951d;">(</span>element-type e<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
                  <span style="color: #67b11d;">(</span>element-equations e<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 
-<span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--declare-type</span> pf--show-package-former : pf--package-former string<span style="color: #3a81c3;">)</span>
+<span style="color: #3a81c3;">(</span>pf--declare-type pf--show-package-former : pf--package-former string<span style="color: #3a81c3;">)</span>
 <span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">pf--show-package-former</span> <span style="color: #6c3163;">(</span>p<span style="color: #6c3163;">)</span>
   <span style="color: #da8b55; background-color: #ecf3ec;">"Pretty print a package-former record value.</span>
 <span style="color: #da8b55; background-color: #ecf3ec;">  "</span>
 
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--open-pf</span> p
+  <span style="color: #6c3163;">(</span>pf--open-pf p
     <span style="color: #2d9574;">(</span>s-join <span style="color: #2d9574;">"\n"</span>
       <span style="color: #67b11d;">(</span>-cons*
 
@@ -4409,7 +4438,7 @@ should be inverses.
 </p>
 <div class="org-src-container">
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">-let</span> <span style="color: #6c3163;">[</span>pf <span style="color: #2d9574;">(</span>cadr <span style="color: #67b11d;">(</span>pf--get-children <span style="color: #2d9574;">"PackageFormer"</span> test<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">]</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>s-collapse-whitespace <span style="color: #b1951d;">(</span>concat <span style="color: #2d9574;">"\n"</span> <span style="color: #3a81c3;">(</span>s-join <span style="color: #2d9574;">"\n"</span> pf<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>s-collapse-whitespace <span style="color: #b1951d;">(</span>concat <span style="color: #2d9574;">"\n"</span> <span style="color: #3a81c3;">(</span>s-join <span style="color: #2d9574;">"\n"</span> pf<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
      <span style="color: #67b11d;">(</span>s-collapse-whitespace <span style="color: #b1951d;">(</span>pf--show-package-former <span style="color: #3a81c3;">(</span>pf--load-package-former pf<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 </pre>
 </div>
@@ -4438,22 +4467,22 @@ should be inverses.
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">ert-deftest</span> <span style="color: #6c3163; font-weight: bold;">pf-parse</span> <span style="color: #6c3163;">()</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Error on empty list of lines.</span>
-   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should-error</span> <span style="color: #2d9574;">(</span>pf--load-package-former nil<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+   <span style="color: #6c3163;">(</span>should-error <span style="color: #2d9574;">(</span>pf--load-package-former nil<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">No crash on empty line.</span>
-   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>pf--load-package-former <span style="color: #67b11d;">(</span>list <span style="color: #2d9574;">""</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+   <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>pf--load-package-former <span style="color: #67b11d;">(</span>list <span style="color: #2d9574;">""</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">No crash on PackageFormer with no elements.</span>
-   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>pf--load-package-former <span style="color: #67b11d;">(</span>list <span style="color: #2d9574;">"PackageFormer PF : Set &#8467; where"</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+   <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>pf--load-package-former <span style="color: #67b11d;">(</span>list <span style="color: #2d9574;">"PackageFormer PF : Set &#8467; where"</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Levels</span>
-   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #2d9574;">"&#8467;"</span> <span style="color: #67b11d;">(</span>pf--package-former-level <span style="color: #b1951d;">(</span>pf--load-package-former <span style="color: #3a81c3;">(</span>list <span style="color: #2d9574;">"PackageFormer PF : Set &#8467; where"</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+   <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #2d9574;">"&#8467;"</span> <span style="color: #67b11d;">(</span>pf--package-former-level <span style="color: #b1951d;">(</span>pf--load-package-former <span style="color: #3a81c3;">(</span>list <span style="color: #2d9574;">"PackageFormer PF : Set &#8467; where"</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
    <span style="color: #2aa1ae; background-color: #ecf3ec;">;;</span>
-   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #2d9574;">""</span> <span style="color: #67b11d;">(</span>pf--package-former-level <span style="color: #b1951d;">(</span>pf--load-package-former <span style="color: #3a81c3;">(</span>list <span style="color: #2d9574;">"PackageFormer PF : Set  where"</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+   <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #2d9574;">""</span> <span style="color: #67b11d;">(</span>pf--package-former-level <span style="color: #b1951d;">(</span>pf--load-package-former <span style="color: #3a81c3;">(</span>list <span style="color: #2d9574;">"PackageFormer PF : Set  where"</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
    <span style="color: #2aa1ae; background-color: #ecf3ec;">;;</span>
-   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #2d9574;">"&#8323;"</span> <span style="color: #67b11d;">(</span>pf--package-former-level <span style="color: #b1951d;">(</span>pf--load-package-former <span style="color: #3a81c3;">(</span>list <span style="color: #2d9574;">"PackageFormer PF : Set&#8323; where"</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+   <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #2d9574;">"&#8323;"</span> <span style="color: #67b11d;">(</span>pf--package-former-level <span style="color: #b1951d;">(</span>pf--load-package-former <span style="color: #3a81c3;">(</span>list <span style="color: #2d9574;">"PackageFormer PF : Set&#8323; where"</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
    <span style="color: #2aa1ae; background-color: #ecf3ec;">;;</span>
-   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #2d9574;">"(Level.suc &#8467;)"</span> <span style="color: #67b11d;">(</span>pf--package-former-level <span style="color: #b1951d;">(</span>pf--load-package-former <span style="color: #3a81c3;">(</span>list <span style="color: #2d9574;">"PackageFormer PF : Set (Level.suc &#8467;) where"</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+   <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #2d9574;">"(Level.suc &#8467;)"</span> <span style="color: #67b11d;">(</span>pf--package-former-level <span style="color: #b1951d;">(</span>pf--load-package-former <span style="color: #3a81c3;">(</span>list <span style="color: #2d9574;">"PackageFormer PF : Set (Level.suc &#8467;) where"</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Full parsing.</span>
    <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">-let</span> <span style="color: #2d9574;">[</span>pf <span style="color: #67b11d;">(</span>pf--load-package-former <span style="color: #b1951d;">(</span>cadr <span style="color: #3a81c3;">(</span>pf--get-children <span style="color: #2d9574;">"PackageFormer"</span> test<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">]</span>
@@ -4461,7 +4490,7 @@ should be inverses.
             <span style="color: #2d9574;">"#s(pf--package-former nil PackageFormer M-Set &#8321; 0 nil 3 (Scalar  : Set Vector  : Set _&#183;_     : Scalar &#8594; Vector &#8594; Vector &#120793;       : Scalar _&#215;_     : Scalar &#8594; Scalar &#8594; Scalar leftId  : {&#120011; : Vector}  &#8594;  &#120793; &#183; &#120011;  &#8801;  &#120011; assoc   : {a b : Scalar} {&#120011; : Vector} &#8594; (a &#215; b) &#183; &#120011;  &#8801;  a &#183; (b &#183; &#120011;)))"</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">-let</span> <span style="color: #2d9574;">[</span>pf <span style="color: #67b11d;">(</span>cadr <span style="color: #b1951d;">(</span>pf--get-children <span style="color: #2d9574;">"PackageFormer"</span> test<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">]</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #67b11d;">(</span>equal <span style="color: #b1951d;">(</span>s-concat <span style="color: #2d9574;">"\n"</span> <span style="color: #3a81c3;">(</span>s-join <span style="color: #2d9574;">"\n"</span> pf<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
+    <span style="color: #2d9574;">(</span>should <span style="color: #67b11d;">(</span>equal <span style="color: #b1951d;">(</span>s-concat <span style="color: #2d9574;">"\n"</span> <span style="color: #3a81c3;">(</span>s-join <span style="color: #2d9574;">"\n"</span> pf<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
                    <span style="color: #b1951d;">(</span>pf--show-package-former <span style="color: #3a81c3;">(</span>pf--load-package-former pf<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
 <span style="color: #3a81c3;">)</span>
@@ -4472,7 +4501,7 @@ should be inverses.
 </div>
 </div>
 
-<div id="outline-container-org3521fd8" class="outline-2">
+<div id="outline-container-org560f607" class="outline-2">
 <h2 id="Variational-Language"><span class="section-number-2">5</span> Variational Language</h2>
 <div class="outline-text-2" id="text-Variational-Language">
 <p>
@@ -4515,7 +4544,7 @@ users are welcome to use any other symbol.
 </div>
 </div>
 
-<div id="outline-container-org9113938" class="outline-3">
+<div id="outline-container-org2c4e9f3" class="outline-3">
 <h3 id="𝒱𝒸---𝒱---and-𝒱"><span class="section-number-3">5.1</span> 𝒱𝒸,  𝒱-, and 𝒱</h3>
 <div class="outline-text-3" id="text-𝒱𝒸---𝒱---and-𝒱">
 <p>
@@ -4568,7 +4597,7 @@ Parsing variational clauses is then straightforward:
                             <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">then invoke the resulting function call with the second eval.</span>
                             <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">progn</span>
                               <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">The variational being called is defined.</span>
-                              <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--ensure</span> <span style="color: #887070;">(</span>fboundp <span style="color: #3a81c3;">(</span>&#119985;- <span style="color: #6c3163;">(</span>car clause<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #887070;">)</span>
+                              <span style="color: #2d9574;">(</span>pf--ensure <span style="color: #887070;">(</span>fboundp <span style="color: #3a81c3;">(</span>&#119985;- <span style="color: #6c3163;">(</span>car clause<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #887070;">)</span>
                                         <span style="color: #887070;">(</span>format <span style="color: #2d9574;">"Did you mistype a variational's name: &#8220;%s&#8221; is not defined."</span> <span style="color: #3a81c3;">(</span>car clause<span style="color: #3a81c3;">)</span><span style="color: #887070;">)</span>
                                         context
                                         <span style="color: #2d9574;">"Use the PackageFormer menu to see which variationals are defined."</span><span style="color: #2d9574;">)</span>
@@ -4591,7 +4620,7 @@ Where we have used the following helper to prefix Lisp code with “𝒱-”.
   <span style="color: #da8b55; background-color: #ecf3ec;">"Prefix the Lisp data &#8216;</span><span style="color: #4e3163; background-color: #ecf3ec;">name</span><span style="color: #da8b55; background-color: #ecf3ec;">&#8217; with a &#8220;&#119985;-&#8221;</span>
 <span style="color: #da8b55; background-color: #ecf3ec;">   then yield that as a Lisp datum.</span>
 <span style="color: #da8b55; background-color: #ecf3ec;">  "</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>symbolp name<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>symbolp name<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">thread-last</span> name
     <span style="color: #2d9574;">(</span>format <span style="color: #2d9574;">"&#119985;-%s"</span><span style="color: #2d9574;">)</span>
     read-from-string
@@ -4706,7 +4735,7 @@ definition as well as its Lisp realisation ^_^ &#x2014;simply press “C-h o ENT
 Here's an example.
 </p>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> test positional <span style="color: #6c3163;">(</span>keyword 3<span style="color: #6c3163;">)</span> another = <span style="color: #2d9574;">"I have two mandatory arguments and one keyword argument"</span><span style="color: #3a81c3;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span>&#119985; test positional <span style="color: #6c3163;">(</span>keyword 3<span style="color: #6c3163;">)</span> another = <span style="color: #2d9574;">"I have two mandatory arguments and one keyword argument"</span><span style="color: #3a81c3;">)</span>
 
 <span style="color: #3a81c3;">(</span>&#119985;-test <span style="color: #2d9574;">"positional arg&#8321;"</span> <span style="color: #2d9574;">"positional arg&#8322;"</span> <span style="color: #3a81c3;">:keyword</span> 25<span style="color: #3a81c3;">)</span> <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8658; nil ^_^</span>
 </pre>
@@ -4714,7 +4743,7 @@ Here's an example.
 </div>
 </div>
 
-<div id="outline-container-orgdb2684e" class="outline-3">
+<div id="outline-container-org330d189" class="outline-3">
 <h3 id="Well-formed-checks----Error-reporting"><span class="section-number-3">5.2</span> Well-formed checks &#x2014;Error reporting</h3>
 <div class="outline-text-3" id="text-Well-formed-checks----Error-reporting">
 <p>
@@ -4766,7 +4795,7 @@ What is the above “fancy cons” we mentioned? Here it is.
     <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">when-let</span> <span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span>here <span style="color: #3a81c3;">(</span>assoc key wf<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
       <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">setq</span> condition        <span style="color: #b1951d;">(</span>eval <span style="color: #3a81c3;">(</span>nth 1 here<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
             message          <span style="color: #b1951d;">(</span>eval <span style="color: #3a81c3;">(</span>nth 2 here<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
-      <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--ensure</span> <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">or</span> condition <span style="color: #3a81c3;">(</span>-contains? args value<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span> message context<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+      <span style="color: #67b11d;">(</span>pf--ensure <span style="color: #b1951d;">(</span><span style="color: #3a81c3; font-weight: bold;">or</span> condition <span style="color: #3a81c3;">(</span>-contains? args value<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span> message context<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Return the key-value as a pair for further processing.</span>
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">:kind and :level values are symbols and so cannot be evaluated furthur.</span>
@@ -4780,7 +4809,7 @@ What is the above “fancy cons” we mentioned? Here it is.
 </div>
 </div>
 
-<div id="outline-container-org23bc36f" class="outline-3">
+<div id="outline-container-orgd17cc67" class="outline-3">
 <h3 id="Loading-Variationals--Super-Simple-Conversion-From-String-to-Lisp"><span class="section-number-3">5.3</span> Loading Variationals: Super Simple Conversion From String to Lisp</h3>
 <div class="outline-text-3" id="text-Loading-Variationals--Super-Simple-Conversion-From-String-to-Lisp">
 <div class="org-src-container">
@@ -4822,35 +4851,35 @@ What is the above “fancy cons” we mentioned? Here it is.
 <div class="org-src-container">
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">ert-deftest</span> <span style="color: #6c3163; font-weight: bold;">variationals-&#119985;&#119992;</span> <span style="color: #6c3163;">()</span>
 
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;- 'nice<span style="color: #67b11d;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;- 'nice<span style="color: #67b11d;">)</span>
                  '&#119985;-nice<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;&#119992; '<span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:height</span> 3 <span style="color: #3a81c3;">:kind</span> 'data<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;&#119992; '<span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:height</span> 3 <span style="color: #3a81c3;">:kind</span> 'data<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
                 '<span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:height</span> . 3<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:kind</span> . data<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Error along with &#8220;noice&#8221;.</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should-error</span> <span style="color: #2d9574;">(</span>&#119985;&#119992; '<span style="color: #67b11d;">(</span><span style="color: #3a81c3;">:height</span> 3 <span style="color: #3a81c3;">:kind</span> datda<span style="color: #67b11d;">)</span> 'noice nil<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should-error <span style="color: #2d9574;">(</span>&#119985;&#119992; '<span style="color: #67b11d;">(</span><span style="color: #3a81c3;">:height</span> 3 <span style="color: #3a81c3;">:kind</span> datda<span style="color: #67b11d;">)</span> 'noice nil<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">nice error.</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should-error</span> <span style="color: #2d9574;">(</span>&#119985;&#119992; '<span style="color: #67b11d;">(</span><span style="color: #3a81c3;">:level</span> 3<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should-error <span style="color: #2d9574;">(</span>&#119985;&#119992; '<span style="color: #67b11d;">(</span><span style="color: #3a81c3;">:level</span> 3<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;;</span>
   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">cl-defun</span> <span style="color: #6c3163; font-weight: bold;">&#119985;-test</span> <span style="color: #2d9574;">(</span><span style="color: #ba2f59; font-weight: bold;">&amp;key</span> height kind<span style="color: #2d9574;">)</span> `<span style="color: #2d9574;">(</span> <span style="color: #67b11d;">(</span>first . ,height<span style="color: #67b11d;">)</span> <span style="color: #67b11d;">(</span>second . ,kind<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;;</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;&#119992; '<span style="color: #b1951d;">(</span>test <span style="color: #3a81c3;">:height</span> 3 <span style="color: #3a81c3;">:kind</span> 'three &#10228; <span style="color: #3a81c3;">:kind</span> 'module<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;&#119992; '<span style="color: #b1951d;">(</span>test <span style="color: #3a81c3;">:height</span> 3 <span style="color: #3a81c3;">:kind</span> 'three &#10228; <span style="color: #3a81c3;">:kind</span> 'module<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
                  '<span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:kind</span> . module<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>first . 3<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>second . three<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;;</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">NOTE: &#119985;-tests&#8242; :kind is optional</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;&#119992; '<span style="color: #b1951d;">(</span>test <span style="color: #3a81c3;">:height</span> 3 &#10228; <span style="color: #3a81c3;">:kind</span> 'module<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;&#119992; '<span style="color: #b1951d;">(</span>test <span style="color: #3a81c3;">:height</span> 3 &#10228; <span style="color: #3a81c3;">:kind</span> 'module<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
                  '<span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:kind</span> . module<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>first . 3<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>second<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;;</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;&#119992; '<span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:height</span> 3 &#10228; <span style="color: #3a81c3;">:kind</span> 'module<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;&#119992; '<span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:height</span> 3 &#10228; <span style="color: #3a81c3;">:kind</span> 'module<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
                  '<span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:kind</span> . module<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:height</span> . 3<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Recursively place 3 (new) wherever 'it (old) occurs.</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">This' a standard Lisp utility.</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal
            <span style="color: #67b11d;">(</span>subst 3 'it '<span style="color: #b1951d;">(</span>1 2 it 4 <span style="color: #3a81c3;">(</span>5 it<span style="color: #3a81c3;">)</span> 7 <span style="color: #3a81c3;">(</span>+ 8 it<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
            '<span style="color: #67b11d;">(</span>1 2 3 4 <span style="color: #b1951d;">(</span>5 3<span style="color: #b1951d;">)</span> 7 <span style="color: #b1951d;">(</span>+ 8 3<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 <span style="color: #3a81c3;">)</span>
@@ -4860,29 +4889,29 @@ What is the above “fancy cons” we mentioned? Here it is.
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">ert-deftest</span> <span style="color: #6c3163; font-weight: bold;">variationals-&#119985;</span> <span style="color: #6c3163;">()</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Nullary</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> test&#8320;  = <span style="color: #3a81c3;">:kind</span> 'record <span style="color: #3a81c3;">:waist</span> 3<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;-test&#8320;<span style="color: #67b11d;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>&#119985; test&#8320;  = <span style="color: #3a81c3;">:kind</span> 'record <span style="color: #3a81c3;">:waist</span> 3<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;-test&#8320;<span style="color: #67b11d;">)</span>
                '<span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:kind</span> . record<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:waist</span> . 3<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Unary</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> test&#8321; heightish = <span style="color: #3a81c3;">:kind</span> 'record <span style="color: #3a81c3;">:waist</span> heightish<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;-test&#8321; <span style="color: #3a81c3;">:heightish</span> 6<span style="color: #67b11d;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>&#119985; test&#8321; heightish = <span style="color: #3a81c3;">:kind</span> 'record <span style="color: #3a81c3;">:waist</span> heightish<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;-test&#8321; <span style="color: #3a81c3;">:heightish</span> 6<span style="color: #67b11d;">)</span>
                  '<span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:kind</span> . record<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:waist</span> . 6<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Invoking the previously defined variational</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> test&#8322;  = <span style="color: #3a81c3;">:kind</span> 'data &#10228; test&#8321; <span style="color: #3a81c3;">:heightish</span> 2<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;-test&#8322;<span style="color: #67b11d;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>&#119985; test&#8322;  = <span style="color: #3a81c3;">:kind</span> 'data &#10228; test&#8321; <span style="color: #3a81c3;">:heightish</span> 2<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;-test&#8322;<span style="color: #67b11d;">)</span>
                  '<span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:kind</span> . record<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:waist</span> . 2<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:kind</span> . data<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">See a nice error message ^_^</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should-error</span> <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">&#119985;</span> test&#8323; = <span style="color: #3a81c3;">:kind</span> recordd<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should-error <span style="color: #2d9574;">(</span>&#119985; test&#8323; = <span style="color: #3a81c3;">:kind</span> recordd<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 <span style="color: #3a81c3;">)</span>
 </pre>
 </div>
 <div class="org-src-container">
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">ert-deftest</span> <span style="color: #6c3163; font-weight: bold;">variationals-loading</span> <span style="color: #6c3163;">()</span>
 
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>pf--load-variational <span style="color: #2d9574;">"&#119985;-tc this height = :level this :waist height"</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>pf--load-variational <span style="color: #2d9574;">"&#119985;-tc this height = :level this :waist height"</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">NEATO! (Has desired error)</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(-let [*parent-context* "woadh"]</span>
@@ -4890,9 +4919,9 @@ What is the above “fancy cons” we mentioned? Here it is.
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;;</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Does not pass: I've commented out the type checking in &#119985; above, for now.</span>
 
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>&#119985;-tc <span style="color: #3a81c3;">:height</span> 9 <span style="color: #3a81c3;">:this</span> 'inc<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>&#119985;-tc <span style="color: #3a81c3;">:height</span> 9 <span style="color: #3a81c3;">:this</span> 'inc<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;&#119992; '<span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:a</span> 'b &#10228; tc <span style="color: #3a81c3;">:height</span> 1<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>equal <span style="color: #67b11d;">(</span>&#119985;&#119992; '<span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:a</span> 'b &#10228; tc <span style="color: #3a81c3;">:height</span> 1<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
                  '<span style="color: #67b11d;">(</span><span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:level</span><span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:waist</span> . 1<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span><span style="color: #3a81c3;">:a</span> . b<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
 
 <span style="color: #2aa1ae; background-color: #ecf3ec;">;</span>
@@ -4904,7 +4933,7 @@ What is the above “fancy cons” we mentioned? Here it is.
 </div>
 </div>
 
-<div id="outline-container-org1a8d16f" class="outline-2">
+<div id="outline-container-orgfb57cb3" class="outline-2">
 <h2 id="Loading-an-Agda-Buffer"><span class="section-number-2">6</span> Loading an Agda Buffer</h2>
 <div class="outline-text-2" id="text-Loading-an-Agda-Buffer">
 <p>
@@ -4913,7 +4942,7 @@ for which we would later generate code.
 </p>
 </div>
 
-<div id="outline-container-orgabf33b5" class="outline-3">
+<div id="outline-container-org7c71b53" class="outline-3">
 <h3 id="Loading-an-Instance----The-Core-Utility"><span class="section-number-3">6.1</span> Loading an Instance &#x2014;The Core Utility</h3>
 <div class="outline-text-3" id="text-Loading-an-Instance----The-Core-Utility">
 <p>
@@ -4984,18 +5013,18 @@ Loading an instantiation into our list is now trivial.
                            <span style="color: #6c3163;">(</span>eval `<span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">setf</span> <span style="color: #887070;">(</span>,<span style="color: #3a81c3;">(</span>car <span style="color: #6c3163;">(</span>read-from-string <span style="color: #2d9574;">(</span>format <span style="color: #2d9574;">"pf--package-former-%s"</span> c<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span> self<span style="color: #887070;">)</span> it<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Ensure instance declaration is well-formed.</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--ensure</span> <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">and</span> <span style="color: #b1951d;">(</span>not <span style="color: #3a81c3;">(</span>s-blank? <span style="color: #6c3163;">(</span>s-trim $&#119899;&#119886;&#119898;&#119890;<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>equal <span style="color: #2d9574;">"="</span> eqSymb<span style="color: #b1951d;">)</span> $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905;<span style="color: #67b11d;">)</span>
+    <span style="color: #2d9574;">(</span>pf--ensure <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">and</span> <span style="color: #b1951d;">(</span>not <span style="color: #3a81c3;">(</span>s-blank? <span style="color: #6c3163;">(</span>s-trim $&#119899;&#119886;&#119898;&#119890;<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>equal <span style="color: #2d9574;">"="</span> eqSymb<span style="color: #b1951d;">)</span> $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905;<span style="color: #67b11d;">)</span>
                <span style="color: #67b11d;">(</span>concat <span style="color: #2d9574;">"An instance declaration is of the form "</span>
                        <span style="color: #2d9574;">"&#8220;new-name = parent-package-former variational-clauses&#8221;."</span><span style="color: #67b11d;">)</span>
                line<span style="color: #2d9574;">)</span>
 
    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Let's not overwrite existing PackageFormers.</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--ensure</span> <span style="color: #67b11d;">(</span>not <span style="color: #b1951d;">(</span>assoc $&#119899;&#119886;&#119898;&#119890; pf--package-formers<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+    <span style="color: #2d9574;">(</span>pf--ensure <span style="color: #67b11d;">(</span>not <span style="color: #b1951d;">(</span>assoc $&#119899;&#119886;&#119898;&#119890; pf--package-formers<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
                <span style="color: #67b11d;">(</span>format <span style="color: #2d9574;">"PackageFormer &#8220;%s&#8221; is already defined; use a new name."</span> $&#119899;&#119886;&#119898;&#119890;<span style="color: #67b11d;">)</span>
                line<span style="color: #2d9574;">)</span>
 
    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Ensure the PackageFormer to be instantiated is defined.</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">pf--ensure</span> self
+    <span style="color: #2d9574;">(</span>pf--ensure self
                <span style="color: #67b11d;">(</span>format <span style="color: #2d9574;">"Parent &#8220;%s&#8221; not defined."</span> $&#119901;&#119886;&#119903;&#119890;&#119899;&#119905;<span style="color: #67b11d;">)</span>
                line<span style="color: #2d9574;">)</span>
 
@@ -5068,15 +5097,15 @@ Loading an instantiation into our list is now trivial.
 </div>
 </div>
 
-<div id="outline-container-orga9b5887" class="outline-3">
+<div id="outline-container-orgdee4143" class="outline-3">
 <h3 id="-pf--load-700-comments--and--lisp--blocks"><span class="section-number-3">6.2</span> <code>pf--load-700-comments</code> and <code>lisp</code> blocks</h3>
 <div class="outline-text-3" id="text--pf--load-700-comments--and--lisp--blocks">
 <p>
 We already two global lists &#x2014;for our loaded PackageFormers and varitionals
-declarared&#x2014; we need two additional globals: One for the contents of <a href="#org7d4888d">700-comments</a>,
+declarared&#x2014; we need two additional globals: One for the contents of <a href="#orge9b539f">700-comments</a>,
 primarily for basic efficiency, and the other to port whatever is within
-<a href="#org7d4888d">700-comments</a> but is not <a href="#org68c9b79">700-syntax</a>. The latter is for when we want definitions
-or generalised variables to be accessible in <i>both</i> <a href="#org7d4888d">700-comments</a> and the
+<a href="#orge9b539f">700-comments</a> but is not <a href="#orgeeb6968">700-syntax</a>. The latter is for when we want definitions
+or generalised variables to be accessible in <i>both</i> <a href="#orge9b539f">700-comments</a> and the
 surrounding script. Which is achieved since the matter is exported to
 the generated file in the Elisp stage, then imported at the Agda level.
 </p>
@@ -5175,7 +5204,7 @@ PackageFormers to a generated file.
 </div>
 </div>
 
-<div id="outline-container-orgbc266ff" class="outline-2">
+<div id="outline-container-orgc057b4e" class="outline-2">
 <h2 id="Emacs-Interface"><span class="section-number-2">7</span> Emacs Interface</h2>
 <div class="outline-text-2" id="text-Emacs-Interface">
 <p>
@@ -5194,7 +5223,7 @@ should be coloured or not. Below we use a particular set of default colours.
 </div>
 </div>
 
-<div id="outline-container-orgef9729c" class="outline-3">
+<div id="outline-container-orgc960afc" class="outline-3">
 <h3 id="Tooltips"><span class="section-number-3">7.1</span> Tooltips</h3>
 <div class="outline-text-3" id="text-Tooltips">
 <p>
@@ -5224,8 +5253,8 @@ name to its elaboration.
 <span style="color: #da8b55; background-color: #ecf3ec;">  The second resource above shows how to alter the phrase's font to indicate that it has</span>
 <span style="color: #da8b55; background-color: #ecf3ec;">  a tooltip. It is not desirable for us, since we want to add onto Agda's coluring.</span>
 <span style="color: #da8b55; background-color: #ecf3ec;">  "</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>stringp phrase<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">should</span> <span style="color: #2d9574;">(</span>stringp notification<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>stringp phrase<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #6c3163;">(</span>should <span style="color: #2d9574;">(</span>stringp notification<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">save-excursion</span>  <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Return cursour to current-point afterwards.</span>
     <span style="color: #2d9574;">(</span>goto-char 1<span style="color: #2d9574;">)</span>
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">The \b are for empty-string at the start or end of a word.</span>
@@ -5239,7 +5268,7 @@ New textual occurrences of a name obtain tooltips when <code>C-c C-l</code> is i
 </p>
 </div>
 </div>
-<div id="outline-container-org5728e0d" class="outline-3">
+<div id="outline-container-org17d1e8e" class="outline-3">
 <h3 id="Advising-our-Beloved--C-c-C-l-"><span class="section-number-3">7.2</span> Advising our Beloved <code>C-c C-l</code></h3>
 <div class="outline-text-3" id="text-Advising-our-Beloved--C-c-C-l-">
 <p>
@@ -5273,15 +5302,8 @@ current buffer automatically.
 <pre class="src src-emacs-lisp"><span style="color: #3a81c3;">(</span><span style="color: #3a81c3; font-weight: bold;">defun</span> <span style="color: #6c3163; font-weight: bold;">pf--reify-package-formers</span> <span style="color: #6c3163;">(</span>orig-fun <span style="color: #ba2f59; font-weight: bold;">&amp;rest</span> args<span style="color: #6c3163;">)</span>
   <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">interactive</span><span style="color: #6c3163;">)</span>
 
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #2d9574;">(</span>generated-file-name
-        printed-pfs
+  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">let</span> <span style="color: #2d9574;">(</span>printed-pfs
         <span style="color: #67b11d;">(</span>parent-imports <span style="color: #b1951d;">(</span>pf--extract-imports<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
-
-    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Sometimes we may want the full name due to files being in a nested</span>
-    <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">directory hierarchy: (file-name-sans-extension buffer-file-name)</span>
-    <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">setq</span> generated-file-name
-          <span style="color: #67b11d;">(</span>concat<span style="color: #b1951d;">(</span>file-name-sans-extension <span style="color: #3a81c3;">(</span>buffer-name<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span>
-                 <span style="color: #2d9574;">"-generated"</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Load variationals, PackageFormers, instantiations, and porting list.</span>
     <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Setting the following to nil each time is not ideal.</span>
@@ -5299,8 +5321,7 @@ current buffer automatically.
          <span style="color: #2d9574;">"{- This file is generated ;; do not alter. -}\n"</span>
          ,parent-imports
          <span style="color: #2d9574;">"open import Level as Level"</span>
-         ,<span style="color: #6c3163;">(</span>format <span style="color: #2d9574;">"module %s where "</span> generated-file-name<span style="color: #6c3163;">)</span>
-         <span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
+         ,<span style="color: #6c3163;">(</span>format <span style="color: #2d9574;">"module %s where "</span> pf--generated-file-name<span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
 
      <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Print the package-formers</span>
       <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">setq</span> printed-pfs
@@ -5320,36 +5341,36 @@ current buffer automatically.
       <span style="color: #67b11d;">(</span>untabify <span style="color: #b1951d;">(</span>point-min<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>point-max<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span>
 
       <span style="color: #67b11d;">(</span>write-region <span style="color: #b1951d;">(</span>beginning-of-buffer<span style="color: #b1951d;">)</span> <span style="color: #b1951d;">(</span>end-of-buffer<span style="color: #b1951d;">)</span>
-                    <span style="color: #b1951d;">(</span>concat generated-file-name <span style="color: #2d9574;">".agda"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+                    <span style="color: #b1951d;">(</span>concat pf--generated-file-name <span style="color: #2d9574;">".agda"</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
-    <span style="color: #2d9574;">(</span>pf--insert-generated-import generated-file-name<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+    <span style="color: #2d9574;">(</span>pf--insert-generated-import pf--generated-file-name<span style="color: #2d9574;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Need to revert buffer to discard old colours.</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(save-buffer) (revert-buffer t t t)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">call agda2-load</span>
-  <span style="color: #6c3163;">(</span>apply orig-fun args<span style="color: #6c3163;">)</span>
+  <span style="color: #2d9574;">(</span>apply orig-fun args<span style="color: #2d9574;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Agda attaches &#8220;jump to definition&#8221; tooltips; we add to those.</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">For some reason we need a slight delay between when Agda is done checking</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">and when we can add on our tooltips.</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Attach tooltips only for existing occurrences; update happens with C-c C-l.</span>
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Wait until Agda is finished highlighting, then do ours (&#3591;&#3232;_&#3232;)&#3591;</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">while</span> agda2-highlight-in-progress
-    <span style="color: #2d9574;">(</span>sleep-for 0.5<span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for <span style="color: #2d9574;">(</span>name . pf<span style="color: #2d9574;">)</span> in pf--package-formers
-        do <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">unless</span> <span style="color: #67b11d;">(</span>equal 'porting name<span style="color: #67b11d;">)</span>
-             <span style="color: #67b11d;">(</span>pf--tooltipify name <span style="color: #b1951d;">(</span>pf--show-package-former pf<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+  <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">while</span> agda2-highlight-in-progress
+    <span style="color: #67b11d;">(</span>sleep-for 0.5<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
+  <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for <span style="color: #67b11d;">(</span>name . pf<span style="color: #67b11d;">)</span> in pf--package-formers
+        do <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">unless</span> <span style="color: #b1951d;">(</span>equal 'porting name<span style="color: #b1951d;">)</span>
+             <span style="color: #b1951d;">(</span>pf--tooltipify name <span style="color: #3a81c3;">(</span>pf--show-package-former pf<span style="color: #3a81c3;">)</span><span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
   <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Let's also add tooltips for the variationals &amp; colour them.</span>
-  <span style="color: #6c3163;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for <span style="color: #2d9574;">(</span>v . docs<span style="color: #2d9574;">)</span> in pf--variationals
-        do <span style="color: #2d9574;">(</span>pf--tooltipify <span style="color: #67b11d;">(</span>format <span style="color: #2d9574;">"%s"</span> v<span style="color: #67b11d;">)</span> docs<span style="color: #2d9574;">)</span>
+  <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">loop</span> for <span style="color: #67b11d;">(</span>v . docs<span style="color: #67b11d;">)</span> in pf--variationals
+        do <span style="color: #67b11d;">(</span>pf--tooltipify <span style="color: #b1951d;">(</span>format <span style="color: #2d9574;">"%s"</span> v<span style="color: #b1951d;">)</span> docs<span style="color: #67b11d;">)</span>
         <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">For beauty, let's colour variational names green.</span>
         <span style="color: #2aa1ae; background-color: #ecf3ec;">;; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Only colour occurances that have a space before or after.</span>
-        <span style="color: #2d9574;">(</span><span style="color: #3a81c3; font-weight: bold;">when</span> pf-highlighting
-          <span style="color: #67b11d;">(</span>highlight-phrase <span style="color: #b1951d;">(</span>format <span style="color: #2d9574;">"[- </span><span style="color: #C57BDB; font-weight: bold;">\\</span><span style="color: #C57BDB; font-weight: bold;">|</span><span style="color: #2d9574;"> ]%s "</span> v<span style="color: #b1951d;">)</span> 'hi-green<span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span>
+        <span style="color: #67b11d;">(</span><span style="color: #3a81c3; font-weight: bold;">when</span> pf-highlighting
+          <span style="color: #b1951d;">(</span>highlight-phrase <span style="color: #3a81c3;">(</span>format <span style="color: #2d9574;">"[- </span><span style="color: #C57BDB; font-weight: bold;">\\</span><span style="color: #C57BDB; font-weight: bold;">|</span><span style="color: #2d9574;"> ]%s "</span> v<span style="color: #3a81c3;">)</span> 'hi-green<span style="color: #b1951d;">)</span><span style="color: #67b11d;">)</span><span style="color: #2d9574;">)</span>
 
-  <span style="color: #6c3163;">(</span>message <span style="color: #2d9574;">"700 &#8759; All the best coding! (&#8226;&#768;&#7447;&#8226;&#769;)&#1608;"</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
+  <span style="color: #2d9574;">(</span>message <span style="color: #2d9574;">"700 &#8759; All the best coding! (&#8226;&#768;&#7447;&#8226;&#769;)&#1608;"</span><span style="color: #2d9574;">)</span><span style="color: #6c3163;">)</span><span style="color: #3a81c3;">)</span>
 
 <span style="color: #2aa1ae; background-color: #ecf3ec;">; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Users can enable this feature if they're interested in using it; disbale it otherwise.</span>
 <span style="color: #2aa1ae; background-color: #ecf3ec;">; </span><span style="color: #2aa1ae; background-color: #ecf3ec;">(advice-add 'agda2-load :around #'pf--reify-package-formers)</span>
@@ -5370,7 +5391,7 @@ Agda working on the buffer even after it has been killed!
 </div>
 </div>
 
-<div id="outline-container-org067c9cb" class="outline-3">
+<div id="outline-container-orge17d937" class="outline-3">
 <h3 id="Menu-matter"><span class="section-number-3">7.3</span> Menu matter</h3>
 <div class="outline-text-3" id="text-Menu-matter">
 <p>
@@ -5544,7 +5565,7 @@ Let's pack these together into a minor mode.
 </div>
 </div>
 
-<div id="outline-container-org2fab8cf" class="outline-2">
+<div id="outline-container-org17c522c" class="outline-2">
 <h2 id="Work"><span class="section-number-2">8</span> <span class="done Future">Future</span> Work</h2>
 <div class="outline-text-2" id="text-Work">
 <p>
@@ -5567,8 +5588,17 @@ any feedback or pointers!
 Below are some desirable features to work on.
 </p>
 
+<p>
+We check them off, rather than deleting them,
+to produce a ‘tada’ list of features ;-)
+</p>
 
 <ul class="org-ul">
+<li class="on"><code>[X]</code> For now, arguments must be enclosed in parenthesis.
+<ul class="org-ul">
+<li class="on"><code>[X]</code> This is likely to be dropped in a future edition of the system.</li>
+</ul></li>
+
 <li class="on"><code>[X]</code> Colouring for 700-syntactical items.</li>
 
 <li class="on"><code>[X]</code> Tooltips</li>
@@ -5589,7 +5619,7 @@ When we move to multi-sorted, as in Graphs, this issue will need to be revisited
 
 <li class="on"><code>[X]</code> Support for equations in PackageFormers: Easy, nothing new needed! Thank-you <code>alter-elements</code>!</li>
 
-<li class="off"><code>[&#xa0;]</code> Examples from the user-manual
+<li class="on"><code>[X]</code> Examples from the user-manual
 should be exported into an Agda file which is then easily checked;
 or the resulting generated code should be generated when export happens.</li>
 
@@ -5606,7 +5636,7 @@ or the resulting generated code should be generated when export happens.</li>
 <li>Maybe such a view is useful for the user? It is provided via <code>get-name</code> and <code>get-type</code>.</li>
 </ul></li>
 
-<li class="on"><code>[X]</code> Refactor load-instantions function to make use of an <code>alter</code> field rather than overloading alter-<a href="#org579e72f">fields</a> in reify-instances.</li>
+<li class="on"><code>[X]</code> Refactor load-instantions function to make use of an <code>alter</code> field rather than overloading alter-<a href="#org65a0ae7">fields</a> in reify-instances.</li>
 
 <li class="on"><code>[X]</code> Refactor <code>instantiate</code> to make use of an <code>instance</code> structure, rather than 13 arguments.
 <ul class="org-ul">
@@ -5618,16 +5648,11 @@ necessary to form different variational presentations. It seems I only needed 5 
 
 <li class="on"><code>[X]</code> Generated.agda needs to inherit all open/import declarations from parent.</li>
 
-<li class="off"><code>[&#xa0;]</code> Give an example PackageFormer with some definitions or derived constructs, then hoist-up your waist so that the non-defined items are <code>module</code> <a href="#org3ae9470">parameters</a>.</li>
-
-<li class="off"><code>[&#xa0;]</code> <code>B = cs ⟨+ A ⟨+ cs′</code> where each cs is a single name-type declaration and the operation is left-associative, and A is an existing packageformer. This gives us a nice way to build a hierarchy. Note that since only A has a name, we may form a forgetful coercion B⇒A automatically.
-E.g., <code>Monoid = Type ⟨+ Pointed ⟨+ (Magma renaming (_⊕_ to _⨾_)) ⟨+ LeftUnital ⟨+ RightUnital ⟨+ assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)</code> gives, automatically, <code>Monoid⇒Type, Monoid⇒Pointed, Monoid⇒Magma, Monoid⇒LeftUnital, Magma⇒RightUnital</code> (•̀ᴗ•́)و MA: To begin with, ignore the rename and work up the sequence one ⟨+ at a time.</li>
+<li class="off"><code>[&#xa0;]</code> Give an example PackageFormer with some definitions or derived constructs, then hoist-up your waist so that the non-defined items are <code>module</code> <a href="#org79c67dd">parameters</a>.</li>
 
 <li class="on"><code>[X]</code> PF's should account for equations. For simplicity they become components of a record &amp; module, but derived operations on datatypes.</li>
 
 <li class="off"><code>[&#xa0;]</code> Demonstrate how generative modules can be emulated.</li>
-
-<li class="off"><code>[&#xa0;]</code> For now, PackageFormer's have no other <a href="#org3ae9470">parameters</a> besides the variation symbol &#x2014;not even that atm.</li>
 
 <li class="off"><code>[&#xa0;]</code> The global variables package-formers &amp; instance-declaration should be <i>buffer</i> specific?</li>
 
@@ -5643,10 +5668,45 @@ if identical, no more processing since everything already generated.</li>
 
 <li class="off"><code>[&#xa0;]</code> Generate all instances of a PackageFormer schema.</li>
 
+<li><code>MR = M-Set primed</code> crashes!</li>
+
+<li class="off"><code>[&#xa0;]</code> Look into <a href="https://github.com/KestrelInstitute/Specware"><b>Specware</b></a>.
+
+<ul class="org-ul">
+<li>Structures are created using colimits.</li>
+<li>Are hierarchical considerations leaked by the resulting structures?</li>
+</ul></li>
+</ul>
+</div>
+
+<div id="outline-container-org1441562" class="outline-3">
+<h3 id="Equality--From---to---to---"><span class="section-number-3">8.1</span> Equality: From ≡ to ≈ to ≈′</h3>
+<div class="outline-text-3" id="text-Equality--From---to---to---">
+<p>
+One may start from a basic ≡-equality, then <b>mechanically</b> move to a setoid one
+by including congruence laws.
+</p>
+<ul class="org-ul">
+<li>Interestingly, sometimes such constructions are invariant under equivalent equalities.
+<ul class="org-ul">
+<li><a href="http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Props.Lattice.html#2531">http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Props.Lattice.html#2531</a></li>
+</ul></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgb36916e" class="outline-3">
+<h3 id="PackageFormers-with-variational-parameters"><span class="section-number-3">8.2</span> PackageFormers with variational <a href="#org79c67dd">parameters</a></h3>
+<div class="outline-text-3" id="text-PackageFormers-with-variational-parameters">
+<ul class="org-ul">
 <li class="off"><code>[&#xa0;]</code> <p>
-Allow package formers to have explicit <code>Variation</code> <a href="#org3ae9470">parameters</a>; but
-how do we then deal with nested invocations? What are the uses of
-having differing invocations?
+For now, PackageFormer's have no other <a href="#org79c67dd">parameters</a> besides the variation symbol &#x2014;not even that atm.
+</p>
+
+<p>
+Allow package formers to have explicit <code>Variation</code> <a href="#org79c67dd">parameters</a>; but
+      how do we then deal with nested invocations? What are the uses of
+      having differing invocations?
 </p>
 
 <p>
@@ -5695,9 +5755,102 @@ With the following example uses.
 Where <code>PF hiding c</code> is the largest sub-PackageFormer of <code>PF</code> with constituent <code>c</code>
 removed &#x2014;in particular, constituents that depend on <code>c</code> would also be dropped.
 </p></li>
-
-<li><code>MR = M-Set primed</code> crashes!</li>
 </ul>
+</div>
+</div>
+
+<div id="outline-container-org8ca93c5" class="outline-3">
+<h3 id="Flip-Combinator"><span class="section-number-3">8.3</span> Flip Combinator</h3>
+<div class="outline-text-3" id="text-Flip-Combinator">
+<p>
+Some properties are merely the syntactic mirror of other
+&#x2014;it would make sense to have this relationship explicit.
+For example:
+</p>
+<ul class="org-ul">
+<li>Left units/zeros/distributively are mirrors of the right ones.
+<ul class="org-ul">
+<li><a href="http://www.cse.chalmers.se/~nad/listings/lib/Algebra.FunctionProperties.html#1">http://www.cse.chalmers.se/~nad/listings/lib/Algebra.FunctionProperties.html#1</a></li>
+<li>Additionally, in the presence of commutativity, such mirrored definitions are provably identically.</li>
+</ul></li>
+</ul>
+
+<p>
+With duality, we can even derive more structure!    For example,
+</p>
+<ul class="org-ul">
+<li>Join semilattices are dual to meet semilattices.</li>
+<li>As such, <i>position</i> of the operators is symmetric wrt the definition of a join-&amp;-meet lattice.
+<ul class="org-ul">
+<li><a href="http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Props.Lattice.html#1029">http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Props.Lattice.html#1029</a></li>
+<li>See RATH for a fine-grained approach to lattices.</li>
+</ul></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgf47295e" class="outline-3">
+<h3 id="Extensions"><span class="section-number-3">8.4</span> Extensions</h3>
+<div class="outline-text-3" id="text-Extensions">
+<p>
+Mathematical structures naturally come in related hierarchies.
+Agda users' current solution is to manually declare such relationships
+by means of conversion functions. An extension <b>variational</b> could be formed
+to make this process mechanical &#x2014;using tiny theories.
+</p>
+<ul class="org-ul">
+<li>Examples: <a href="http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#2533">http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#2533</a>
+<ul class="org-ul">
+<li>C.f., every abelian group <i>is a</i> group.</li>
+</ul></li>
+</ul>
+
+<p>
+<b>Theory graphs:</b>
+Incidentally, as it stands, the current prototype allows arbitrary Emacs Lisp to be
+used and so such a variational could potentially produce <code>dot</code> specifications
+in the current directory, which can be used to obtain <b>visually</b> the relationships
+between structures. Such “mathematical knowledge management” is underway with the MMT setup.
+</p>
+
+<ul class="org-ul">
+<li class="off"><code>[&#xa0;]</code> <code>B = cs ⟨+ A ⟨+ cs′</code> where each cs is a single name-type declaration and the operation is left-associative, and A is an existing packageformer. This gives us a nice way to build a hierarchy. Note that since only A has a name, we may form a forgetful coercion B⇒A automatically.</li>
+</ul>
+<p>
+E.g., <code>Monoid = Type ⟨+ Pointed ⟨+ (Magma renaming (_⊕_ to _⨾_)) ⟨+ LeftUnital ⟨+ RightUnital ⟨+ assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)</code> gives, automatically, <code>Monoid⇒Type, Monoid⇒Pointed, Monoid⇒Magma, Monoid⇒LeftUnital, Magma⇒RightUnital</code> (•̀ᴗ•́)و MA: To begin with, ignore the rename and work up the sequence one ⟨+ at a time.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org3208d1d" class="outline-3">
+<h3 id="Sharoda-s--Leveraging-the-information-contained-in-theory-presentations-"><span class="section-number-3">8.5</span> Sharoda's “Leveraging the information contained in theory presentations”</h3>
+<div class="outline-text-3" id="text-Sharoda-s--Leveraging-the-information-contained-in-theory-presentations-">
+<p>
+In her PhD proposal, pages 1-3, she shows how an explicit definition of monoid can mechanically gives rise
+to:
+</p>
+<ul class="org-ul">
+<li class="on"><code>[X]</code> signatures</li>
+<li class="on"><code>[X]</code> termtypes
+<ul class="org-ul">
+<li>Covered in our gpce<sub>19</sub> paper.</li>
+</ul></li>
+<li class="on"><code>[X]</code> open termtypes, those with variables
+<ul class="org-ul">
+<li>Covered in our gpce<sub>19</sub> paper.</li>
+</ul></li>
+<li class="off"><code>[&#xa0;]</code> Interpretation functions from termtypes to recordtypes &#x2014;which give terms meaning.
+<ul class="org-ul">
+<li class="off"><code>[&#xa0;]</code> With an environment argument for open termtypes.</li>
+</ul></li>
+<li class="off"><code>[&#xa0;]</code> Staged terms and partial evaluators</li>
+</ul>
+
+<p>
+She proposes that universal algebra &#x2014;a uniform approach to studying different algebras&#x2014;
+is currently performed on-demand and manually in computing, which it needn't be.
+</p>
+</div>
 </div>
 </div>
 </div>
