@@ -31,7 +31,7 @@ A super simple description of this work, for the layman, can be found [here](htt
 ◈ [Prototype](./prototype/package-former.html)
 ◈ [A Language Feature to Unbundle Data at Will](./papers/gpce19_a_language_feature_to_unbundle_data_at_will.pdf) ◈
 
-![](./papers/gpce19_MousingOver.png)
+![](./papers/gpce19-mousing-over.png)
 
 <h2> Proposal </h2>
 

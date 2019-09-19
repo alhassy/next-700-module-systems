@@ -6,7 +6,7 @@ or simply hover your mouse over any PackageFormer's name to see the generated co
 -}
 
 module gpce19 where
-open import gpce19_Generated
+open import gpce19-generated
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.List hiding (concat)
 

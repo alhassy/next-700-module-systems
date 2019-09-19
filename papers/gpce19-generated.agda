@@ -3,10 +3,10 @@
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.List hiding (concat)
 open import Level as Level
-module gpce19_Generated where 
+module gpce19-generated where
 
 
-{- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type.
 
 PackageFormer MonoidP : Set₁ where
     Carrier     : Set
@@ -17,7 +17,7 @@ PackageFormer MonoidP : Set₁ where
     rightId     : ∀ {x : Carrier} → x ⨾ Id ≡ x -}
 
 
-{- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type.
 {- MonoidPⁱᵈ = MonoidP identity -}
 PackageFormer MonoidPⁱᵈ : Set₁ where
     Carrier     : Set
@@ -28,7 +28,7 @@ PackageFormer MonoidPⁱᵈ : Set₁ where
     rightId     : ∀ {x : Carrier} → x ⨾ Id ≡ x -}
 
 
-{- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type.
 {- MonoidP⁰  = MonoidP -}
 PackageFormer MonoidP⁰ : Set₁ where
     Carrier     : Set
@@ -39,7 +39,7 @@ PackageFormer MonoidP⁰ : Set₁ where
     rightId     : ∀ {x : Carrier} → x ⨾ Id ≡ x -}
 
 
-{- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type.
 {- MonoidPᶜ = MonoidP ⟴ -}
 PackageFormer MonoidPᶜ : Set₁ where
     Carrier     : Set
@@ -80,7 +80,7 @@ record Monoid₂″ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) : 
 
 
 
-{- Kind “PackageFormer” does not correspond  to a concrete Agda type. 
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type.
 
 PackageFormer MonoidPE : Set₁ where
     Carrier     : Set

@@ -30,12 +30,20 @@
 
 #+TITLE: A Language Feature to Unbundle Data at Will (Short Paper)
 #+DESCRIPTION: Thesis proposal for Musa Al-hassy; McMaster University 2019.
-# AUTHOR: Musa Al-hassy, Jacques Carette, Wolfram Kahl
+#+AUTHOR: Musa Al-hassy, Jacques Carette, Wolfram Kahl
 #+EMAIL: alhassy@gmail.com
-#+OPTIONS: toc:nil d:nil title:nil author:nil
+#+OPTIONS: toc:nil d:nil author:nil title:nil author:nil
 #+PROPERTY: header-args :tangle no :comments link
 #+TODO: TODO | OLD LaTeX README Remarks space
 #+MACRO: PF \textsf{PackageFormer}
+
+:Sources:
+1. ../CheatSheet/UnicodeSymbols.sty
+2. ./gpce19-mousing-over-large.png
+3. ./gpce19_a_language_feature_to_unbundle_data_at_will.tex
+4. ./gpce19_a_language_feature_to_unbundle_data_at_will.pdf
+5. ./acmart.cls
+:End:
 
 :summary:
 In a language with dependent types, the same notion may be formalised several different ways. For instance, a monoid could be:
@@ -51,6 +59,18 @@ In a language with dependent types, the same notion may be formalised several di
 (5) a datatype of free monoids indexed on a type of variables, with an injection from the variables as an additional constructor.
 
 In general, a record with N fields might have M interesting variations, requiring order of N*M lines of code. The paper presents a technique (implemented as Emacs macros) where one can write N+M lines, from which the N*M lines are generated.
+:End:
+
+:location_of_phrase_short-paper_and_appendices:
+
+- [X] Title: The suffix '(Short Paper)' is part of the title and should be used in the regular title font size.
+  Currently, it is used as sub-title.
+  There is no need to start a new line for this suffix.
+
+- [X]
+- The appendix should be placed in front of the acknowledgments and references.
+  It counts within the page limit.
+  There is no need to start a new page for any of these sections.
 :End:
 
 * Remarks COMMENT on writing
@@ -204,6 +224,16 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
  #+RESULTS: make-acmart-class
  : acmart has been loaded
 
+  The GPCE 19 proceedings team needs us to submit the acmart.cls file along
+  with our sources. So, let's bring that to our current directory.
+#+BEGIN_SRC shell
+(shell-command (s-collapse-whitespace (format "cp %s ."
+                       (shell-command-to-string "kpsewhich acmart.cls"))))
+#+END_SRC
+
+#+RESULTS:
+: 126
+
    The ‘footer’ at the end of this file currently executes only this code block for you
    ---if you enable the local vars. You can easily tweak it to execute the other blocks,
    if you like.
@@ -268,7 +298,7 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
 
   # ACM uses the natbib package
   #
-  #+LATEX: \settopmatter{printacmref=false, printccs=true, printfolios=false}
+  #+LATEX: \settopmatter{printccs=true, printfolios=false}
 
 ** Unicode & hyperlinks :ignore:
   # Dark green colour for links.
@@ -276,7 +306,7 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
   #+LATEX_HEADER: \definecolor{darkgreen}{rgb}{0.0, 0.3, 0.1}
   #+LATEX_HEADER: \hypersetup{colorlinks,linkcolor=darkgreen,citecolor=darkgreen,urlcolor=darkgreen}
 
-  #+LATEX_HEADER: \usepackage{CheatSheet/UnicodeSymbols}
+  #+LATEX_HEADER: \usepackage{../CheatSheet/UnicodeSymbols}
 
   #+LATEX_HEADER: \DeclareMathOperator{\VCCompose}{\longrightarrow\hspace{-3ex}\oplus\;}
   #+LATEX_HEADER: \newunicodechar{⟴}{\ensuremath{\!\!\VCCompose}}
@@ -350,9 +380,6 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
 ** Authors & title                                                   :ignore:
 
  #+begin_export latex
- \title{A Language Feature to Unbundle Data at Will}
-\subtitle{ (Short Paper)}
-
  \author{Musa Al-hassy}
  \affiliation{McMaster University, Canada}
  \email{alhassy@gmail.com}
@@ -1005,14 +1032,14 @@ No; unless we desire to do so.
 
   #+caption: Hovering to show details. Notice special syntax has default colouring: Red for \textsf{PackageFormer} delimiters,
   #+caption: yellow for elements, and green for variationals. label:mousing-over
-    [[file:./Paper0_MousingOverLarge.png]]
-  # [[file:./Paper0_MousingOver.png]]
+    [[file:./gpce19-mousing-over-large.png]]
+  # [[file:./gpce19-mousing-over.png]]
 
   #+latex: \noindent
   The details of the implementation and numerous common structuring mechanisms
   derived from the meta-primitives can be found on the prototype's homepage:
   #+begin_center org
-  https://alhassy.github.io/next-700-module-systems/prototype/PackageFormer.html
+  https://alhassy.github.io/next-700-module-systems/prototype/package-former.html
   #+end_center
 
 * Conclusion and Next Steps
@@ -1079,7 +1106,7 @@ No; unless we desire to do so.
    /pattern into full-fledged library methods/. In turn, the system addresses the following
    extremely unsatisfactory points of hand-written instances, mentioned by the “Deriving Via” cite:deriving_via group:
 
-   #+latex: \newpage
+   # latex: \newpage
    #+latex: \noindent
    #+begin_quoting
    0. It is not obvious that we are instantiating a general principle.
@@ -1112,13 +1139,7 @@ No; unless we desire to do so.
   # type is required for a PackageFormer, rather than spelling-out the mundane and
   # uninsightful definition.
 
-* Bib                                                                :ignore:
-
- #+latex: \bibliography{References}
- #+latex: \bibliographystyle{plainnat}
- # latex: \bibliographystyle{ACM-Reference-Format}
-
-* space 1 × \newpage                                                 :ignore:
+* space COMMENT 1 × \newpage                                                 :ignore:
    # \newpage
    # latex: {\color{white}.}
    \newpage
@@ -1142,9 +1163,9 @@ open import Data.List hiding (concat)
 open import Relation.Binary.PropositionalEquality
             using (_≡_)
 
-module Paper0 where
+module gpce19 where
 
-open import Paper0_Generated
+open import gpce19-generated
 #+END_SRC
 
 #+latex: \vspace{0.3em}
@@ -1196,7 +1217,7 @@ Monoid₂″ = MonoidP record ⟴ :waist 2
 -}
 #+END_SRC
 
-#+latex: \newpage
+# latex: \newpage
 
 ** ~termtype~ Variationals
 
@@ -1264,6 +1285,12 @@ concat₃ = concat³
 
 ** LaTeX end appendix                                                :ignore:
      #+Latex: \end{appendices}
+* Bib                                                                :ignore:
+
+ #+latex: \bibliography{References}
+ #+latex: \bibliographystyle{plainnat}
+ # latex: \bibliographystyle{ACM-Reference-Format}
+
 * OLD COMMENT other ideas
 
 What about some context at the beginning of the first paragraph?
