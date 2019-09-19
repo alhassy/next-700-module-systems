@@ -28,7 +28,7 @@ A super simple description of this work, for the layman, can be found [here](htt
 
 <h2> Prototype and a Preprint </h2>
 
-◈ [Prototype](./prototype/PackageFormer.html)
+◈ [Prototype](./prototype/package-former.html)
 ◈ [A Language Feature to Unbundle Data at Will](./papers/gpce19_a_language_feature_to_unbundle_data_at_will.pdf) ◈
 
 ![](./papers/gpce19_MousingOver.png)
