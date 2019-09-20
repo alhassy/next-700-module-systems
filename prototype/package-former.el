@@ -3,6 +3,7 @@
 ;; https://github.com/magnars/s.el
 (require 's)               ;; “The long lost Emacs string manipulation library”
 (require 'dash)            ;; “A modern list library for Emacs”
+(require 'dash-functional) ;; Function library; -const, -compose, -orfn, -not, -partial, etc.
 (require 'fold-this)       ;; Folding away regions of text
 (fold-this-mode)
 
@@ -493,7 +494,7 @@
   (let (lhs name)
     (setq lhs
           (s-split " " (car (s-split " = " (car (s-split " : " element))))))
-    (if (and (< 1 (length lhs)) (special (nth 0 lhs)))
+    (if (and (< 1 (length lhs)) (pf--special (nth 0 lhs)))
         (cadr lhs)
       (car lhs))))
 
@@ -813,7 +814,7 @@
          give-goal)))
 
     ;; Now set the code as a documentation string in it, after the fact.
-    (setq docs (format "Arguments:\t%s %s\n%s" pargs kargs
+    (setq docs (format "Arguments:\t%s %s\n%s" pargs (reverse kargs)
                        (if (not docs) "Undocumented user-defined variational."
                          ;; Keep paragraph structure, but ignore whitespace otherwise.
                          (thread-last docs
@@ -1248,6 +1249,14 @@
        (re-search-forward "\\(module.*\\)")
        (replace-match (concat "\\1\nopen import " name-of-generated-file))))))
 
+(defvar pf-waiting-for-agda-threshhold 14
+    "How long we should wait for Agda before giving up on colouring and tooltips.
+
+     Default is to wait 4 × 0.5 milliseconds.
+
+     Why? An inital agda2-load of a ~300 line file may take some time.
+    ")
+
 (defun pf--reify-package-formers (orig-fun &rest args)
   (interactive)
 
@@ -1305,8 +1314,11 @@
   ;; and when we can add on our tooltips.
   ;; Attach tooltips only for existing occurrences; update happens with C-c C-l.
   ;; Wait until Agda is finished highlighting, then do ours (งಠ_ಠ)ง
-  (while agda2-highlight-in-progress
-    (sleep-for 0.5))
+  (-let [counter 0] ; agda2-in-progress
+    (while agda2-highlight-in-progress
+      (when (> counter pf-waiting-for-agda-threshhold) (error "PackageFormer ∷ Items generated, but not coloured; Agda seems busy..."))
+      (incf counter)
+      (sleep-for 0.5))) ;; In case Agda errors on a term, no more waiting.
   (loop for (name . pf) in pf--package-formers
         do (unless (equal 'porting name)
              (pf--tooltipify name (pf--show-package-former pf))))
@@ -1319,7 +1331,7 @@
         (when pf-highlighting
           (highlight-phrase (format "[- \\| ]%s " v) 'hi-green)))
 
-  (message "700 ∷ All the best coding! (•̀ᴗ•́)و")))
+  (message "PackageFormer ∷ All the best coding! (•̀ᴗ•́)و")))
 
 ; Users can enable this feature if they're interested in using it; disbale it otherwise.
 ; (advice-add 'agda2-load :around #'pf--reify-package-formers)
@@ -1440,278 +1452,100 @@
       ;; Closing
       (pf-disable-package-formers))))
 
-(let ((it (quote "(𝒱 record = \"Reify a variational as an Agda “record”.\"
-            :kind record
-            :alter-elements (λ es → (--map (map-qualifier (λ _ → \"field\") it) es)))
+(let ((it (quote ";; p ≈ symptom; f ≈ medicine; adj ≈ neighbouring dependency
+;;
+(defun graph-map (p f adj xs)
+  \"Map the nodes ‘xs’ satisfying ‘p’ by ‘f’.
 
-(𝒱 exposing n
- = \"Make the first N elements as parameters to the PackageFormer\"
-   :waist n)
+  ‘f’ is performed on nodes satisfying ‘p’,
+  all neighbours are then considered to satisfy p
+  and the process repeats recursively.
 
-(𝒱 map elements (support-mixfix-names t)
-   = \"Apply function ELEMENTS that acts on PackageFormer elements,
-      then propogate all new name changes to subsequent elements.
+  E.g., nodes exhibiting symptoms ‘p’ are given medicine ‘f’,
+  and their sickness spreads to their neighbours who in turn
+  become ill thereby requiring medication, and the process continues.
 
-      There is minimal support for mixfix names, but it may be
-      ignored by setting SUPPORT-MIXFIX-NAMES to be nil.
-     \"
-     :alter-elements (lambda (es)
-    (let* ((esnew   (mapcar elements es))
-           (_       (if support-mixfix-names \"\" \"_\"))
-           (names   (--map (s-replace \"_\" _ (element-name it)) es))
-           (names′  (--map (s-replace \"_\" _ (element-name it)) esnew)))
-      (loop for old in names
-            for new in names′
-            do (setq esnew (--map (element-replace old new it) esnew)))
-      ;; return value
-      esnew)))
-
-(𝒱 rename f (support-mixfix-names t)
-  =  \"Rename elements using a string-to-string function F acting on names.
-
-      There is minimal support for mixfix names, but it may be
-      ignored by setting SUPPORT-MIXFIX-NAMES to be nil.
-     \"
-     map (λ e → (map-name (λ n → (rename-mixfix f n)) e))
-         :support-mixfix-names 'support-mixfix-names)
-
-(𝒱 decorated by
-  = \"Rename all elements by suffixing string BY to them.\"
-     rename (λ name → (concat name by)))
-
-(𝒱 co-decorated by
-  = \"Rename all elements by prefixing string BY to them.\"
-     rename (λ name → (concat by name)))
-
-(𝒱 primed
-  = \"All elements are renamed with a postfix prime.\"
-    decorated \"′\")
-
-(defun to-subscript (n)
-  \"Associate a digit ‘n’ with its subscript.\"
-  (nth n '(\"₀\" \"₁\" \"₂\" \"₃\" \"₄\" \"₅\" \"₆\" \"₇\" \"₈\" \"₉\")))
-
-(loop for i from 0 to 9
-      do (let* ((ᵢ    (to-subscript i))
-               (docs (format \"Subscript all elementes by suffixing them with %s.\" i)))
-               (eval `(𝒱 ,(intern (format \"subscripted%s\" ᵢ)) = ,docs decorated ,ᵢ))))
-
-(defun is-sort (element)
-  \"Check whether the target of ‘element’s type is “Set”. \"
-  (s-contains? \"Set\" (target (element-type element))))
-  ;; Method ‘target’ is defined in the next subsection, on ADTs.
-
-(𝒱 single-sorted with-sort
-  = \"Replace all nullary sorts with the provided WITH-SORT string
-     as the name of the new single sort, the universe of discourse.\"
-    map (λ e → (if (is-sort e) (map-name (λ _ → with-sort) e) e)))
-
-(defun reify-to-list (str &optional otherwise)
- \"Given a string of “;”-separated items consisting of “to”-separated pairs,
-  interpret it as a Lisp function where “to”-pairs denote mapping clauses.
-
- E.g., “x₀ to y₀; …; xₙ to yₙ”
- becomes the function sending value xᵢ to yᵢ, and behaves as the identity function
- otherwise unless “otherwise” is provided, in which case it acts as a fallback.
-
- Concretely:
-    (reify-to-list \\\"1 to x; 2 to y; p to q\\\")
-  ≈ (λ arg → (pcase arg (\\\"1\\\" \\\"x\\\") (\\\"2\\\" \\\"y\\\") (\\\"p\\\" \\\"q\\\") (otherwise otherwise)))
- \"
- (let (clauses (fallback (or otherwise 'otherwise)))
-   (thread-last str
-     (s-split \";\")
-     (--map (s-split \" to \" it))
-     (--map (list (s-trim (car it)) (s-trim (cadr it))))
-     (-cons* 'pcase 'arg)
-     (setq clauses))
-   `(lambda (arg) ,(append clauses `((otherwise ,fallback))))))
-
-(𝒱 renaming by
-  = \"Rename elements using BY, a “;”-separated string of “to”-separated pairs.\"
-    rename '(reify-to-list by))
-
-(defun target (thing)
-  \" Given a type-name ‘[name :] τ₀ → ⋯ → τₙ’, yield ‘τₙ’;
-    the ‘name’ porition is irrelevant.
+  ‘adj’ is a binary relation denoting adjacency.
+  (adj x y)  ≈  x depends on, or is a neighbour, of y.
   \"
-  (car (-take-last 1 (s-split \"→\" thing))))
 
-(𝒱 data carrier
-  = \"Reify as an Agda “data” type.
+  (let* (;; Using -map instead of -filter since nodes may become sickly later on, position matters.
+         (sickly (-map p xs))
+         ;; Obtain the items that are currently ‘sickly’.
+         (get-sickly (lambda () (--filter it (--zip-with (when it other) sickly xs))))
+         ;; infected x  ≡ x has a sickly neighbour
+         (infected (λ x → (--any (funcall adj x it) (funcall get-sickly)))))
 
-     Only elements targeting CARRIER are kept.
-    \"
-    :kind  data
-    :level dec
-    :alter-elements (lambda (es)
-      (thread-last es
-        (--filter (s-contains? carrier (target (element-type it))))
-        (--map (map-type (λ τ → (s-replace carrier $𝑛𝑎𝑚𝑒 τ)) it)))))
-
-(𝒱 generated by
-  = \"Keep the largest well-formed PackageFormer whose elements satisfy BY.
-
-     BY is a predicate on elements.
-    \"
-    :alter-elements  (lambda (fs)
-      (let* ( (yeses (--map (funcall by it) fs))
-              (get-yeses (lambda () (--filter it (--zip-with (if it other) yeses fs))))
-              (in-yeses (lambda (e)
-                          (--any
-                           (s-contains? (s-replace \"_\" \" \" (element-name e)) (element-type it))
-                           (funcall get-yeses)))))
-
-        (loop for _ in fs do
-              (loop for f in fs
+     ;; Propogate sickness.
+     (loop for _ in xs
+           do (loop for x in xs
                     for i from 0
-                    do ;; when f in yess, set f to be yes.
-                    (when (funcall in-yeses f) (setf (nth i yeses) t))))
+                    do (when (funcall infected x) (setf (nth i sickly) t))))
 
-        (funcall get-yeses))))
+     ;; Apply medication to sickly elements only.
+     (--map (if (-contains-p (funcall get-sickly) it) (funcall f it) it) xs)))
 
-(𝒱 sorts
- = \"Obtaining the types declared in a grouping mechanism.
+;; Example: A graph of 10 nodes, with an edge between multiples; where nodes 3,4,5 are initally ill.
+;; (graph-map (λ x → (-contains-p '(3 4 5) x)) (λ x → (format \"medicated-%s\" x)) (λ x y → (zerop (mod x y))) '(1 2 3 4 5 6 7 8 9 10))
+;; ⇒ (1 2 medicated-3 medicated-4 medicated-5 medicated-6 7 medicated-8 medicated-9 medicated-10)
 
-   For now, only base types; i.e., items targeting “Set”.
-   \"
-   generated (λ e → (s-contains? \"Set\" (target (element-type e)))))
+(defmacro --graph-map (mark alter elements)
+  \"Mark elements in a given list, and recursively mark all those that depend on them.
+   Return the list of elements with the marked ones being altered.
 
-(defun targets-a-sort (element)
-  \"Checks whether the given ‘element’ targets
-   any of the sorts of the *current* PacakgeFormer.
-   \"
-  (--any (s-contains? it (target (element-type element)))
-         (-map #'element-name (-filter #'is-sort $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠))))
-
-(𝒱 signature
-  = \"Keep only the elements that target a sort, drop all else.\"
-    generated (λ e → (targets-a-sort e)))
-
-(𝒱 open with (avoid-mixfix-renaming nil)
-  =
-    \"Reify a given PackageFormer as a *parameterised* Agda “module” declaration.
-
-     WITH is a renaming, string to string, function that is applied to the parent record that will
-     be opened and reexported as a module.
-
-     AVOID-MIXFIX-RENAMING is optional; by default renaming “jumps over” underscores,
-     but providing a non-nil value for this argument leaves underscores alone.
-     It is a matter of having, say, default “_⊕ₙ_” versus “_⊕_ₙ”.
-
-     The resulting module has a parameter, whose name is irrelevant but is
-     of the form “Arg𝒹𝒹𝒹𝒹” for some digits 𝒹 in order to minimise clash with
-     any user-defined names.
-
-     Besides the addition of a new parameter, all element qualifiers are discarded.
-    \"
-    :kind module
-    :level none
-    :waist 1
-    :alter-elements  (lambda (fs)
-      (let ((kind \"{! !}\") (ℛ (format \"Ar%s\" (gensym))))
-        (cons (make-element :name ℛ :type $𝑝𝑎𝑟𝑒𝑛𝑡)
-          (--map (let ((name (if avoid-mixfix-renaming (with (element-name it)) (rename-mixfix with (element-name it)))))
-            (make-element :name name
-                          :type (format \"let open %s %s in %s\" $𝑝𝑎𝑟𝑒𝑛𝑡 ℛ (element-type it))
-                          :equations (list (format \"%s = %s.%s %s\" name $𝑝𝑎𝑟𝑒𝑛𝑡 (element-name it) ℛ)))) fs)))))
-
-(𝒱 opening with
-  = \"Open a record as a module exposing only the names mentioned in WITH.
-
-    WITH is a string of “;”-separated items consisting of “to”-separated pairs.
-    \"
-    open (λ x → (funcall (reify-to-list with \"_\") x)) :avoid-mixfix-renaming t)
-
-    ;; Alternatively, we could have used ‘trash’ names,
-    ;; something like (format \"%s\" (gensym)), instead of \"_\".
-
-(𝒱 open-with-decoration ddd
-  = \"Open a record, exposing all elements, with decoration DDD.
-
-    DDD is a string.
-   \"
-   open (λ x → (concat x ddd)))
-
-(defun to-subscript (n)
-  \"If i ∈ 0..9, then yield ᵢ, else i.\"
-  (if (not (< -1 i 10))
-      (format \"%s\" i)
-    (nth n '(\"₀\" \"₁\" \"₂\" \"₃\" \"₄\" \"₅\" \"₆\" \"₇\" \"₈\" \"₉\"))))
-
-(defun homify (element sort)
-  \"Given a typed name, produce the associating “preservation” formula.
-   E.g.,
-          _·_    : Scalar → Vector → Vector
-          pres-· : {x₁ : Scalar} → {x₂ : Vector} → map₂ (x₁ · x₂) = map₁ x₁ ·′ map₂ x₂
-
-  Type τ gets variable xᵢ provided (i, τ) ∈ sorts; likewise we think of mapᵢ : τ → τ′.
-  Notice that the target name is primed, “·′”.
+   ‘mark’ and ‘alter’ are expressions mentioning ‘it’,
+    and so are implicit functional expressions.
   \"
-  (letf* ((sorts     (mapcar #'car sort))
-          ((symbol-function 'index) (lambda (s) (to-subscript (cdr (assoc it sort)))))
+  `(graph-map (λ it → ,mark)
+              (λ it → ,alter)
+              ;; x depends on y  ≡  x mentions y, with all or no undescores, in its type or equations.
+              (λ x y → (or (s-contains? (s-replace \"_\" \" \" (element-name y)) (s-join \" \" (cons (element-type x) (element-equations x))))
+                           (s-contains? (element-name y) (s-join \" \" (cons (element-type x) (element-equations x))))))
+              ,elements
+              ))
 
-          (tn→       (s-split \" → \" (element-type element)))
-          (arg-count (1- (length tn→)))
+(𝒱 record (discard-equations nil) (and-names nil)
+ = \"Reify a variational as an Agda “record”.
 
-          (all-indicies  (--map (index it) (--filter (member (s-trim it) sorts) tn→)))
-          (indicies  (-drop-last 1 all-indicies))
-          (tgt-idx   (car (-take-last 1 all-indicies)))
+    By default, elements with equations are construed as
+    derivatives of fields  ---the elements
+    without any equations.
 
-          (op        (element-name element))
-          (args      (--map (concat \"x\" it) indicies))
-          (lhs       (format \"map%s (%s %s)\" tgt-idx op (s-join \" \" args)))
+    ⇨ DISCARD-EQUATIONS is nil by default.
+      If provided with a non-nil value, equations are dropped.
 
-          (op′       (rename-mixfix (lambda (n) (concat n \"′\")) op))
-          (map-args  (--map (format \"(map%s x%s)\" it it) indicies))
-          (rhs       (format \"%s %s\" op′ (s-join \" \" map-args)))
+    ⇨ AND-NAMES is nil by default and only takes
+      effect when DISCARD-EQUATIONS is active.
+      If provided with a non-nil value, names with
+      equations are dropped altogether.
+   \"
+  :kind record
+  :alter-elements
+    (λ es →
+      (thread-last es
+      ;; Keep or drop eqns depending on “discard-equationals”
+      (--graph-map (and discard-equations (element-equations it))
+                   (map-equations (-const nil)
+                     (map-name (λ n → (if and-names \"_\" n)) it)))
+      ;; Discard all “_” named items.
+      (--reject (equal \"_\" (element-name it)))
+      ;; Unless there's equations, mark elements as fields.
+      (--map (map-qualifier
+        (λ _ → (unless (element-equations it)
+               \"field\")) it)))))
 
-          (target    (format \"  %s   ≡   %s\" lhs rhs)))
+(𝒱 unbundling n
+ = \"Make the first N elements as parameters to the PackageFormer.
 
-    ;; Change the target type.
-    (setq tn→ (--map (when (assoc it sort) (format \"{x%s : %s}\" (index it) it)) tn→))
-    (setf (nth arg-count tn→) target)
-
-    ;; Stick it all together, with an updated name.
-    (make-element
-     :name (format \"pres-%s\" (s-replace \"_\" \"\" (element-name element)))
-     :type (s-join \" → \" tn→))))
-
-(𝒱 hom
-  = \"Formulate the notion of homomorphism of $𝑝𝑎𝑟𝑒𝑛𝑡 algebras.
-
-     ➩ $𝑝𝑎𝑟𝑒𝑛𝑡 must be an existing record type used in the resulting formulation.
-    \"
-    record ⟴
-    :waist 2
-    :alter-elements (lambda (es)
-
-      (let (maps eqns sorts (𝒮𝓇𝒸 \"Src\") (𝒯ℊ𝓉 \"Tgt\"))
-
-        ;; Construct the mapᵢ : sortᵢ → sortᵢ′; keeping track of (sort . i) pairs.
-        (loop for e in es
-              for i from 1
-         do
-           (when (is-sort e)
-             (push (cons (element-name e) i) sorts)
-             (push (make-element
-                      :qualifier \"field\"
-                      :name (format \"map%s\" (to-subscript i))
-                      :type (format \"%s → %s′\" (element-name e) (element-name e)))
-                   maps))
-
-            (when (and (targets-a-sort e) (not (is-sort e)))
-              (push (homify e sorts) eqns)))
-
-      ;; Ensure we have a source and target space as elements.
-      (-cons*
-       (make-element :qualifier \"field\" :name 𝒮𝓇𝒸 :type $𝑝𝑎𝑟𝑒𝑛𝑡)
-       (make-element :qualifier \"field\" :name 𝒯ℊ𝓉 :type $𝑝𝑎𝑟𝑒𝑛𝑡)
-       (--map
-        (map-type (λ τ → (format \"let open %s %s; open %s′ %s in %s\"
-                                 $𝑝𝑎𝑟𝑒𝑛𝑡 𝒮𝓇𝒸 $𝑝𝑎𝑟𝑒𝑛𝑡 𝒯ℊ𝓉 τ))
-                  (map-qualifier (λ _ → \"field\") it))
-        (reverse (-concat eqns maps)))))))
+    Any elements in above the waist line have their equations dropped.
+    As such, unbundling is not invertible.
+   \"
+   :waist n
+   :alter-elements (λ es →
+     (-let [i 0]
+       (--graph-map (progn (incf i) (<= i n))
+                    (map-equations (-const nil) it)
+                    es))))
 ")))
 (setq ♯standard-variationals (s-count-matches-all "(𝒱" it))
 (eval (car (read-from-string (format "(progn %s)" it))))

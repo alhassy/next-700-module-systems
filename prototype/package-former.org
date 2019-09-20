@@ -2014,8 +2014,8 @@ module package-former where
 open import package-former-generated
 open import Level
 open import Data.Bool
-open import Relation.Binary.PropositionalEquality using (_≡_)
-open import Data.String hiding (_++_)
+open import Data.List using (List; _∷_; []; foldr)
+import Relation.Binary.PropositionalEquality as ≡; open ≡ using (_≡_)
 #+END_SRC
 #
 # Strip away the 700 annotations with:
@@ -2048,17 +2048,10 @@ as a Lisp form.
 -}
 #+END_SRC
 
-Alternatively, here is a example PackageFormer for monoids as well as that of M-Sets from earlier.
+Alternatively, here is the PackageFormer for M-Sets from the introduction.
+It is a useful example since it is multi-sorted.
 #+BEGIN_SRC agda
 {-700
-PackageFormer MonoidP : Set₁ where
-    Carrier : Set
-    _⨾_     : Carrier → Carrier → Carrier
-    Id      : Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
-    rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
-
 PackageFormer M-Set : Set₁ where
    Scalar  : Set
    Vector  : Set
@@ -2067,9 +2060,70 @@ PackageFormer M-Set : Set₁ where
    _×_     : Scalar → Scalar → Scalar
    leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
    assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
-
 -}
 #+END_SRC
+Let us also introduce a slightly more syntactically-involved example:
+*A PackageFormer with equations.* The equations, /depending on our perspective,/
+---i.e., the variational invoked--- may be thought of as:
++ Derived elements; e.g., in a record, they are a definitional extension
+  and for an ADT, they are methods defined on the constructors.
++ Coherence constraints; e.g., in a record, we may interpret an equation ~𝓁 = 𝓇~
+  as an additional axiom ~∀ {⋯} → ℓ ≡ 𝓇~ ---e.g., when a user may supply an efficient definition
+  of ~𝓁~ but is constrained to have a particular behaviour ~𝓇~.
++ Rewrite rules; e.g., in an ADT, an equation may simply act as an alias and is to be used
+  in rewriting the remainder of the ADT declaration.
++ Ignored components; e.g., in a record, we may ignore the equations altogether
+  and lift the associated names into being fields ---e.g., ~_≈_~ would usually be lifted into
+  a field and its stringent implementation via ~_≡_~ is used as a motivating or simplifying factor.
+
+#+BEGIN_SRC agda
+{-700
+PackageFormer MonoidP : Set₁ where
+
+    -- A few declarations
+    Carrier : Set
+    _⨾_     : Carrier → Carrier → Carrier
+    Id      : Carrier
+    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+    -- We have a setoid-like structure; with a default implementation
+    _≈_   : Carrier → Carrier → Set
+    _≈_   = _≡_
+    ⨾-cong : ∀ {x y x′ y′} → x ≈ x′ →  y ≈ y′ → (x ⨾ y) ≈ (x′ ⨾ y′)
+    ⨾-cong = λ{ ≡.refl ≡.refl → ≡.refl}
+
+    -- For now only one item in a declaration;
+    -- namely “Lid” & “Rid” cannot be declared in one line.
+    Lid : Carrier → Carrier
+    Lid x = Id ⨾ x
+    Rid : Carrier → Carrier
+    Rid x = x ⨾ Id
+
+    -- Agda permits pure, non-pattern-matching, equations between “fields” in a record.
+    concat : List Carrier → Carrier
+    concat = foldr _⨾_ Id
+
+    -- More declarations
+    leftId  : ∀ {x : Carrier} → (Id ⨾ x) ≈ x
+    rightId : ∀ {x : Carrier} → Rid x ≈ x
+
+    -- Since there are no more pure declarations, “fields”, subsequent equations
+    -- may use pattern matching.
+
+    Id² : (Id ⨾ Id) ≈ Id
+    Id² = rightId
+
+    concatₚ : List Carrier → Carrier
+    concatₚ []       = Id
+    concatₚ (x ∷ xs) = x ⨾ concatₚ xs
+-}
+#+END_SRC
+
+Notice that there is no particular segregation of declarations and equations.
+Simply: A declaration may /optionally/ have an associated equation; however
+once an equation uses pattern matching then all subsequent declarations must also
+have equations ---this is a constraint of the current Agda implementation---;
+as such, the equation for ~⨾-cong~ uses Agda's pattern-matching-λ.
 
 :not_yet_implemented:
 TODO: implement support for literate blocks
@@ -2082,7 +2136,7 @@ Instead, they may simply write ~\begin{700} ⋯ \end{700}~ and similarly for ~li
 | Henceforth, we omit the comment delimiters. |
 
 For example, here is our earlier PackageFormer of ~M-Set~'s declared in full.
-#+BEGIN_SRC agda :tangle no
+,#+BEGIN_SRC agda :tangle no
 PackageFormer M-Set : Set₁ where
    Scalar  : Set
    Vector  : Set
@@ -2224,7 +2278,7 @@ We are not doing anything with the arguments here; we shall return to this in la
    ~:kind~ and ~:alter-elements~, as follows.
 #+BEGIN_SRC agda
 {-700
-𝒱-record = :kind record :alter-elements (λ es → (--map (map-qualifier (λ _ → "field") it) es))
+𝒱-record₀ = :kind record :alter-elements (λ es → (--map (map-qualifier (λ _ → "field") it) es))
 -}
 #+END_SRC
 
@@ -2243,14 +2297,14 @@ We are not doing anything with the arguments here; we shall return to this in la
    Let's try it out.
 #+BEGIN_src agda
 {-700
-M-Set-Record = M-Set record
+M-Set-Record = M-Set record₀
 -}
 #+END_SRC
 
    The system picks this up, looks up ~M-Set~ which was defined in the first section earlier,
    looks up the variational ~record~, then runs that configuration to generate:
 #+BEGIN_SRC results-agda :tangle no
-{- M-Set-Record = M-Set record -}
+{- M-Set-Record = M-Set record₀ -}
 record M-Set-Record : Set₁ where
    field Scalar     : Set
    field Vector     : Set
@@ -2265,35 +2319,237 @@ record M-Set-Record : Set₁ where
   has been performed. The above is the /exact/ generated result of the system ---the comment indicates
   the source of this generated code.
 
-  Since this is a variational that is likely to be used often, it is sensible to document it
+** Equation Accommodating Record Variational
+
+  Since record formation is a variational that is likely to be used often, it is sensible to document it
   ---which in turn is attached to all occurences of the variational name via tooltips.
+  Moreover, let's strengthen it to accomodate PackageFormers with equations.
 #+BEGIN_SRC agda
 {-lisp
-(𝒱 record = "Reify a variational as an Agda “record”."
-            :kind record
-            :alter-elements (λ es → (--map (map-qualifier (λ _ → "field") it) es)))
+(𝒱 record₁ (discard-equations nil)
+ = "Reify a variational as an Agda “record”.
+    Elements with equations are construed as
+    derivatives of fields  ---the elements
+    without any equations--- by default, unless
+    DISCARD-EQUATIONS is provided with a non-nil value.
+   "
+  :kind record
+  :alter-elements
+    (λ es →
+      (thread-last es
+      ;; Keep or drop eqns depending on “discard-equations”
+      (--map
+        (if discard-equations
+            (map-equations (λ _ → nil) it)
+            it))
+      ;; Unless there's equations, mark elements as fields.
+      (--map (map-qualifier
+        (λ _ → (unless (element-equations it)
+               "field")) it)))))
 -}
 #+END_SRC
 
-   Unlike ~𝒱-identity~ from the previous section, we have decided to split this definition into multiple
+   Unlike ~𝒱-identity~ from a previous section, we have decided to split this definition into multiple
    lines by enclosing it in ~{-lisp ⋯ -~}~. Such blocks may contain arbitrary Lisp to be executed and so
    all contents must be Lisp forms ---notice the ~𝒱-⋯~ from ~700~-blocks has been *exchanged* for
    a parenthesised (~𝒱 ⋯)~ within ~lisp~-blocks.
 
-   :Hide_export_to_el:
-   #+BEGIN_SRC lisp :tangle "variationals.tmp"
-(𝒱 record = "Reify a variational as an Agda “record”."
-            :kind record
-            :alter-elements (λ es → (--map (map-qualifier (λ _ → "field") it) es)))
+   Let's try this out.
+
+   First, using only the default value ---which doesn't discard equations.
+#+BEGIN_SRC agda
+{-700
+Monoid-Record-derived = MonoidP record₁
+-}
 #+END_SRC
-:End:
+#+BEGIN_SRC results-agda :tangle no
+record Monoid-Record-derived : Set₁ where
+    field Carrier       : Set
+    field _⨾_       : Carrier → Carrier → Carrier
+    field Id        : Carrier
+    field assoc     : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    _≈_     : Carrier → Carrier → Set ; _≈_   = _≡_
+    ⨾-cong      : ∀ {x y x′ y′} → x ≈ x′ →  y ≈ y′ → (x ⨾ y) ≈ (x′ ⨾ y′) ;  ⨾-cong = λ{ ≡.refl ≡.refl → ≡.refl}
+    Lid     : Carrier → Carrier ;   Lid x = Id ⨾ x
+    Rid     : Carrier → Carrier ;   Rid x = x ⨾ Id
+    concat      : List Carrier → Carrier ;  concat = foldr _⨾_ Id
+    field leftId        : ∀ {x : Carrier} → (Id ⨾ x) ≈ x
+    field rightId       : ∀ {x : Carrier} → Rid x ≈ x
+    Id²     : (Id ⨾ Id) ≈ Id ;  Id² = rightId
+    concatₚ     : List Carrier → Carrier ;  concatₚ []       = Id ; concatₚ (x ∷ xs) = x ⨾ concatₚ xs
+#+END_SRC
+   Second, discarding equations and lifting all elements into ~field~-s.
+#+BEGIN_SRC agda
+{-700
+Monoid-Record-field = MonoidP record₁ :discard-equations t
+-}
+#+END_SRC
+#+BEGIN_SRC results-agda :tangle no
+record Monoid-Record-cons : Set₁ where
+    field Carrier       : Set
+    field _⨾_       : Carrier → Carrier → Carrier
+    field Id        : Carrier
+    field assoc     : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    field _≈_       : Carrier → Carrier → Set
+    field ⨾-cong        : ∀ {x y x′ y′} → x ≈ x′ →  y ≈ y′ → (x ⨾ y) ≈ (x′ ⨾ y′)
+    field Lid       : Carrier → Carrier
+    field Rid       : Carrier → Carrier
+    field concat        : List Carrier → Carrier
+    field leftId        : ∀ {x : Carrier} → (Id ⨾ x) ≈ x
+    field rightId       : ∀ {x : Carrier} → Rid x ≈ x
+    field Id²       : (Id ⨾ Id) ≈ Id
+    field concatₚ       : List Carrier → Carrier
+#+END_SRC
+
+** A Coherent Equation Accommodating Record Variational
+
+   Yet another option to handling equations is to drop the names that have
+   equations associated with them. To tackle such a scenario
+   requires the remaining elements to be well-defined and so requires “the largest sub-PackageFormer”.
+
+   Coherent relationships are just graphs in disguise, so let's abstract away the details and solve
+   a graph-theoretic problem. In ~{-lisp ⋯ -}~ blocks we may have arbitrary Emacs Lisp code and so include
+   the following ---which has a large number of shortcomings, but the aim is a simple demonstration of Lisp
+   code for the Agda user, not to be robust Lisp code. The name, <<<graph-map>>>, may not be ideal but it seems good enough, for now.
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+;; p ≈ symptom; f ≈ medicine; adj ≈ neighbouring dependency
+;;
+(defun graph-map (p f adj xs)
+  "Map the nodes ‘xs’ satisfying ‘p’ by ‘f’.
+
+  ‘f’ is performed on nodes satisfying ‘p’,
+  all neighbours are then considered to satisfy p
+  and the process repeats recursively.
+
+  E.g., nodes exhibiting symptoms ‘p’ are given medicine ‘f’,
+  and their sickness spreads to their neighbours who in turn
+  become ill thereby requiring medication, and the process continues.
+
+  ‘adj’ is a binary relation denoting adjacency.
+  (adj x y)  ≈  x depends on, or is a neighbour, of y.
+  "
+
+  (let* (;; Using -map instead of -filter since nodes may become sickly later on, position matters.
+         (sickly (-map p xs))
+         ;; Obtain the items that are currently ‘sickly’.
+         (get-sickly (lambda () (--filter it (--zip-with (when it other) sickly xs))))
+         ;; infected x  ≡ x has a sickly neighbour
+         (infected (λ x → (--any (funcall adj x it) (funcall get-sickly)))))
+
+     ;; Propogate sickness.
+     (loop for _ in xs
+           do (loop for x in xs
+                    for i from 0
+                    do (when (funcall infected x) (setf (nth i sickly) t))))
+
+     ;; Apply medication to sickly elements only.
+     (--map (if (-contains-p (funcall get-sickly) it) (funcall f it) it) xs)))
+
+;; Example: A graph of 10 nodes, with an edge between multiples; where nodes 3,4,5 are initally ill.
+;; (graph-map (λ x → (-contains-p '(3 4 5) x)) (λ x → (format "medicated-%s" x)) (λ x y → (zerop (mod x y))) '(1 2 3 4 5 6 7 8 9 10))
+;; ⇒ (1 2 medicated-3 medicated-4 medicated-5 medicated-6 7 medicated-8 medicated-9 medicated-10)
+#+END_SRC
+
+Testing this graph-theoretic solution for our setting shows it to be a reasonable fit.
+#+BEGIN_SRC emacs-lisp :tangle no
+;; Example: Dropping the implementations of the first 2 items.
+(setq i -1)
+(graph-map (λ _ → (incf i) (< i 2))
+           (λ x → (map-equations (λ _ → nil) x))
+           ;; x depends on y  ≡  x mentions y in its type or equations.
+           (λ x y → (s-contains? (s-replace "_" " " (element-name y)) (s-join " " (cons (element-type x) (element-equations x)))))
+           (parse-elements '("A : Set" "_≈_ : A → A → Set" "_≈_ = _≡_" "easy : ∀ {x} → x ≈ x" "easy = refl"
+                             "another : ∀ {x} → Set" "another = easy" "by : Set₁" "by = Set"))))
+⇒
+  A       : Set
+  eq      : A → A → Set    ;; implementation dropped
+  easy	  : ∀ {x} → x ≈ x  ;; ditto, since it depends on ≈'s implementation
+  another : ∀ {x} → Set    ;; ditto, since it depends on easy's implementation
+  by      : Set₁
+  by      = Set₁
+#+END_SRC
+
+Let's introduce a dedicated form for ~element~ values.
+#+BEGIN_SRC emacs-lisp  :tangle "variationals.tmp"
+(defmacro --graph-map (mark alter elements)
+  "Mark elements in a given list, and recursively mark all those that depend on them.
+   Return the list of elements with the marked ones being altered.
+
+   ‘mark’ and ‘alter’ are expressions mentioning ‘it’,
+    and so are implicit functional expressions.
+  "
+  `(graph-map (λ it → ,mark)
+              (λ it → ,alter)
+              ;; x depends on y  ≡  x mentions y, with all or no undescores, in its type or equations.
+              (λ x y → (or (s-contains? (s-replace "_" " " (element-name y)) (s-join " " (cons (element-type x) (element-equations x))))
+                           (s-contains? (element-name y) (s-join " " (cons (element-type x) (element-equations x))))))
+              ,elements
+              ))
+#+END_SRC
+
+Now the previous example may be invoked as:
+#+BEGIN_SRC emacs-lisp :tangle no
+(setq i -1)
+(--graph-map (progn (incf i) (< i 3))
+             (map-equations (λ _ → nil) it)
+             (parse-elements '("A : Set" "_≈_ : A → A → Set" "_≈_ = _≡_"
+                               "easy : ∀ {x} → x ≈ x" "easy = refl"
+                               "another : ∀ {x} → Set" "another = easy" "by : Set₁" "by = Set"))))
+#+END_SRC
+
+With these pieces in hand, let's form
+#+BEGIN_SRC  emacs-lisp  :tangle "variationals.tmp"
+(𝒱 record (discard-equations nil) (and-names nil)
+ = "Reify a variational as an Agda “record”.
+
+    By default, elements with equations are construed as
+    derivatives of fields  ---the elements
+    without any equations.
+
+    ⇨ DISCARD-EQUATIONS is nil by default.
+      If provided with a non-nil value, equations are dropped.
+
+    ⇨ AND-NAMES is nil by default and only takes
+      effect when DISCARD-EQUATIONS is active.
+      If provided with a non-nil value, names with
+      equations are dropped altogether.
+   "
+  :kind record
+  :alter-elements
+    (λ es →
+      (thread-last es
+      ;; Keep or drop eqns depending on “discard-equationals”
+      (--graph-map (and discard-equations (element-equations it))
+                   (map-equations (-const nil)
+                     (map-name (λ n → (if and-names "_" n)) it)))
+      ;; Discard all “_” named items.
+      (--reject (equal "_" (element-name it)))
+      ;; Unless there's equations, mark elements as fields.
+      (--map (map-qualifier
+        (λ _ → (unless (element-equations it)
+               "field")) it)))))
+#+END_SRC
+We can obtain the previous variationals ~rcordᵢ~ as well as new presentations.
+#+BEGIN_SRC agda
+{-700
+Monoid-Record-derived-again  = MonoidP record
+Monoid-Record-derived-again2 = MonoidP record :and-names t
+Monoid-Record-field-again    = MonoidP record :discard-equations t
+Monoid-Record-no-equationals = MonoidP record :discard-equations t :and-names t
+-}
+#+END_SRC
+The last form yields:
+#+BEGIN_SRC results-agda :tangle no
+record Monoid-Record-no-equationals : Set₁ where
+    field Carrier       : Set
+    field _⨾_       : Carrier → Carrier → Carrier
+    field Id        : Carrier
+    field assoc     : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+#+END_SRC
 
 ** Typeclasses ---Parameterised Records--- and Meta-Primitives ~:waist~ & ~:level~
    :PROPERTIES:
    :CUSTOM_ID: Typeclasses----Parameterised-Records----and-Meta-Primitives---waist------level-
-   :END:
-   :PROPERTIES:
-
    :END:
 
     We mentioned the <<<“waist”>>> before, but what is it exactly?
@@ -2349,47 +2605,80 @@ record MonoidT₂ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) : Se
     field rightId       : ∀ {x : Carrier} → x ⨾ Id ≡ x
         #+END_SRC
 
-        #+BEGIN_SRC results-agda :tangle no
-{-700
-𝒱-typeclass₂    = :kind record :waist-strings ("field") :waist 2 :level dec
-M-Set-Typeclass₂ = M-Set typeclass₂
--}
-record M-Set-Typeclass₂ (Scalar : Set) (Vector : Set) : Set where
-   field _·_        : Scalar → Vector → Vector
-   field 𝟙      : Scalar
-   field _×_        : Scalar → Scalar → Scalar
-   field leftId     : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
-   field assoc      : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
-#+END_src
-
-  Unlike records, typeclasses scream to have an argument: The height of the waist.
-  Variationals may have arguments and we will cover this issue in a later subsection
-  in preference to continuing our purview of the meta-primitives.
+  # Unlike records, typeclasses scream to have an argument: The height of the waist.
+  # Variationals may have arguments and we will cover this issue in a later subsection
+  # in preference to continuing our purview of the meta-primitives.
 
   For fun, here are a few more to play with:
 #+BEGIN_SRC agda
 {-700
 MonoidT₃         = MonoidP record ⟴ :waist 3 :level dec
+MonoidT₃-again   = MonoidP ⟴ record ⟴ exposing 3
 M-Set-Typeclass₂ = M-Set record ⟴ typeclass₂
 -}
 #+END_SRC
 
 In particular, the last example suggest that our composition is idempotent, but this is clearly not the case.
 Indeed, here's a pretty alternative to the meta-primitive ~:waist~ that is not ⟴-idempotent
-but is in-fact a homomorphism: ~exposing n ⟴ exposing m ≈ exposing (n + m)~.
+but is in-fact a homomorphism: ~unbundling n ⟴ unbundling m ≈ unbundling (n + m)~.
 #+BEGIN_SRC lisp :tangle "variationals.tmp"
-(𝒱 exposing n
- = "Make the first N elements as parameters to the PackageFormer"
-   :waist n)
+(𝒱 unbundling n
+ = "Make the first N elements as parameters to the PackageFormer.
+
+    Any elements in above the waist line have their equations dropped.
+    As such, unbundling is not invertible.
+   "
+   :waist n
+   :alter-elements (λ es →
+     (-let [i 0]
+       (--graph-map (progn (incf i) (<= i n))
+                    (map-equations (-const nil) it)
+                    es))))
 #+END_SRC
-Play with it! We'll return to arguments later on.
+( The graph-map operation was defined in the previous section. )
+
+Incidentally, this solves the problem of lifting the waist to include elements with equations.
 #+BEGIN_SRC agda
 {-700
-MonoidT₃-again = MonoidP ⟴ record ⟴ exposing 3
+-- Ill-formed in Agda: A defintion is not a parameter!
+MonoidP-Typeclass₅ = MonoidP :waist 5
 -}
+    #+END_SRC
+
+    #+BEGIN_SRC results-agda :tangle no
+{- Kind “PackageFormer” does not correspond  to a concrete Agda type.
+{- MonoidP-Typeclass₅ = MonoidP :waist 5 -}
+PackageFormer MonoidP-Typeclass₅ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) (Id : Carrier) (assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) (_≈_ : Carrier → Carrier → Set ; _≈_ = _≡_) : Set₁ where
+    ⨾-cong      : ∀ {x y x′ y′} → x ≈ x′ →  y ≈ y′ → (x ⨾ y) ≈ (x′ ⨾ y′) ;  ⨾-cong = λ{ ≡.refl ≡.refl → ≡.refl}
+    Lid     : Carrier → Carrier ;   Lid x = Id ⨾ x
+    Rid     : Carrier → Carrier ;   Rid x = x ⨾ Id
+    concat      : List Carrier → Carrier ;  concat = foldr _⨾_ Id
+    leftId      : ∀ {x : Carrier} → (Id ⨾ x) ≈ x
+    rightId     : ∀ {x : Carrier} → Rid x ≈ x
+    Id²     : (Id ⨾ Id) ≈ Id ;  Id² = rightId
+    concatₚ     : List Carrier → Carrier ;  concatₚ []       = Id ; concatₚ (x ∷ xs) = x ⨾ concatₚ xs -}
 #+END_SRC
 
-** Primed Decoration and ~rename-mixfix~
+#+BEGIN_SRC agda
+{-700
+MonoidT₅ = MonoidP ⟴ unbundling 5 ⟴ record
+-}
+    #+END_SRC
+    #+BEGIN_SRC results-agda :tangle no
+record MonoidT₅ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) (Id : Carrier) (assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) (_≈_ : Carrier → Carrier → Set) : Set₁ where
+    field ⨾-cong        : ∀ {x y x′ y′} → x ≈ x′ →  y ≈ y′ → (x ⨾ y) ≈ (x′ ⨾ y′)
+    field Lid       : Carrier → Carrier
+    field Rid       : Carrier → Carrier
+    field concat        : List Carrier → Carrier
+    field leftId        : ∀ {x : Carrier} → (Id ⨾ x) ≈ x
+    field rightId       : ∀ {x : Carrier} → Rid x ≈ x
+    field Id²       : (Id ⨾ Id) ≈ Id
+    field concatₚ       : List Carrier → Carrier
+#+END_SRC
+
+ :smile:
+
+** COMMENT Primed Decoration and ~rename-mixfix~
    :PROPERTIES:
    :CUSTOM_ID: Primed-Decoration-and--rename-mixfix-
    :END:
@@ -2521,7 +2810,7 @@ record MonoidR′ : Set₁ where
 #+END_SRC
 :End:
 
-** First-class PackageFormers
+** COMMENT First-class PackageFormers
    :PROPERTIES:
    :CUSTOM_ID: First-class-PackageFormers
    :END:
@@ -2599,7 +2888,7 @@ It is important to remember that these primed perspectives do /not/ typecheck in
 issue mentioned earlier. We are only demonstrating composition, ~⟴~, in this section; in a later section we
 fix-up ~primed~.
 
-** Variationals with Arguments ---~map, rename, [co]decorated, subscriptedᵢ, renaming~
+** COMMENT Variationals with Arguments ---~map, rename, [co]decorated, subscriptedᵢ, renaming~
    :PROPERTIES:
    :CUSTOM_ID: Variationals-with-Arguments-----map--rename---co-decorated--subscriptedᵢ--renaming-
    :END:
@@ -2934,7 +3223,7 @@ record NearMonoid¹ : Set₁ where
 Write a variational ~remove-sorts~ that strips out all sorts from a PackageFormer.
 If elements depend on sorts, as they normally do, then one must remove them as well;
 ignore this for now, and we shall return to subgenerated PackageFormers later on.
-** Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable
+** COMMENT Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable
    :PROPERTIES:
    :CUSTOM_ID: Forming-Syntax-and-the-Special---𝑛𝑎𝑚𝑒--Variable
    :END:
@@ -3023,7 +3312,7 @@ data No : Set where
 {- Crashes since type No′ is not defined! -}
 #+END_SRC
 
-** Subpacakges with ~generated, sorts, signature~
+** COMMENT Subpacakges with ~generated, sorts, signature~
    :PROPERTIES:
    :CUSTOM_ID: Subpacakges-with--generated--sorts--signature-
    :END:
@@ -3138,7 +3427,7 @@ record MonSig : Set₁ where
 
    Neato! Those were some nifty applications!
 
-** Shallow Renaming with Agda's ~open ⋯ public ⋯ renaming ⋯~
+** COMMENT Shallow Renaming with Agda's ~open ⋯ public ⋯ renaming ⋯~
    :PROPERTIES:
    :CUSTOM_ID: Shallow-Renaming-with-Agda-s--open---public---renaming---
    :END:
@@ -3309,7 +3598,7 @@ new pacaking mechanisms. They are a terminal construction.
 
 #  For now, let's show how /functions are PackageFormers./
 
-** Automatically deriving homomorphism definitions ♥‿♥
+** COMMENT Automatically deriving homomorphism definitions ♥‿♥
    :PROPERTIES:
    :CUSTOM_ID: Automatically-deriving-homomorphism-definitions----
    :END:
@@ -3765,6 +4054,7 @@ First some useful libraries:
 ;; https://github.com/magnars/s.el
 (require 's)               ;; “The long lost Emacs string manipulation library”
 (require 'dash)            ;; “A modern list library for Emacs”
+(require 'dash-functional) ;; Function library; -const, -compose, -orfn, -not, -partial, etc.
 (require 'fold-this)       ;; Folding away regions of text
 (fold-this-mode)
 
@@ -4607,7 +4897,7 @@ Given a typed name, return the name.
   (let (lhs name)
     (setq lhs
           (s-split " " (car (s-split " = " (car (s-split " : " element))))))
-    (if (and (< 1 (length lhs)) (special (nth 0 lhs)))
+    (if (and (< 1 (length lhs)) (pf--special (nth 0 lhs)))
         (cadr lhs)
       (car lhs))))
 #+END_SRC
@@ -5096,7 +5386,7 @@ expects the syntax outlined earlier.
          give-goal)))
 
     ;; Now set the code as a documentation string in it, after the fact.
-    (setq docs (format "Arguments:\t%s %s\n%s" pargs kargs
+    (setq docs (format "Arguments:\t%s %s\n%s" pargs (reverse kargs)
                        (if (not docs) "Undocumented user-defined variational."
                          ;; Keep paragraph structure, but ignore whitespace otherwise.
                          (thread-last docs
@@ -5948,6 +6238,14 @@ should be coloured or not. Below we use a particular set of default colours.
  current buffer automatically.
 
  #+BEGIN_SRC emacs-lisp :tangle yes
+(defvar pf-waiting-for-agda-threshhold 14
+    "How long we should wait for Agda before giving up on colouring and tooltips.
+
+     Default is to wait 4 × 0.5 milliseconds.
+
+     Why? An inital agda2-load of a ~300 line file may take some time.
+    ")
+
 (defun pf--reify-package-formers (orig-fun &rest args)
   (interactive)
 
@@ -6005,8 +6303,11 @@ should be coloured or not. Below we use a particular set of default colours.
   ;; and when we can add on our tooltips.
   ;; Attach tooltips only for existing occurrences; update happens with C-c C-l.
   ;; Wait until Agda is finished highlighting, then do ours (งಠ_ಠ)ง
-  (while agda2-highlight-in-progress
-    (sleep-for 0.5))
+  (-let [counter 0] ; agda2-in-progress
+    (while agda2-highlight-in-progress
+      (when (> counter pf-waiting-for-agda-threshhold) (error "PackageFormer ∷ Items generated, but not coloured; Agda seems busy..."))
+      (incf counter)
+      (sleep-for 0.5))) ;; In case Agda errors on a term, no more waiting.
   (loop for (name . pf) in pf--package-formers
         do (unless (equal 'porting name)
              (pf--tooltipify name (pf--show-package-former pf))))
@@ -6019,7 +6320,7 @@ should be coloured or not. Below we use a particular set of default colours.
         (when pf-highlighting
           (highlight-phrase (format "[- \\| ]%s " v) 'hi-green)))
 
-  (message "700 ∷ All the best coding! (•̀ᴗ•́)و")))
+  (message "PackageFormer ∷ All the best coding! (•̀ᴗ•́)و")))
 
 ; Users can enable this feature if they're interested in using it; disbale it otherwise.
 ; (advice-add 'agda2-load :around #'pf--reify-package-formers)
