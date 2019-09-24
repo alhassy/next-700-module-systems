@@ -1,3 +1,5 @@
+# ‼ User manual: Sections primed-decoration onwards need to account for equations!
+
 # (setq test outsidetest)
 # MA: Switch to spacemacs theme before export.
 # TODO User Manual :Incomplete: ⇨ equations!
@@ -10,6 +12,63 @@
 
 :End:
 #+MACRO: goal @@html:<center><em>@@ $1 @@html:</center></em>@@
+
+:CaseStudy_agda:
+{- (load-file "PackageFormer.el") -}
+
+module CaseStudy where
+open import CaseStudy_Generated
+open import Level
+open import Data.Bool renaming (Bool to 𝔹)
+open import Relation.Binary.PropositionalEquality using (_≡_)
+
+{- To make the exposition easier to read.
+   The ‘???’ is whatever the user whishes to
+   accomplish in the task at hand; i.e., it's a hole.
+-}
+postulate ??? : ∀ {ℓ} {A : Set ℓ} → A
+
+{-700
+variable
+   ℓ : Level
+
+PackageFormer Monoid (v : Variation) : Set where
+    _⨾_     : Monoid v → Monoid v → Monoid v
+    Id      : Monoid v
+    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId  : ∀ {x : Monoid v} → Id ⨾ x ≡ x
+    rightId : ∀ {x : Monoid v} → x ⨾ Id ≡ x
+
+Classical = Monoid typeclass
+MonoidOp = Monoid record unbundling 2
+MonoidId = Monoid record exposing (Carrier; Id)
+Monoid-false = Monoid record with (Carrier to 𝔹; Id to false)
+
+Monoid-m = Monoid typeclass renaming (Carrier to m)
+-}
+
+{- M-. on these to see their elaborated forms. -}
+_ = Classical
+_ = MonoidOp
+_ = MonoidId
+
+open Classical using () renaming (_⨾_ to Op)
+
+yuck-one :    (X Y : Classical 𝔹)
+         →  Op X  ≡ _∧_
+         →  Op Y  ≡ _∨_
+         →  Set
+yuck-one = ???
+
+first-problem : MonoidOp 𝔹 _∧_  →  MonoidOp 𝔹 _∨_  → Set
+first-problem = ???
+
+second-problem-okay : (X Y : MonoidId 𝔹 false) → Set
+second-problem-okay = ???
+
+second-problem-better : (X Y : Monoid-false) → Set
+second-problem-better = ???
+:End:
 
 * COMMENT Issues to fix
   :PROPERTIES:
@@ -1302,9 +1361,7 @@ module Monoid₂ (ℛ : Monoid) where
   :PROPERTIES:
   :CUSTOM_ID: Preamble
   :END:
-  :PROPERTIES:
 
-  :END:
 :Idea:
 TODO: Maintain a list of instantations-loaded, then use that to obtain
 the elements of an instance to determine how an ‘opening’ should be
@@ -1398,10 +1455,7 @@ In the ~*ert*~ buffer, press ~r~ on a test to re-run it.
 
 ** COMMENT org/ob-agda setup                                        :load_me:
    :PROPERTIES:
-   :CUSTOM_ID: COMMENT-org-ob-agda-setup
-   :END:
-   :PROPERTIES:
-
+   :CUSTOM_ID: org-ob-agda-setup
    :END:
 
  Just C-c C-c this block (•̀ᴗ•́)و
@@ -1653,7 +1707,7 @@ the pattern of [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures
 /Everything here works with Agda version 2.6.0./
 #+END_CENTER
 
-| Results of tests and [[file:PackageFormer.agda][examples]] will be in pink, like this. |
+| Results of tests and [[file:package-former.agda][examples]] will be in pink, like this. |
 
 #+TOC: headlines 3
 
@@ -1827,41 +1881,51 @@ or [[https://alhassy.github.io/next-700-module-systems/][the next 700 module sys
 
 {{{goal(Obtaining the system!)}}}
 
-Click here to obtain [[https://raw.githubusercontent.com/alhassy/next-700-module-systems-proposal/master/prototype/PackageFormer.el][PackageFormer.el]], place it somewhere, open an Agda file, execute
-~M-x your/location/PackageFormer.el~, then enable the mode by executing ~M-x 700-mode~.
+# Click here to obtain [[https://raw.githubusercontent.com/alhassy/next-700-module-systems-proposal/master/prototype/PackageFormer.el][PackageFormer.el]], place it somewhere, open an Agda file, execute
+# ~M-x your/location/PackageFormer.el~, then enable the mode by executing ~M-x 700-mode~.
 
-*Alternatively*, add the following to your Emacs configuration file:
+Add the following to the top of your Emacs configuration file, i.e., the ~~/.emacs~ file.
 #+BEGIN_SRC emacs-lisp :tangle no
-;; Ensure you have the pre-requsite libraries ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;                                                                                       ;;
-;; String and list manipulation libraries                                                ;;
-;; https://github.com/magnars/dash.el                                                    ;;
-;; https://github.com/magnars/s.el                                                       ;;
-(package-install 's)                ;; “The long lost Emacs string manipulation library” ;;
-(package-install 'dash)             ;; “A modern list library for Emacs”                 ;;
-(package-install 'fold-this)        ;; Folding away regions of text                      ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Connect to internet repositories for Emacs packages.
+(require 'package)
+(push '("melpa-stable" . "http://stable.melpa.org/packages/") package-archives)
+(package-initialize)
+(package-refresh-contents)
+
+;; Obtain & setup installation interface.
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+(require 'use-package)
+(setq use-package-always-ensure t)
+
+;; Necessary libraries for producing the prototype
+(use-package s)                  ;; “The long lost Emacs string manipulation library”.
+(use-package dash)               ;; “A modern list library for Emacs”
+(use-package dash-functional)    ;; -partial, -compose, -orfun, etc.
+(use-package origami)            ;; Folding away regions of text
+(use-package hydra)
 
 ;; Next, obtain the Elisp file, load it, and attach it to Agda.
+(unless (file-exists-p "~/.emacs.d/package-former.el")
+  (shell-command (concat "curl "
+    "https://raw.githubusercontent.com/alhassy/next-700-module-systems/master/package-former.el "
+    ">> ~/.emacs.d/package-former.el")))
+(load-file "~/.emacs.d/package-former.el")
+;; (add-hook 'agda2-mode-hook #'package-former-mode)
 
-(shell-command (concat "curl "
-  "https://raw.githubusercontent.com/alhassy/next-700-module-systems-proposal/master/PackageFormer.el "
-  ">> ~/.emacs.d/PackageFormer.el"))
-
-(load-file "~/.emacs.d/PackageFormer.el")
-
-(add-hook 'agda2-mode-hook #'700-mode)
+;; Uncomment out the last line above if you want package-former
+;; to ALWAYS be active on .agda files.
 #+END_SRC
 
-When you enable ~700-mode~:
+When you enable ~package-former-mode~:
 
-0. A menu-bar ~700PackageFormers~ will be added.
+0. A menu-bar ~PackageFormers~ will be added.
 
 1. It will allow you to temporarily disable and enable this new feature,
-   as well as providing a help menu. Invoke ~M-x 700-mode~ to toggle turning off this feature
+   as well as providing a help menu. Invoke ~M-x package-former-mode~ to toggle turning off this feature
    completely.
 
-2. The string icon ~700 (•̀ᴗ•́)و~ is displayed in the mode line ---near the bottom of Emacs.
+2. The string icon ~PackageFormer (•̀ᴗ•́)و~ is displayed in the mode line ---near the bottom of Emacs.
 
 3. You may use ~C-c c-l~ as usual, but it will now recognise 700-comments and generate
    legitimate Agda code from them ---more on this later.
@@ -2320,6 +2384,9 @@ record M-Set-Record : Set₁ where
   the source of this generated code.
 
 ** Equation Accommodating Record Variational
+   :PROPERTIES:
+   :CUSTOM_ID: Equation-Accommodating-Record-Variational
+   :END:
 
   Since record formation is a variational that is likely to be used often, it is sensible to document it
   ---which in turn is attached to all occurences of the variational name via tooltips.
@@ -2402,6 +2469,9 @@ record Monoid-Record-cons : Set₁ where
 #+END_SRC
 
 ** A Coherent Equation Accommodating Record Variational
+   :PROPERTIES:
+   :CUSTOM_ID: A-Coherent-Equation-Accommodating-Record-Variational
+   :END:
 
    Yet another option to handling equations is to drop the names that have
    equations associated with them. To tackle such a scenario
@@ -2613,7 +2683,7 @@ record MonoidT₂ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) : Se
 #+BEGIN_SRC agda
 {-700
 MonoidT₃         = MonoidP record ⟴ :waist 3 :level dec
-MonoidT₃-again   = MonoidP ⟴ record ⟴ exposing 3
+-- MonoidT₃-again   = MonoidP ⟴ record ⟴ unbundling 3
 M-Set-Typeclass₂ = M-Set record ⟴ typeclass₂
 -}
 #+END_SRC
@@ -2678,7 +2748,7 @@ record MonoidT₅ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) (Id 
 
  :smile:
 
-** COMMENT Primed Decoration and ~rename-mixfix~
+** Primed Decoration and ~rename-mixfix~
    :PROPERTIES:
    :CUSTOM_ID: Primed-Decoration-and--rename-mixfix-
    :END:
@@ -2810,12 +2880,9 @@ record MonoidR′ : Set₁ where
 #+END_SRC
 :End:
 
-** COMMENT First-class PackageFormers
+** First-class PackageFormers
    :PROPERTIES:
    :CUSTOM_ID: First-class-PackageFormers
-   :END:
-   :PROPERTIES:
-
    :END:
 
    The previous example caused an Agda typechecking error, however if we do not
@@ -2888,7 +2955,7 @@ It is important to remember that these primed perspectives do /not/ typecheck in
 issue mentioned earlier. We are only demonstrating composition, ~⟴~, in this section; in a later section we
 fix-up ~primed~.
 
-** COMMENT Variationals with Arguments ---~map, rename, [co]decorated, subscriptedᵢ, renaming~
+** Variationals with Arguments ---~map, rename, [co]decorated, subscriptedᵢ, renaming~
    :PROPERTIES:
    :CUSTOM_ID: Variationals-with-Arguments-----map--rename---co-decorated--subscriptedᵢ--renaming-
    :END:
@@ -2951,7 +3018,7 @@ record M-Set0-Typeclass₃ (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vect
    # pertinent aspects of loading such declarations.
 
    Let's code up the priming operation as a reusable pattern ---call it ~map~.
-#+BEGIN_SRC lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
 (𝒱 map elements (support-mixfix-names t)
    = "Apply function ELEMENTS that acts on PackageFormer elements,
       then propogate all new name changes to subsequent elements.
@@ -3010,7 +3077,7 @@ record MR𝕏 : Set₁ where
 
 Now for some useful corollaries.
 # For diversity, we render these in lisp-blocks.
-#+BEGIN_SRC  lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
 (𝒱 rename f (support-mixfix-names t)
   =  "Rename elements using a string-to-string function F acting on names.
 
@@ -3052,7 +3119,7 @@ record MR-oh : Set₁ where
 
 We would expect it to be common to prefix and suffix symbols, so let's make
 variationals for these patterns.
-#+BEGIN_SRC lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
 (𝒱 decorated by
   = "Rename all elements by suffixing string BY to them."
      rename (λ name → (concat name by)))
@@ -3099,7 +3166,7 @@ instead of forcing users to produce functions explicitly.
 
 We may also prefer writing ~subscriptedᵢ~ rather than ~decorated "ᵢ"~.
 With a bit of Lisp meta-programming, we can generate these variationals.
-#+BEGIN_SRC lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
 (defun to-subscript (n)
   "Associate a digit ‘n’ with its subscript."
   (nth n '("₀" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉")))
@@ -3189,7 +3256,7 @@ Some observations are in order:
    No more bending to the will of language designers! More power to the user!
 
    For example, we can codify the previous ~NearMonoid~ scheme into a top-level pattern.
-#+BEGIN_SRC lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
 (defun is-sort (element)
   "Check whether the target of ‘element’s type is “Set”. "
   (s-contains? "Set" (target (element-type element))))
@@ -3223,12 +3290,9 @@ record NearMonoid¹ : Set₁ where
 Write a variational ~remove-sorts~ that strips out all sorts from a PackageFormer.
 If elements depend on sorts, as they normally do, then one must remove them as well;
 ignore this for now, and we shall return to subgenerated PackageFormers later on.
-** COMMENT Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable
+** Forming Syntax and the Special ~$𝑛𝑎𝑚𝑒~ Variable
    :PROPERTIES:
    :CUSTOM_ID: Forming-Syntax-and-the-Special---𝑛𝑎𝑚𝑒--Variable
-   :END:
-   :PROPERTIES:
-
    :END:
 
   |  /Records provide a semantics, what if we want the syntax?/ |
@@ -3250,7 +3314,7 @@ keep only those elements that target it. Finally, as data constructor must targe
 type being defined, we alter the filtered elements by changing every instance of the
 carrier name with the name of the newly defined PackageFormer ---which we may access
 using the special identifier ~$𝑛𝑎𝑚𝑒~. In a ~lisp~ block, we formalise this algorithm as follows.
-#+BEGIN_src emacs-lisp  :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
 (𝒱 data carrier
   = "Reify as an Agda “data” type.
 
@@ -3312,7 +3376,7 @@ data No : Set where
 {- Crashes since type No′ is not defined! -}
 #+END_SRC
 
-** COMMENT Subpacakges with ~generated, sorts, signature~
+** Subpacakges with ~generated, sorts, signature~
    :PROPERTIES:
    :CUSTOM_ID: Subpacakges-with--generated--sorts--signature-
    :END:
@@ -3427,7 +3491,7 @@ record MonSig : Set₁ where
 
    Neato! Those were some nifty applications!
 
-** COMMENT Shallow Renaming with Agda's ~open ⋯ public ⋯ renaming ⋯~
+** Shallow Renaming with Agda's ~open ⋯ public ⋯ renaming ⋯~
    :PROPERTIES:
    :CUSTOM_ID: Shallow-Renaming-with-Agda-s--open---public---renaming---
    :END:
@@ -3598,12 +3662,9 @@ new pacaking mechanisms. They are a terminal construction.
 
 #  For now, let's show how /functions are PackageFormers./
 
-** COMMENT Automatically deriving homomorphism definitions ♥‿♥
+** Automatically deriving homomorphism definitions ♥‿♥
    :PROPERTIES:
-   :CUSTOM_ID: Automatically-deriving-homomorphism-definitions----
-   :END:
-   :PROPERTIES:
-
+   :CUSTOM_ID: Automatically-deriving-homomorphism-definitions
    :END:
 
     The definition of “structure preservation” is, nearly always, mechanical to
@@ -3788,7 +3849,7 @@ record Hom² (Src : Algebra) (Tgt : Algebra) : Set₁ where
   This is so cool (•̀ᴗ•́)و
 
   We leave it to the reader to derive other constructs from a theory presentation.
-  Examples can be found in these [[https://github.com/alhassy/next-700-module-systems-proposal/blob/master/JC_Program_Generation_Talk_IFIP.pdf][Metaprogramming Agda]] slides:
+  Examples can be found in these [[https://alhassy.github.io/next-700-module-systems/papers/JC_Program_Generation_Talk_IFIP.pdf][Metaprogramming Agda]] slides:
   Homomorphism equality, application to carrier elements, isomorphisms,
   isomorphisms where only one direction needs to preserve the structure
   and an automatically derivable proof that the other direction is also
@@ -6732,12 +6793,9 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
    She proposes that universal algebra ---a uniform approach to studying different algebras---
    is currently performed on-demand and manually in computing, which it needn't be.
 
-* Appending PackageFormer.el with the useful variationals :ignore:noexport:
+* Appending PackageFormer.el with the useful variationals :ignore:
   :PROPERTIES:
   :CUSTOM_ID: Appending-PackageFormer-el-with-the-useful-variationals
-  :END:
-  :PROPERTIES:
-
   :END:
 
 :Hide:

@@ -6,8 +6,8 @@ module package-former where
 open import package-former-generated
 open import Level
 open import Data.Bool
-open import Relation.Binary.PropositionalEquality using (_≡_)
-open import Data.String hiding (_++_)
+open import Data.List using (List; _∷_; []; foldr)
+import Relation.Binary.PropositionalEquality as ≡; open ≡ using (_≡_)
 
 {-
 0. There are a number of common use-cases.
@@ -24,14 +24,6 @@ open import Data.String hiding (_++_)
 -}
 
 {-700
-PackageFormer MonoidP : Set₁ where
-    Carrier : Set
-    _⨾_     : Carrier → Carrier → Carrier
-    Id      : Carrier
-    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
-    rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
-
 PackageFormer M-Set : Set₁ where
    Scalar  : Set
    Vector  : Set
@@ -40,7 +32,47 @@ PackageFormer M-Set : Set₁ where
    _×_     : Scalar → Scalar → Scalar
    leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
    assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+-}
 
+{-700
+PackageFormer MonoidP : Set₁ where
+
+    -- A few declarations
+    Carrier : Set
+    _⨾_     : Carrier → Carrier → Carrier
+    Id      : Carrier
+    assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+    -- We have a setoid-like structure; with a default implementation
+    _≈_   : Carrier → Carrier → Set
+    _≈_   = _≡_
+    ⨾-cong : ∀ {x y x′ y′} → x ≈ x′ →  y ≈ y′ → (x ⨾ y) ≈ (x′ ⨾ y′)
+    ⨾-cong = λ{ ≡.refl ≡.refl → ≡.refl}
+
+    -- For now only one item in a declaration;
+    -- namely “Lid” & “Rid” cannot be declared in one line.
+    Lid : Carrier → Carrier
+    Lid x = Id ⨾ x
+    Rid : Carrier → Carrier
+    Rid x = x ⨾ Id
+
+    -- Agda permits pure, non-pattern-matching, equations between “fields” in a record.
+    concat : List Carrier → Carrier
+    concat = foldr _⨾_ Id
+
+    -- More declarations
+    leftId  : ∀ {x : Carrier} → (Id ⨾ x) ≈ x
+    rightId : ∀ {x : Carrier} → Rid x ≈ x
+
+    -- Since there are no more pure declarations, “fields”, subsequent equations
+    -- may use pattern matching.
+
+    Id² : (Id ⨾ Id) ≈ Id
+    Id² = rightId
+
+    concatₚ : List Carrier → Carrier
+    concatₚ []       = Id
+    concatₚ (x ∷ xs) = x ⨾ concatₚ xs
 -}
 
 {-700
@@ -77,17 +109,49 @@ Monoid-test = MonoidP ⟴ test "positional arg₁" "positional arg₂" :keyword 
 -}
 
 {-700
-𝒱-record = :kind record :alter-elements (λ es → (--map (map-qualifier (λ _ → "field") it) es))
+𝒱-record₀ = :kind record :alter-elements (λ es → (--map (map-qualifier (λ _ → "field") it) es))
 -}
 
 {-700
-M-Set-Record = M-Set record
+M-Set-Record = M-Set record₀
 -}
 
 {-lisp
-(𝒱 record = "Reify a variational as an Agda “record”."
-            :kind record
-            :alter-elements (λ es → (--map (map-qualifier (λ _ → "field") it) es)))
+(𝒱 record₁ (discard-equations nil)
+ = "Reify a variational as an Agda “record”.
+    Elements with equations are construed as
+    derivatives of fields  ---the elements
+    without any equations--- by default, unless
+    DISCARD-EQUATIONS is provided with a non-nil value.
+   "
+  :kind record
+  :alter-elements
+    (λ es →
+      (thread-last es
+      ;; Keep or drop eqns depending on “discard-equations”
+      (--map
+        (if discard-equations
+            (map-equations (λ _ → nil) it)
+            it))
+      ;; Unless there's equations, mark elements as fields.
+      (--map (map-qualifier
+        (λ _ → (unless (element-equations it)
+               "field")) it)))))
+-}
+
+{-700
+Monoid-Record-derived = MonoidP record₁
+-}
+
+{-700
+Monoid-Record-field = MonoidP record₁ :discard-equations t
+-}
+
+{-700
+Monoid-Record-derived-again  = MonoidP record
+Monoid-Record-derived-again2 = MonoidP record :and-names t
+Monoid-Record-field-again    = MonoidP record :discard-equations t
+Monoid-Record-no-equationals = MonoidP record :discard-equations t :and-names t
 -}
 
 {-700
@@ -105,11 +169,17 @@ MonoidT₂      = MonoidP typeclass₂
 
 {-700
 MonoidT₃         = MonoidP record ⟴ :waist 3 :level dec
+-- MonoidT₃-again   = MonoidP ⟴ record ⟴ unbundling 3
 M-Set-Typeclass₂ = M-Set record ⟴ typeclass₂
 -}
 
 {-700
-MonoidT₃-again = MonoidP ⟴ record ⟴ exposing 3
+-- Ill-formed in Agda: A defintion is not a parameter!
+MonoidP-Typeclass₅ = MonoidP :waist 5
+-}
+
+{-700
+MonoidT₅ = MonoidP ⟴ unbundling 5 ⟴ record
 -}
 
 {-700
