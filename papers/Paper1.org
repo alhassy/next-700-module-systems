@@ -1,0 +1,598 @@
+#+TITLE: An Elementary Semantics for PackageFormer with Applications to Universal Algebra (Short Paper)
+#+Subtitle: ---Draft---
+#+DESCRIPTION: Paper for PEPM 2020.
+#+AUTHOR: Musa Al-hassy, Jacques Carette, Wolfram Kahl
+#+EMAIL: alhassy@gmail.com
+#+OPTIONS: toc:nil d:nil author:t title:nil
+#+PROPERTY: header-args :tangle no :comments link
+#+TODO: TODO | OLD LaTeX README Remarks space
+#+MACRO: PF \textsf{PackageFormer}
+
+* README COMMENT Dependencies of this org file
+
+In the source blocks below, go into each one and press C-c C-c
+to have it executed. Some ‘results’ will be echoed into the buffer
+if everything went well.
+
+Rather than executing the following blocks each time you edit this file,
+consider adding them to your Emacs [[https://alhassy.github.io/init/][configuration file]].
+
+ + org-mode :: This particular markup is called org-mode.
+
+     Let's obtain Org-mode along with the extras that allow us to ignore
+     heading names, but still utilise their contents --e.g., such as a heading
+     named ‘preamble’ that contains org-mode setup for a file.
+     #+begin_src emacs-lisp
+;; first we get a handy-dandy package manager
+
+(require 'package)
+(setq package-archives '(("org"       . "https://orgmode.org/elpa/")
+                         ("gnu"       . "https://elpa.gnu.org/packages/")
+                         ("melpa"     . "https://melpa.org/packages/")
+                         ("melpa-stable" . "https://stable.melpa.org/packages/")
+                         ))
+(package-initialize)
+
+(package-refresh-contents)
+
+(package-install 'use-package)
+(require 'use-package)
+(setq use-package-always-ensure t)
+
+;; then we get the org-mode goodness
+
+(use-package org
+  :ensure org-plus-contrib
+  :config
+  (require 'ox-extra)
+  (ox-extras-activate '(ignore-headlines)))
+#+end_src
+
+     This lets us use the ~:ignore:~ tag on headlines you'd like to have ignored,
+     while not ignoring their content --see [[https://emacs.stackexchange.com/a/17677/10352][here]].
+
+     - Use the ~:noexport:~ tag to omit a headline /and/ its contents.
+
+ + minted & bib :: Source blocks obtain colour.
+
+     Execute the following for bib ref as well as minted
+     Org-mode uses the Minted package for source code highlighting in PDF/LaTeX
+     --which in turn requires the pygmentize system tool.
+     #+BEGIN_SRC emacs-lisp
+     (setq org-latex-listings 'minted
+           org-latex-packages-alist '(("" "minted"))
+           org-latex-pdf-process
+           '("pdflatex -shell-escape -output-directory %o %f"
+             ;; "biber %b"
+             "bibtex %b"
+             "pdflatex -shell-escape -output-directory %o %f"
+             "pdflatex -shell-escape -output-directory %o %f")
+     )
+     #+END_SRC
+
+     #+RESULTS:
+     | pdflatex -shell-escape -output-directory %o %f | bibtex %b | pdflatex -shell-escape -output-directory %o %f | pdflatex -shell-escape -output-directory %o %f |
+
+  # Enable the following to have small-font code blocks.
+  # LATEX_HEADER: \RequirePackage{fancyvrb}
+  # LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+
+ + acmart :: Enable acmart latex class.
+
+   #+NAME: make-acmart-class
+   #+BEGIN_SRC emacs-lisp
+(add-to-list 'org-latex-classes
+             '("acmart" "\\documentclass{acmart}"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+
+ (message "acmart has been loaded")
+ #+END_SRC
+
+ #+RESULTS: make-acmart-class
+ : acmart has been loaded
+
+  The GPCE 19 proceedings team needs us to submit the acmart.cls file along
+  with our sources. So, let's bring that to our current directory.
+#+BEGIN_SRC shell
+(shell-command (s-collapse-whitespace (format "cp %s ."
+                       (shell-command-to-string "kpsewhich acmart.cls"))))
+#+END_SRC
+
+#+RESULTS:
+: 126
+
+   The ‘footer’ at the end of this file currently executes only this code block for you
+   ---if you enable the local vars. You can easily tweak it to execute the other blocks,
+   if you like.
+
+ + org-ref :: [[https://github.com/jkitchin/org-ref][An exquisite system]] for handling references.
+
+    If everything works, the following entity will display useful data
+    when the mouse hovers over it (•̀ᴗ•́)و If you click on it, then you're
+    in for a lot of super neat stuff, such as searching for the pdf online!
+
+    cite:agda_overview
+
+    #+BEGIN_SRC emacs-lisp
+(use-package org-ref :demand t)
+
+;; Files to look at when no “╲bibliography{⋯}” is not present in a file.
+;; Most useful for non-LaTeX files.
+(setq reftex-default-bibliography '("References.bib"))
+
+(use-package helm-bibtex :demand t)
+;; If you use helm-bibtex as the citation key completion method you should set these variables too.
+
+(setq bibtex-completion-bibliography "References.bib")
+#+END_SRC
+
+  Execute ~M-x helm-bibtex~ and, say, enter ~agda~ and you will be presented with
+  all the entries in the bib database that mention ‘agda’. Super cool stuff.
+
+* LaTeX setup                                                        :ignore:
+
+#+latex_class_options: [10pt]
+
+  # Visible editorial comments.
+  #+LATEX_HEADER: \usepackage{edcomms}
+  #+LATEX_HEADER: \edcommsfalse
+
+  #+latex_header: \usepackage[font=itshape]{quoting}
+  # Use quoting environment
+
+** Document class options                                            :ignore:
+  #+LATEX_CLASS: acmart
+  # latex_class_options: [sigplan,screen]
+  # latex_class_options: [sigplan,review,anonymous]
+  #+latex_class_options: [sigplan,review]
+  # latex_class_options: [acmsmall,review,anonymous]
+
+** Letter size and no page numbers or footers :ignore:
+  # Letter-Size Paper Format, defaults
+  #+latex_header: \pdfpagewidth=8.5in
+  #+latex_header: \pdfpageheight=11in
+
+  # switch off page numbering, “folios”
+  # latex_header: \pagenumbering{gobble}
+
+  # LATEX: \settopmatter{printccs=true, printfolios=false}
+
+** Unicode & hyperlinks :ignore:
+  # Dark green colour for links.
+  #+LATEX_HEADER: \usepackage{color}
+  #+LATEX_HEADER: \definecolor{darkgreen}{rgb}{0.0, 0.3, 0.1}
+  #+LATEX_HEADER: \hypersetup{colorlinks,linkcolor=darkgreen,citecolor=darkgreen,urlcolor=darkgreen}
+
+  #+LATEX_HEADER: \usepackage{../CheatSheet/UnicodeSymbols}
+
+  #+LATEX_HEADER: \DeclareMathOperator{\VCCompose}{\longrightarrow\hspace{-3ex}\oplus\;}
+  #+LATEX_HEADER: \newunicodechar{⟴}{\ensuremath{\!\!\VCCompose}}
+  #+LATEX_HEADER: \newunicodechar{𝓋}{\ensuremath{\!\!v}}
+  #+LATEX_HEADER: \newunicodechar{𝒱}{\ensuremath{\mathcal{V}}}
+  #+LATEX_HEADER: \newunicodechar{α}{\ensuremath{\alpha}}
+
+  # 𝑛𝑎𝑚𝑒
+  #+LATEX_HEADER: \newunicodechar{𝑛}{\ensuremath{n}}
+  #+LATEX_HEADER: \newunicodechar{𝑎}{\ensuremath{a}}
+  #+LATEX_HEADER: \newunicodechar{𝑚}{\ensuremath{m}}
+  #+LATEX_HEADER: \newunicodechar{𝑒}{\ensuremath{e}}
+
+  #+LATEX_HEADER: \newunicodechar{⁰}{\ensuremath{^0}}
+  #+LATEX_HEADER: \newunicodechar{³}{\ensuremath{^3}}
+
+  #+LATEX_HEADER: \newunicodechar{𝑷}{\ensuremath{\textbf{P}}}
+  #+LATEX_HEADER: \newunicodechar{𝑭}{\ensuremath{\textbf{F}}}
+  #+LATEX_HEADER: \newunicodechar{𝑯}{\ensuremath{\textbf{H}}}
+
+** COMMENT CCSXML and Keywords                                               :ignore:
+   # This must be /before/ maketitle!
+   #+begin_export latex
+ %%
+ %% The code below is generated by the tool at http://dl.acm.org/ccs.cfm.
+
+ \begin{CCSXML}
+ <ccs2012>
+ <concept>
+ <concept_id>10011007.10011006.10011008.10011009.10011019</concept_id>
+ <concept_desc>Software and its engineering~Extensible languages</concept_desc>
+ <concept_significance>500</concept_significance>
+ </concept>
+ <concept>
+ <concept_id>10011007.10011006.10011008.10011024.10011031</concept_id>
+ <concept_desc>Software and its engineering~Modules / packages</concept_desc>
+ <concept_significance>500</concept_significance>
+ </concept>
+ <concept>
+ <concept_id>10011007.10011006.10011008.10011009.10011012</concept_id>
+ <concept_desc>Software and its engineering~Functional languages</concept_desc>
+ <concept_significance>300</concept_significance>
+ </concept>
+ <concept>
+ <concept_id>10011007.10011006.10011008.10011024.10011025</concept_id>
+ <concept_desc>Software and its engineering~Polymorphism</concept_desc>
+ <concept_significance>300</concept_significance>
+ </concept>
+ <concept>
+ <concept_id>10011007.10011006.10011041.10011047</concept_id>
+ <concept_desc>Software and its engineering~Source code generation</concept_desc>
+ <concept_significance>300</concept_significance>
+ </concept>
+ <concept>
+ <concept_id>10011007.10011006.10011066.10011069</concept_id>
+ <concept_desc>Software and its engineering~Integrated and visual development environments</concept_desc>
+ <concept_significance>300</concept_significance>
+ </concept>
+ </ccs2012>
+ \end{CCSXML}
+
+ \ccsdesc[500]{Software and its engineering~Extensible languages}
+ \ccsdesc[500]{Software and its engineering~Modules / packages}
+ \ccsdesc[300]{Software and its engineering~Functional languages}
+ \ccsdesc[300]{Software and its engineering~Polymorphism}
+ \ccsdesc[300]{Software and its engineering~Source code generation}
+ \ccsdesc[300]{Software and its engineering~Integrated and visual development environments}
+
+ %%
+ %% Keywords. The author(s) should pick words that accurately describe
+ %% the work being presented. Separate the keywords with commas.
+ \keywords{Agda, meta-program, extensible, Emacs, packages, modules, dependent-types}
+   #+end_export
+
+** COMMENT Authors & title                                                   :ignore:
+
+ #+begin_export latex
+ \author{Musa Al-hassy}
+ \affiliation{McMaster University, Canada}
+ \email{alhassy@gmail.com}
+
+ \author{Jacques Carette}
+ \orcid{0000-0001-8993-9804}
+ \affiliation{McMaster University, Canada}
+ \email{carette@mcmaster.ca}
+
+ \author{Wolfram Kahl}
+ \orcid{0000-0002-6355-214X}
+ \affiliation{McMaster University, Canada}
+ \email{kahl@cas.mcmaster.ca}
+
+ % \author{Musa Al-hassy \\ {\small \url{alhassy@gmail.com} \\ McMaster University \\ Computing and Software \\ Hamilton, Ontario, Canada}}
+ % \author{Jacques Carette \\ {\small \url{carette@mcmaster.ca} \\ McMaster University \\ Computing and Software \\ Hamilton, Ontario, Canada}}
+ % \author{Wolfram Kahl \\ {\small \url{kahl@cas.mcmaster.ca} \\ McMaster University \\ Computing and Software \\ Hamilton, Ontario, Canada}}
+
+ #+end_export
+
+** Widows and Orphans                                                :ignore:
+ # An "orphan" is an isolated line of text at the bottom of a page;
+ # an "orphan heading" is a heading without following body text at the bottom of the page;
+ # a "widow" is an isolated line of text at the top of a page.
+ #
+ # LaTeX: In order to eliminate widows and orphans, you can copy the following commands into the LaTeX source before \begin{document} :
+ #
+   #+latex_header:        \clubpenalty = 10000
+   #+latex_header:        \widowpenalty = 10000
+   #+latex_header:        \displaywidowpenalty = 10000
+
+ # Sometimes, orphans and widows will survive these commands, in which case a \vspace command might help.
+
+** Balanced Columns on Last Page                                     :ignore:
+   #+latex_header: \usepackage{flushend}
+
+ # The two columns of the last page need to have the same length.
+ #
+ # + LaTeX (Option 1) :: Insert the command \usepackage{flushend} into the LaTeX source before \begin{document}.
+ #
+ # + LaTeX (Option 2) :: Insert \usepackage{balance} into the LaTeX source before \begin{document}
+ #      and the following in the text that would appear as left column on the last page without balancing: \balance.
+ #
+ # + LaTeX (Option 3) :: If the above options do not work, it seems that one of the used packages prevents
+ #      the balancing from working properly. In case you do not want to spend time on finding out which
+ #       package it is, you can manually balance the last page by inserting a \newpage between your
+ #       references in the .bbl file at an appropriate position. (Attention: Running bibtex again
+ #       will overwrite this; alternatively, the contents of the .bbl file can be copy-and-paste'ed
+ #       into the main LaTeX file in place of the \bibliography command.)
+ #
+** COMMENT GPCE’19 Copyright                                                 :ignore:
+
+ # The following is specific to GPCE '19 and the paper
+ # 'A Language Feature to Unbundle Data at Will (Short Paper)'
+ # by Musa Al-hassy, Wolfram Kahl, and Jacques Carette.
+ #
+ #+latex_header: \setcopyright{acmcopyright}
+ #+latex_header: \acmPrice{15.00}
+ #+latex_header: \acmDOI{10.1145/3357765.3359523}
+ #+latex_header: \acmYear{2019}
+ #+latex_header: \copyrightyear{2019}
+ #+latex_header: \acmISBN{978-1-4503-6980-0/19/10}
+ #+latex_header: \acmConference[GPCE '19]{Proceedings of the 18th ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences}{October 21--22, 2019}{Athens, Greece}
+ #+latex_header: \acmBooktitle{Proceedings of the 18th ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences (GPCE '19), October 21--22, 2019, Athens, Greece}
+ #+latex_header:
+
+* Abstract                                                           :ignore:
+#+begin_abstract org
+
+  Folklore has held that any ‘semantic unit’ is essentially a type-theoretic context
+  ---this includes, for example, records and algebraic datatypes.
+  Recently a flexible implementation of general contexts has risen in the setting of
+  Martin-Lof Type Theory as so-called PackageFormer. These contexts come equipped
+  with a number of so-called variationals that allow them to be viewed as concrete
+  Agda packaging constructs ---such as records, algebraic datatypes, and modules.
+
+  PackageFormers are implemented as an editor extension for Agda, but their theoretical
+  boundaries are unclear. In this paper, we provide a simple semantics to the useful
+  editor extension. Moreover, to demonstrate that the semantics is sufficient to capture
+  a large number of use cases, we show how homomorphism constructions can be /mechanically derived/
+  using the PackageFormer mechanism in a correct-by-construction fashion for over 300
+  equational theories ---we are serving more than just a classical mathematical audience by
+  considering tiny theories near the theory of Groups.
+  This is the second contribution of this paper: Ensuring that a common
+  pattern can be mechanically derived for a large number of use cases that people generally have
+  written by hand.
+
+  #+begin_quote
+  MA:
+  + Group = Carrier × Identity × Operation × UnitLaws × AssocitivityLaw × InvOp × InvLaws
+  + 2 ⇐ There are two choices to whether we want a carrier or the empty theory.
+  + 2 ⇐ There are two choices to whether we want an elected element or not.
+    - 2² ⇐ If we have the element, there are 4 choices whether we want left/right unit laws.
+  + 2 ⇐ There are two choices to whether we want a binary operation or not.
+  + - 2 ⇐ If we have an bop, there are two choices to whether we want the AssocitivityLaw.
+  + 2 ⇐ Two choices whether we have a unary operator or not.
+    - 2² ⇐ If we have an InvOp, there are 4 choices whether we want left/right inverse laws.
+
+  Total: 2 × 2 × (1 + 1 × 2²) × (1 + 1 × 2) × (1 + 1 × 2²) = 300
+  #+end_quote
+  - Maybe we can jump to categories instead and obtain functors!
+  - Right now, I've tried M-sets; but simply have not tried if the existing
+    setups works for cats ---something to do.
+    - If it doesn't work, discuss why not.
+#+end_abstract
+
+ \maketitle
+
+* Introduction [0/4] :boring:unclear:
+
+  + [ ] Show example of a PackageFormer.
+        - Demonstrate how: PackageFormer  ≈  named context + header.
+  + [ ] Show example of how it can be used to give a record.
+  + [ ] Show how it can be used to give us a homomorphism definition.
+  + [ ] What are the pre- and post-conditions of the homomorphism construction?
+        - This is what we are trying to solve.
+
+* A Grammar for PackageFormer [0/5]                        :rather:promising:
+
+  + [ ] Grammar for PackageFormer heading.
+  + [ ] Grammar for element datatype.
+  + [ ] Grammar for “types”.
+    - We clearly cannot use any Agda/MLTT types.
+  + [ ] Define a fold for PackageFormer ---the homepage currently calls this ~graph-map~ due to
+        the graph theoretic nature of element dependencies.
+  + [ ] Prove that this fold preserves well-formedness & well-typedness of PackageFormers.
+    - This is the semantics function!
+    - *PackageFormers are an M-Set and fold is an M-Set homomorphism!*
+
+      Call this M-Set “𝑷𝑭”.
+      1. Two sorts: ~PackageFormer~ and ~Element~.
+      2. Action: ~_◁_ : PackageFormer → Element → PackageFormer~
+      3. Monoid on ~PackageFormer~
+         - Unit: The empty PackageFormer
+         - Bop: Union of contexts
+           + If they agree on their intersection, then union of element lists;
+             otherwise ‘crash’ by yielding ANN.
+           + ANN is the annihilating PackageFormer: It is a postulated value
+             that acts as the zero of union.
+           - This ensures that a crash propagates and so a union of PF's
+               is ANN if any two items conflict.
+           - E.g., “crash : PackageFormer⊥ → PackageFormer⊥ → Boolean”
+               is defined with “crash ⊥ x ≈ true” and symmetrically so.
+           - Taking ANN = ⊥, as a bottom element; e.g., ~nothing~.
+           + Proof outline of associativity:
+           - Case 1: No crashes, then ordinary list catenation, which is associative.
+           - Case 2: Some two items conflict, then ANN is propagated and both sides equal ANN.
+
+** Deriving Fold
+
+   1. Define a “Right M-Set” ( close, but not really ):
+      #+BEGIN_SRC agda
+PackageFormer M-Set : Set₁ where
+   Carrier₁     : Set
+   Carrier₂     : Set
+   _◁_          : Carrier₁ → Carrier₂ → Carrier₁
+   ∅            : Carrier₁
+   _∪_          : Carrier₁ → Carrier₁ → Carrier₁
+   leftId       : {𝓋 : Carrier₂}  →  ∅ ◁ 𝓋  ≡  𝓋
+   assoc        : {a b : Carrier₁} {𝓋 : Carrier₂} → (a ∪ b) ◁ 𝓋  ≡  a ∪ (b ◁ 𝓋)
+#+END_SRC
+
+   2. Let ℳ denote an M-Set.
+
+   3. For ~fold : 𝑷𝑭 ⟶ ℳ~ to be an M-Set homomorphism, we are *forced* to have …
+
+   4. Two maps, ~foldᵢ : 𝑷𝑭.Carrierᵢ → ℳ.Carrierᵢ~
+   5. ~fold₁~ is a monoid homomorphism
+      1. Unit₁: ~fold₁ ∅ ≈ ∅~
+      2. Assoc₁: ~fold₁ (p ∪ q) ≈ fold₁ p ∪ fold₁ q~
+   6. Equivariance:
+      ~fold₁ (p ◁ e) ≈ fold₁ p ◁ fold₂ e~
+
+      \newpage
+
+   7. Since a PackageFormer, by extensionality, can always be expressed
+      as a finite sequence of extensions we find:
+       #+BEGIN_SRC agda
+  fold₁ p
+= {- Extensionality, with eᵢ elements of p -}
+  fold₁ (∅ ◁ e₁ ◁ e₂ ◁ ⋯ ◁ eₙ)
+= {- Equivariance (6) -}
+  fold₁ ∅ ◁ fold₂ e₁ ◁ ⋯ ◁ fold₂ eₙ
+= {- Unit (5.1) -}
+  ∅ ◁ fold₂ e₁ ◁ ⋯ ◁ fold₂ eₙ
+= {- M-Set.leftId -}
+  fold₂ e₁ ◁ ⋯ ◁ fold₂ eₙ
+#+END_SRC
+
+   8. Whence it seems ~fold₁~ is defined uniquely in terms of ~fold₂~ ---which is unsurprising:
+      *PackageFormers are an inductive type!*
+
+   9. TODO: Realise this argument _within_ Agda!
+
+* An Application to Universal Algebra :super_sketchy:
+  + [ ] Grammar for the minimal language necessary to form homomorphism contexts.
+    - How? What? Huh!?
+    - I'm not sure I know what I'm thinking here.
+    - I'm trying to “know” what the ~hom~ variational, from the webpage does!
+  + [ ] Define a function: ~𝑯 : PFSyntax → List HomoSyntax~.
+  + [ ] Show a coherence such as ~𝑯(T ◁ e) = 𝑯 T ◁ 𝑯 e~
+        where ◁ denotes context extension; i.e., append.
+    - This would ensure that we have a ‘modular’ way to define homomorphisms.
+
+  Applications to structures that CS people are interested in?
+  - Monoids    ⇐ for-loops
+  - Graphs     ⇐ databases
+  - Lattices   ⇐ optimisation
+
+    \vfill
+
+* Conclusion & Next Steps :sketchy:
+
+  + Initial semantics is enough?
+  + Limitations?
+  + Dependent-type?
+  + A counterexample not covered by the semantics?
+  + Soundness?
+
+* space COMMENT newpage :ignore:
+  \newpage
+* COMMENT Bib                                                                :ignore:
+
+ #+latex: \bibliography{References}
+ #+latex: \bibliographystyle{plainnat}
+ # latex: \bibliographystyle{ACM-Reference-Format}
+
+* OLD COMMENT Idea: Making Staging Accessible by Generating Partial Evaluators (Short Paper)
+** Abstract                                                          :ignore:
+ # Do not use footnotes and references in the abstract!
+
+ #+begin_abstract
+
+
+   Interpreters are generally written with a syntax first then an interpretation second.
+   The relationship between the two is sometimes made explicit by having the
+   interpretation function target an existing record type ---e.g., syntactic
+   datatype constructors are mapped to semantic projections of record values.
+   However, this process only needs the record definition ---all else is needless
+   duplication.
+
+   Using ~PackageFormer~, a recent Emacs editor extension to the dependently typed language
+   Agda, we demonstrate how partially-static data may be mechanically derived from
+   theory presentations. Moreover, we also show how to mechanically obtain
+   the necessary tools to work with staged interpreters; namely, automatically deriving
+   evaluation functions and notions of ground terms.
+ #+end_abstract
+
+  \maketitle
+** Relevant Links
+   + [[http://www.cs.tsukuba.ac.jp/~kam/papers/pepm2018.pdf][Program Generation for ML Modules]] --- Kameyama et al.
+   + [[http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.438.6924&rep=rep1&type=pdf][A Gentle Introduction to Multi-stage Programming]] -- Walid Taha
+   + [[https://www.cl.cam.ac.uk/~jdy22/papers/partially-static-data-as-free-extension-of-algebras.pdf][Partially-Static Data as Free Extension of Algebras]] -- Yallop et al.
+   + [[http://okmij.org/ftp/meta-programming/StagingNG.pdf][Staging Beyond Terms: Prospects and Challenges]] --- Oleg et al.
+
+** Introduction: The Difficulties of Staging
+
+ + Easy to get things wrong!
+
+** Automatically Introducing Dynamic Forms
+
+ + A view that adds on variables and forms partial evaluators
+
+ #+BEGIN_SRC agda
+data BindingTime : Set where Static Dynamic : BindingTime
+
+{- Aliases -}
+Now   = Static
+Later = Dynamic
+         #+END_SRC
+
+ Then:
+ #+BEGIN_SRC agda
+{- Given -}
+record Magma : Set₁ where
+  field
+    Carrier : Set
+    _⊕_     : Carrier → Carrier → Carrier
+
+power₀ : {{ℳ : Magma }} (let M = Magma.Carrier ℳ)
+      → M → ℕ → M
+power₀ x zero    = x
+power₀ x (suc n) = x ⊕ power₀ x n
+
+instance
+  𝒩 : Magma
+  𝒩 = record {Carrier = ℕ; _⊕_ = _×_}
+
+{- Obtain -}
+
+---------------------------------------------------------------------------------------
+
+{- Tree = Magma termtype with injection “Leaf” -}
+data Tree (A : Set) → Set where
+   Leaf   : A → Tree A
+   Branch : Tree A → Tree A → Tree A
+
+{- Proof obligation -}
+instance
+   tree-is-magma : ∀ {A} → Magma
+   tree-is-magma {A} = record {Carrier = Tree A; _⊕_ = Branch}
+
+{- Evaluator; terms reduce completely. -}
+eval : (ℳ : Magma) → let M = Magma.Carrier ℳ
+                      in  Tree M → M
+eval (Leaf m) = m
+eval (Branch l r) = eval l ⊕ evla r
+
+{- An instance of power₀ -}
+power₁ : {A : Set} → Tree A → ℕ → Tree A
+power₁ x zero    = x
+power₁ x (suc n) = Branch x (power₁ x n)
+
+----------------------------------------------------------------------------------------
+{- Terms with variables -}
+data TreeV (A B : Set) → Set where
+   Value    : A → TreeV A B
+   Variable : B → TreeV A B
+   Branch   : TreeV A B → TreeV A B → TreeV A B
+
+{- Reduction for “TreeV String 𝒩” may be blocked by variables -}
+evalV : (ℳ : Magma) {V : Set} →
+          let M = Magma.Carrier ℳ
+          in (V → M) → TreeV M V → M
+evalV σ (Value m)    = m
+evalV σ (Variable v) = σ v
+evalV σ (Branch l r) = evalV σ l ⊕ evalV σ r
+
+{- *NOT* an instance of power₀; but a generalisation thereof! -}
+power : {{ℳ : Magma }} (let M = Magma.Carrier ℳ)
+      → TreeV M V → ℕ → TreeV M V
+power x zero    = x
+power x (suc n) = x ⊕ power x n
+ #+END_SRC
+
+** Multistaging via PackageFormers
+
+   + How writing different PackageFormers allows us to merely select to what degree we want
+     staging to occur; e.g., stageᵢ.
+** Conclusion and Next Steps
+
+   + Theory?
+   + Applications?
+   + Pedagogy?
+
+* COMMENT footer                                                     :ignore:
+
+# Local Variables:
+# eval: (progn (org-babel-goto-named-src-block "make-acmart-class") (org-babel-execute-src-block))
+# compile-command: (progn (org-babel-tangle) (org-latex-export-to-pdf) (async-shell-command "open Paper1.pdf"))
+# End:
