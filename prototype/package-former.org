@@ -4316,8 +4316,8 @@ then all subsequent lines with at least that much indentation have the same ance
 {{{end-fold}}}
 
 {{{fold(get-children Implementation)}}}
+# (pf--declare-type get-children (:then t) string (or string list) cons)
 #+BEGIN_SRC emacs-lisp :tangle yes
-(pf--declare-type get-children (:then t) string (or string list) cons)
 (cl-defun pf--get-children (parent the-wild &key (then #'identity))
   "Go into ‘the-wild’ seeking out the first occurence of ‘parent’,
    who once found, ought to have a minimal indentation for its children.
@@ -4777,6 +4777,7 @@ Here are some possible invocations, the last one being our use case.
 # (rename-mixfix (lambda (it) (concat it "′")) "_⊕_")  ;; ⇒ _⊕′_
 
 We also want to prefix the generated file with the imports of the current file.
+# ;; (pf--declare-type extract-imports : string)
 {{{fold(extract-imports Implementation)}}}
 #+BEGIN_SRC emacs-lisp :tangle yes
 (defvar pf-generated-suffix "-generated"
@@ -4788,7 +4789,6 @@ We also want to prefix the generated file with the imports of the current file.
   "Name of the generated file."
   (concat (file-name-sans-extension (buffer-name)) pf-generated-suffix))
 
-(pf--declare-type extract-imports : string)
 (cl-defun pf--extract-imports ()
   "Return substring of buffer whose lines mention “import”.
    Throw away any that mention the substring “⟪FileName⟫_Generated”.
@@ -5145,9 +5145,9 @@ Let's try this out.
 #+RESULTS:
 | #s(package-former nil PackageFormer M-Set ₁ 0 nil 3 (#s(element nil Scalar Set nil) #s(element nil Vector Set nil) #s(element nil _·_ Scalar → Vector → Vector nil) #s(element nil 𝟙 Scalar nil) #s(element nil _×_ Scalar → Scalar → Scalar nil) #s(element nil leftId {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 nil) #s(element nil assoc {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋) nil))) |
 
+# (pf--declare-type special : string t)
 Conversely, let's have a pretty printer.
 #+BEGIN_SRC emacs-lisp :tangle yes
-(pf--declare-type special : string t)
 (defun pf--special (f)
   "Special elements, for whatever reason are exceptional, and so
    are maked as singleton lists and their indentation is lessened.

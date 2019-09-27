@@ -126,7 +126,6 @@
   "
   (if string (length (s-shared-start string (s-repeat (length string) " "))) 0))
 
-(pf--declare-type get-children (:then t) string (or string list) cons)
 (cl-defun pf--get-children (parent the-wild &key (then #'identity))
   "Go into ‘the-wild’ seeking out the first occurence of ‘parent’,
    who once found, ought to have a minimal indentation for its children.
@@ -323,7 +322,6 @@
   "Name of the generated file."
   (concat (file-name-sans-extension (buffer-name)) pf-generated-suffix))
 
-(pf--declare-type extract-imports : string)
 (cl-defun pf--extract-imports ()
   "Return substring of buffer whose lines mention “import”.
    Throw away any that mention the substring “⟪FileName⟫_Generated”.
@@ -544,7 +542,6 @@
       ;; return value
       pf))
 
-(pf--declare-type special : string t)
 (defun pf--special (f)
   "Special elements, for whatever reason are exceptional, and so
    are maked as singleton lists and their indentation is lessened.
