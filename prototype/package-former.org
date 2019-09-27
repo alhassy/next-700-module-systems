@@ -854,7 +854,7 @@ PackageFormer M₁₂ : Set₁ where
 
  TODO: load instance declaratin tests.
  {{{fold(Tests)}}}
- #+BEGIN_SRC emacs-lisp :tangle yes
+ #+BEGIN_SRC emacs-lisp :tangle no
 (ert-deftest lid ()
 
   (let (id)
@@ -1184,7 +1184,7 @@ data Semigroup-syntax : Set where
   at will.
 
   {{{fold(Unit Tests)}}}
-  #+BEGIN_SRC emacs-lisp :var test = test
+  #+BEGIN_SRC emacs-lisp :var test = test :tangle no
 (ert-deftest inst ()
 
   ;; Parameterised record
@@ -1710,7 +1710,7 @@ the pattern of [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures
 | Results of tests and [[file:package-former.agda][examples]] will be in pink, like this. |
 
 #+TOC: headlines 3
-
+ho
 * Aim: /Scrap the Repetition/
   :PROPERTIES:
   :CUSTOM_ID: Aim---Scrap-the-Repetition-
@@ -1900,21 +1900,26 @@ Add the following to the top of your Emacs configuration file, i.e., the ~~/.ema
 
 ;; Necessary libraries for producing the prototype
 (use-package s)                  ;; “The long lost Emacs string manipulation library”.
-(use-package dash)               ;; “A modern list library for Emacs”
+(use-package dash)               ;; “A modern list library for Emacs”.
 (use-package dash-functional)    ;; -partial, -compose, -orfun, etc.
-(use-package origami)            ;; Folding away regions of text
-(use-package hydra)
+(use-package origami)            ;; Folding away regions of text.
+(use-package hydra)              ;; Helpful menus.
+(require 'subr-x)                ;; Extra Lisp functions; e.g., when-let.
 
 ;; Next, obtain the Elisp file, load it, and attach it to Agda.
 (unless (file-exists-p "~/.emacs.d/package-former.el")
   (shell-command (concat "curl "
-    "https://raw.githubusercontent.com/alhassy/next-700-module-systems/master/package-former.el "
+    "https://raw.githubusercontent.com/alhassy/next-700-module-systems/master/prototype/package-former.el"
     ">> ~/.emacs.d/package-former.el")))
 (load-file "~/.emacs.d/package-former.el")
 ;; (add-hook 'agda2-mode-hook #'package-former-mode)
 
 ;; Uncomment out the last line above if you want package-former
 ;; to ALWAYS be active on .agda files.
+
+;; You likely have this in your ~/.emacs file already
+(load-file (let ((coding-system-for-read 'utf-8))
+                (shell-command-to-string "/usr/local/bin/agda-mode locate")))
 #+END_SRC
 
 When you enable ~package-former-mode~:
@@ -4089,9 +4094,6 @@ The full source of this discussion is as follows.
   :PROPERTIES:
   :CUSTOM_ID: Strings-and-Things
   :END:
-  :PROPERTIES:
-
-  :END:
 
 Since our prototype is intended to be as minimally obtrusive as possible, we will
 need to extract our special 700-syntactical items between delimited tokens
@@ -4108,6 +4110,50 @@ The following subsections introduce:
 + ~extract-imports~ :: Obtain all ‘import’ clauses so that they can be
      ported over to the generated file.
 
+First we include an Emacs Lisp [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Library-Headers.html#Library-Headers][library header]] which declares important meta-data
+---with the aim of having the resulting software
+be distributed with Emacs's largest package repository, MELPA.
+Installing this package, from within Emacs, also automatically installs its dependencies,
+recursively.
+#+BEGIN_SRC emacs-lisp :tangle yes
+;;; package-former.el --- Making Modules with Meta-Programmed Meta-Primitives, for Agda
+
+;; Author: Musa Al-hassy <alhassy@gmail.com>
+;; Version: 1.0
+;; Package-Requires: ((s "1.12.0") (dash "2.16.0") (origami "1.0")  (emacs "24.4"))
+;; Keywords: agda, modules, packages, theories, languages, convenience, maint, tools
+;; URL: https://alhassy.github.io/next-700-module-systems
+
+;; Copyright (c) 2019 Musa Al-hassy
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This program is intended to reduce the burden in selecting
+;; the form of records and other kinds of packages in Agda.
+;; For example, the decision of whether a record element should be
+;; declared as a field or as a parameter no longer needs to be performed
+;; prematurely but rather may be selected when necessary.
+
+;; This el file has been tangled from a literate, org-mode, file.
+;; See the documentation on:
+;; https://alhassy.github.io/next-700-module-systems/prototype/package-former.html
+
+;;; Code:
+#+END_SRC
+
 First some useful libraries:
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; String and list manipulation libraries
@@ -4115,11 +4161,10 @@ First some useful libraries:
 ;; https://github.com/magnars/s.el
 (require 's)               ;; “The long lost Emacs string manipulation library”
 (require 'dash)            ;; “A modern list library for Emacs”
-(require 'dash-functional) ;; Function library; -const, -compose, -orfn, -not, -partial, etc.
-(require 'fold-this)       ;; Folding away regions of text
-(fold-this-mode)
-
-(require 'ert) ;; Testing framework
+(require 'dash-functional) ;; Function library; ‘-const’, ‘-compose’, ‘-orfn’, ‘-not’, ‘-partial’, etc.
+(require 'origami)         ;; Folding away regions of text
+(require 'subr-x)          ;; Extra Lisp functions; e.g., ‘when-let’.
+(require 'ert)             ;; Testing framework; ‘should’ for assertions
 #+END_SRC
 
 ** Typing mechanism
@@ -4202,12 +4247,6 @@ First some useful libraries:
       ;; Register the typing advice and notify user of what was added.
       (advice-add (function ,f) :around (function ,advice-name))
       ,notify-user )))
-
-(defun list-of-p (τ thing)
-  (and (listp thing) (every (lambda (x) (typep x τ)) thing)))
-
-(deftype list-of (τ)
-  `(satisfies (lambda (thing) (list-of-p (quote ,τ) thing))))
 #+END_SRC
 #
 # E.g., (pf--declare-type f₁ (:z string :w list) integer symbol string)
@@ -4266,7 +4305,7 @@ then all subsequent lines with at least that much indentation have the same ance
 
 {{{fold(get-indentation Implementation)}}}
 #+BEGIN_SRC emacs-lisp :tangle yes
-(pf--declare-type pf--get-indentation : string integer)
+;; (pf--declare-type pf--get-indentation : string integer)
 (defun pf--get-indentation (string)
   "How many spaces are there at the front of ‘string’?
 
@@ -4417,7 +4456,7 @@ executing the following block, will report which tests pass and tries to explain
 why tests fail.
 
 {{{fold(Tests)}}}
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle no
 (ert-deftest get-ind ()
   (loop for s in '(nil "" "x" "  x" "  x ")
     do (should (<= (pf--get-indentation s) (length s))))
@@ -4548,7 +4587,9 @@ utilities, so that we can work with higher-level abstract datatypes.
 
   (-let [pre-post (s-split "$here" context)]
     (pf--substring-delimited (s-trim (car pre-post)) (s-trim (cadr pre-post)) string)))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp :tangle no
 (ert-deftest subst-delimit-here ()
   (-let [str "𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟜 𝟞"] ;; Intentionally repeated ‘𝟜’.
     ;; Pattern for loop: (prefix postfix expected-needle :comment)
@@ -4640,11 +4681,7 @@ To that end, we propose that our fictitious syntax be directly embedded via spec
     (setq content  (buffer-substring-no-properties start-pos end-pos))
 
     (when more (funcall more sp ep))
-    (when pf-folding
-      (goto-char start-pos)
-      (push-mark end-pos)
-      (setq mark-active t)
-      (fold-active-region start-pos end-pos))
+    (when pf-folding (origami-close-node-recursively (current-buffer) (point)))
 
     content))
 #+END_SRC
@@ -4652,7 +4689,6 @@ To that end, we propose that our fictitious syntax be directly embedded via spec
 
 Where we have the following value:
 #+BEGIN_SRC emacs-lisp :tangle yes
-; (use-package fold-this :demand t :ensure t)
 (defvar pf-folding nil
   "Should 700 and lisp blocks be folded away when C-c C-l.")
 #+END_SRC
@@ -4748,9 +4784,9 @@ We also want to prefix the generated file with the imports of the current file.
 
 ;; Sometimes we may want the full name due to files being in a nested
 ;; directory hierarchy: (file-name-sans-extension buffer-file-name)
-(defvar pf--generated-file-name
-  (concat (file-name-sans-extension (buffer-name)) pf-generated-suffix)
-  "Name of the generated file.")
+(defun pf--generated-file-name ()
+  "Name of the generated file."
+  (concat (file-name-sans-extension (buffer-name)) pf-generated-suffix))
 
 (pf--declare-type extract-imports : string)
 (cl-defun pf--extract-imports ()
@@ -4760,7 +4796,7 @@ We also want to prefix the generated file with the imports of the current file.
   (thread-last (buffer-substring-no-properties (point-min) (point-max))
     (s-split "\n")
     (--filter (s-contains? "import " it))
-    (--remove (s-contains? pf--generated-file-name it))
+    (--remove (s-contains? (pf--generated-file-name) it))
     (s-join "\n")))
 #+END_SRC
 {{{end-fold}}}
@@ -4871,6 +4907,7 @@ a useful macro to “open p” locally.
 #+BEGIN_SRC emacs-lisp :tangle yes
 ;; An anaphoric macro ^_^
 (defmacro pf--open-pf (p &rest body)
+  "Open a package-former so no qualiiers are required."
   `(let*
     ((docstring             (pf--package-former-docstring ,p))
      (kind                  (pf--package-former-kind ,p))
@@ -5074,7 +5111,7 @@ With this in hand, let's produce a robust parser.
       (error "pf--load-package-former: Error: Input must be non-empty list."))
 
   (let* (pf
-         (header (car lines))
+         (header (or (car lines) ""))
          (name (pf--substring-delimited-here "PackageFormer $here :" header))
          (level (pf--substring-delimited-here "Set $here where" header)))
 
@@ -5224,7 +5261,7 @@ should be inverses.
 #+end_center
 
 {{{fold(Unit Tests)}}}
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle no
 (ert-deftest pf-parse ()
 
   ;; Error on empty list of lines.
@@ -5588,7 +5625,7 @@ What is the above “fancy cons” we mentioned? Here it is.
 # and here in the backend we need two.
 # ?
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle no
 (ert-deftest variationals-𝒱𝒸 ()
 
   (should (equal (𝒱- 'nice)
@@ -5624,7 +5661,7 @@ What is the above “fancy cons” we mentioned? Here it is.
            '(1 2 3 4 (5 3) 7 (+ 8 3))))
 )
 #+END_SRC
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle no
 (ert-deftest variationals-𝒱 ()
 
   ;; Nullary
@@ -5646,7 +5683,7 @@ What is the above “fancy cons” we mentioned? Here it is.
   (should-error (𝒱 test₃ = :kind recordd))
 )
 #+END_SRC
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle no
 (ert-deftest variationals-loading ()
 
   (should (pf--load-variational "𝒱-tc this height = :level this :waist height"))
@@ -6308,9 +6345,12 @@ should be coloured or not. Below we use a particular set of default colours.
     ")
 
 (defun pf--reify-package-formers (orig-fun &rest args)
+  "Parse package-former syntax and produce Agda when possible."
   (interactive)
-
-  (let (printed-pfs
+  (let* (printed-pfs
+        (parent-dir (s-join "/" (-drop-last 1 (s-split "/" buffer-file-truename))))
+        (generatedmodule  (pf--generated-file-name))
+        (newfile (concat parent-dir "/" generatedmodule ".agda"))
         (parent-imports (pf--extract-imports)))
 
     ;; Load variationals, PackageFormers, instantiations, and porting list.
@@ -6329,7 +6369,7 @@ should be coloured or not. Below we use a particular set of default colours.
          "{- This file is generated ;; do not alter. -}\n"
          ,parent-imports
          "open import Level as Level"
-         ,(format "module %s where " pf--generated-file-name))))
+         ,(format "module %s where " generatedmodule))))
 
      ;; Print the package-formers
       (setq printed-pfs
@@ -6348,10 +6388,9 @@ should be coloured or not. Below we use a particular set of default colours.
       ;; Replace tabs with spaces
       (untabify (point-min) (point-max))
 
-      (write-region (beginning-of-buffer) (end-of-buffer)
-                    (concat pf--generated-file-name ".agda")))
+      (write-region (beginning-of-buffer) (end-of-buffer) newfile))
 
-    (pf--insert-generated-import pf--generated-file-name)
+    (pf--insert-generated-import generatedmodule)
 
   ;; Need to revert buffer to discard old colours.
   ;; (save-buffer) (revert-buffer t t t)
@@ -6399,21 +6438,14 @@ should be coloured or not. Below we use a particular set of default colours.
    :PROPERTIES:
    :CUSTOM_ID: Menu-matter
    :END:
-   :PROPERTIES:
-
-   :END:
  Let's quickly add a menu bar that allows users to enable or disable using PackageFormer's;
  along with a brief help menu.
 
   Names with a double dash are intended to be private, not to be touched by users.
 
- {{{fold(The global map)}}}
  #+BEGIN_SRC emacs-lisp :tangle yes
-(defvar pf--menu-bar (make-sparse-keymap "PackageFormers"))
-
-(define-key global-map [menu-bar pf--menu] (cons "PackageFormers" pf--menu-bar))
+(defvar pf--menu-bar (make-sparse-keymap "PackageFormer"))
  #+END_SRC
- {{{end-fold}}}
 
  {{{fold( Enabling the feature )}}}
  #+BEGIN_SRC emacs-lisp :tangle yes
@@ -6421,7 +6453,9 @@ should be coloured or not. Below we use a particular set of default colours.
   '(menu-item "Enable PackageFormer Generation" pf-enable-package-formers))
 
 (defun pf-enable-package-formers ()
+ "Add a menubar, and make Agda's C-c C-l consider package-former syntax."
  (interactive)
+ (define-key global-map [menu-bar pf--menu] (cons "PackageFormer" pf--menu-bar))
  (advice-add 'agda2-load :around #'pf--reify-package-formers)
  (message-box "C-c C-l now reifies PackageFormer annotations into legitimate Agda."))
  #+END_SRC
@@ -6433,7 +6467,9 @@ should be coloured or not. Below we use a particular set of default colours.
   '(menu-item "Disable PackageFormer Generation" pf-disable-package-formers))
 
 (defun pf-disable-package-formers ()
+  "Remove menubar, and make Agda's C-c C-l act as normal."
  (interactive)
+ (define-key global-map [menu-bar pf--menu] nil)
  (advice-remove 'agda2-load #'pf--reify-package-formers)
  (setq global-mode-string (remove "PackageFormer (•̀ᴗ•́)و " global-mode-string))
   (message-box "C-c C-l now behaves as it always has."))
@@ -6446,6 +6482,7 @@ should be coloured or not. Below we use a particular set of default colours.
   '(menu-item "About PackageFormers" pf-package-formers-about))
 
 (defun pf-package-formers-about ()
+  "Show help about the PackageFormer system."
  (interactive)
  (switch-to-buffer "*PackageFormer-About*") (insert
   " This is an editor extension prototyping “the next 700 module systems” proposed research.
@@ -6467,8 +6504,8 @@ should be coloured or not. Below we use a particular set of default colours.
   '(menu-item "Copy file with PackageFormer annotations stripped away" pf--bare-bones))
 
 (defun pf-bare-bones ()
+  "Produce a copy of the current file with PackageFormer annotations stripped away."
  (interactive)
-
  (let* ((src (file-name-sans-extension (buffer-name)))
         (src-agda (format "%s.agda" src))
         (bare-agda (format "%s_Bare.agda" src)))
@@ -6498,6 +6535,7 @@ should be coloured or not. Below we use a particular set of default colours.
   '(menu-item "Show all registered variationals" pf-show-variationals))
 
 (defun pf-show-variationals ()
+  "Show all user declared 𝒱ariationals in another buffer."
  (interactive)
  (occur "𝒱[ \\|-]"))
 
@@ -6505,6 +6543,7 @@ should be coloured or not. Below we use a particular set of default colours.
   '(menu-item "Show all concrete PackageFormers" pf-show-pfs))
 
 (defun pf-show-pfs ()
+  "Show all user declared PackageFormer's in another buffer."
  (interactive)
  (occur "PackageFormer .* where"))
  #+END_SRC
@@ -6516,18 +6555,32 @@ should be coloured or not. Below we use a particular set of default colours.
   '(menu-item "Toggle folding away “700” and “lisp” blocks" pf-fold-annotations))
 
 (defun pf-fold-annotations ()
+  "Fold all items enclosed in Agda comments “{- ⋯ -}”."
  (interactive)
  (setq pf-folding (not pf-folding))
  (if pf-folding
      (message "C-c C-l will now fold away “700” and “lisp” blocks. Press ENTER to unfold a block. ")
-     (fold-this-unfold-all)
+     (origami-open-all-nodes (current-buffer))
      (message "Blocks “700” and “lisp” have been unfolded.")))
+
+;; Basic origami support for Agda.
+(push (cons 'agda2-mode (origami-markers-parser "{-" "-}"))
+      origami-parser-alist)
+
+;; Along with a hydra for super quick navigation and easily folding, unfolding blocks!
+(defhydra folding-with-origami-mode (global-map "C-c f")
+  ("h" origami-close-node-recursively "Hide")
+  ("o" origami-open-node-recursively  "Open")
+  ("t" origami-toggle-all-nodes  "Toggle buffer")
+  ("n" origami-next-fold "Next")
+  ("p" origami-previous-fold "Previous"))
  #+END_SRC
  {{{end-fold}}}
 
  Let's pack these together into a minor mode.
  {{{fold( Minor mode )}}}
  #+BEGIN_SRC emacs-lisp :tangle yes
+;;;###autoload
 (define-minor-mode package-former-mode
     "This is an editor extension prototyping “the next 700 module systems” proposed research.
 
@@ -6554,6 +6607,10 @@ should be coloured or not. Below we use a particular set of default colours.
       ;; Closing
       (pf-disable-package-formers))))
  #+END_SRC
+
+The file ought to also contain one or more autoload magic comments, as explained in
+[[https://www.gnu.org/software/emacs/manual/html_node/elisp/Packaging-Basics.html#Packaging-Basics][Packaging Basics]].
+
  {{{end-fold}}}
 
 * Future Work
@@ -6793,20 +6850,30 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
    She proposes that universal algebra ---a uniform approach to studying different algebras---
    is currently performed on-demand and manually in computing, which it needn't be.
 
-* Appending PackageFormer.el with the useful variationals :ignore:
+* Appending PackageFormer.el with the useful variationals AND el footer:ignore:
   :PROPERTIES:
   :CUSTOM_ID: Appending-PackageFormer-el-with-the-useful-variationals
   :END:
 
 :Hide:
-  #+BEGIN_SRC emacs-lisp :exports none :tangle "package-former.el" :var it=(file-as-string "variationals.tmp")
-(setq ♯standard-variationals (s-count-matches-all "(𝒱" it))
-(eval (car (read-from-string (format "(progn %s)" it))))
- #+END_SRC
-
    We read in the temporary variationals file, then tangle the result into the PackageFormer.el file.
 
    This must come at the end since it uses things like 𝒱 which need to be defined first.
+
+  #+BEGIN_SRC emacs-lisp :exports none :tangle "package-former.el" :var it=(file-as-string "variationals.tmp")
+(setq ♯standard-variationals (s-count-matches-all "(𝒱" it))
+(eval (car (read-from-string (format "(progn %s)" it))))
+#+END_SRC
+
+The above is enclosed in a let-clause, which we need to leave to declare the following
+top-level item.
+
+#+BEGIN_SRC emacs-lisp :tangle "package-former.el"
+(provide 'package-former)
+;;; package-former.el ends here
+ #+END_SRC
+ This is the footer line; it appears at the very end of the file.
+ Its purpose is to enable people to detect truncated versions of the file from the lack of a footer line.
    :End:
 
 * COMMENT Cool stuffs, but now obsolete -e.g., :itify:
@@ -7115,7 +7182,7 @@ we overload them for sake of familiarity ---in actuality, we are generalising th
 )))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle no
 (ert-deftest parse-tos ()
 
   ;; Expected use

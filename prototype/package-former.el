@@ -1,13 +1,49 @@
+;;; package-former.el --- Making Modules with Meta-Programmed Meta-Primitives, for Agda
+
+;; Author: Musa Al-hassy <alhassy@gmail.com>
+;; Version: 1.0
+;; Package-Requires: ((s "1.12.0") (dash "2.16.0") (origami "1.0")  (emacs "24.4"))
+;; Keywords: agda, modules, packages, theories, languages, convenience, maint, tools
+;; URL: https://alhassy.github.io/next-700-module-systems
+
+;; Copyright (c) 2019 Musa Al-hassy
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This program is intended to reduce the burden in selecting
+;; the form of records and other kinds of packages in Agda.
+;; For example, the decision of whether a record element should be
+;; declared as a field or as a parameter no longer needs to be performed
+;; prematurely but rather may be selected when necessary.
+
+;; This el file has been tangled from a literate, org-mode, file.
+;; See the documentation on:
+;; https://alhassy.github.io/next-700-module-systems/prototype/package-former.html
+
+;;; Code:
+
 ;; String and list manipulation libraries
 ;; https://github.com/magnars/dash.el
 ;; https://github.com/magnars/s.el
 (require 's)               ;; “The long lost Emacs string manipulation library”
 (require 'dash)            ;; “A modern list library for Emacs”
-(require 'dash-functional) ;; Function library; -const, -compose, -orfn, -not, -partial, etc.
-(require 'fold-this)       ;; Folding away regions of text
-(fold-this-mode)
-
-(require 'ert) ;; Testing framework
+(require 'dash-functional) ;; Function library; ‘-const’, ‘-compose’, ‘-orfn’, ‘-not’, ‘-partial’, etc.
+(require 'origami)         ;; Folding away regions of text
+(require 'subr-x)          ;; Extra Lisp functions; e.g., ‘when-let’.
+(require 'ert)             ;; Testing framework; ‘should’ for assertions
 
 ;; Crashes if an argument is ":"
 (cl-defmacro pf--declare-type (f key-types &rest types)
@@ -82,13 +118,7 @@
       (advice-add (function ,f) :around (function ,advice-name))
       ,notify-user )))
 
-(defun list-of-p (τ thing)
-  (and (listp thing) (every (lambda (x) (typep x τ)) thing)))
-
-(deftype list-of (τ)
-  `(satisfies (lambda (thing) (list-of-p (quote ,τ) thing))))
-
-(pf--declare-type pf--get-indentation : string integer)
+;; (pf--declare-type pf--get-indentation : string integer)
 (defun pf--get-indentation (string)
   "How many spaces are there at the front of ‘string’?
 
@@ -158,41 +188,6 @@
     ;; Yield the parent line along with the children lines; and the unconsumed wild's prefix and suffix.
     `(,prefix ,(cons parent-line lines) ,unconsidered)))
 
-(ert-deftest get-ind ()
-  (loop for s in '(nil "" "x" "  x" "  x ")
-    do (should (<= (pf--get-indentation s) (length s))))
-  )
-
-(ert-deftest get-child ()
-  (-let [eh
-"+ item 1
-  - subitem 1.1
-    * subsubitem 1.1.1
-  - subitem 1.2
-+ item 2
-  - subitem 2.2
-+ item 3"]
-
-    ;; Consider each line above as a parent, with ‘eh’ as the wild.
-    (loop for parent in (s-split "\n" eh) do
-      (let* ((cs (pf--get-children parent eh))
-         (children (cdadr cs)))
-
-      ;; Result is a list of lists: Each is either nil or a cons.
-      (loop for r in cs do (should (listp r)))
-
-      ;; The parent line contains the parent.
-      (should (equal parent (caadr cs)))
-
-      ;; The children all have the same indentation.
-      (loop for c in children for d in children do (should (equal (pf--get-indentation c) (pf--get-indentation d))))
-
-      ;; Extensionality: Orginal input can be regained from resulting parts.
-      (should (equal eh (s-trim (s-join "\n" (--map (s-join "\n" it) cs)))))
-    )
-  )
-))
-
 ;; This may accept argument ":", which “pf--declare-type” cannot currently handle.
 (cl-defun pf--substring-delimited
     (prefix suffix string)
@@ -231,39 +226,6 @@
   (-let [pre-post (s-split "$here" context)]
     (pf--substring-delimited (s-trim (car pre-post)) (s-trim (cadr pre-post)) string)))
 
-(ert-deftest subst-delimit-here ()
-  (-let [str "𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟜 𝟞"] ;; Intentionally repeated ‘𝟜’.
-    ;; Pattern for loop: (prefix postfix expected-needle :comment)
-    (loop for it in `( ( "$here" ,str              :Identity)
-               ( "𝟘 $here 𝟞" "𝟙 𝟚 𝟛 𝟜 𝟝 𝟜"  :Boundaries)
-               ( "$here 𝟞" "𝟘 𝟙 𝟚 𝟛 𝟜 𝟝 𝟜"  :NoLeft)
-               ( "𝟘 $here"  "𝟙 𝟚 𝟛 𝟜 𝟝 𝟜 𝟞" :NoRight)
-               ( "𝟠 $here"   ,str          :BogusL)
-               ( "$here ∞"   ,str          :BogusR)
-               ( "𝟠 $here ∞" ,str          :BogusLR)
-             )
-      do (should (equal (second it) (pf--substring-delimited-here (first it) str))))
-
-    ;; Longest substring
-    (should (equal "𝟛" (pf--substring-delimited-here "𝟚 $here 𝟜" str)))
-
-    ;; Identical boundaries.
-    (should (equal "𝟙" (pf--substring-delimited-here "𝟘 $here 𝟘" "𝟘 𝟙 𝟘")))
-    (should (equal ""  (pf--substring-delimited-here "𝟘 $here 𝟘" "𝟘 𝟘")))
-    (should (equal ""  (pf--substring-delimited-here "𝟘 $here 𝟘" "𝟘𝟘")))
-
-    ;; Multiple occurances of prefix or postfix
-    (should (equal "y"  (pf--substring-delimited-here "𝑳 $here 𝑹" "𝑳 x 𝑳 y 𝑹")))
-    (should (equal "x"  (pf--substring-delimited-here "𝑳 $here 𝑹" "𝑳 x 𝑹 y 𝑹")))
-
-    ;; Space irrelevance for keyword ‘$here’:
-    (should (equal "𝟙" (pf--substring-delimited-here "𝑳 $here 𝑹" "𝑳 𝟙 𝑹")))
-    (should (equal "𝟙" (pf--substring-delimited-here "𝑳 $here𝑹" "𝑳 𝟙 𝑹")))
-    (should (equal "𝟙" (pf--substring-delimited-here "𝑳$here 𝑹" "𝑳 𝟙 𝑹")))
-    (should (equal "𝟙" (pf--substring-delimited-here "𝑳$here𝑹" "𝑳 𝟙 𝑹")))
-    (should (equal "𝟙" (pf--substring-delimited-here "𝑳      $here  𝑹" "𝑳 𝟙 𝑹")))
-    ))
-
 ;; pf--declare-type has no support for optionals yet
 (cl-defun pf--buffer-substring-delimited (start end &optional more &key (regexp t))
   "
@@ -292,15 +254,10 @@
     (setq content  (buffer-substring-no-properties start-pos end-pos))
 
     (when more (funcall more sp ep))
-    (when pf-folding
-      (goto-char start-pos)
-      (push-mark end-pos)
-      (setq mark-active t)
-      (fold-active-region start-pos end-pos))
+    (when pf-folding (origami-close-node-recursively (current-buffer) (point)))
 
     content))
 
-; (use-package fold-this :demand t :ensure t)
 (defvar pf-folding nil
   "Should 700 and lisp blocks be folded away when C-c C-l.")
 
@@ -362,9 +319,9 @@
 
 ;; Sometimes we may want the full name due to files being in a nested
 ;; directory hierarchy: (file-name-sans-extension buffer-file-name)
-(defvar pf--generated-file-name
-  (concat (file-name-sans-extension (buffer-name)) pf-generated-suffix)
-  "Name of the generated file.")
+(defun pf--generated-file-name ()
+  "Name of the generated file."
+  (concat (file-name-sans-extension (buffer-name)) pf-generated-suffix))
 
 (pf--declare-type extract-imports : string)
 (cl-defun pf--extract-imports ()
@@ -374,7 +331,7 @@
   (thread-last (buffer-substring-no-properties (point-min) (point-max))
     (s-split "\n")
     (--filter (s-contains? "import " it))
-    (--remove (s-contains? pf--generated-file-name it))
+    (--remove (s-contains? (pf--generated-file-name) it))
     (s-join "\n")))
 
 (defmacro λ (&rest body)
@@ -434,6 +391,7 @@
 
 ;; An anaphoric macro ^_^
 (defmacro pf--open-pf (p &rest body)
+  "Open a package-former so no qualiiers are required."
   `(let*
     ((docstring             (pf--package-former-docstring ,p))
      (kind                  (pf--package-former-kind ,p))
@@ -561,7 +519,7 @@
       (error "pf--load-package-former: Error: Input must be non-empty list."))
 
   (let* (pf
-         (header (car lines))
+         (header (or (car lines) ""))
          (name (pf--substring-delimited-here "PackageFormer $here :" header))
          (level (pf--substring-delimited-here "Set $here where" header)))
 
@@ -645,37 +603,6 @@
          ;; (--map (concat (s-repeat (- indentation (if (pf--special it) 2 0)) (if (s-starts-with? "sibling" it) "" " "))
          ;;                (if (s-starts-with? "top-level" it) (s-chop-prefix "top-level " it)
          ;;                 (if (s-starts-with? "sibling" it) (s-chop-prefix "sibling " it) it))))
-
-(ert-deftest pf-parse ()
-
-  ;; Error on empty list of lines.
-   (should-error (pf--load-package-former nil))
-
-   ;; No crash on empty line.
-   (should (pf--load-package-former (list "")))
-
-   ;; No crash on PackageFormer with no elements.
-   (should (pf--load-package-former (list "PackageFormer PF : Set ℓ where")))
-
-   ;; Levels
-   (should (equal "ℓ" (pf--package-former-level (pf--load-package-former (list "PackageFormer PF : Set ℓ where")))))
-   ;;
-   (should (equal "" (pf--package-former-level (pf--load-package-former (list "PackageFormer PF : Set  where")))))
-   ;;
-   (should (equal "₃" (pf--package-former-level (pf--load-package-former (list "PackageFormer PF : Set₃ where")))))
-   ;;
-   (should (equal "(Level.suc ℓ)" (pf--package-former-level (pf--load-package-former (list "PackageFormer PF : Set (Level.suc ℓ) where")))))
-
-   ;; Full parsing.
-   (-let [pf (pf--load-package-former (cadr (pf--get-children "PackageFormer" test)))]
-     (equal (format "%s" pf)
-            "#s(pf--package-former nil PackageFormer M-Set ₁ 0 nil 3 (Scalar  : Set Vector  : Set _·_     : Scalar → Vector → Vector 𝟙       : Scalar _×_     : Scalar → Scalar → Scalar leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋 assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)))"))
-
-  (-let [pf (cadr (pf--get-children "PackageFormer" test))]
-    (should (equal (s-concat "\n" (s-join "\n" pf))
-                   (pf--show-package-former (pf--load-package-former pf)))))
-
-)
 
 (setq pf--variationals nil)
 ;;  "Association list of Agda-user defined variational operators."
@@ -916,80 +843,6 @@
     read-from-string
     car
     eval))
-
-(ert-deftest variationals-𝒱𝒸 ()
-
-  (should (equal (𝒱- 'nice)
-                 '𝒱-nice))
-
-  (should (equal (𝒱𝒸 '(:height 3 :kind 'data))
-                '((:height . 3) (:kind . data))))
-
-
-  ;; Error along with “noice”.
-  (should-error (𝒱𝒸 '(:height 3 :kind datda) 'noice nil))
-
-  ;; nice error.
-  (should-error (𝒱𝒸 '(:level 3)))
-
-  ;;
-  (cl-defun 𝒱-test (&key height kind) `( (first . ,height) (second . ,kind)))
-  ;;
-  (should (equal (𝒱𝒸 '(test :height 3 :kind 'three ⟴ :kind 'module))
-                 '((:kind . module) (first . 3) (second . three))))
-  ;;
-  ;; NOTE: 𝒱-tests′ :kind is optional
-  (should (equal (𝒱𝒸 '(test :height 3 ⟴ :kind 'module))
-                 '((:kind . module) (first . 3) (second))))
-  ;;
-  (should (equal (𝒱𝒸 '(:height 3 ⟴ :kind 'module))
-                 '((:kind . module) (:height . 3))))
-
-  ;; Recursively place 3 (new) wherever 'it (old) occurs.
-  ;; This' a standard Lisp utility.
-  (should (equal
-           (subst 3 'it '(1 2 it 4 (5 it) 7 (+ 8 it)))
-           '(1 2 3 4 (5 3) 7 (+ 8 3))))
-)
-
-(ert-deftest variationals-𝒱 ()
-
-  ;; Nullary
-  (should (𝒱 test₀  = :kind 'record :waist 3))
-  (should (equal (𝒱-test₀)
-               '((:kind . record) (:waist . 3))))
-
-  ;; Unary
-  (should (𝒱 test₁ heightish = :kind 'record :waist heightish))
-  (should (equal (𝒱-test₁ :heightish 6)
-                 '((:kind . record) (:waist . 6))))
-
-  ;; Invoking the previously defined variational
-  (should (𝒱 test₂  = :kind 'data ⟴ test₁ :heightish 2))
-  (should (equal (𝒱-test₂)
-                 '((:kind . record) (:waist . 2) (:kind . data))))
-
-  ;; See a nice error message ^_^
-  (should-error (𝒱 test₃ = :kind recordd))
-)
-
-(ert-deftest variationals-loading ()
-
-  (should (pf--load-variational "𝒱-tc this height = :level this :waist height"))
-
-  ;; NEATO! (Has desired error)
-  ;; (-let [*parent-context* "woadh"]
-  ;;   (𝒱-tc :height 'no :this 'inc))
-  ;;
-  ;; Does not pass: I've commented out the type checking in 𝒱 above, for now.
-
-  (should (𝒱-tc :height 9 :this 'inc))
-
-  (should (equal (𝒱𝒸 '(:a 'b ⟴ tc :height 1))
-                 '((:level) (:waist . 1) (:a . b))))
-
-;
-)
 
 (defstruct pf-instance-declaration
   "Record of components for an PackageFormer instance declaration:
@@ -1258,9 +1111,12 @@
     ")
 
 (defun pf--reify-package-formers (orig-fun &rest args)
+  "Parse package-former syntax and produce Agda when possible."
   (interactive)
-
-  (let (printed-pfs
+  (let* (printed-pfs
+        (parent-dir (s-join "/" (-drop-last 1 (s-split "/" buffer-file-truename))))
+        (generatedmodule  (pf--generated-file-name))
+        (newfile (concat parent-dir "/" generatedmodule ".agda"))
         (parent-imports (pf--extract-imports)))
 
     ;; Load variationals, PackageFormers, instantiations, and porting list.
@@ -1279,7 +1135,7 @@
          "{- This file is generated ;; do not alter. -}\n"
          ,parent-imports
          "open import Level as Level"
-         ,(format "module %s where " pf--generated-file-name))))
+         ,(format "module %s where " generatedmodule))))
 
      ;; Print the package-formers
       (setq printed-pfs
@@ -1298,10 +1154,9 @@
       ;; Replace tabs with spaces
       (untabify (point-min) (point-max))
 
-      (write-region (beginning-of-buffer) (end-of-buffer)
-                    (concat pf--generated-file-name ".agda")))
+      (write-region (beginning-of-buffer) (end-of-buffer) newfile))
 
-    (pf--insert-generated-import pf--generated-file-name)
+    (pf--insert-generated-import generatedmodule)
 
   ;; Need to revert buffer to discard old colours.
   ;; (save-buffer) (revert-buffer t t t)
@@ -1336,15 +1191,15 @@
 ; Users can enable this feature if they're interested in using it; disbale it otherwise.
 ; (advice-add 'agda2-load :around #'pf--reify-package-formers)
 
-(defvar pf--menu-bar (make-sparse-keymap "PackageFormers"))
-
-(define-key global-map [menu-bar pf--menu] (cons "PackageFormers" pf--menu-bar))
+(defvar pf--menu-bar (make-sparse-keymap "PackageFormer"))
 
 (define-key pf--menu-bar [pf-enable-package-formers]
   '(menu-item "Enable PackageFormer Generation" pf-enable-package-formers))
 
 (defun pf-enable-package-formers ()
+ "Add a menubar, and make Agda's C-c C-l consider package-former syntax."
  (interactive)
+ (define-key global-map [menu-bar pf--menu] (cons "PackageFormer" pf--menu-bar))
  (advice-add 'agda2-load :around #'pf--reify-package-formers)
  (message-box "C-c C-l now reifies PackageFormer annotations into legitimate Agda."))
 
@@ -1352,7 +1207,9 @@
   '(menu-item "Disable PackageFormer Generation" pf-disable-package-formers))
 
 (defun pf-disable-package-formers ()
+  "Remove menubar, and make Agda's C-c C-l act as normal."
  (interactive)
+ (define-key global-map [menu-bar pf--menu] nil)
  (advice-remove 'agda2-load #'pf--reify-package-formers)
  (setq global-mode-string (remove "PackageFormer (•̀ᴗ•́)و " global-mode-string))
   (message-box "C-c C-l now behaves as it always has."))
@@ -1361,6 +1218,7 @@
   '(menu-item "About PackageFormers" pf-package-formers-about))
 
 (defun pf-package-formers-about ()
+  "Show help about the PackageFormer system."
  (interactive)
  (switch-to-buffer "*PackageFormer-About*") (insert
   " This is an editor extension prototyping “the next 700 module systems” proposed research.
@@ -1378,8 +1236,8 @@
   '(menu-item "Copy file with PackageFormer annotations stripped away" pf--bare-bones))
 
 (defun pf-bare-bones ()
+  "Produce a copy of the current file with PackageFormer annotations stripped away."
  (interactive)
-
  (let* ((src (file-name-sans-extension (buffer-name)))
         (src-agda (format "%s.agda" src))
         (bare-agda (format "%s_Bare.agda" src)))
@@ -1405,6 +1263,7 @@
   '(menu-item "Show all registered variationals" pf-show-variationals))
 
 (defun pf-show-variationals ()
+  "Show all user declared 𝒱ariationals in another buffer."
  (interactive)
  (occur "𝒱[ \\|-]"))
 
@@ -1412,6 +1271,7 @@
   '(menu-item "Show all concrete PackageFormers" pf-show-pfs))
 
 (defun pf-show-pfs ()
+  "Show all user declared PackageFormer's in another buffer."
  (interactive)
  (occur "PackageFormer .* where"))
 
@@ -1419,13 +1279,27 @@
   '(menu-item "Toggle folding away “700” and “lisp” blocks" pf-fold-annotations))
 
 (defun pf-fold-annotations ()
+  "Fold all items enclosed in Agda comments “{- ⋯ -}”."
  (interactive)
  (setq pf-folding (not pf-folding))
  (if pf-folding
      (message "C-c C-l will now fold away “700” and “lisp” blocks. Press ENTER to unfold a block. ")
-     (fold-this-unfold-all)
+     (origami-open-all-nodes (current-buffer))
      (message "Blocks “700” and “lisp” have been unfolded.")))
 
+;; Basic origami support for Agda.
+(push (cons 'agda2-mode (origami-markers-parser "{-" "-}"))
+      origami-parser-alist)
+
+;; Along with a hydra for super quick navigation and easily folding, unfolding blocks!
+(defhydra folding-with-origami-mode (global-map "C-c f")
+  ("h" origami-close-node-recursively "Hide")
+  ("o" origami-open-node-recursively  "Open")
+  ("t" origami-toggle-all-nodes  "Toggle buffer")
+  ("n" origami-next-fold "Next")
+  ("p" origami-previous-fold "Previous"))
+
+;;;###autoload
 (define-minor-mode package-former-mode
     "This is an editor extension prototyping “the next 700 module systems” proposed research.
 
@@ -1815,3 +1689,6 @@
 (setq ♯standard-variationals (s-count-matches-all "(𝒱" it))
 (eval (car (read-from-string (format "(progn %s)" it))))
 )
+
+(provide 'package-former)
+;;; package-former.el ends here
