@@ -1,5 +1,5 @@
-{- This loads the PackageFormer metaprogram                      -}
-{- (progn (load-file "package-former.el") (package-former-mode)) -}
+{- This loads the PackageFormer metaprogram; press C-x C-e after the closing “)” below.                 -}
+{- (progn (load-file "~/.emacs.d/agda-next-700-module-systems.el") (agda-next-700-module-systems-mode)) -}
 
 module package-former where
 

@@ -1,7 +1,9 @@
+# For now: (shell-command "cp package-former.el agda-next-700-module-systems.el")
+#
 # ‼ User manual: Sections primed-decoration onwards need to account for equations!
 
 # (setq test outsidetest)
-# MA: Switch to spacemacs theme before export.
+# MA:  Switch to spacemacs theme before export.
 # TODO User Manual :Incomplete: ⇨ equations!
 
 :Attach_a_purpose_to_each_heading:
@@ -842,7 +844,7 @@ PackageFormer M₁₂ : Set₁ where
  #+END_SRC
 
  TODO:
- #+BEGIN_SRC emacs-lisp :tangle yes
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 ;; (load-instance-declaration "LHS = PF :arg₀ val₀ ⟴ test₁ :heightish 23")
 
      ;; PackageFormer names are in yellow; instances are are bolded.
@@ -899,7 +901,7 @@ PackageFormer M₁₂ : Set₁ where
     :END:
 
   OLD:
-  #+BEGIN_SRC emacs-lisp  :tangle yes
+  #+BEGIN_SRC emacs-lisp  :tangle agda-next-700-module-systems.el
 (cl-defun instantiate (id)
 
   "Given an instance-declaration ‘id’, produce a new PackageFormer.
@@ -1077,7 +1079,7 @@ record NewName (Scalar : Set) (Vector : Set) : Set where
   begins with the name of the ~data~-type being defined, let's only keep those fields and drop the rest.
 
   First, a helper function.
-  #+BEGIN_SRC emacs-lisp :tangle yes
+  #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defun target (field)
   "Given a declaration “name : type0 → ⋯ → typeN”, yield “typeN”. "
   (ignore-errors (car (-take-last 1 (s-split "→" field))))
@@ -1241,7 +1243,7 @@ module Semantics₁ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) (I
 
  For now, a common scenario is forming modules that re-export a type under a new superficial disguise;
  e.g., in the setting where we want to have multiple references to a structure, as in when defining homomorphisms.
- #  :tangle yes
+ #  :tangle agda-next-700-module-systems.el
  #+BEGIN_SRC emacs-lisp exports both :results replace :wrap "src results-agda"
 (cl-defun instantiate-as-opening (decls inst)
 
@@ -1710,7 +1712,7 @@ the pattern of [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures
 | Results of tests and [[file:package-former.agda][examples]] will be in pink, like this. |
 
 #+TOC: headlines 3
-ho
+
 * Aim: /Scrap the Repetition/
   :PROPERTIES:
   :CUSTOM_ID: Aim---Scrap-the-Repetition-
@@ -1871,6 +1873,13 @@ If the previous section is unclear regarding the aims and uses of this prototype
 please consult the pre-print [[../papers/gpce19_a_language_feature_to_unbundle_data_at_will.pdf][A Language Feature to Unbundle Data at Will]]
 or [[https://alhassy.github.io/next-700-module-systems/][the next 700 module systems proposal]].
 
+:Hide:
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref std-𝒱-lib :noweb yes
+(defvar ♯standard-variationals 10
+  "The number of variationals exported with the PackageFormer system.")
+#+END_SRC
+:End:
+
 ** Installation
    :PROPERTIES:
    :CUSTOM_ID: Installation
@@ -1907,12 +1916,12 @@ Add the following to the top of your Emacs configuration file, i.e., the ~~/.ema
 (require 'subr-x)                ;; Extra Lisp functions; e.g., when-let.
 
 ;; Next, obtain the Elisp file, load it, and attach it to Agda.
-(unless (file-exists-p "~/.emacs.d/package-former.el")
+(unless (file-exists-p "~/.emacs.d/agda-next-700-module-systems.el")
   (shell-command (concat "curl "
-    "https://raw.githubusercontent.com/alhassy/next-700-module-systems/master/prototype/package-former.el"
-    ">> ~/.emacs.d/package-former.el")))
-(load-file "~/.emacs.d/package-former.el")
-;; (add-hook 'agda2-mode-hook #'package-former-mode)
+    "https://raw.githubusercontent.com/alhassy/next-700-module-systems/master/prototype/agda-next-700-module-systems.el"
+    ">> ~/.emacs.d/agda-next-700-module-systems.el")))
+(load-file "~/.emacs.d/agda-next-700-module-systems.el")
+;; (add-hook 'agda2-mode-hook #'agda-next-700-module-systems-mode)
 
 ;; Uncomment out the last line above if you want package-former
 ;; to ALWAYS be active on .agda files.
@@ -1922,12 +1931,12 @@ Add the following to the top of your Emacs configuration file, i.e., the ~~/.ema
                 (shell-command-to-string "/usr/local/bin/agda-mode locate")))
 #+END_SRC
 
-When you enable ~package-former-mode~:
+When you enable ~agda-next-700-module-systems-mode~,
 
 0. A menu-bar ~PackageFormers~ will be added.
 
 1. It will allow you to temporarily disable and enable this new feature,
-   as well as providing a help menu. Invoke ~M-x package-former-mode~ to toggle turning off this feature
+   as well as providing a help menu. Invoke ~M-x agda-next-700-module-systems-mode~ to toggle turning off this feature
    completely.
 
 2. The string icon ~PackageFormer (•̀ᴗ•́)و~ is displayed in the mode line ---near the bottom of Emacs.
@@ -2075,8 +2084,8 @@ by other Agda code, and otherwise leave it free standing.
 
    Let's start-off with a usual Agda header:
 #+BEGIN_SRC agda
-{- This loads the PackageFormer metaprogram                      -}
-{- (progn (load-file "package-former.el") (package-former-mode)) -}
+{- This loads the PackageFormer metaprogram; press C-x C-e after the closing “)” below.                 -}
+{- (progn (load-file "~/.emacs.d/agda-next-700-module-systems.el") (agda-next-700-module-systems-mode)) -}
 
 module package-former where
 
@@ -2486,28 +2495,18 @@ record Monoid-Record-cons : Set₁ where
    a graph-theoretic problem. In ~{-lisp ⋯ -}~ blocks we may have arbitrary Emacs Lisp code and so include
    the following ---which has a large number of shortcomings, but the aim is a simple demonstration of Lisp
    code for the Agda user, not to be robust Lisp code. The name, <<<graph-map>>>, may not be ideal but it seems good enough, for now.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref std-𝒱-lib :noweb yes
 ;; p ≈ symptom; f ≈ medicine; adj ≈ neighbouring dependency
 ;;
 (defun graph-map (p f adj xs)
-  "Map the nodes ‘xs’ satisfying ‘p’ by ‘f’.
-
-  ‘f’ is performed on nodes satisfying ‘p’,
-  all neighbours are then considered to satisfy p
-  and the process repeats recursively.
-
-  E.g., nodes exhibiting symptoms ‘p’ are given medicine ‘f’,
-  and their sickness spreads to their neighbours who in turn
-  become ill thereby requiring medication, and the process continues.
-
-  ‘adj’ is a binary relation denoting adjacency.
-  (adj x y)  ≈  x depends on, or is a neighbour, of y.
-  "
-
-  (let* (;; Using -map instead of -filter since nodes may become sickly later on, position matters.
+  "Map the nodes XS satisfying P by F along adjacency ADJ.
+<<docs('graph-map)>>"
+  (let* (;; Using -map instead of -filter since nodes may become
+         ;; sickly later on, position matters.
          (sickly (-map p xs))
          ;; Obtain the items that are currently ‘sickly’.
-         (get-sickly (lambda () (--filter it (--zip-with (when it other) sickly xs))))
+         (get-sickly (lambda ()
+                       (--filter it (--zip-with (when it other) sickly xs))))
          ;; infected x  ≡ x has a sickly neighbour
          (infected (λ x → (--any (funcall adj x it) (funcall get-sickly)))))
 
@@ -2519,11 +2518,35 @@ record Monoid-Record-cons : Set₁ where
 
      ;; Apply medication to sickly elements only.
      (--map (if (-contains-p (funcall get-sickly) it) (funcall f it) it) xs)))
-
-;; Example: A graph of 10 nodes, with an edge between multiples; where nodes 3,4,5 are initally ill.
-;; (graph-map (λ x → (-contains-p '(3 4 5) x)) (λ x → (format "medicated-%s" x)) (λ x y → (zerop (mod x y))) '(1 2 3 4 5 6 7 8 9 10))
-;; ⇒ (1 2 medicated-3 medicated-4 medicated-5 medicated-6 7 medicated-8 medicated-9 medicated-10)
 #+END_SRC
+
+Here's how this works ---the following is what the incantation
+above ~<<docs('graph-map)>>~ refers to, and the reader may ignore all ~<<…>>~
+as they are a backend ‘literate programming’ utility.
+
+#+name: graph-map
+- F is performed on nodes satisfying P,
+  all neighbours are then considered to satisfy P
+  and the process repeats recursively.
+
+-  E.g., nodes exhibiting symptoms P are given medicine F,
+  and their sickness spreads to their neighbours who in turn
+  become ill thereby requiring medication, and the process continues.
+
+- ADJ is a binary relation denoting adjacency.
+  + (adj x y)  ≈  “x depends on, or is a neighbour, of y.”
+
+- For example, a graph of 10 nodes, with an edge between multiples;
+  where nodes 3, 4, 5 are initally ill.
+
+  #+BEGIN_SRC emacs-lisp :tangle no
+   (graph-map (λ x → (-contains-p '(3 4 5) x))
+              (λ x → (format "medicated-%s" x))
+              (λ x y → (zerop (mod x y))) '(1 2 3 4 5 6 7 8 9 10))
+  ⇒
+    (1 2 medicated-3 medicated-4 medicated-5 medicated-6 7
+       medicated-8 medicated-9 medicated-10)
+  #+END_SRC
 
 Testing this graph-theoretic solution for our setting shows it to be a reasonable fit.
 #+BEGIN_SRC emacs-lisp :tangle no
@@ -2544,22 +2567,29 @@ Testing this graph-theoretic solution for our setting shows it to be a reasonabl
   by      = Set₁
 #+END_SRC
 
-Let's introduce a dedicated form for ~element~ values.
-#+BEGIN_SRC emacs-lisp  :tangle "variationals.tmp"
-(defmacro --graph-map (mark alter elements)
-  "Mark elements in a given list, and recursively mark all those that depend on them.
-   Return the list of elements with the marked ones being altered.
+Let's introduce a dedicated form for ~element~ values:
+#+name: --graph-map
+- Mark elements in a given list, and recursively mark all those that depend on
+  them.  Return the list of elements with the marked ones being altered.
 
-   ‘mark’ and ‘alter’ are expressions mentioning ‘it’,
-    and so are implicit functional expressions.
-  "
+- MARK and ALTER are expressions mentioning IT, a value of ELEMENTS,
+  and so are implicit functional expressions.
+#+BEGIN_SRC emacs-lisp  :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
+(defmacro --graph-map (mark alter elements)
+  "Recursively ALTER and MARK elements and their dependents.
+<<docs('--graph-map)>>"
   `(graph-map (λ it → ,mark)
               (λ it → ,alter)
-              ;; x depends on y  ≡  x mentions y, with all or no undescores, in its type or equations.
-              (λ x y → (or (s-contains? (s-replace "_" " " (element-name y)) (s-join " " (cons (element-type x) (element-equations x))))
-                           (s-contains? (element-name y) (s-join " " (cons (element-type x) (element-equations x))))))
-              ,elements
-              ))
+              ;; x depends on y  ≡  x mentions y, with all or no undescores,
+              ;;                    in its type or equations.
+              (λ x y →
+                 (or (s-contains? (s-replace "_" " " (element-name y))
+                                  (s-join " " (cons (element-type x)
+                                                    (element-equations x))))
+                     (s-contains? (element-name y)
+                                  (s-join " " (cons (element-type x)
+                                                    (element-equations x))))))
+              ,elements))
 #+END_SRC
 
 Now the previous example may be invoked as:
@@ -2573,7 +2603,7 @@ Now the previous example may be invoked as:
 #+END_SRC
 
 With these pieces in hand, let's form
-#+BEGIN_SRC  emacs-lisp  :tangle "variationals.tmp"
+#+BEGIN_SRC  emacs-lisp  :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 record (discard-equations nil) (and-names nil)
  = "Reify a variational as an Agda “record”.
 
@@ -2696,7 +2726,7 @@ M-Set-Typeclass₂ = M-Set record ⟴ typeclass₂
 In particular, the last example suggest that our composition is idempotent, but this is clearly not the case.
 Indeed, here's a pretty alternative to the meta-primitive ~:waist~ that is not ⟴-idempotent
 but is in-fact a homomorphism: ~unbundling n ⟴ unbundling m ≈ unbundling (n + m)~.
-#+BEGIN_SRC lisp :tangle "variationals.tmp"
+#+BEGIN_SRC lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 unbundling n
  = "Make the first N elements as parameters to the PackageFormer.
 
@@ -2756,9 +2786,6 @@ record MonoidT₅ (Carrier : Set) (_⨾_ : Carrier → Carrier → Carrier) (Id 
 ** Primed Decoration and ~rename-mixfix~
    :PROPERTIES:
    :CUSTOM_ID: Primed-Decoration-and--rename-mixfix-
-   :END:
-   :PROPERTIES:
-
    :END:
 
     When we have two occurrences of a structure, we may want one of them to be decorated
@@ -3023,7 +3050,7 @@ record M-Set0-Typeclass₃ (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vect
    # pertinent aspects of loading such declarations.
 
    Let's code up the priming operation as a reusable pattern ---call it ~map~.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 map elements (support-mixfix-names t)
    = "Apply function ELEMENTS that acts on PackageFormer elements,
       then propogate all new name changes to subsequent elements.
@@ -3082,7 +3109,7 @@ record MR𝕏 : Set₁ where
 
 Now for some useful corollaries.
 # For diversity, we render these in lisp-blocks.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 rename f (support-mixfix-names t)
   =  "Rename elements using a string-to-string function F acting on names.
 
@@ -3124,7 +3151,7 @@ record MR-oh : Set₁ where
 
 We would expect it to be common to prefix and suffix symbols, so let's make
 variationals for these patterns.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 decorated by
   = "Rename all elements by suffixing string BY to them."
      rename (λ name → (concat name by)))
@@ -3140,19 +3167,25 @@ variationals for these patterns.
 
 Likewise, for the casing approach, let's make a “to list”.
 For now, such lists are necessarily enclosed in double-quotes.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
-(defun reify-to-list (str &optional otherwise)
- "Given a string of “;”-separated items consisting of “to”-separated pairs,
+
+#+name: reify-to-list
+- Given a string of “;”-separated items consisting of “to”-separated pairs,
   interpret it as a Lisp function where “to”-pairs denote mapping clauses.
 
- E.g., “x₀ to y₀; …; xₙ to yₙ”
- becomes the function sending value xᵢ to yᵢ, and behaves as the identity function
- otherwise unless “otherwise” is provided, in which case it acts as a fallback.
+- E.g., “x₀ to y₀; …; xₙ to yₙ” becomes the function sending value xᵢ to yᵢ,
+  and behaves as the identity function otherwise unless OTHERWISE is provided,
+  in which case it acts as a fallback.
 
- Concretely:
-    (reify-to-list \"1 to x; 2 to y; p to q\")
-  ≈ (λ arg → (pcase arg (\"1\" \"x\") (\"2\" \"y\") (\"p\" \"q\") (otherwise otherwise)))
- "
+- Concretely:
+  #+BEGIN_SRC emacs-lisp :tangle no
+      (reify-to-list "1 to x; 2 to y; p to q")
+    ≈ (λ arg → (pcase arg ("1" "x") ("2" "y") ("p" "q") (otherwise otherwise)))
+  #+END_SRC
+
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
+(defun reify-to-list (str &optional otherwise)
+ "Transform “to list” STR with default OTHERWISE into a Lisp function.
+<<docs('reify-to-list)>>"
  (let (clauses (fallback (or otherwise 'otherwise)))
    (thread-last str
      (s-split ";")
@@ -3171,15 +3204,19 @@ instead of forcing users to produce functions explicitly.
 
 We may also prefer writing ~subscriptedᵢ~ rather than ~decorated "ᵢ"~.
 With a bit of Lisp meta-programming, we can generate these variationals.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (defun to-subscript (n)
-  "Associate a digit ‘n’ with its subscript."
-  (nth n '("₀" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉")))
+  "Associate digit N with its subscript.
 
+If N ∈ 0..9, then yield ₙ, else N."
+
+  (or (nth n '("₀" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉")) n))
+
+;; Let's make a family of variationals.
 (loop for i from 0 to 9
-      do (let* ((ᵢ    (to-subscript i))
-               (docs (format "Subscript all elementes by suffixing them with %s." i)))
-               (eval `(𝒱 ,(intern (format "subscripted%s" ᵢ)) = ,docs decorated ,ᵢ))))
+      for ᵢ    = (to-subscript i)
+      for docs = (format "Subscript all elementes by suffixing them with %s." i)
+      do (eval `(𝒱 ,(intern (format "subscripted%s" ᵢ)) = ,docs decorated ,ᵢ)))
 #+END_SRC
 
 Here are some example uses.
@@ -3261,9 +3298,9 @@ Some observations are in order:
    No more bending to the will of language designers! More power to the user!
 
    For example, we can codify the previous ~NearMonoid~ scheme into a top-level pattern.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (defun is-sort (element)
-  "Check whether the target of ‘element’s type is “Set”. "
+  "Check whether the target of ELEMENT’s type is ‘Set’."
   (s-contains? "Set" (target (element-type element))))
   ;; Method ‘target’ is defined in the next subsection, on ADTs.
 
@@ -3306,11 +3343,12 @@ Since ~data~ declarations consist of constructors, whose target type necessarily
 begins with the name of the ~data~-type being defined, let's only keep those fields and drop the rest.
 To do so, we use the helper function ~target~ which takes a declaration ~name : type0 → ⋯ → typeN~ and yields ~typeN~.
 
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (defun target (thing)
-  " Given a type-name ‘[name :] τ₀ → ⋯ → τₙ’, yield ‘τₙ’;
-    the ‘name’ porition is irrelevant.
-  "
+  "Return final type mentioned in THING, a string declaration.
+
+Given a type-name ‘[name :] τ₀ → ⋯ → τₙ’, yield ‘τₙ’;
+the ‘name’ porition is irrelevant."
   (car (-take-last 1 (s-split "→" thing))))
 #+END_SRC
 
@@ -3319,7 +3357,7 @@ keep only those elements that target it. Finally, as data constructor must targe
 type being defined, we alter the filtered elements by changing every instance of the
 carrier name with the name of the newly defined PackageFormer ---which we may access
 using the special identifier ~$𝑛𝑎𝑚𝑒~. In a ~lisp~ block, we formalise this algorithm as follows.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 data carrier
   = "Reify as an Agda “data” type.
 
@@ -3407,7 +3445,7 @@ data No : Set where
     then traverses the elements list, adding all elements needed to ensure that list
     is coherent. Moreover, for generality, we consider a predicate rather than an explicit
     listing of items to be retained.
-#+BEGIN_SRC  emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC  emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 generated by
   = "Keep the largest well-formed PackageFormer whose elements satisfy BY.
 
@@ -3431,7 +3469,7 @@ data No : Set where
 #+END_SRC
 
 Here's an immediate application: Obtaining the types declared in a grouping mechanism.
-#+BEGIN_SRC emacs-lisp  :tangle  "variationals.tmp"
+#+BEGIN_SRC emacs-lisp  :tangle  "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 sorts
  = "Obtaining the types declared in a grouping mechanism.
 
@@ -3465,11 +3503,11 @@ record MonoidSignature : Set₁ where
 
 This pattern of having a lawless grouping seems sufficiently desirable that we may
 codify it.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (defun targets-a-sort (element)
-  "Checks whether the given ‘element’ targets
-   any of the sorts of the *current* PacakgeFormer.
-   "
+  "Check whether the given ELEMENT targets a sort.
+
+The sorts considered refer to those of the *current* PacakgeFormer."
   (--any (s-contains? it (target (element-type element)))
          (-map #'element-name (-filter #'is-sort $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠))))
 
@@ -3532,7 +3570,7 @@ module Neato (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vector → Vector)
 #+END_SRC
 
    One-hundred: A one-parameter module where elements may be renamed.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 open with (avoid-mixfix-renaming nil)
   =
     "Reify a given PackageFormer as a *parameterised* Agda “module” declaration.
@@ -3594,7 +3632,7 @@ module M-Set-R₁ (Arg6926 : M-Set-R) where
 
   It is common in Agda to provide “to”-lists, so let's provide a variant that supports those
   instead of forcing users to produce functions explicitly.
-  #+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+  #+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 opening with
   = "Open a record as a module exposing only the names mentioned in WITH.
 
@@ -3627,7 +3665,7 @@ Let's provide an even more common feature: Opening records with a decoration.
 For example, when we have two algebraic structures, we might want the first to be subscripted with ₁
 and the second with ₂ ---this is different than ~subscriptedᵢ~ from above, which produces a /new/ record
 rather than opening it with renames.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 open-with-decoration ddd
   = "Open a record, exposing all elements, with decoration DDD.
 
@@ -3731,29 +3769,28 @@ new pacaking mechanisms. They are a terminal construction.
 #+END_SRC
 
     With this as a specification, in a ~lisp~ block:
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
-(defun to-subscript (n)
-  "If i ∈ 0..9, then yield ᵢ, else i."
-  (if (not (< -1 i 10))
-      (format "%s" i)
-    (nth n '("₀" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉"))))
-
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (defun homify (element sort)
   "Given a typed name, produce the associating “preservation” formula.
-   E.g.,
-          _·_    : Scalar → Vector → Vector
-          pres-· : {x₁ : Scalar} → {x₂ : Vector} → map₂ (x₁ · x₂) = map₁ x₁ ·′ map₂ x₂
 
-  Type τ gets variable xᵢ provided (i, τ) ∈ sorts; likewise we think of mapᵢ : τ → τ′.
-  Notice that the target name is primed, “·′”.
-  "
+E.g.,
+  _·_    : Scalar → Vector → Vector
+  pres-· : {x₁ : Scalar} → {x₂ : Vector} → map₂ (x₁ · x₂) = map₁ x₁ ·′ map₂ x₂
+
+
+Type τ gets variable xᵢ provided (i, τ) ∈ SORT;
+likewise we think of mapᵢ : τ → τ′.
+Notice that the target name is primed, “·′”
+
+ELEMENT is the typed-name and SORT is the alist of numbered sorts."
   (letf* ((sorts     (mapcar #'car sort))
-          ((symbol-function 'index) (lambda (s) (to-subscript (cdr (assoc it sort)))))
+          (index     (λ it → (to-subscript (cdr (assoc it sort)))))
 
           (tn→       (s-split " → " (element-type element)))
           (arg-count (1- (length tn→)))
 
-          (all-indicies  (--map (index it) (--filter (member (s-trim it) sorts) tn→)))
+          (all-indicies  (mapcar index
+                                 (--filter (member (s-trim it) sorts) tn→)))
           (indicies  (-drop-last 1 all-indicies))
           (tgt-idx   (car (-take-last 1 all-indicies)))
 
@@ -3768,7 +3805,8 @@ new pacaking mechanisms. They are a terminal construction.
           (target    (format "  %s   ≡   %s" lhs rhs)))
 
     ;; Change the target type.
-    (setq tn→ (--map (when (assoc it sort) (format "{x%s : %s}" (index it) it)) tn→))
+    (setq tn→ (--map (when (assoc it sort)
+                       (format "{x%s : %s}" (funcall index it) it)) tn→))
     (setf (nth arg-count tn→) target)
 
     ;; Stick it all together, with an updated name.
@@ -3778,7 +3816,7 @@ new pacaking mechanisms. They are a terminal construction.
 #+END_SRC
 
     Then, we form the variational as follows ---also in a ~lisp~ block.
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp"
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 hom
   = "Formulate the notion of homomorphism of $𝑝𝑎𝑟𝑒𝑛𝑡 algebras.
 
@@ -4115,8 +4153,8 @@ First we include an Emacs Lisp [[https://www.gnu.org/software/emacs/manual/html_
 be distributed with Emacs's largest package repository, MELPA.
 Installing this package, from within Emacs, also automatically installs its dependencies,
 recursively.
-#+BEGIN_SRC emacs-lisp :tangle yes
-;;; package-former.el --- Making Modules with Meta-Programmed Meta-Primitives, for Agda
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+;;; agda-next-700-module-systems.el --- Making Modules with Meta-Programmed Meta-Primitives, for Agda
 
 ;; Author: Musa Al-hassy <alhassy@gmail.com>
 ;; Version: 1.0
@@ -4147,6 +4185,10 @@ recursively.
 ;; declared as a field or as a parameter no longer needs to be performed
 ;; prematurely but rather may be selected when necessary.
 
+;; We cannot use lexical binding since the package provides a macro called 𝒱
+;; that acts as an interface for a DSL that generates Lisp functions
+;; which requires EVAL to bind staged formal arguments to their runtime values.
+
 ;; This el file has been tangled from a literate, org-mode, file.
 ;; See the documentation on:
 ;; https://alhassy.github.io/next-700-module-systems/prototype/package-former.html
@@ -4155,7 +4197,7 @@ recursively.
 #+END_SRC
 
 First some useful libraries:
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 ;; String and list manipulation libraries
 ;; https://github.com/magnars/dash.el
 ;; https://github.com/magnars/s.el
@@ -4165,34 +4207,40 @@ First some useful libraries:
 (require 'origami)         ;; Folding away regions of text
 (require 'subr-x)          ;; Extra Lisp functions; e.g., ‘when-let’.
 (require 'ert)             ;; Testing framework; ‘should’ for assertions
+(require 'cl-lib)          ;; New Common Lisp library; ‘cl-???’ forms.
 #+END_SRC
 
-** Typing mechanism
+** COMMENT Typing mechanism :avoiding_this_for_now:
    :PROPERTIES:
    :CUSTOM_ID: Typing-mechanism
    :END:
-   :PROPERTIES:
 
-   :END:
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+NAME: declare-type
+Attach the given list of types to the function ‘F’
+by advising the function to check its arguments’ types
+are equal to the list of given types.
+
+#+NAME: declare-type
+We name the advice ‘⟪f⟫-typing-advice’ so that further
+invocations to this macro overwrite the same advice function
+rather than introducing additional, unintended, constraints.
+
+#+NAME: declare-type
+Using type specifiers we accommodate for unions of types
+and subtypes, etc ♥‿♥.
+
+#+NAME: declare-type
+‘key-types’ should be of the shape (:x₀ t₀ ⋯ :xₙ tₙ);
+when there are no optional types, use symbol “:”.
+
+#+NAME: declare-type
+E.g., (pf--declare-type my-func (:z string :w integer) integer symbol string)
+
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 ;; Crashes if an argument is ":"
 (cl-defmacro pf--declare-type (f key-types &rest types)
-  "Attach the given list of types to the function ‘f’
-   by advising the function to check its arguments’ types
-   are equal to the list of given types.
-
-   We name the advice ‘⟪f⟫-typing-advice’ so that further
-   invocations to this macro overwrite the same advice function
-   rather than introducing additional, unintended, constraints.
-
-   Using type specifiers we accommodate for unions of types
-   and subtypes, etc ♥‿♥.
-
-   ‘key-types’ should be of the shape (:x₀ t₀ ⋯ :xₙ tₙ);
-    when there are no optional types, use symbol “:”.
-
-    E.g., (pf--declare-type my-func (:z string :w integer) integer symbol string)
-  "
+  "Attach run-time typechecking to a function.
+<<docs('declare-type)>>"
 
   ;; Basic coherency checks. When there aren't optional types, key-types is the “:” symbol.
   (should (and (listp types) (or (listp key-types) (symbolp key-types))))
@@ -4231,15 +4279,15 @@ First some useful libraries:
            (error "%s: Insufficient number of arguments; given %s, %s, but %s are needed."
                   (function ,f) (length pos-args) pos-args ,num-of-types))
          (loop for (ar ty pos) in (-zip pos-args (quote ,types) (number-sequence 0 ,num-of-types))
-               do (shucks ty (format "for argument %s" pos) ar))
+               do (funcall shucks ty (format "for argument %s" pos) ar))
 
          ;; Check the types of *present* keys.
          (loop for (k . v) in key-args
-               do (shucks (cdr (assoc k (quote ,key-types))) k v))
+               do (funcall shucks (cdr (assoc k (quote ,key-types))) k v))
 
          ;; Actually execute the orginal function on the provided arguments.
          (setq fun-result (apply orig-fun args))
-         (shucks (quote ,result-type) "for the result type (!)" fun-result)
+         (funcall shucks (quote ,result-type) "for the result type (!)" fun-result)
 
          ;; Return-value should be given to caller.
          fun-result))
@@ -4254,9 +4302,6 @@ First some useful libraries:
 ** Finding Children in the Wild
    :PROPERTIES:
    :CUSTOM_ID: Finding-Children-in-the-Wild
-   :END:
-   :PROPERTIES:
-
    :END:
 
 Being a prototype, we are talking a mostly string-based approach to working
@@ -4304,49 +4349,57 @@ Here's my intuitive algorithm: We obtain the indentation of the first child,
 then all subsequent lines with at least that much indentation have the same ancestor.
 
 {{{fold(get-indentation Implementation)}}}
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 ;; (pf--declare-type pf--get-indentation : string integer)
 (defun pf--get-indentation (string)
-  "How many spaces are there at the front of ‘string’?
+  "How many spaces are there at the front of STRING?
 
-  Property: The resulting number is ‘≤ length string’.
-  "
+Property: The resulting number is ≤ length STRING."
   (if string (length (s-shared-start string (s-repeat (length string) " "))) 0))
 #+END_SRC
 {{{end-fold}}}
 
 {{{fold(get-children Implementation)}}}
+
+#+NAME: get-children
+Go into ‘the-wild’ seeking out the first occurence of ‘parent’,
+who once found, ought to have a minimal indentation for its children.
+
+#+NAME: get-children
+“Minimal” in that if there are items with a greater indentation,
+then they are children of children and should be kept.
+
+#+NAME: get-children
+The first input argument is of type ‘string’,
+the second argument may be of type ‘string’ or ‘list’ of strings
+---if it's a string, we split along new lines---,
+the optional ‘then’ is a function acting on children strings.
+
+#+NAME: get-children
+Result is the parent followed by its children, as a list of lines,
+where each child has been altered using the optional THEN function.
+Moreover, we also return the rest of the unconsidered portion of THE-WILD:
+
+#+NAME: get-children
+Result list: (unconsidered-prefix-of-the-wild
+              (cons parent-line children-lines)
+              unconsidered-remaining-lines)
+
+#+NAME: get-children
+The first element is the porition that does not contain an occurence
+of PARENT.  The second is the parent and its children, if possible.
+The third is the remainder of THE-WILD.
+
+#+NAME: get-children
+Implementation: Look at the indentation of the
+first child, then use that as a lower bound to find the indentation
+of the remaining children.
+
 # (pf--declare-type get-children (:then t) string (or string list) cons)
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (cl-defun pf--get-children (parent the-wild &key (then #'identity))
-  "Go into ‘the-wild’ seeking out the first occurence of ‘parent’,
-   who once found, ought to have a minimal indentation for its children.
-
-   “Minimal” in that if there are items with a greater indentation,
-    then they are children of children and should be kept.
-
-   The first input argument is of type ‘string’,
-   the second argument may be of type ‘string’ or ‘list’ of strings
-   ---if it's a string, we split along new lines---,
-   the optional ‘then’ is a function acting on children strings.
-
-   Result is the parent followed by its children, as a list of lines,
-   where each child has been altered using the optional ‘then’ function.
-   Moreover, we also return the rest of the unconsidered portion of ‘the-wild’:
-
-   Result list: (  unconsidered-prefix-of-the-wild
-           (cons parent-line children-lines)
-           unconsidered-remaining-lines )
-
-   The first element is the porition that does not contain an occurence
-   of ‘parent’. The second is the parent and its children, if possible.
-   The third is the remainder of the wild.
-
-   Implementation: Look at the indentation of the
-   first child, then use that as a lower bound to find the indentation
-   of the remaining children.
-  "
-
+  "Returns indented text under a PARENT line.
+<<docs('get-children)>>"
   (let ((lines (if (stringp the-wild) (s-lines the-wild) the-wild))
         (indentation -1)
         unconsidered
@@ -4369,14 +4422,16 @@ then all subsequent lines with at least that much indentation have the same ance
     (setq indentation (pf--get-indentation (car lines)))
 
     ;; Keep only the children that have at least this level of indentation.
-    (setq lines&more (--split-with (<= indentation (pf--get-indentation it)) lines))
+    (setq lines&more
+          (--split-with (<= indentation (pf--get-indentation it)) lines))
     (setq lines (car lines&more))
     (setq unconsidered (cadr lines&more))
 
     ;; Alter the children according to the given function.
     (setq lines (mapcar then lines))
 
-    ;; Yield the parent line along with the children lines; and the unconsumed wild's prefix and suffix.
+    ;; Yield the parent line along with the children lines;
+    ;; and the unconsumed wild's prefix and suffix.
     `(,prefix ,(cons parent-line lines) ,unconsidered)))
 #+END_SRC
 {{{end-fold}}}
@@ -4484,22 +4539,17 @@ why tests fail.
       (should (equal parent (caadr cs)))
 
       ;; The children all have the same indentation.
-      (loop for c in children for d in children do (should (equal (pf--get-indentation c) (pf--get-indentation d))))
+      (loop for c in children for d in children
+            do (should (equal (pf--get-indentation c) (pf--get-indentation d))))
 
       ;; Extensionality: Orginal input can be regained from resulting parts.
-      (should (equal eh (s-trim (s-join "\n" (--map (s-join "\n" it) cs)))))
-    )
-  )
-))
+      (should (equal eh (s-trim (s-join "\n" (--map (s-join "\n" it) cs)))))))))
 #+END_SRC
 {{{end-fold}}}
 
 ** Substrings Delimited by Tokens
    :PROPERTIES:
    :CUSTOM_ID: Substrings-Delimited-by-Tokens
-   :END:
-   :PROPERTIES:
-
    :END:
 
 #+begin_center
@@ -4515,29 +4565,29 @@ utilities, so that we can work with higher-level abstract datatypes.
   this operation takes a string of the form  ~⋯‘prefix’⟪needle⟫‘suffix’⋯~ and yields ~needle~.
 
 {{{fold(substring-delimited Implementation)}}}
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; This may accept argument ":", which “pf--declare-type” cannot currently handle.
-(cl-defun pf--substring-delimited
-    (prefix suffix string)
-  "Assuming ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle.
 
-    NOTE: Delimiters ‘prefix’ and ‘suffix’ may be empty.
+#+NAME: substring-delimited
+We convert all adjacent whitespace
+characters to a single space in the input STRING and trim any surrounding
+whitespace from the resulting output needle string.
 
-  We convert all adjacent whitespace
-  characters to a single space in the input ‘string’ and trim any surrounding
-  whitespace from the resulting output needle string.
-  "
+ - NOTE: Delimiters PREFIX and SUFFIX may be empty.
 
-  (unless (stringp string) (error "pf--substring-delimited: Argument ‘string’ must be a string."))
+# ;; This may accept argument ":", which “pf--declare-type” cannot currently handle.
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(cl-defun pf--substring-delimited (prefix suffix string)
+  "Assuming “STRING ≈ ⋯PREFIX⟪needle⟫SUFFIX⋯”, return the first such needle.
+<<docs('substring-delimited)>>"
+
+  (unless (stringp string)
+    (error "PF--SUBSTRING-DELIMITED: Argument STRING must be a string"))
   (let* ((new (s-collapse-whitespace string)))
-
-  (when (not (s-blank? prefix))
-    (setq new (car (-take-last (if (equal prefix suffix) 2 1) (s-split prefix new)))))
-
-  (when (not (s-blank? suffix))
-    (setq new (car (s-split suffix new))))
-
-  (s-trim new)))
+    (when (not (s-blank? prefix))
+      (setq new (car (-take-last
+                      (if (equal prefix suffix) 2 1) (s-split prefix new)))))
+    (when (not (s-blank? suffix))
+      (setq new (car (s-split suffix new))))
+    (s-trim new)))
 #+END_SRC
 
 # TODO: broken
@@ -4553,7 +4603,8 @@ utilities, so that we can work with higher-level abstract datatypes.
                ( "" "∞"  ,str          :BogusR)
                ( "𝟠" "∞" ,str          :BogusLR)
              )
-      do (should (equal (third it) (pf--substring-delimited (first it) (second it) str))))
+      do (should (equal (third it)
+                        (pf--substring-delimited (first it) (second it) str))))
 
     (should (equal "𝟛" (pf--substring-delimited "𝟚" "𝟜" str)))
 
@@ -4572,21 +4623,30 @@ utilities, so that we can work with higher-level abstract datatypes.
 # (pf--substring-delimited-here "PackageFormer $here :" "PackageFormer 𝒫 : Set")
 
 {{{fold(pf--substring-delimited-here Implementation)}}}
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; This may accept argument ":", which “pf--declare-type” cannot currently handle.
-(cl-defun pf--substring-delimited-here (context string)
-  "Assuming ‘context’ = “⟪prefix⟫ $here ⟪suffix⟫”
-   and ‘string’ ≈ ⋯‘prefix’⟪needle⟫‘suffix’⋯, return the /first/ such needle.
 
-  NOTE: ⟪prefix⟫ and ⟪suffix⟫ cannot be empty strings!
+#+Name: substring-delimited-here
+- That is, assuming “CONTEXT ≈ PREFIX $here SUFFIX”
+  and “STRING ≈ ⋯PREFIX ⟪needle⟫ SUFFIX⋯”, return the /first/ such needle.
 
-  We convert all adjacent whitespace
+  That is, we place template CONTEXT “on top of” provide STRING,
+  then return whatever falls under position ‘$here’.
+
+- NOTE: PREFIX and SUFFIX cannot be empty strings!
+
+- We convert all adjacent whitespace
   characters to a single space in the input ‘string’ and trim any surrounding
   whitespace from the resulting output needle string.
-  "
+
+#  ;; This may accept argument ":", which “pf--declare-type” cannot currently handle.
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(cl-defun pf--substring-delimited-here (context string) "\
+Assuming “CONTEXT ≈ PREFIX $here SUFFIX” yield the value of needle ‘$here’.
+<<docs('substring-delimited-here)>>"
 
   (-let [pre-post (s-split "$here" context)]
-    (pf--substring-delimited (s-trim (car pre-post)) (s-trim (cadr pre-post)) string)))
+    (pf--substring-delimited (s-trim (car pre-post))
+                             (s-trim (cadr pre-post))
+                             string)))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp :tangle no
@@ -4601,7 +4661,8 @@ utilities, so that we can work with higher-level abstract datatypes.
                ( "$here ∞"   ,str          :BogusR)
                ( "𝟠 $here ∞" ,str          :BogusLR)
              )
-      do (should (equal (second it) (pf--substring-delimited-here (first it) str))))
+      do (should (equal (second it)
+                        (pf--substring-delimited-here (first it) str))))
 
     ;; Longest substring
     (should (equal "𝟛" (pf--substring-delimited-here "𝟚 $here 𝟜" str)))
@@ -4651,22 +4712,31 @@ To that end, we propose that our fictitious syntax be directly embedded via spec
   - Cursor position is saved.
   - This function let's us obtain the contents of /all/ 700-comments.
 
+Where we have the following value:
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(defvar pf-folding nil
+  "Should 700 and Lisp blocks be folded away when 𝑪-𝑐 𝑪-𝑙.")
+#+END_SRC
+
 {{{fold(pf--buffer-substring-delimited Implementation)}}}
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; pf--declare-type has no support for optionals yet
-(cl-defun pf--buffer-substring-delimited (start end &optional more &key (regexp t))
-  "
-  Get the current buffer's /next/ available substring that is delimited
-  between the regexp tokens ‘start’ up to ‘end’, exclusively.
+#+name: buffer-substring-delimited
+- Get the current buffer's /next/ available substring that is delimited
+  between the regexp tokens START up to END, exclusively.
 
-  If no tokens are found, an error is thrown.
+- If no tokens are found, an error is thrown.
 
-  ‘more’ is a function that is called on the found instance:
+- MORE is a function that is called on the found instance:
   It is a function of the start and end positions of the occurance.
 
-  ‘regexp’ indicates whether we are using regular expression strings, or literals.
-   It is ‘nil’ by default.
-  "
+- REGEXP indicates whether we are using regular expression strings, or literals.
+   It is nil by default.
+
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+;; pf--declare-type has no support for optionals yet
+(cl-defun pf--buffer-substring-delimited
+    (start end &optional more &key (regexp t))
+  "Return next delimited substring in the current buffer.
+<<docs('buffer-substring-delimited)>>"
   (let (start-pos end-pos sp ep content)
     (if regexp (re-search-forward start) (search-forward start))
     (setq start-pos (point))
@@ -4687,28 +4757,25 @@ To that end, we propose that our fictitious syntax be directly embedded via spec
 #+END_SRC
 {{{end-fold}}}
 
-Where we have the following value:
-#+BEGIN_SRC emacs-lisp :tangle yes
-(defvar pf-folding nil
-  "Should 700 and lisp blocks be folded away when C-c C-l.")
-#+END_SRC
-
 {{{fold(pf--buffer-substring-delimited-whole-buffer Implementation)}}}
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+name: buffer-substring-delimited-whole-buffer
+- Return a list of all substrings in the current buffer that
+  are delimited by regexp tokens START and END, exclusively.
+
+- MORE is a function that is called on the found instance:
+  It is a function of the start and end positions of the occurance.
+
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 ;; pf--declare-type has no support for optionals yet
 (cl-defun pf--buffer-substring-delimited-whole-buffer (start end &optional more)
-  "Return a list of all substrings in the current buffer that
-   are delimited by regexp tokens ‘start’ and ‘end’, exclusively.
-
-  ‘more’ is a function that is called on the found instance:
-  It is a function of the start and end positions of the occurance.
-  "
+  "Return all delimited substrings in the current buffer.
+<<docs('buffer-substring-delimited-whole-buffer)>>"
   ;; Colour 700 keywords red “'error”
   (highlight-phrase start 'error)
   (highlight-phrase end 'error)
   (save-excursion
     (let ((l nil) (continue t))
-     (beginning-of-buffer)
+     (goto-char (point-min))
 
      (while continue
        (condition-case nil
@@ -4738,32 +4805,36 @@ Here are some possible invocations, the last one being our use case.
    :PROPERTIES:
    :CUSTOM_ID: Agda-Mixfix-Renaming-and-Imports
    :END:
-   :PROPERTIES:
-
-   :END:
    Renamaing Agda mixifix names where the rename operation ignores the outermost
    position markers ‘_’.
-#+BEGIN_SRC emacs-lisp :tangle yes
+
+#+name: rename-mixfix
+- Given an Agda mixfix operator OP, apply a function on strings F on
+  the inner-most delimiting tokens of the operator, in-particular ignoring
+  outer argument markers ‘_’.
+
+- For example, if you wish to decorate an operator with a prime or a subscript,
+  we cannot simply catenate else we obtain “_⊕_₁” rather than “_⊕₁_”.
+
+- Here are some sample results, assuming “f ≈ (λ it → (format “₀%s¹” it))”:
+  +  _⊕_     ↦  _₀⊕¹_
+  + _[_⊗_]  ↦  _₀[_⊗_]¹
+  + he_lo   ↦  ₀he_lo¹
+  + he-lo   ↦  ₀he-lo¹
+
+- AVOID-MIXFIX-RENAMING is optional; by default renaming “jumps over”
+  underscores, but providing a non-nil value for this argument leaves
+  underscores alone.
+
+  It is a matter of having, say, default “_⊕ₙ_” versus “_⊕_ₙ”.
+
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defun rename-mixfix (f op &optional avoid-mixfix-renaming)
-  "Given an Agda mixfix operator, apply a function on strings ‘f’ on
-   the inner-most delimiting tokens of the operator, in-particular ignoring
-   outer argument markers ‘_’.
-
-   For example, if you wish to decorate an operator with a prime or a subscript,
-   we cannot simply catenate else we obtain “_⊕_₁” rather than “_⊕₁_”.
-
-   Here are some sample results, assuming “f ≈ (λ (it) (format “₀%s¹” it))”:
-   _⊕_     ↦  _₀⊕¹_
-   _[_⊗_]  ↦  _₀[_⊗_]¹
-   he_lo   ↦  ₀he_lo¹
-   he-lo   ↦  ₀he-lo¹
-
-   AVOID-MIXFIX-RENAMING is optional; by default renaming “jumps over” underscores,
-   but providing a non-nil value for this argument leaves underscores alone.
-   It is a matter of having, say, default “_⊕ₙ_” versus “_⊕_ₙ”.
-  "
-
-  (let* ((parts (s-split "_" op)) (front (s-blank? (first parts))) (rear (s-blank? (car (last parts)))))
+  "Rename an operation by “leaping over” Agda positional markers.
+<<docs('rename-mixfix)>>"
+  (let* ((parts (s-split "_" op))
+         (front (s-blank? (first parts)))
+         (rear (s-blank? (car (last parts)))))
 
     (if avoid-mixfix-renaming
         (funcall f op)
@@ -4779,7 +4850,7 @@ Here are some possible invocations, the last one being our use case.
 We also want to prefix the generated file with the imports of the current file.
 # ;; (pf--declare-type extract-imports : string)
 {{{fold(extract-imports Implementation)}}}
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defvar pf-generated-suffix "-generated"
   "The suffix applied to a file's name to produce it's generated counterpart.")
 
@@ -4791,8 +4862,8 @@ We also want to prefix the generated file with the imports of the current file.
 
 (cl-defun pf--extract-imports ()
   "Return substring of buffer whose lines mention “import”.
-   Throw away any that mention the substring “⟪FileName⟫_Generated”.
-  "
+
+Throw away any that mention the substring “⟪FileName⟫-generated”."
   (thread-last (buffer-substring-no-properties (point-min) (point-max))
     (s-split "\n")
     (--filter (s-contains? "import " it))
@@ -4807,24 +4878,21 @@ So much string meddling, hopefully no more 🙈 :hear_no_evil: :speak_no_evil:
    :PROPERTIES:
    :CUSTOM_ID: -λ--for-the-Agda-User
    :END:
-   :PROPERTIES:
-
-   :END:
 
    Let's make this prototype more accessible to the Agda user
    by providing an abbreviation of Lisp functions ~(lambda (x₀ … xₙ) body)~
    into the Agda-like syntax ~(λ x₀ ⋯ xₙ → body)~.
 
- #+BEGIN_SRC emacs-lisp :tangle yes
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defmacro λ (&rest body)
   "Implementing Agda style, interactive, lambdas; ideally for inline use:
 
-   “λ α β … ω → body”  becomes an interactive function with arguments α, …, ω.
+“λ α β … ω → BODY”  becomes an interactive function with arguments α, …, ω.
 
-   The args list may be empty, in which case the separator “→” may be omitted
-   entirely, if desired.
-  "
+The args list may be empty, in which case the separator “→” may be omitted
+entirely, if desired.
 
+A BODY must always be supplied, even if the literal nil."
   (let* ((parts (-split-on '→ body)) args rest)
 
     (if (<= 2 (length parts))
@@ -4832,16 +4900,12 @@ So much string meddling, hopefully no more 🙈 :hear_no_evil: :speak_no_evil:
          ;; Otherwise, only one part was found ---no arguments were provided.
          (setq args nil) (setq rest (car parts)))
 
-   `(lambda ,args (interactive) ,@rest)
-  ))
+   `(lambda ,args (interactive) ,@rest)))
  #+END_SRC
 
 * The ~package-former~ Datatype
   :PROPERTIES:
   :CUSTOM_ID: The--package-former--Datatype
-  :END:
-  :PROPERTIES:
-
   :END:
 
 For this prototype's constraints, a PackageFormer will generally declared as
@@ -4854,28 +4918,29 @@ The body, ~⋮~, of such a declaration consists of a number of name-type declara
 and, equations ---*not yet supported*--- so let's form a type to work with these
 components rather than meddle with strings all the time.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+name: package-former
+- ‘docstring’: Relevant documentation about this structure; e.g.,
+   what is the instance declaration that generated this type, if any.
+
+- ‘kind’: PackageFormer, record, data, module, function, etc.
+
+- ‘name’: The name of the grouping mechanism schema.
+
+- ‘level’: The universe level that the instantiations will inhabit.
+       The universe level of the PackageFormer.
+
+- Finally, the children fields are the typed-names that constitute the body of the
+  grouping mechanism. As long as consistent indentation is selected, it does not matter how much.
+  As such, we keep track of these indentation numerics ourselves in case we need to tweak them.
+
+- The first ‘waist’-many elements are considered parameters.
+
+TODO: Eventually need to support variations?
+
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defstruct pf--package-former
   "Record of components that form a PackageFormer.
-
-   - ‘docstring’: Relevant documentation about this structure; e.g.,
-      what is the instance declaration that generated this type, if any.
-
-   - ‘kind’: PackageFormer, record, data, module, function, etc.
-
-   - ‘name’: The name of the grouping mechanism schema.
-
-   - ‘level’: The universe level that the instantiations will inhabit.
-          The universe level of the PackageFormer.
-
-   - Finally, the children fields are the typed-names that constitute the body of the
-     grouping mechanism. As long as consistent indentation is selected, it does not matter how much.
-     As such, we keep track of these indentation numerics ourselves in case we need to tweak them.
-
-   - The first ‘waist’-many elements are considered parameters.
-
-   TODO: Eventually need to support variations?
-  "
+<<docs('package-former)>>"
   docstring
   kind
   name
@@ -4890,9 +4955,20 @@ components rather than meddle with strings all the time.
 #+END_SRC
 
 We will keep track of all such declarations in a global list.
-#+BEGIN_SRC emacs-lisp  :tangle yes
+#+BEGIN_SRC emacs-lisp  :tangle agda-next-700-module-systems.el
 (defvar pf--package-formers nil
   "The list of PackageFormer schema declarations in the current Agda buffer.")
+#+END_SRC
+
+Let's also declare a global variable for keeping track of whether 700-syntactical
+should be coloured or not. Below we use a particular set of default colours.
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(defvar pf-highlighting t
+  "Should PackageFormer syntactical items be coloured?
+
+➩ Yellow for PackageFormer content.
+➩ Red for delimiters 700 and Lisp.
+➩ Green for names of variationals.")
 #+END_SRC
 
 ** Locally Opening a PackageFormer
@@ -4904,10 +4980,10 @@ We will keep track of all such declarations in a global list.
    :END:
 It will get rather redundant to write ~(pf--package-former-X p)~ to project the constituents of a PackageFormer ~p~. As such, let's introduce
 a useful macro to “open p” locally.
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 ;; An anaphoric macro ^_^
 (defmacro pf--open-pf (p &rest body)
-  "Open a package-former so no qualiiers are required."
+  "Open a package-former P so no qualifiers are required in form BODY."
   `(let*
     ((docstring             (pf--package-former-docstring ,p))
      (kind                  (pf--package-former-kind ,p))
@@ -4916,14 +4992,9 @@ a useful macro to “open p” locally.
      (waist                 (pf--package-former-waist ,p))
      (indentation           (pf--package-former-indentation ,p))
      (elements              (pf--package-former-elements ,p))
-
-    ;; ‼ TODO: MA: Eventually need to support variations?
-
-    (parameters            (-take waist elements))
-    (fields                (-drop waist elements)))
-    ,@body
-  )
-)
+     (parameters            (-take waist elements))
+     (fields                (-drop waist elements)))
+    ,@body))
 #+END_SRC
 
 ( Lisp convention would advise this function to be named ~with-pf~, but I'm using the prefix ~open~,
@@ -4938,13 +5009,9 @@ as it is closer to the object language, Agda. )
    :PROPERTIES:
    :CUSTOM_ID: Elements
    :END:
-   :PROPERTIES:
-
-   :END:
 A PackageFormer is a list of elements.
-   #+BEGIN_SRC emacs-lisp :tangle yes
+   #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defstruct element
-
   qualifier ;; E.g., “private, field”
   name      ;; The lhs of an equation and a typed-name
   type      ;; The type of a typed-name
@@ -4953,23 +5020,21 @@ A PackageFormer is a list of elements.
 #+END_SRC
 
 Let's produce the associated useful map functions.
-#+BEGIN_SRC emacs-lisp :tangle yes :results replace
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el :results replace
 (loop for place in '(qualifier name type equations)
       do
       (-let [loc (intern (format "element-%s" place))]
         (eval `(defun ,(intern (format "map-%s" place)) (f e)
-           "??? TODO:"
+           ,(format "Alter the ‘%s’ field of an ‘element’ value." place)
            (-let [e′ (copy-element e)]
              (setf (,loc e′) (funcall f (,loc e′)))
              e′)))))
 #+END_SRC
 
 Now a method for replacing textual strings within an element structure.
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defun element-replace (old new e)
-  "Replace every occurance of /word/ ‘old’ by string ‘new’
-   in element ‘e’."
-
+  "Replace every occurance of word OLD by string NEW in element E."
   (-let [e′ (copy-element e)]
     (loop for place in '(element-qualifier element-name element-type)
           do (eval `(setf (,place e′)
@@ -4984,17 +5049,14 @@ Now a method for replacing textual strings within an element structure.
 #+END_SRC
 
 Given a typed name, return the name.
-#+BEGIN_SRC emacs-lisp :tangle yes
-(pf--declare-type parse-name : string string)
+# (pf--declare-type parse-name : string string)
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defun parse-name (element)
-  "Given an string representation of an ‘element’, yield the ‘name’ component.
+  "Given an string representation of an ELEMENT, yield the ‘name’ component.
 
-   The shape of the input may be “qualifier lhs ~ rhs” where ‘~’ is either ‘:’
-   or ‘=’. The qualifier is a ‘special’ word: field, private.
-  "
-  (let (lhs name)
-    (setq lhs
-          (s-split " " (car (s-split " = " (car (s-split " : " element))))))
+The shape of the input may be “qualifier lhs ~ rhs” where ‘~’ is either ‘:’
+or ‘=’.  The qualifier is a ‘special’ word: field, private."
+  (let ((lhs (s-split " " (car (s-split " = " (car (s-split " : " element)))))))
     (if (and (< 1 (length lhs)) (pf--special (nth 0 lhs)))
         (cadr lhs)
       (car lhs))))
@@ -5010,53 +5072,59 @@ Given a typed name, return the name.
 :End:
 
 Parsing a list of interleaved elements in concrete syntax.
-#+BEGIN_SRC emacs-lisp :tangle yes
-(pf--declare-type parse-elements : (list-of string) (list-of element))
-(defun parse-elements (elements)
-  "Given a list of PackageFormer ‘elements’, as strings, parse them into the
-  ‘element’ datatype. Declarations and equations may be interspersed, as along
+
+#+name: parse-elements
+- Given a list of PackageFormer ELEMENTS, as strings, parse them into the
+  ‘element’ datatype.  Declarations and equations may be interspersed, as along
   as equations of names follow their declarations.
 
-   The order is preserved in-case there are declarations that make use of definitions.
+- The order is preserved in-case there are declarations that make use of
+  definitions.
 
-   Types must always be supplied ---in general, type inference is undecidable in DTLs.
-   "
+- Types must always be supplied ---in general, type inference is
+  undecidable in DTLs.
 
+# (pf--declare-type parse-elements : (list-of string) (list-of element))
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(defun parse-elements (elements)
+  "Parse string representation of elements into the ‘element’ record type.
+<<docs('parse-elements)>>"
   (-let [es (mapcar #'list elements)]
     ;; Maintain a list of related items.
     (loop for i from 0
           for e in es
-          do
-          (loop for j from 0 to (1- i)
-                do
-                ;; If the name of ‘e’ occurs in the prefix,
-                ;; then move ‘e’ to the location in the prefix,
-              ;; and zero-out the current location.
-              (let (lhs name)
-                 (setq name (parse-name (car e)))
-
-                 (when (equal name (parse-name (or (car (nth j es)) "")))
-                   ;; Use an empty string in-case the location is nil.
-                   (setf (nth j es) (append (nth j es) e))
-                   (setf (nth i es) nil)))))
+          for name = (parse-name (car e))
+          do (loop for j from 0 to (1- i)
+                   do
+                   ;; If the name of ‘e’ occurs in the prefix,
+                   ;; then move ‘e’ to the location in the prefix,
+                   ;; and zero-out the current location.
+                   (when (equal name (parse-name (or (car (nth j es)) "")))
+                     ;; Use an empty string in-case the location is nil.
+                     (setf (nth j es) (append (nth j es) e))
+                     (setf (nth i es) nil))))
 
     ;; Drop the nils.
     (setq es (--reject (not it) es))
 
     ;; We now have a list of related items,
     ;; with the car of each being a qualified typed-name
-    ;; and the cdr of each being a list of equational clauses associated with that name.
+    ;; and the cdr of each being a list of equational clauses
+    ;; associated with that name.
     (loop for e in es
+          for τ    = (s-split " : " (car e))
+          for nom  = (parse-name (car τ))
+          for qual = (car (s-split nom (car τ)))
+          for _    = (pf--ensure (cdr τ)
+                                 (format "Type not supplied for %s!" nom)
+                                 (s-join "\n\t\t" (-take 5 elements))
+                                 "⋯ Add a type!")
+          for ty   = (s-join " : " (cdr τ))
           collect
-          (let* ((τ (s-split " : " (car e)))
-                 (nom (parse-name (car τ)))
-                 (qual (car (s-split nom (car τ)))))
-            (make-element :qualifier (unless (s-blank? qual) qual)
-                          :name nom
-                          :type (if (cdr τ) (s-join " : " (cdr τ))
-                                  (error (message-box
-                                          "Error: Type not supplied for %s!" nom)))
-                          :equations (cdr e))))))
+          (make-element :qualifier (unless (s-blank? qual) qual)
+                        :name nom
+                        :type ty
+                        :equations (cdr e)))))
 #+END_SRC
 
 Notice that the equations do not necessarily immediately follow their associated declarations.
@@ -5089,26 +5157,27 @@ Notice that the equations do not necessarily immediately follow their associated
    :PROPERTIES:
    :CUSTOM_ID: Package-Former-Parsing-and-Pretty-Printing
    :END:
-   :PROPERTIES:
-
-   :END:
 
 With this in hand, let's produce a robust parser.
-#+BEGIN_SRC emacs-lisp :tangle yes
-; (pf--declare-type pf--load-package-former : (list-of string) package-former)
-(pf--declare-type pf--load-package-former : t t)
+
+#+name: load-package-former
+- The input LINES must be a list of lines forming a full
+  PackageFormer declaration; e.g., obtained by calling ‘pf--get-children’.
+
+- It is parsed and a ‘package-former’ value is returned.
+
+- Whitespace is stripped off of items.
+
+- Docstrings are ignored.
+
+# ; (pf--declare-type pf--load-package-former : (list-of string) package-former)
+# (pf--declare-type pf--load-package-former : t t)
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defun pf--load-package-former (lines)
-  "The input ‘lines’ must be a list of lines forming a full PackageFormer declaration;
-   e.g., obtained by calling ‘pf--get-children’.
-
-   It is parsed and a ‘package-former’ value is returned.
-
-   - Whitespace is stripped off of items.
-   - Docstrings are ignored.
-  "
-
+  "Load a string representation of a ‘package-former’ into our global list.
+<<docs('load-package-former)>>"
   (when (not lines)
-      (error "pf--load-package-former: Error: Input must be non-empty list."))
+      (error "PF--LOAD-PACKAGE-FORMER: Error: Input must be non-empty list"))
 
   (let* (pf
          (header (or (car lines) ""))
@@ -5116,20 +5185,21 @@ With this in hand, let's produce a robust parser.
          (level (pf--substring-delimited-here "Set $here where" header)))
 
     (when pf-highlighting
-      (--map (highlight-phrase (s-trim it) 'hi-yellow) (cdr lines)))
+      (mapc (λ it → (highlight-phrase (s-trim it) 'hi-yellow)) (cdr lines)))
 
     (setq pf
           (make-pf--package-former
            :kind                     "PackageFormer"
            :name                     name
            ;; ‘level’ may be “”, that's okay.
-           ;; It may be a subscript or implicitly zero & so no space after ‘Set’.
+           ;; It may be a subscript or implicitly zero, so no space after ‘Set’.
            :level                    level
            :waist                    0
-           ;; ‼ TODO: Currently no parameter support for arbitrary PackageFormers.
+           ;; TODO: Currently no parameter support for arbitrary PackageFormers.
            :indentation              (pf--get-indentation (cadr lines))
            :elements  (parse-elements (--remove (s-starts-with? "-- " it)
-                                                (--map (s-trim it) (cdr lines))))))
+                                                (--map (s-trim it)
+                                                       (cdr lines))))))
 
       (push (cons name pf) pf--package-formers)
 
@@ -5147,41 +5217,48 @@ Let's try this out.
 
 # (pf--declare-type special : string t)
 Conversely, let's have a pretty printer.
-#+BEGIN_SRC emacs-lisp :tangle yes
+
+#+name: special
+- Special elements F, for whatever reason are exceptional, and so
+  are maked as singleton lists and their indentation is lessened.
+  That is, these denote sibling fields rather than more children.
+
+- Special elements include: field, private.
+
+- See ‘show-package-former’ for their use and how their printed.
+
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defun pf--special (f)
-  "Special elements, for whatever reason are exceptional, and so
-   are maked as singleton lists and their indentation is lessened.
-   That is, these denote sibling fields rather than more children.
-
-   Special elements include: field, private.
-
-   See ‘show-package-former’ for their use and how their printed.
-  "
+  "Test whether an element F is special or not.
+<<docs('special)>>"
   (--any? (s-contains? it f) '("field" "private" "open" "top-level" "sibling")))
 #+END_SRC
 A “sibling” item has no indentation.
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-(pf--declare-type show-element (:omit-qualifier t) element string)
+# (pf--declare-type show-element (:omit-qualifier t) element string)
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (cl-defun show-element (e &optional omit-qualifier)
-  "Render an ‘element’ value in the form
+  "Render an ‘element’ value E in the form:
 
-       qualifier name : type ; equational-clause₀ ; ⋯ ; equational-clauseₙ
-  "
+   qualifier name : type ; equational-clause₀ ; ⋯ ; equational-clauseₙ
 
-  (s-join " ;\t" (cons
-                 (format "%s%s\t\t: %s"
-                         (-let [it (element-qualifier e)] (if (or (not it) omit-qualifier) "" (format "%s " it)))
-                         (element-name e)
-                         (element-type e))
-                 (element-equations e))))
+Optional OMIT-QUALIFIER is useful for when
+elements are in a parameter position."
+  (s-join " ;\t"
+          (cons
+           (format "%s%s\t\t: %s"
+                   (-let [it (element-qualifier e)]
+                     (if (or (not it) omit-qualifier) "" (format "%s " it)))
+                   (element-name e)
+                   (element-type e))
+           (element-equations e))))
+#+END_SRC
 
-(pf--declare-type pf--show-package-former : pf--package-former string)
-(cl-defun pf--show-package-former (p)
-  "Pretty print a package-former record value.
-  "
-
-  (pf--open-pf p
+# (pf--declare-type pf--show-package-former : pf--package-former string)
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(cl-defun pf--show-package-former (pf)
+  "Pretty print a package-former PF record value."
+  (pf--open-pf pf
     (s-join "\n"
       (-cons*
 
@@ -5193,22 +5270,19 @@ A “sibling” item has no indentation.
         (s-join " "
                 (list kind
                       name
-                      (s-join " " (--map (concat "(" (show-element it :omit-qualifier) ")") parameters))
+                      (s-join " "
+                              (--map (concat "("
+                                             (show-element it :omit-qualifier)
+                                             ")")
+                                     parameters))
                       (unless (equal level 'none) (concat ": Set" level))
                       "where")))
 
        ;; The elements of a PackageFormer
        (thread-last fields
-         (--map (format "%s%s" (s-repeat indentation " ") (show-element it)))
-         )
-       ))))
-
-         ;; Indent all elements, less indentation for the specials.
-         ;; Regarding “top-level” see the “recordₑ” variational in Paper0.pdf.
-         ;; The extra whitespace is important.
-         ;; (--map (concat (s-repeat (- indentation (if (pf--special it) 2 0)) (if (s-starts-with? "sibling" it) "" " "))
-         ;;                (if (s-starts-with? "top-level" it) (s-chop-prefix "top-level " it)
-         ;;                 (if (s-starts-with? "sibling" it) (s-chop-prefix "sibling " it) it))))
+         (--map (format "%s%s"
+                        (s-repeat indentation " ")
+                        (show-element it))))))))
 #+END_SRC
 
 Let's test it out by /introducing/ a whole new local variable and trying
@@ -5299,12 +5373,8 @@ should be inverses.
   :PROPERTIES:
   :CUSTOM_ID: Variational-Language
   :END:
-  :PROPERTIES:
-
-  :END:
 
   A variational has the syntactic form specfied by
-
 #+BEGIN_SRC text
         𝓋   ::=  identifier (identifier)* = 𝓋𝒸
         𝓋𝒸  ::= [identifier] (:key value)* (⟴ 𝓋𝒸)*
@@ -5319,16 +5389,93 @@ should be inverses.
 
   Let's keep track of the user defined variationals, so that we can display them to the
   user via menus, as well as highlight them, and attach tooltips to them.
-#+BEGIN_SRC emacs-lisp :tangle yes
-(setq pf--variationals nil)
-;;  "Association list of Agda-user defined variational operators."
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(eval-and-compile
+  (defvar pf--variationals nil
+    "Association list of Agda-user defined variational operators."))
 #+END_SRC
 
 Let's be somewhat agonstic regardiing the variational composition operator;
 users are welcome to use any other symbol.
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defvar pf-variational-composition-operator "⟴"
   "The operator that composes varitionals.")
+#+END_SRC
+
+** Well-formed checks ---Error reporting
+   :PROPERTIES:
+   :CUSTOM_ID: Well-formed-checks----Error-reporting
+   :END:
+What is the above “fancy cons” we mentioned? Here it is.
+
+#+name: ensure
+- Ensure CONDITION is true and defined, otherwise emit MESSAGE
+  and indicate the offending CONTEXT.
+  If there are any SUGGESTIONS to the user, then we show those too.
+
+- If CONDITION is defined and non-nil, whence true, we return it.
+
+#+BEGIN_SRC emacs-lisp  :tangle agda-next-700-module-systems.el
+(eval-and-compile
+(defmacro pf--ensure (condition message context &rest suggestions)
+  "Ensure provided CONDITION is true, otherwise report an error.
+<<docs('ensure)>>"
+  `(let* ((ლ\(ಠ益ಠ\)ლ
+           (format "700: %s\n\n\t⇨\t%s%s%s" ,message ,context
+                   (if (quote ,suggestions) "\n" "")
+                   (s-join "\n" (--map (format "\t⇨\t%s" it)
+                                       (quote ,suggestions)))))
+          ;; Try to evaluate the condition.
+          (res (condition-case nil ,condition (error ლ\(ಠ益ಠ\)ლ))))
+
+     ;; If we've made it here, then the condition is defined.
+     ;; It remains to check that it's true.
+     (or res (error ლ\(ಠ益ಠ\)ლ)))))
+#+END_SRC
+
+#+name: wf
+- This operation checks that the VALUE of KEY
+  is well-formed according to 700-specifications ---which are stated
+  explicitly within this method--- and if it is well-formed we
+  return the VALUE /interpreted/ along with the KEY.
+
+- When the value is not well-formed, we use the provided CONTEXT
+  in an error message.  No error is reported if VALUE is an ARGument, ARGS,
+  of a variational begin declared.
+
+# ;; pf--declare-type cannot yet accomodate optional arguments
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(eval-and-compile
+(cl-defun pf--wf (key value &optional context args)
+  "Report an error unless provided key-value are well-formed.
+<<docs('wf)>>"
+  (let* ((case
+            (pcase key
+              (:kind `(,(-contains? '(record data module PackageFormer) value)
+                       This kind “ ,value ” is not support by Agda!
+                       Valid kinds: record⨾ data⨾ module⨾ PackageFormer!))
+              (:waist `(,(numberp value)
+                        The waist should be a number⨾ which “ ,value ” is not!))
+              (:level `(,(-contains? '(inc dec none) value)
+                        The “level” must be “inc” or “dec” or “none”⨾
+                        which “ ,value ” is not!))))
+        (condition (car case))
+        (message   (mapconcat #'prin1-to-string (cdr case) " ")))
+
+    ;; TODO: Acount for alter-elements well-formedness?
+    ;; (:alter-elements (functionp value)
+    ;; (format "Componenet alter-elements should be a function;
+    ;; which “%s” is not." value))
+
+    (when case
+      (pf--ensure (or condition (-contains? args value)) message context))
+
+    ;; Return the key-value as a pair for further processing.
+    ;; :kind and :level values are symbols and so cannot be evaluated furthur.
+    (cons key
+          (if (or (-contains? args value) (-contains? '(:kind :level) key))
+              value
+            (eval value))))))
 #+END_SRC
 
 ** 𝒱𝒸,  𝒱-, and 𝒱
@@ -5346,33 +5493,45 @@ users are welcome to use any other symbol.
   but the implementation will refer to it with a prefix.
 
 Parsing variational clauses is then straightforward:
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle no
 (when nil *parent-context* nil
   "For error report; what is the current parent context of a child item.
 
    Should be set whenver a parent invokes a child.
    Since we have no grandchildren, we only need one level.
 ")
+#+END_SRC
 
+#+name: 𝒱𝒸
+- If there is a ‘label’, then yield ‘(label :key value ⋯)’
+  since ‘label’ is assumed to exist as a variational having the given
+  keys as arguments.  The result should be a list of pairs.
+
+  BODY-LIST consists of elements of this shape.
+
+- If there is no label, the parse the list of pairs.
+
+- For example,
+
+    (cl-defun 𝒱-test (&key height kind) (list (format "%s & %s" height kind)))
+
+    (𝒱𝒸 '(test :height 3 :kind 'data)) ≈ (test :height 3 :kind data) ≈ (“3 & data”)
+
+    (𝒱𝒸 '(     :height 3 :kind data))  ≈ ((:height . 3) (:kind . data))
+
+- Newer items c₀ ⟴ ⋯ ⟴ cₙ should be at the front of the list;
+  access should then be using ‘assoc’.
+
+- CONTEXT is the parent context that contains an invocation of this method.
+
+- ARGS is the list of names that are bound, and so are variational args.
+
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(eval-and-compile
 (defun 𝒱𝒸 (body-list &optional context args)
-  "Parse a single 𝒱ariational 𝒸lause, as a list, of the form “[label] (:key :value)*”.
-
-   If there is a ‘label’, then yield ‘(label :key value ⋯)’
-   since ‘label’ is assumed to exist as a variational having the given
-   keys as arguments. The result should be a list of pairs.
-
-   If there is no label, the parse the list of pairs.
-
-  For example,
-     (cl-defun 𝒱-test (&key height kind) (list (format \"%s & %s\" height kind)))
-     (𝒱𝒸 '(test :height 3 :kind 'data)) ≈ (test :height 3 :kind data) ≈ (“3 & data”)
-     (𝒱𝒸 '(     :height 3 :kind data))  ≈ ((:height . 3) (:kind . data))
-
-   Newer items c₀ ⟴ ⋯ ⟴ cₙ should be at the front of the list;
-   access should then be using ‘assoc’.
-  "
-
-  (let* (res (*parent-context* context))
+  "Parse a single 𝒱ariational 𝒸lause, “[label] (:key :value)*”, as a list.
+<<docs('𝒱𝒸)>>"
+  (let (res)
     (loop for clause in (-split-on '⟴ body-list)
           do (setq res (-concat
                         ;; Symbols starting with “:” are keywords.
@@ -5381,61 +5540,77 @@ Parsing variational clauses is then straightforward:
                             ;; We turn everything into a string so that we may
                             ;; prepend the function name with a 𝒱-
                             ;; then turn that into Lisp with the first eval
-                            ;; then invoke the resulting function call with the second eval.
+                            ;; then invoke the resulting function call
+                            ;; with the second eval.
                             (progn
                               ;; The variational being called is defined.
                               (pf--ensure (fboundp (𝒱- (car clause)))
-                                        (format "Did you mistype a variational's name: “%s” is not defined." (car clause))
-                                        context
-                                        "Use the PackageFormer menu to see which variationals are defined.")
+                                          (format "%s %s “%s” %s"
+                                                  "Did you mistype a"
+                                                  "variational's name:"
+                                                  (car clause)
+                                                  "is not defined.")
+                                          context
+                                          (concat "Use the PackageFormer menu"
+                                                  "to see which variationals"
+                                                  "are defined."))
                               (eval `( ,(𝒱- (car clause)) ,@(cdr clause))))
                           ;; List of key-value pairs
                           `,(loop for key   in clause by #'cddr
                                   for value in (cdr clause) by #'cddr
-                                  collect (pf--wf key value context args)))  ;; “pf--wf” is just a fancy “cons”.
-                        ;; Newer items c₀ ⟴ ⋯ ⟴ cₙ should be at the front of the list;
+                                  collect (pf--wf key value context args)))
+                        ;; “pf--wf” is just a fancy “cons”.
+                        ;; Newer items c₀ ⟴ ⋯ ⟴ cₙ should be at the
+                        ;; front of the list;
                         ;; access should then be using assoc.
                         res)))
-    res))
+    res)))
 #+END_SRC
 Where we have used the following helper to prefix Lisp code with “𝒱-”.
-#+BEGIN_SRC emacs-lisp :results replace  :tangle yes
+#+BEGIN_SRC emacs-lisp :results replace  :tangle agda-next-700-module-systems.el
+(eval-and-compile
 (defun 𝒱- (name)
-  "Prefix the Lisp data ‘name’ with a “𝒱-”
-   then yield that as a Lisp datum.
-  "
+  "Prefix the Lisp data NAME with a “𝒱-” then yield that as a Lisp datum."
   (should (symbolp name))
   (thread-last name
     (format "𝒱-%s")
     read-from-string
-    car))
+    car)))
 #+END_SRC
 
 We now handle variational declarations by introducing a DSL; i.e., a macro that
 expects the syntax outlined earlier.
-#+BEGIN_SRC emacs-lisp :tangle yes
-(defmacro 𝒱 (name &rest body)
 
-  "Reify as Lisp a variational declaration using the following grammar.
+#+name: 𝒱
+- The grammar:
 
         𝓋   ::= [docstring] identifier ([“(”]identifier[“)”])* = 𝓋𝒸
+
         𝓋𝒸  ::= [identifier] (:key value)* (⟴ 𝓋𝒸)*
 
-    E.g., (𝒱 tes positional (keyword 3) = :kind data)
-    This defines a variational with one positional and one keyword argument having
-    3 as default.
+- The result is a function NAME prefixed by 𝒱- whose BODY is an alist
+  obtained from the aforementioned key-value pairs.
 
-    The resulting generated function has its code embeded as a docstring viewable
-    with “C-h o” ---catented after any provided user documentation.
-  "
+- E.g., (𝒱 tes positional (keyword 3) = :kind data)
+  This defines a variational with one positional and one keyword argument having
+  3 as default.
 
+- The resulting generated function has its code embeded as a docstring viewable
+  with “𝑪-𝒉 𝒐” ---catented after any provided user documentation.
+
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(eval-and-compile
+(defmacro 𝒱 (name &rest body)
+  "Reify as Lisp a variational declaration using the variational grammar.
+<<docs('𝒱)>>"
   ;; Main code follows.
-  (let* ((context (mapconcat (lambda (x) (prin1-to-string x t)) (cons name body) " "))
-         (args-body (-split-on '= body)) args pargs kargs argnames docs body res actual-code)
+  (let* ((context (mapconcat (λ x → (prin1-to-string x t)) (cons name body) " "))
+         (args-body (-split-on '= body))
+         args pargs kargs argnames docs body res actual-code)
     (pcase (length args-body)
       (2 (setq args (car args-body)
                body (cadr args-body)))
-      (t (setq body (car args-body))))
+      (_ (setq body (car args-body))))
 
     ;; Realise the arguments as either 𝒫ositinal or 𝒦ey arguments.
     (loop for a in args
@@ -5469,16 +5644,14 @@ expects the syntax outlined earlier.
 
           "Stage the formal names *now*, then evaluate their values at run time."
           (loop for arg in (quote ,argnames)
-                do (setq give-goal (subst (eval arg) arg give-goal)))
+                do (setq give-goal (cl-subst (eval arg) arg give-goal)))
 
           ;; TODO, maybe.
           ;; "Check that substituted values are well-typed"
           ;; (--map (pf--wf (car it) (or (cdr it)
-          ;;                             ;; Mention which argument is not supplied.
-          ;;                             (format "No Value for :%s Provided!"
-          ;;                                     (cdr (assoc (car it) (reverse give-goal₀)))))
-          ;;                (s-concat (when *parent-context* (s-concat *parent-context* "\n\t➩\t")) ,context)) give-goal)
-
+          ;;                        ;; Mention which argument is not supplied.
+          ;;                         (format "No Value for :%s Provided!"
+          ;;                       (cdr (assoc (car it) (reverse give-goal₀))))
           )
 
          give-goal)))
@@ -5486,7 +5659,7 @@ expects the syntax outlined earlier.
     ;; Now set the code as a documentation string in it, after the fact.
     (setq docs (format "Arguments:\t%s %s\n%s" pargs (reverse kargs)
                        (if (not docs) "Undocumented user-defined variational."
-                         ;; Keep paragraph structure, but ignore whitespace otherwise.
+                         ;; Keep paragraph structure, but ignore whitespace.
                          (thread-last docs
                            (s-split "\n\n")
                            (mapcar #'s-collapse-whitespace)
@@ -5494,8 +5667,8 @@ expects the syntax outlined earlier.
                            (s-join "\n\n")
                            (s-word-wrap 70)
                            (format "\n%s\n\n\n")))))
-                    ;; When the user provides documentation, they may not want to see
-                    ;; the raw and expansions, so we pad extra whitespace before them.
+              ;; When the user provides documentation, they may not want to see
+             ;; the raw and expansions, so we pad extra whitespace before them.
 
     (put (𝒱- name) 'function-documentation
          (format "%s\n⟪User Definition⟫\n\n%s\n\n⟪Lisp Elaboration⟫\n\n%s"
@@ -5503,7 +5676,7 @@ expects the syntax outlined earlier.
     ;; Register this new item in our list of variationals.
     (push (cons name docs) pf--variationals)
     ;; Return value:
-    actual-code))
+    actual-code)))
 #+END_SRC
 
 Consequently, any item declared with 𝒱 now has a docstring containing its user-facing
@@ -5516,102 +5689,36 @@ Here's an example.
 (𝒱-test "positional arg₁" "positional arg₂" :keyword 25) ;; ⇒ nil ^_^
 #+END_SRC
 
-** Well-formed checks ---Error reporting
-   :PROPERTIES:
-   :CUSTOM_ID: Well-formed-checks----Error-reporting
-   :END:
-   :PROPERTIES:
-
-   :END:
-What is the above “fancy cons” we mentioned? Here it is.
-
-#+BEGIN_SRC emacs-lisp  :tangle yes
-(defmacro pf--ensure (condition message context &rest suggestions)
-  "Ensure ‘condition’ is true and defined, otherwise emit ‘message’
-   and indicate the offending ‘context’.
-   If there are any ‘suggestions’ to the user, then we show those too.
-
-   ➩ If ‘condition’ is defined and non-nil, whence true, we return it.
-  "
-  `(let* ((ლ\(ಠ益ಠ\)ლ
-          (format "700: %s\n\n\t⇨\t%s%s%s" ,message ,context
-                  (if (quote ,suggestions) "\n" "")
-                  (s-join "\n" (--map (format "\t⇨\t%s" it) (quote ,suggestions)))))
-         ;; Try to evaluate the condition.
-         (res (condition-case nil ,condition (error ლ\(ಠ益ಠ\)ლ))))
-
-    ;; If we've made it here, then the condition is defined.
-    ;; It remains to check that it's true.
-    (or res (error ლ\(ಠ益ಠ\)ლ))))
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; pf--declare-type cannot yet accomodate optional arguments
-(cl-defun pf--wf (key value &optional context args)
-  "This operation checks that the ‘value’ of ‘key’
-   is well-formed according to 700-specifications ---which are stated
-   explicitly within this method--- and if it is well-formed we
-   return the ‘value’ /interpreted/ along with the ‘key’.
-
-   When the value is not well-formed, we use the provided ‘context’
-   in an error message. No error is reported if ‘value’ is an ‘arg’ument
-   of a variational begin declared.
-  "
-
-  (let ( condition message
-         (wf '( (:kind   (-contains? '(record data module PackageFormer) value)
-                         (format "This kind “%s” is not supported by Agda!\n     Valid kinds: record, data, module, PackageFormer." value))
-                (:waist  (numberp value) (format "The waist should be a number; which “%s” is not." value))
-                (:level (-contains? '(inc dec none) value) (format "The “level” must be “inc” or “dec” or “none”; which “%s” is not." value))
-                ; (:alter-elements (functionp value) (format "Componenet alter-elements should be a function; which “%s” is not." value))
-                       )))
-
-    (when-let ((here (assoc key wf)))
-      (setq condition        (eval (nth 1 here))
-            message          (eval (nth 2 here)))
-      (pf--ensure (or condition (-contains? args value)) message context))
-
-    ;; Return the key-value as a pair for further processing.
-    ;; :kind and :level values are symbols and so cannot be evaluated furthur.
-    (cons key
-          (if
-           (or (-contains? args value) (-contains? '(:kind :level) key))
-           value
-           (eval value)))))
-#+END_SRC
-
 ** Loading Variationals: Super Simple Conversion From String to Lisp
    :PROPERTIES:
    :CUSTOM_ID: Loading-Variationals--Super-Simple-Conversion-From-String-to-Lisp
    :END:
-   :PROPERTIES:
 
-   :END:
-#+begin_src emacs-lisp :tangle yes
-(cl-defun pf--load-variational (variation-string)
-  "Obtain lines of the buffer that start with “𝒱-”.
-   Realise them as Lisp association lists.
-
-   A line is something like:
+#+name: load-variational
+- A VARIATION-STRING line is something like:
 
       𝒱-name x₀ … xₙ  =  ([label₀] :key₀ val₁ ⋯ :keyₘ valₘ ⟴)*
 
-   The result is a list of 3-tuples (name (x₀ ⋯ xₙ) ((key₀ val₀) ⋯ (keyₘ valₘ))),
+- The result is a list of 3-tuples (name (x₀ ⋯ xₙ) ((key₀ val₀) ⋯ (keyₘ valₘ))),
    containing the clause's name, argument list, and key-value pairs.
 
-   If the optional ‘string-list’ is provided, then use
-   that instead of searching the buffer. This feature
-   has been added on to make the presentation of tests
-   and examples easier to digest ---without the mockup
-   of fletting ‘buffer-substring-no-properties’ to return
-   what could instead be ‘string-list’. It was the addition
-   of a simple ‘or’ ---far less than this string explaning it.
+- For now, the RHS must be an expression of the form
+  “:key₀ value₀ ⋯ :keyₙ valueₙ”
+  + where the valueᵢ are legitmate Lisp expressions
+  + and the LHS is an atomic name, possibly with argument names.
 
-   For now, the RHS must be an expression of the form “:key₀ value₀ ⋯ :keyₙ valueₙ”
-   - where the valueᵢ are legitmate Lisp expressions
-   - and the LHS is an atomic name, possibly with argument names.
-  "
-
+# - If the optional ‘string-list’ is provided, then use
+#   that instead of searching the buffer. This feature
+#   has been added on to make the presentation of tests
+#   and examples easier to digest ---without the mockup
+#   of fletting ‘buffer-substring-no-properties’ to return
+#   what could instead be ‘string-list’. It was the addition
+#    of a simple ‘or’ ---far less than this string explaning it.
+#
+#+begin_src emacs-lisp :tangle agda-next-700-module-systems.el
+(cl-defun pf--load-variational (variation-string)
+  "Obtain lines of the buffer that start with “𝒱-” as a Lisp alist.
+<<docs('load-variational)>>"
   (thread-last variation-string
     (s-replace "𝒱-" "𝒱 ")
     (format "(%s)")
@@ -5708,9 +5815,6 @@ What is the above “fancy cons” we mentioned? Here it is.
   :PROPERTIES:
   :CUSTOM_ID: Loading-an-Agda-Buffer
   :END:
-  :PROPERTIES:
-
-  :END:
 
 # Herein we define the datatype of ~instance-declaration~, describe how
 # to parse such entities.
@@ -5722,16 +5826,13 @@ for which we would later generate code.
    :PROPERTIES:
    :CUSTOM_ID: Loading-an-Instance----The-Core-Utility
    :END:
-   :PROPERTIES:
-
-   :END:
 An instance declaration is of the form:
 #+BEGIN_SRC results-agda
 PF′ = PF variational₁ args₁ ⟴  ⋯ ⟴ variationalₙ (argsₙ)
 #+END_SRC
 
 This gives rise to a simple nice structure:
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defstruct pf-instance-declaration
   "Record of components for an PackageFormer instance declaration:
    ⟪name⟫ = ⟪package-former⟫ (⟴ ⟪variation⟫ [⟪args⟫])*
@@ -5745,25 +5846,34 @@ This gives rise to a simple nice structure:
 #+END_SRC
 
 Loading an instantiation into our list is now trivial.
-#+BEGIN_SRC emacs-lisp :tangle yes
+
+#+name:load-instance-declaration
+- If the current LINE string is an instance declaration,
+  then produce a new PackageFormer from it.  Else, do nothing.
+
+- Whitespace is automatically collopased from LINE.
+
+- Nil elements are discarded; e.g., due to a filter.
+
+- Duplicates are discarded; e.g., due to a rename.
+
+- Variational clauses may mention
+  + $𝑛𝑎𝑚𝑒: The name of the PackageFormer currently being declared;
+            i.e., the LHS name.
+  + $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠: Many variationals will act on individal elements, but may check a
+           property relative to all elements and this name allows us to avoid
+           having variationals that simply accomodate for binary functions
+           that operate on an individual element while also needing to refer to
+           all elements.  For example, a variational that keeps an element if
+           it's related to another element somehow.
+
+- SHOW-IT: For testing, and presentation, this optional value indicates whether
+  the resulting PackageFormer should be pretty-printed or not.
+
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defun pf--load-instance-declaration (line &optional show-it)
-  "If the current ‘line’ string is an instance declaration,
-   then produce a new PackageFormer from it. Else, do nothing.
-
-   ⇒ Whitespace is automatically collopased from ‘line’.
-   ⇒ Nil elements are discarded; e.g., due to a filter.
-   ⇒ Duplicates are discarded; e.g., due to a rename.
-
-   Variational clauses may mention
-   ⇒ $𝑛𝑎𝑚𝑒: The name of the PackageFormer currently being declared; i.e., the LHS name.
-   ⇒ $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠: Many variationals will act on individal elements, but may check a
-              property relative to all elements and this name allows us to avoid
-              having variationals that simply accomodate for binary functions
-              that operate on an individual element while also needing to refer to all
-              elements. For example, a variational that keeps an element if it's related
-              to another element somehow.
-  "
-
+  "Reify concrete instance declarations as ‘package-former’ values.
+<<docs('load-instance-declaration)>>"
   (letf* (
      (pieces (s-split " " (s-collapse-whitespace line)))
      ($𝑛𝑎𝑚𝑒      (nth 0 pieces))
@@ -5773,40 +5883,47 @@ Loading an instantiation into our list is now trivial.
      (variations (nthcdr 3 pieces))
      (alterations nil)
      (self (copy-pf--package-former (cdr (assoc $𝑝𝑎𝑟𝑒𝑛𝑡 pf--package-formers))))
-     ((symbol-function '⁉)
-      ;; If componenet ‘c’ is in the ‘alterations’ list of the instance declaration,
-      ;; then evalaute any given ‘more’ code, get the value for ‘c’ and turn it
+     (⁉
+      ;; If componenet ‘c’ is in the ‘alterations’ list of the
+      ;; instance declaration, then evalaute any given ‘more’ code,
+      ;; get the value for ‘c’ and turn it
       ;; into a string, if ‘str’ is true, then set the new PackageFormer's ‘c’
       ;; componenet to be this value.
       ;; Well-formedness checks happen at the 𝒱 and 𝒱𝒸 stages, see below.
-         (lambda (c &optional str more) (when-let ((it (cdr (assoc (intern (format ":%s" c)) alterations))))
-                           (eval `(progn ,@more))
-                           (when str (setq it (format "%s" it)))
-                           (eval `(setf (,(car (read-from-string (format "pf--package-former-%s" c))) self) it))))))
+      (lambda (c &optional str more)
+        (when-let ((it (cdr (assoc (intern (format ":%s" c)) alterations))))
+          (eval `(progn ,@more))
+          (when str (setq it (format "%s" it)))
+          (eval `(setf (,(car (read-from-string
+                               (format "pf--package-former-%s" c))) self)
+                       it))))))
 
-   ;; Ensure instance declaration is well-formed.
+    ;; Ensure instance declaration is well-formed.
     (pf--ensure (and (not (s-blank? (s-trim $𝑛𝑎𝑚𝑒))) (equal "=" eqSymb) $𝑝𝑎𝑟𝑒𝑛𝑡)
-               (concat "An instance declaration is of the form "
-                       "“new-name = parent-package-former variational-clauses”.")
-               line)
+                (concat "An instance declaration is of the form "
+                        "“new-name = parent-package-former "
+                        "variational-clauses”.")
+                line)
 
-   ;; Let's not overwrite existing PackageFormers.
+    ;; Let's not overwrite existing PackageFormers.
     (pf--ensure (not (assoc $𝑛𝑎𝑚𝑒 pf--package-formers))
-               (format "PackageFormer “%s” is already defined; use a new name." $𝑛𝑎𝑚𝑒)
-               line)
+                (format "PackageFormer “%s” is already defined; use a new name."
+                        $𝑛𝑎𝑚𝑒)
+                line)
 
-   ;; Ensure the PackageFormer to be instantiated is defined.
+    ;; Ensure the PackageFormer to be instantiated is defined.
     (pf--ensure self
-               (format "Parent “%s” not defined." $𝑝𝑎𝑟𝑒𝑛𝑡)
-               line)
+                (format "Parent “%s” not defined." $𝑝𝑎𝑟𝑒𝑛𝑡)
+                line)
 
     ;; Update the new PackageFormer with a docstring of its instantiation
     ;; as well as its name.
     (setf (pf--package-former-docstring self) line)
     (setf (pf--package-former-name self) $𝑛𝑎𝑚𝑒)
-    (setq $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠 ; Copy so that user does not inadvertently alter shared memory locations!
+    (setq $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠 ; Copy so that user does not inadvertently
+                  ; alter shared memory locations!
           (loop for e in (pf--package-former-elements self)
-                 collect (copy-element e)))
+                collect (copy-element e)))
 
     ;; Parse the “𝓋₀ ⟴ ⋯ ⟴ 𝓋ₙ” portion of an instance declaration.
      (thread-last  variations
@@ -5823,19 +5940,21 @@ Loading an instantiation into our list is now trivial.
      ;; the new components of the PackageFormer being made.
 
       ;; :kind ≈ The vocabulary that replaces “PackageFormer”.
-      (⁉ 'kind 'string-please)
+      (funcall ⁉ 'kind 'string-please)
 
       ;; :waist ≈ The division between parameters and remaining elements.
-      (⁉ 'waist)
+      (funcall ⁉ 'waist)
 
       ;; :level ≈ Either 'inc or 'dec, for increment or decrementing the level.
-      (⁉ 'level nil ;; 'string-please
+      (funcall ⁉ 'level nil ;; 'string-please
          '((let* ((lvl (pf--package-former-level self))
-                  (toLevel (lambda (n) (s-join "" (-concat
-                        (-repeat n "Level.suc (") (list "Level.zero") (-repeat n ")")))))
-                 (subs `("" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉" ,(funcall toLevel 10)))
+                  (toLevel (lambda (n)
+                             (s-join "" (-concat (-repeat n "Level.suc (")
+                                                 (list "Level.zero")
+                                                 (-repeat n ")")))))
+                 (subs `("" "₁" "₂" "₃" "₄" "₅" "₆" "₇" "₈" "₉"
+                         ,(funcall toLevel 10)))
                  (here (-elem-index (s-trim lvl) subs)))
-
              (setq it
                    (if here
 
@@ -5845,33 +5964,37 @@ Loading an instantiation into our list is now trivial.
 
                      (pcase it
                        ('inc (format "Level.suc (%s)" lvl))
-                       ('dec (s-join "suc" (cdr (s-split "suc" lvl :omit-nulls)))))))
+                       ('dec (s-join "suc"
+                                     (cdr (s-split "suc" lvl :omit-nulls)))))))
 
              (unless it (setq it 'none)))))
 
       ;; :alter-elements ≈ Access the typed name constituents list.
-      ;; Perform *all* element alterations, in the left-to-right ⟴ order; if any at all.
-        (loop for ae in (reverse (mapcar #'cdr (--filter (equal ':alter-elements (car it)) alterations)))
-              do
-        (setq $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠
-              (remove-duplicates (--filter it (funcall ae $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)) :test #'equal :from-end t)))
-              ;; Filter in only the non-nil constituents & those not starting with “--” & remove duplicates.
-              ;; We do this each time, rather than at the end, since variationals
-              ;; may loop over all possible elements and we do not want to consider
-              ;; intermediary nils or duplicates.
-        (setf (pf--package-former-elements self) $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)
+      ;; Perform *all* element alterations,
+      ;; in the left-to-right ⟴ order; if any at all.
+      (loop for ae in (reverse (mapcar #'cdr (--filter
+                                              (equal ':alter-elements (car it))
+                                              alterations)))
+            do
+            (setq $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠
+                  (cl-remove-duplicates (--filter it (funcall ae $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠))
+                                     :test #'equal :from-end t)))
+              ;; Filter in only the non-nil constituents & those not
+              ;; starting with “--” & remove duplicates.
+              ;; We do this each time, rather than at the end, since
+              ;; variationals may loop over all possible elements and we do not
+              ;;  want to consider intermediary nils or duplicates.
+      (setf (pf--package-former-elements self) $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠)
 
-    ;; We've just formed a new PackageFormer, which can be modified, specialised, later on.
-    (add-to-list 'pf--package-formers (cons $𝑛𝑎𝑚𝑒 self))
-    (when show-it (pf--show-package-former self))))
+      ;; We've just formed a new PackageFormer, which can be modified,
+      ;; specialised, later on.
+      (add-to-list 'pf--package-formers (cons $𝑛𝑎𝑚𝑒 self))
+      (when show-it (pf--show-package-former self))))
 #+END_SRC
 
 ** ~pf--load-700-comments~ and ~lisp~ blocks
    :PROPERTIES:
    :CUSTOM_ID: -pf--load-700-comments--and--lisp--blocks
-   :END:
-   :PROPERTIES:
-
    :END:
 
    We already two global lists ---for our loaded PackageFormers and varitionals
@@ -5888,43 +6011,48 @@ Loading an instantiation into our list is now trivial.
    list ---then take care to check if an item is for porting or not when printing
    PackageFormers to a generated file.
 
-#+BEGIN_SRC emacs-lisp  :tangle yes
+#+BEGIN_SRC emacs-lisp  :tangle agda-next-700-module-systems.el
 (defvar pf--annotations nil
-  "The contents of the pf--annotations.
+  "The contents of the PackageFormer annotations.
 
-   If this variable does not change, we short-circut all processing.
-  ")
+If this variable does not change, we short-circut all processing.")
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp :tangle yes
-;; ("^\\\\begin{lisp}" . "^\\\\end{lisp}"))
+#+name: load-pf--annotations
+- Parse comments of the form “{-700 ⋯ -}” and add all PackageFormer declarations
+  to the ‘package-formers’ list and load all instantations to the list as well.
 
+- We also execute any valid Lisp code in “{-lisp -}” comments;
+  which may contain an arbitrary number of Lisp forms
+  ---a ‘progn’ is auto provided.
+
+  Lisp is executed before any pf--annotations are; which is preferable
+  due to Lisp's dynamic scope.
+
+# ;; ("^\\\\begin{lisp}" . "^\\\\end{lisp}"))
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (cl-defun pf--load-pf--annotations ()
-  "Parse comments of the form “{-700 ⋯ -}” and add all PackageFormer declarations
-   to the ‘package-formers’ list and all instantations to the
-   ‘instantiations-remaining’ list.
-
-   We also execute any valid Lisp code in “{-lisp -}” comments;
-   which may contain an arbitrary number of Lisp forms ---a ‘progn’ is auto provided.
-   Lisp is executed before any pf--annotations are; which is preferable
-   due to Lisp's dynamic scope.
-  "
+  "Parse and load {-700⋯-} syntax.
+<<docs('load-pf--annotations)>>"
   (interactive)
 
   ;; First, let's run all the lisp. We enclose each in a progn in-case the user
   ;; has multiple forms in a single lisp-block.
   (loop for (lispstart . lispend) in '(("^\{-lisp" . "^-\}"))
-        do (loop for lispstr in (pf--buffer-substring-delimited-whole-buffer lispstart lispend)
-                 do (eval (car (read-from-string (format "(progn %s)" lispstr))))))
+        do (loop for lispstr in
+                 (pf--buffer-substring-delimited-whole-buffer lispstart lispend)
+                 do
+                 (eval (car (read-from-string (format "(progn %s)" lispstr))))))
 
-  ;; For now, ‘item’ is a PackageFormer, instantiation declaration, or other Agda code.
+  ;; For now, ‘item’ is a PackageFormer,
+  ;; instantiation declaration, or other Agda code.
   (let (item lines 700-cmnts)
 
     ;; Catenate all pf--annotations into a single string.
-    (setq 700-cmnts
-          (s-join "\n" (pf--buffer-substring-delimited-whole-buffer "^\{-700" "^-\}")))
-    ;; (setq 700-cmnts (append 700-cmnts
-    ;;                         (s-join "\n" (pf--buffer-substring-delimited-whole-buffer "700}" "end"))))
+    (setq 700-cmnts (s-join "\n"
+                            (pf--buffer-substring-delimited-whole-buffer
+                             "^\{-700"
+                             "^-\}")))
 
     (if (equal pf--annotations 700-cmnts)
 
@@ -5935,12 +6063,14 @@ Loading an instantiation into our list is now trivial.
 
       ;; View comments as a sequence of lines, ignore empty lines
       ;; ---which are not in our grammar.
-      (setq lines (--remove (s-blank? (s-collapse-whitespace it)) (s-lines pf--annotations)))
+      (setq lines (--remove (s-blank? (s-collapse-whitespace it))
+                            (s-lines pf--annotations)))
 
       ;; Traverse the pf--annotations:
       ;; ➩ Skip comments; lines starting with “-- ”.
       ;; ➩ If we see a “𝒱-lhs = rhs” equation, then load it as a variational.
-      ;; ➩ If we view a “lhs = rhs” equation, then load it as an instance delcaration.
+      ;; ➩ If we view a “lhs = rhs” equation, then load it as an
+      ;;   instance delcaration.
       ;; ➩ If we view a PackageFormer declaration, then load it into our
       ;;   package-formers list.
       (while lines
@@ -5953,20 +6083,25 @@ Loading an instantiation into our list is now trivial.
               (progn (pf--load-variational item) (setq lines (cdr lines)))
 
             (if (s-contains? " = " item)
-                (progn (pf--load-instance-declaration item) (setq lines (cdr lines)))
+                (progn (pf--load-instance-declaration item)
+                       (setq lines (cdr lines)))
 
               ;; Else we have a PackageFormer declaration
               ;; and other possiblly-non-700 items.
               (setq item (pf--get-children "PackageFormer" lines))
-              ;; port non-700 items to generated file
-              (push (cons 'porting (s-join "\n" (car item))) pf--package-formers)
-                    ;; acknowledge PackageFormer declaration, if any
-                    (when (cadr item) (pf--load-package-former (cadr item)))
-                    ;; Update lines to be the unconsidered porition
-                    ;; of the wild comments.
-                    (setq lines (caddr item))))))
 
-        (message "Finished parsing pf--annotations."))))
+              ;; port non-700 items to generated file
+              (push (cons 'porting (s-join "\n" (car item)))
+                    pf--package-formers)
+
+              ;; acknowledge PackageFormer declaration, if any
+              (when (cadr item) (pf--load-package-former (cadr item)))
+
+              ;; Update lines to be the unconsidered porition
+              ;; of the wild comments.
+              (setq lines (caddr item))))))
+
+      (message "Finished parsing pf--annotations."))))
 #+END_SRC
 
 # Works, but hidden out from HTML output.
@@ -6246,21 +6381,6 @@ nil
   :PROPERTIES:
   :CUSTOM_ID: Emacs-Interface
   :END:
-  :PROPERTIES:
-
-  :END:
-
-Let's finally declare the variable for keeping track of whether 700-syntactical
-should be coloured or not. Below we use a particular set of default colours.
-#+BEGIN_SRC emacs-lisp :tangle yes
-(defvar pf-highlighting t
-  "Should PackageFormer syntactical items be coloured?
-
-   ➩ Yellow for PackageFormer content.
-   ➩ Red for delimiters “700” and “lisp”.
-   ➩ Green for names of variationals.
-  ")
-#+END_SRC
 
 ** Tooltips
    :PROPERTIES:
@@ -6274,7 +6394,19 @@ should be coloured or not. Below we use a particular set of default colours.
    of 700-syntactical items. As such, let's tie existing occurrences of a PackageFormer's
    name to its elaboration.
 
- #+BEGIN_SRC emacs-lisp :tangle yes
+   #+name: tooltipify
+   We only add tooltips to PHRASE as a standalone word, not as a subword.
+
+   Useful info on tooltips:
+    + http://kitchingroup.cheme.cmu.edu/blog/2013/04/12/Tool-tips-on-text-in-Emacs/
+    + https://www.gnu.org/software/emacs/manual/html_node/elisp/Changing-Properties.html
+    + http://kitchingroup.cheme.cmu.edu/blog/2016/03/16/Getting-graphical-feedback-as-tooltips-in-Emacs/
+    + https://stackoverflow.com/questions/293853/defining-new-tooltips-in-emacs
+
+  The second resource above shows how to alter the phrase's font to indicate that it has
+  a tooltip. It is not desirable for us, since we want to add onto Agda's colouring.
+
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 ;; Nearly instantaneous display of tooltips.
 (setq tooltip-delay 0)
 
@@ -6282,26 +6414,18 @@ should be coloured or not. Below we use a particular set of default colours.
 (setq tooltip-hide-delay 30)
 
 (defun pf--tooltipify (phrase notification)
-  "Add a tooltip to every instance of “phrase” to show “notification”.
-
-   We only add tooltips to “phrase” as a standalone word, not as a subword.
-
-  Useful info on tooltips:
-  http://kitchingroup.cheme.cmu.edu/blog/2013/04/12/Tool-tips-on-text-in-Emacs/
-  https://www.gnu.org/software/emacs/manual/html_node/elisp/Changing-Properties.html
-  http://kitchingroup.cheme.cmu.edu/blog/2016/03/16/Getting-graphical-feedback-as-tooltips-in-Emacs/
-  https://stackoverflow.com/questions/293853/defining-new-tooltips-in-emacs
-
-  The second resource above shows how to alter the phrase's font to indicate that it has
-  a tooltip. It is not desirable for us, since we want to add onto Agda's coluring.
-  "
+  "Add a tooltip to every instance of PHRASE to show NOTIFICATION.
+<<docs('tooltipify)>>"
   (should (stringp phrase))
   (should (stringp notification))
   (save-excursion  ;; Return cursour to current-point afterwards.
     (goto-char 1)
     ;; The \b are for empty-string at the start or end of a word.
     (while (search-forward-regexp (format "\\b%s\\b" phrase) (point-max) t)
-      (put-text-property (match-beginning 0) (match-end 0) 'help-echo (s-trim notification)))))
+      (put-text-property (match-beginning 0)
+                         (match-end 0)
+                         'help-echo
+                         (s-trim notification)))))
  #+END_SRC
 
  New textual occurrences of a name obtain tooltips when ~C-c C-l~ is invoked.
@@ -6314,15 +6438,16 @@ should be coloured or not. Below we use a particular set of default colours.
    :END:
 
  Let's give the current buffer access to the location of the generated file.
- #+BEGIN_SRC emacs-lisp  :tangle yes
+ #+BEGIN_SRC emacs-lisp  :tangle agda-next-700-module-systems.el
 (defun pf--insert-generated-import (name-of-generated-file)
-  "In the current file, find the top-most module declaration
-   then insert an import of the generated file.
-  "
+  "Insert an import pointing to the generated file.
+
+In the current file, find the top-most module declaration
+then insert an import to NAME-OF-GENERATED-FILE."
   (interactive)
   (save-excursion
-    (beginning-of-buffer)
-    (condition-case the-err
+    (goto-char (point-min))
+    (condition-case _
         ;; attemptClause:
         (re-search-forward (concat "open import " name-of-generated-file))
       ;; recoveryBody:
@@ -6335,34 +6460,37 @@ should be coloured or not. Below we use a particular set of default colours.
  produce legitimate Agda from that, and ensure the generated Agda is accessible to the
  current buffer automatically.
 
- #+BEGIN_SRC emacs-lisp :tangle yes
-(defvar pf-waiting-for-agda-threshhold 14
-    "How long we should wait for Agda before giving up on colouring and tooltips.
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(defvar pf-waiting-for-agda-threshhold 14 "\
+How long we should wait for Agda before giving up on colouring and tooltips.
 
-     Default is to wait 4 × 0.5 milliseconds.
-
-     Why? An inital agda2-load of a ~300 line file may take some time.
-    ")
+Default is to wait 4 × 0.5 milliseconds.
+Why? An inital ‘agda2-load’ of a ~300 line file may take some time.")
 
 (defun pf--reify-package-formers (orig-fun &rest args)
-  "Parse package-former syntax and produce Agda when possible."
+  "Parse package-former syntax and produce Agda when possible.
+
+ORIG-FUN is intended to be the Agda loading process with arguments ARGS."
   (interactive)
   (let* (printed-pfs
-        (parent-dir (s-join "/" (-drop-last 1 (s-split "/" buffer-file-truename))))
+        (parent-dir (s-join "/"
+                            (-drop-last 1 (s-split "/" buffer-file-truename))))
         (generatedmodule  (pf--generated-file-name))
         (newfile (concat parent-dir "/" generatedmodule ".agda"))
         (parent-imports (pf--extract-imports)))
 
     ;; Load variationals, PackageFormers, instantiations, and porting list.
     ;; Setting the following to nil each time is not ideal.
-    (setq	pf--variationals (-take-last ♯standard-variationals pf--variationals) ;; take last n items, those being exported into the .el.
-            pf--package-formers       nil
-            pf--annotations           nil)
+    (setq	pf--variationals
+             (-take-last ♯standard-variationals pf--variationals)
+             ;; take last n items, those being exported into the .el.
+             pf--package-formers       nil
+             pf--annotations           nil)
 
     (pf--load-pf--annotations)
 
     (with-temp-buffer
-      (beginning-of-buffer)
+      (goto-char (point-min))
 
       ;; Copy/paste imports from parent file.
       (insert (s-join "\n" `(
@@ -6388,15 +6516,15 @@ should be coloured or not. Below we use a particular set of default colours.
       ;; Replace tabs with spaces
       (untabify (point-min) (point-max))
 
-      (write-region (beginning-of-buffer) (end-of-buffer) newfile))
+      (write-region (goto-char (point-min)) (goto-char (point-max)) newfile))
 
     (pf--insert-generated-import generatedmodule)
 
-  ;; Need to revert buffer to discard old colours.
-  ;; (save-buffer) (revert-buffer t t t)
+    ;; Need to revert buffer to discard old colours.
+    ;; (save-buffer) (revert-buffer t t t)
 
-  ;; call agda2-load
-  (apply orig-fun args)
+    ;; call agda2-load
+    (apply orig-fun args)
 
   ;; Agda attaches “jump to definition” tooltips; we add to those.
   ;; For some reason we need a slight delay between when Agda is done checking
@@ -6405,25 +6533,25 @@ should be coloured or not. Below we use a particular set of default colours.
   ;; Wait until Agda is finished highlighting, then do ours (งಠ_ಠ)ง
   (-let [counter 0] ; agda2-in-progress
     (while agda2-highlight-in-progress
-      (when (> counter pf-waiting-for-agda-threshhold) (error "PackageFormer ∷ Items generated, but not coloured; Agda seems busy..."))
-      (incf counter)
-      (sleep-for 0.5))) ;; In case Agda errors on a term, no more waiting.
-  (loop for (name . pf) in pf--package-formers
-        do (unless (equal 'porting name)
-             (pf--tooltipify name (pf--show-package-former pf))))
+      (when (> counter pf-waiting-for-agda-threshhold)
+        (error (concat "PackageFormer ∷ "
+                       "Items generated, but not coloured; "
+                       "Agda seems busy...")))
+        (incf counter)
+        (sleep-for 0.5))) ;; In case Agda errors on a term, no more waiting.
+    (loop for (name . pf) in pf--package-formers
+          do (unless (equal 'porting name)
+               (pf--tooltipify name (pf--show-package-former pf))))
 
-  ;; Let's also add tooltips for the variationals & colour them.
-  (loop for (v . docs) in pf--variationals
-        do (pf--tooltipify (format "%s" v) docs)
-        ;; For beauty, let's colour variational names green.
-        ;; Only colour occurances that have a space before or after.
-        (when pf-highlighting
-          (highlight-phrase (format "[- \\| ]%s " v) 'hi-green)))
+    ;; Let's also add tooltips for the variationals & colour them.
+    (loop for (v . docs) in pf--variationals
+          do (pf--tooltipify (format "%s" v) docs)
+          ;; For beauty, let's colour variational names green.
+          ;; Only colour occurances that have a space before or after.
+          (when pf-highlighting
+            (highlight-phrase (format "[- \\| ]%s " v) 'hi-green)))
 
-  (message "PackageFormer ∷ All the best coding! (•̀ᴗ•́)و")))
-
-; Users can enable this feature if they're interested in using it; disbale it otherwise.
-; (advice-add 'agda2-load :around #'pf--reify-package-formers)
+    (message "PackageFormer ∷ All the best coding! (•̀ᴗ•́)و")))
  #+END_SRC
 
  Personal note:
@@ -6443,31 +6571,32 @@ should be coloured or not. Below we use a particular set of default colours.
 
   Names with a double dash are intended to be private, not to be touched by users.
 
- #+BEGIN_SRC emacs-lisp :tangle yes
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (defvar pf--menu-bar (make-sparse-keymap "PackageFormer"))
  #+END_SRC
 
  {{{fold( Enabling the feature )}}}
- #+BEGIN_SRC emacs-lisp :tangle yes
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (define-key pf--menu-bar [pf-enable-package-formers]
   '(menu-item "Enable PackageFormer Generation" pf-enable-package-formers))
 
 (defun pf-enable-package-formers ()
- "Add a menubar, and make Agda's C-c C-l consider package-former syntax."
+ "Add a menubar, and make Agda's 𝑪-𝑐 𝑪-𝒍 consider package-former syntax."
  (interactive)
  (define-key global-map [menu-bar pf--menu] (cons "PackageFormer" pf--menu-bar))
  (advice-add 'agda2-load :around #'pf--reify-package-formers)
- (message-box "C-c C-l now reifies PackageFormer annotations into legitimate Agda."))
+ (message-box (concat "C-c C-l now reifies PackageFormer annotations"
+                      "into legitimate Agda.")))
  #+END_SRC
  {{{end-fold}}}
 
  {{{fold( Disabling the feature )}}}
- #+BEGIN_SRC emacs-lisp :tangle yes
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (define-key pf--menu-bar [pf-disable-package-formers]
   '(menu-item "Disable PackageFormer Generation" pf-disable-package-formers))
 
 (defun pf-disable-package-formers ()
-  "Remove menubar, and make Agda's C-c C-l act as normal."
+  "Remove menubar, and make Agda's 𝑪-𝑐 𝑪-𝒍 act as normal."
  (interactive)
  (define-key global-map [menu-bar pf--menu] nil)
  (advice-remove 'agda2-load #'pf--reify-package-formers)
@@ -6477,46 +6606,48 @@ should be coloured or not. Below we use a particular set of default colours.
  {{{end-fold}}}
 
  {{{fold( About menu )}}}
- #+BEGIN_SRC emacs-lisp :tangle yes
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (define-key pf--menu-bar [pf-package-formers-about]
   '(menu-item "About PackageFormers" pf-package-formers-about))
 
 (defun pf-package-formers-about ()
   "Show help about the PackageFormer system."
  (interactive)
- (switch-to-buffer "*PackageFormer-About*") (insert
-  " This is an editor extension prototyping “the next 700 module systems” proposed research.
+ (switch-to-buffer "*PackageFormer-About*") (insert "\
+This is an editor extension prototyping “the next 700 module systems”
+proposed research.
 
-    An informal documentation, with examples, page can be found at
-    https://alhassy.github.io/next-700-module-systems/prototype/package-former.html
+An informal documentation, with examples, page can be found at
+https://alhassy.github.io/next-700-module-systems/prototype/package-former.html
 
-    The technical matter can be found at https://alhassy.github.io/next-700-module-systems/
+The technical matter can be found at
+https://alhassy.github.io/next-700-module-systems/
 
-    If you experience anything “going wrong” or have any ideas for improvement,
-    please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥
-  "))
+If you experience anything “going wrong” or have any ideas for improvement,
+please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"))
  #+END_SRC
  {{{end-fold}}}
 
  {{{fold( Bare Bones Agda )}}}
- #+BEGIN_SRC emacs-lisp :tangle yes
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (define-key pf--menu-bar [pf--bare-bones]
-  '(menu-item "Copy file with PackageFormer annotations stripped away" pf--bare-bones))
+  '(menu-item "Copy file with PackageFormer annotations stripped away"
+              pf--bare-bones))
 
 (defun pf-bare-bones ()
-  "Produce a copy of the current file with PackageFormer annotations stripped away."
+  "Duplicate the current buffer with PackageFormer annotations stripped away."
  (interactive)
  (let* ((src (file-name-sans-extension (buffer-name)))
         (src-agda (format "%s.agda" src))
-        (bare-agda (format "%s_Bare.agda" src)))
+        (bare-agda (format "%s-bare.agda" src)))
    (with-temp-buffer
      (insert-file-contents src-agda)
-     (beginning-of-buffer)
+     (goto-char (point-min))
        (re-search-forward (format "module %s" src))
-       (replace-match (format "module %s_Bare" src))
+       (replace-match (format "module %s-bare" src))
      (loop for pre in '("^\{-lisp" "^\{-700")
       do
-      (beginning-of-buffer)
+      (goto-char (point-min))
       (pf--buffer-substring-delimited-whole-buffer pre "^-\}"
            (lambda (sp ep)
              (save-excursion
@@ -6530,7 +6661,7 @@ should be coloured or not. Below we use a particular set of default colours.
  {{{end-fold}}}
 
  {{{fold( Menu of Defined PackageFormer Contents )}}}
- #+BEGIN_SRC emacs-lisp :tangle yes
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (define-key pf--menu-bar [pf-show-variationals]
   '(menu-item "Show all registered variationals" pf-show-variationals))
 
@@ -6550,24 +6681,26 @@ should be coloured or not. Below we use a particular set of default colours.
  {{{end-fold}}}
 
  {{{fold( Folding Away PackageFormer Annotations )}}}
- #+BEGIN_SRC emacs-lisp :tangle yes
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (define-key pf--menu-bar [pf-fold-annotations]
-  '(menu-item "Toggle folding away “700” and “lisp” blocks" pf-fold-annotations))
+  '(menu-item "Toggle folding away “700” and “lisp” blocks"
+              pf-fold-annotations))
 
 (defun pf-fold-annotations ()
   "Fold all items enclosed in Agda comments “{- ⋯ -}”."
- (interactive)
- (setq pf-folding (not pf-folding))
- (if pf-folding
-     (message "C-c C-l will now fold away “700” and “lisp” blocks. Press ENTER to unfold a block. ")
-     (origami-open-all-nodes (current-buffer))
-     (message "Blocks “700” and “lisp” have been unfolded.")))
+  (interactive)
+  (setq pf-folding (not pf-folding))
+  (if pf-folding
+      (message "Use “C-c f t” to toggle folding blocks")
+    (origami-open-all-nodes (current-buffer))
+    (message "Blocks “700” and “lisp” have been unfolded.")))
 
 ;; Basic origami support for Agda.
 (push (cons 'agda2-mode (origami-markers-parser "{-" "-}"))
       origami-parser-alist)
 
-;; Along with a hydra for super quick navigation and easily folding, unfolding blocks!
+;; Along with a hydra for super quick navigation
+;; and easily folding, unfolding blocks!
 (defhydra folding-with-origami-mode (global-map "C-c f")
   ("h" origami-close-node-recursively "Hide")
   ("o" origami-open-node-recursively  "Open")
@@ -6579,30 +6712,32 @@ should be coloured or not. Below we use a particular set of default colours.
 
  Let's pack these together into a minor mode.
  {{{fold( Minor mode )}}}
- #+BEGIN_SRC emacs-lisp :tangle yes
+
+ #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 ;;;###autoload
-(define-minor-mode package-former-mode
-    "This is an editor extension prototyping “the next 700 module systems” proposed research.
+(define-minor-mode agda-next-700-module-systems-mode "\
+An editor extension prototyping “the next 700 module systems” proposed research.
 
-    An informal documentation, with examples, page can be found at
-    https://alhassy.github.io/next-700-module-systems-proposal/PackageFormer.html
+An informal documentation, with examples, page can be found at
+https://alhassy.github.io/next-700-module-systems-proposal/PackageFormer.html
 
-    The technical matter can be found at https://alhassy.github.io/next-700-module-systems-proposal/
+The technical matter can be found at
+https://alhassy.github.io/next-700-module-systems-proposal/
 
-    If you experience anything “going wrong” or have any ideas for improvement,
-    please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥
-  "
-  :lighter " PackageFormer (•̀ᴗ•́)و" ;; Icon to display indicating the mode is enabled.
+If you experience anything “going wrong” or have any ideas for improvement,
+please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
+  ;; Icon to display indicating the mode is enabled.
+  :lighter " PackageFormer (•̀ᴗ•́)و"
   :require 'foo
 
   ;; Toggle the menu bar
-  ;; (define-key global-map [menu-bar 700menu] t)(not 700-mode))
-  (define-key global-map [menu-bar pf--menu] (and package-former-mode (cons "PackageFormer" pf--menu-bar)))
+  (define-key global-map [menu-bar pf--menu]
+    (and agda-next-700-module-systems-mode (cons "PackageFormer" pf--menu-bar)))
 
   (letf (( (symbol-function 'message-box) #'message))
-  (if package-former-mode
-      ;; Initilisation
-      (pf-enable-package-formers)
+    (if agda-next-700-module-systems-mode
+        ;; Initilisation
+        (pf-enable-package-formers)
 
       ;; Closing
       (pf-disable-package-formers))))
@@ -6769,7 +6904,7 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
    ‘pf-record’, ‘pf-typeclass’, ‘pf-data’.
 
    Use: You want a particular instance in rapid developement and don't want
-   to be bothered to give it a name. Or experimenting and unsure which instance
+   to be bothered to give it a name.  Or experimenting and unsure which instance
    is most desirable, so have access to all of them.
 
    Possible extensions:
@@ -6850,7 +6985,7 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
    She proposes that universal algebra ---a uniform approach to studying different algebras---
    is currently performed on-demand and manually in computing, which it needn't be.
 
-* Appending PackageFormer.el with the useful variationals AND el footer:ignore:
+* Appending the *.el with the useful variationals AND el footer:ignore:
   :PROPERTIES:
   :CUSTOM_ID: Appending-PackageFormer-el-with-the-useful-variationals
   :END:
@@ -6860,21 +6995,91 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
 
    This must come at the end since it uses things like 𝒱 which need to be defined first.
 
-  #+BEGIN_SRC emacs-lisp :exports none :tangle "package-former.el" :var it=(file-as-string "variationals.tmp")
-(setq ♯standard-variationals (s-count-matches-all "(𝒱" it))
-(eval (car (read-from-string (format "(progn %s)" it))))
+   #  :var it = (s-count-matches-all "(𝒱" (file-as-string "variationals.tmp"))
+# (setq ♯standard-variationals 10)
+
+#+BEGIN_SRC emacs-lisp :noweb yes :exports none :tangle agda-next-700-module-systems.el
+(eval-and-compile ;; begin eval-and-compile for standard library of 𝒱ariationals
+
+  <<std-𝒱-lib>>
+
+) ;; End eval-and-compile for standard library of 𝒱ariationals
 #+END_SRC
 
 The above is enclosed in a let-clause, which we need to leave to declare the following
 top-level item.
 
-#+BEGIN_SRC emacs-lisp :tangle "package-former.el"
-(provide 'package-former)
-;;; package-former.el ends here
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(provide 'agda-next-700-module-systems)
+;;; agda-next-700-module-systems.el ends here
  #+END_SRC
  This is the footer line; it appears at the very end of the file.
  Its purpose is to enable people to detect truncated versions of the file from the lack of a footer line.
    :End:
+
+* COMMENT Testing install in a clean emacs :Reference:
+  :PROPERTIES:
+  :CUSTOM_ID: COMMENT-Testing-install-in-a-clean-emacs
+  :END:
+
+ 0. ~emacs -Q~
+
+ 1. In the scratch buffer, paste and execute the following.
+    #+BEGIN_SRC emacs-lisp
+
+(progn
+(require 'package)
+(push '("melpa-stable" . "http://stable.melpa.org/packages/") package-archives)
+(package-initialize)
+(package-refresh-contents)
+
+;; Obtain & setup installation interface.
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+(require 'use-package)
+(setq use-package-always-ensure t)
+
+;; Necessary libraries for producing the prototype
+(use-package s)                  ;; “The long lost Emacs string manipulation library”.
+(use-package dash)               ;; “A modern list library for Emacs”.
+(use-package dash-functional)    ;; -partial, -compose, -orfun, etc.
+(use-package origami)            ;; Folding away regions of text.
+(use-package hydra)              ;; Helpful menus.
+(require 'subr-x)                ;; Extra Lisp functions; e.g., when-let.
+
+(shell-command "cp ~/thesis-proposal/prototype/agda-next-700-module-systems.el ~/.emacs.d/agda-next-700-module-systems.el")
+(load-file "~/.emacs.d/agda-next-700-module-systems.el")
+;; (add-hook 'agda2-mode-hook #'agda-next-700-module-systems-mode)
+
+;; Uncomment out the last line above if you want package-former
+;; to ALWAYS be active on .agda files.
+
+;; You likely have this in your ~/.emacs file already
+(load-file (let ((coding-system-for-read 'utf-8))
+                (shell-command-to-string "/usr/local/bin/agda-mode locate")))
+  )
+#+END_SRC
+
+ 2. In a new ~test.agda~ file, load the meta-program and C-c C-l the following.
+  #+BEGIN_SRC agda
+{- Execute me: (agda-next-700-module-systems-mode) -}
+open import test-generated
+module test where
+
+{-700
+PackageFormer this : Set₁ where
+  A : Set
+  a : A
+
+𝒱-mid = "neato"
+
+thisR = this record ⟴ mid
+-}
+
+_ = thisR
+#+END_SRC
+
+ 3. Now C-c C-l package-former.agda from the webpage.
 
 * COMMENT Cool stuffs, but now obsolete -e.g., :itify:
   :PROPERTIES:
@@ -6889,7 +7094,7 @@ top-level item.
    :END:
 
 Accidentally_reimplemented_Lisps_subst
-#+BEGIN_SRC emacs-lisp :results replace :tangle yes
+#+BEGIN_SRC emacs-lisp :results replace :tangle agda-next-700-module-systems.el
 ;; This is Lisp's “subst”, lol ^_^
 (defun rec-replace (old new thing)
   "Traverse ‘thing’ and seek out all, possibly nested, instances
@@ -6914,7 +7119,7 @@ Accidentally_reimplemented_Lisps_subst
    :PROPERTIES:
 
    :END:
-#+BEGIN_SRC emacs-lisp :results replace  :tangle yes
+#+BEGIN_SRC emacs-lisp :results replace  :tangle agda-next-700-module-systems.el
 ;; Posterity
 (defmacro 𝒱₀ (name &rest body)
   "lhs args = key-value pairs   ⇒  a Lisp lambda taking args, yielding the pairs"
@@ -6944,7 +7149,7 @@ Accidentally_reimplemented_Lisps_subst
    :CUSTOM_ID: update-state
    :END:
 
-#+begin_src emacs-lisp :tangle yes :results replace
+#+begin_src emacs-lisp :tangle agda-next-700-module-systems.el :results replace
 (cl-defun update-state (xs ys)
   "Given ys, a list of key-value pairs, where the keys appear free in list of pairs xs,
    update the values of xs making use of these new pairs.
@@ -7112,7 +7317,7 @@ case analysis. These meta-lists occur in existing Agda notation and so
 we overload them for sake of familiarity ---in actuality, we are generalising the existing form.
 
 {{{fold(~parse-labelled-to-list~)}}}
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
 (cl-defun parse-labelled-to-list (label the-list &key (no-to nil))
 
      "Given a “to-list” of the form “label (x₀ to y₀; …; xₙ to yₙ; λ x → Bx)”
