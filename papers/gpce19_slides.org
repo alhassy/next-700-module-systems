@@ -1,0 +1,710 @@
+#+TITLE: A Language Feature to Unbundle Data at Will
+# DESCRIPTION: ???
+#+AUTHOR: Musa Al-hassy, Jacques Carette, Wolfram Kahl
+#+EMAIL: alhassy@gmail.com
+#+OPTIONS: toc:nil d:nil author:nil title:nil author:nil
+#+PROPERTY: header-args :tangle no :comments link
+#+TODO: TODO | OLD LaTeX README Remarks space
+
+:slides_setup:
+#+OPTIONS: timestamp:nil
+
+#+OPTIONS: reveal_center:t reveal_progress:t reveal_history:t reveal_control:t
+#+OPTIONS: reveal_rolling_links:t reveal_keyboard:t reveal_overview:t num:t
+# OPTIONS: reveal_width:1200 reveal_height:800
+#+OPTIONS: reveal_height:500
+
+#+REVEAL_MARGIN: 0.1
+#+REVEAL_MIN_SCALE: 0.5
+#+REVEAL_MAX_SCALE: 2.5
+
+# Available transitions are: default|cube|page|concave|zoom|linear|fade|none.
+#+REVEAL_TRANS: fade
+# Available themes are: default(black)|white|league|sky|beige|simple|serif|blood|night|moon|solarized
+#+REVEAL_THEME: solarized
+# REVEAL_THEME: serif
+
+# Use 2 if you do not want a ↓-arrow; i.e., only want flat, non 2D, slides.
+#+REVEAL_HLEVEL: 1
+
+# REVEAL_HEAD_PREAMBLE: <meta name="description" content="Org-Reveal Introduction.">
+#+REVEAL_POSTAMBLE:
+#+REVEAL_PLUGINS: (markdown notes)
+#+REVEAL_EXTRA_CSS: ./local.css
+#
+# See here for examples of how fragments look
+# https://revealjs.com/#/fragments
+#
+# Here for what themes look like
+# https://revealjs.com/#/themes
+
+#+MACRO: myfrag  #+ATTR_REVEAL: :frag (appear)
+
+#+MACRO: begin-columns  #+REVEAL_HTML: <div style="width:50%;float:left">
+#+MACRO: break-columns  #+REVEAL_HTML: </div> <div style="width:50%;float: left">
+#+MACRO: end-columns #+REVEAL_HTML: </div>
+
+# Place item in a 1×1 table then center the table.
+# This works nicely for preformatted code whose indentation is important.
+#
+#+MACRO: begin-center #+REVEAL_HTML: <center><table width="50%" border="0""><tr><td>
+#+MACRO: end-center  #+REVEAL_HTML: </td><tr></table></center>
+:End:
+:FragmentStyles:
+The ATTR_REVEAL part must be immediately preceding the first item in a list, no new line;
+other items may be freely spaced.
+
+Available fragment styles are:
+#+ATTR_REVEAL: :frag t
+    * grow
+    * shrink
+    * roll-in
+    * fade-out
+    * highlight-red
+    * highlight-green
+    * highlight-blue
+    * appear
+
+    Fragment sequence can be changed by assigning adding ~:frag_idx~
+    property to each fragmented element.
+
+#+ATTR_REVEAL: :frag t :frag_idx 3
+    And, this paragraph shows at last.
+
+#+ATTR_REVEAL: :frag t :frag_idx 2
+    This paragraph shows secondly.
+
+#+ATTR_REVEAL: :frag t :frag_idx 1
+    This paragraph shows at first.
+
+~#+ATTR_REVEAL: :frag frag-style~ above a list defines fragment style for the list as a whole.
+To define fragment styles for every list item, please enumerate each item's style in a lisp list.
+
+When there is :frag_idx specified, insufficient fragment style list will be extended by its last element. So a :frag (appear) assigns each item of a list the appear fragment style.
+
+#+BEGIN_SRC emacs-lisp
+#+ATTR_REVEAL: :frag (appear)
+   * I appear.
+   * I appear.
+   * I appear.
+#+END_SRC
+
+Nb: Org-reveal supports /editable code blocks/ using klipsify.
+
+  # :frag_idx (5 4 3 2 1)
+#+ATTR_REVEAL: :frag (grow shrink roll-in fade-out none)
++ I will grow.
++ I will shrink.
++ I rolled in.
++ I will fade out.
++ I don't fragment.
+
+  EXPORT CURRENT SUBTREE
+Use menu entry " C-c C-e R S" to export only current subtree, without the title slide and the table of content, for a quick preview of your current edition.
+:End:
+* COMMENT [[https://revealjs.com/?transition=zoom#/][Reveal.JS]] -- An HTML Presentation Framework :README_WK:
+
+Org-mode documents can be transformed into beautiful slide decks
+with [[https://github.com/yjwen/org-reveal/blob/master/Readme.org][org-reveal]] with the following two simple lines.
+
+#+BEGIN_SRC emacs-lisp
+(use-package ox-reveal
+  :config (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js"))
+#+END_SRC
+
+For example, execute, ~C-x C-e~ after the closing parenthesis of, the following block to see an example slide-deck (─‿‿─)
+#+BEGIN_SRC emacs-lisp :tangle no
+(progn (shell-command "curl https://raw.githubusercontent.com/yjwen/org-reveal/696613edef0fe17a9c53146f79933fe7c4101100/Readme.org >> Trying_out_reveal.org")
+       (switch-to-buffer (find-file "Trying_out_reveal.org"))
+       (org-reveal-export-to-html-and-browse))
+#+END_SRC
+
+Org-mode exporting, ~C-c C-e~, now includes an option ~R~ for such reveal slide decks.
+
+:Hide:
+[[https://alhassy.github.io/next-700-module-systems/proposal/defence-slides.html#/sec-title-slide][Here]] ([[https://raw.githubusercontent.com/alhassy/next-700-module-systems/master/proposal/defence-slides.org][source]]) is an example of org-reveal slides where I add a number to each page,
+use multiple columns, and extend the margins perhaps a bit too much.
+:End:
+
+Two dimensional slides may be a bit new to some people, so I like to give viewers
+an option, in tiny font, to view the slide-deck continuously and remind them that ~?~ provides useful shortcuts.
+#+BEGIN_SRC emacs-lisp
+(setq org-reveal-title-slide "<h1>%t</h1> <h3>%a</h3>
+<font size=\"1\">
+<a href=\"?print-pdf&showNotes=true\">
+⟪ Flattened View ; Press <code>?</code> for Help ⟫
+</a>
+</font>")
+#+END_SRC
+One should remove the ~&showNotes=true~ if they do not want to include speaker notes in the flattened view.
+
+Within the flatenned view, one may wish to ~CTRL/CMD+P~ then save the resulting PDF locally.
+
+* COMMENT overview from review
+
+In a language with dependent types, the same notion may be formalised several different ways. For instance, a monoid could be:
+
+(1) a record with as fields (i) its carrier, (ii) a binary operation on the carrier, (iii) an identity element of the carrier, and (iv) associative, (v) left, and (vi) right identity laws;
+
+(2) a record indexed on a carrier, with (ii)-(vi) as fields;
+
+(3) a record indexed on a carrier, binary operation, and identity, with (iv)-(vi) as fields;
+
+(4) a datatype of free monoids, with a binary operation and identity as constructors;
+
+(5) a datatype of free monoids indexed on a type of variables, with an injection from the variables as an additional constructor.
+
+In general, a record with N fields might have M interesting variations, requiring order of N*M lines of code. The paper presents a technique (implemented as Emacs macros) where one can write N+M lines, from which the N*M lines are generated.
+
+* Selecting the ‘Right’ Perspective
+
+  {{{myfrag}}}
+  + Library Design
+
+    ⇒ Reusability Aim
+
+    ⇒ Substantial Generality
+
+  + Akin to whether functions should be curried,
+
+  #+begin_center
+  {{{myfrag}}}
+  When creating a
+  record to bundle up certain information that “naturally” belongs together,
+  *what parts of that record should be /parameters/ and what parts should be
+  /fields/?*
+  #+end_center
+
+** ‘Parameter’ vs ‘Field’
+
+   #+html: <font size="5">
+  #+begin_quoting
+    Structures are meaninglessly parameterized from a mathematical perspective.
+    [...] I think of the parametric versus bundled variants as analogous to currying
+    or not; are the arguments to a function presented in succession or as a single
+    ordered tuple? However, there is a big difference between currying functions
+    and currying structures. *Switching between curried and uncurried functions is
+    cheap, but it is nearly impossible in Lean to curry a structure.* That is, what
+    is bundled cannot be later opened up as a parameter. (Going the other direction
+    towards increased bundling of structures is easily achieved with sigma types.)
+   This means that library designers are forced to take a conservative approach and
+   expose as a parameter anything that any user might reasonably want exposed, because
+   once it is bundled, it is not coming back.
+
+   ---Tom Hales
+  #+end_quoting
+  #+html: </font>
+
+   {{{myfrag}}}
+  | This is the problem we are solving! |
+
+** Current Approach ---Monoids
+
+   {{{myfrag}}}
+   + Haskell typeclasses can have only one instance per datatype
+
+   + Standard libraries define two /isomorphic/ copies ~All~ and ~Any~ of ~Bool~
+
+   {{{myfrag}}}
+#+BEGIN_SRC haskell
+data Bool   = False | True
+
+newtype All = All { getAll :: Bool }
+
+newtype Any = Any { getAny :: Bool }
+#+END_SRC
+
+   {{{myfrag}}}
+    *Only* defined for the purpose of being able to attach the respective monoid instances to them
+
+* What is a Monoid?
+ For the monoid example,
+ it /seems/ that there are three contenders for the monoid interface.
+
+** /An/ Arbitrary Monoid
+  #+begin_src agda
+  record Monoid₀ : Set₁ where
+    field
+      Carrier : Set
+      _⨾_     : Carrier → Carrier → Carrier
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
+#+end_src
+
+   {{{myfrag}}}
+  Use-case: The category of monoids.
+
+  #+BEGIN_NOTES
+  In ~Monoid₀~, we will call ~Carrier~ “bundled up”,
+  while we call it “exposed” in ~Monoid₁~ and ~Monoid₂~.
+  #+END_NOTES
+
+** A Monoid /over/ A Given Carrier Type
+#+begin_src agda
+  record Monoid₁ (Carrier : Set) : Set where
+    field
+      _⨾_     : Carrier → Carrier → Carrier
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
+#+end_src
+
+   {{{myfrag}}}
+  Use-case: Sharing the carrier type.
+
+** A Monoid over a Given Carrier /and/ Operation
+#+begin_src agda
+  record Monoid₂
+           (Carrier : Set)
+           (_⨾_ : Carrier → Carrier → Carrier)
+         : Set  where
+    field
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
+  #+end_src
+
+     {{{myfrag}}}
+  Use-case: This solves Haskell's problem of making contrived datatypes for
+  the sake of attaching instances to them.
+
+** Monoids as Reified Syntax
+
+   A monoid is an /interpretation/ mapping from terms.
+
+     #+begin_src agda
+    data Monoid₃ : Set where
+      _⨾_ : Monoid₃ → Monoid₃ → Monoid₃
+      Id  : Monoid₃
+  #+end_src
+
+** A Monoid /over/ ⋯
+
+   {{{myfrag}}}
+  + There are other combinations of what is to be exposed and hidden,
+    for applications that we might never think of.
+
+  + What to do?
+
+  + /commit to no particular formulation/ and allow on the fly “unbundling”
+    - This is the /converse/ of *instantiation*
+
+  {{{myfrag}}}
+  This desire for reusability motivates a new language feature: The ~PackageFormer~.
+
+** Making Modules with Meta-Programmed Meta-Primitives
+
+  {{{myfrag}}}
+  + *All* previous presentation can be generated from a *single* explicit declaration + 4 lines
+    ---one line for each presentation
+
+    - Former was quadratic in length, this approach is linear!
+
+  + How?
+
+  + Generative meta-program integrated into the
+     most widely-used Agda “IDE”: Emacs!
+
+  #+BEGIN_NOTES
+  In particular,
+  if one were to explicitly write $M$ different bundlings of a package
+  with $N$ constants then one would write nearly $N × M$ lines of code,
+  yet this quadratic count becomes linear $N + M$ by having a single
+  package declaration of $N$ constituents with $M$ subsequent instantiations.
+  We hope that reducing such duplication of effort, and of potential maintenance
+  burden, will be beneficial to the software engineering of large libraries
+  of formal code --- and consider it the main contribution of our work.
+
+  To demonstrate the generality of the notion of package formers we shall demonstrate how other common forms could be ‘derived’ from the single declaration above. It is to be noted that for such a small example, such derived code may be taken for granted, however for much larger theories —for example, a “field” comes with more than 20 fields— the ability to derive different perspectives in a consistent fashion is indispens- able; especially when the package is refactored. More realistically, a symmetric rig groupoid uses about 212 coherence laws [rig_computation], for which case-splitting, to perform proofs, yields over 200 goals thereby making metaprogramming a tempting approach.
+#+END_NOTES
+
+** /The/ Definition of a Monoid
+  #+begin_example
+  PackageFormer MonoidP : Set₁ where
+    Carrier : Set
+     _⨾_    : Carrier → Carrier → Carrier
+    Id      : Carrier
+    assoc   : ∀ {x y z}
+            → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId  : ∀ {x} → Id ⨾ x ≡ x
+    rightId : ∀ {x} → x ⨾ Id ≡ x
+  #+end_example
+
+* Using Variationals To Be Non-Committal
+
+     {{{myfrag}}}
+  We declare a ~PackageFormer~ then /instantiate/ it using directives:
+    #+begin_src agda
+  id          :  Variational
+  record      :  Variational
+  typeclass   :  Variational
+  termtype    :  String → Variational
+  unbundled   :  ℕ → Variational
+  exposing    :  List Name → Variational
+  _⟴_        :  Variational
+              →  Variational → Variational
+#+end_src
+
+ {{{myfrag}}}
+ We may
+ write any /instantiation/ as a sequence of ⟴-separated clauses:
+  #+begin_center
+~PF ⟴ 𝓋₁ ⟴ 𝓋₂ ⟴ ⋯ ⟴ 𝓋ₙ~
+ #+end_center
+
+** Obtaining The Previous Presentations
+
+*** Sematincal ~record~
+
+   #+begin_example
+ Monoid₀′  = MonoidP record
+
+ Monoid₁′ = MonoidP record ⟴ unbundled 1
+ Monoid₁″ = Monoid₀′ exposing (Carrier)
+
+ Monoid₂″ = Monoid₀′ exposing (Carrier; _⨾_)
+#+end_example
+
+    #+BEGIN_NOTES
+    It is interesting to note that /\textsf{PackageFormer}/ ~MonoidP~ is treated on
+    the same footing as /record/ ~Monoid₀′~: Both may be subjected to variationals.
+    #+END_NOTES
+
+*** Syntactical ~data~
+
+    #+begin_example
+ Monoid₃′ = MonoidP termtype "Carrier"
+
+ Monoid₄ = MonoidP
+           termtype-with-variables "Carrier"
+{- ≅
+    data Monoid₄ (Vars : Set) : Set where
+      inj : Vars → Monoid₄ Vars
+      _⨾_ : Monoid₄ Vars
+          → Monoid₄ Vars → Monoid₄ Vars
+      Id  : Monoid₄ Vars
+-}
+#+end_example
+
+    #+BEGIN_NOTES
+   Our running example uses the theory of monoids, which is a single-sorted theory.
+   In general, a ~PackageFormer~ may have multiple sorts --- as is the case with
+   graphs --- and so one of the possibly many sorts needs to be designated as the
+   universe of discourse, or carrier, of the resulting inductively defined term type.
+   Such a purpose is served by the single argument to ~termtype~.
+
+   We may also want to have terms /over/ a particular variable set, and so declare
+   the following after extending the system with a user defined variational ~termtype-with-variables~.
+   #+END_NOTES
+
+** Quadratic to Linear
+
+ {{{myfrag}}}
+  + Notice that the previous 5 monoid presentations, ~Monoid₀~ to ~Monoid₄~, spanned 32
+    lines
+    - 8 for the original, 24 for the variants
+
+  + Using ~MonoidP~ and our operators, this can be done in 7 + 6 = 13 lines.
+
+  + This corresponds to using a 2-part code,
+     with the initial lines being a model, and then 1-2 lines to specify variants.
+
+* Variational Polymorphism
+
+** Summing Elements from a Monoid?
+  #+BEGIN_NOTES
+  Suppose we want to produce the function ~concat~, which folds over the elements of a list
+  according to a compositionality scheme --- examples of this include summing over
+  a list, multiplication over a list, checking all items in a list are true, or
+  at least one item in the list is true.
+  Depending on the selected instantiation,
+  the resulting function may have types such as the following:
+  #+END_NOTES
+
+#+BEGIN_SRC agda
+  concat₀ : {M : Monoid₀}
+          → let C = Monoid₀.Carrier M
+             in  List C → C
+
+  concat₁ : {C : Set} {M : Monoid₁ C}
+          → List C → C
+
+  concat₂ : {C : Set} {_⨾_ : C → C→ C}
+            {M : Monoid₂ C _⨾_}
+          → List C → C
+
+  concat₃ : let C = Monoid₃
+            in List C → C
+#+END_SRC
+
+** Easy: Add a new clause!
+
+  #+BEGIN_NOTES
+  Given our previous work, and providing that the variationals are already
+  defined, we add a new declaration which, unlike the rest, comes
+  equipped with a /definition/.
+#+END_NOTES
+
+#+BEGIN_SRC agda
+PackageFormer MonoidP : Set₁ where
+      ⋮
+    concat : List Carrier → Carrier
+    concat = foldr _⨾_ Id
+#+END_SRC
+
+   {{{myfrag}}}
+  The variationals is where this power comes from!
+
+** What is a Variational?
+
+  {{{myfrag}}}
+  $$Variational \\ \quad ≅ \quad (PackageFormer → PackageFormer)$$
+
+  #+BEGIN_NOTES
+  Indeed, our implementation relies on 5 meta-primitives to form arbitrarily
+  complex schemes that transform abstract \textsf{PackageFormer}s into
+  other grouping mechanisms. The meta-primitives were arrived at by codifying
+  a number of structuring mechanisms directly then carefully extracting the minimal
+  ingredients that enable them to be well-defined.
+  #+END_NOTES
+
+* How Does This Work?
+
+  We have implemented our system as an “editor tactic” meta-program.
+
+  #+BEGIN_NOTES
+  In actual use, an Agda programmer declares what they want
+  using the combinators above (inside special Agda code comments).
+  The comments are read by Emacs Lisp and legitimate Agda is produced in a generated file, which is
+  then automatically imported into the current file --- examples are provided in an appendix.
+  The generated file never needs to be consulted,
+  as the declared names are furnished with tooltips rendering the elaborated
+  Agda form. Moreover, we also provide a feature to extract a ‘bare bones’ version
+  of a file that strips out all PackageFormer annotations, leaving only Agda
+  as well as the import to the generated file. Finally, since the elaborations are
+  just Agda, one only needs to use the system once and future users are
+  not forced to know about it.
+  #+END_NOTES
+
+  {{{myfrag}}}
+  + [✓] Extensible
+  + [✓] Practical
+    - Can form boilerplate code for
+      renamings, hidings, decorations, and generations
+      of hierarchical structures.
+
+  + [✓] Pragmatic
+    - Menus, highlighting new syntax, fold away 700-blocks, discard annotations.
+
+** Demonstration
+
+    [[file:./gpce19-mousing-over-large.png]]
+
+  #+BEGIN_NOTES
+  The details of the implementation and numerous common structuring mechanisms
+  derived from the meta-primitives can be found on the prototype's homepage:
+  #+begin_center org
+  https://alhassy.github.io/next-700-module-systems/prototype/package-former.html
+  #+end_center
+#+END_NOTES
+
+* Conclusion and Next Steps
+
+  #+BEGIN_NOTES
+  We have outlined a new language feature that is intended to reduce
+  duplicated effort involved in taking different perspectives on structures --- and to solve
+  Hales' problem of premature commitment to a particular encoding. Moreover, on the road
+  to making this tractable, we have unearthed a novel form of polymorphism and demonstrated
+  its usefulness with some examples.
+  #+END_NOTES
+
+** Future Work
+
+  {{{myfrag}}}
+  0. Provide explicit (elaboration) semantics for ~PackageFormer~ within a minimal type theory.
+
+  1. Explain how generative modules
+     are supported by this scheme.
+
+  3. How do multiple default, or optional, clauses for a constituent fit into this
+     language feature.
+     # This may necessitate a form of limited subtyping.
+
+  4. Explore inheritance, coercion, and transport along canonical isomorphisms.
+
+** TODO Contributions
+
+  #+BEGIN_NOTES
+  This short paper proposes a language feature that enables users to selectively
+  choose how information is to be organised, such as which parts are exposed as parameters,
+  thereby reducing effort when taking different perspectives on structures.
+  To demonstrate that this feature seems useful in practice,
+  we have implemented a meta-program to generate Agda using special code comments
+  that specify how package elements are to be organised, such as their selective exposure
+  as parameters which is a common issue with libraries in dependently-typed languages.
+
+  Our variationals
+  cannot yet be directly defined in Agda. Instead, we are making use of Emacs Lisp, a language
+  close to the Agda ecosystem. Going forward, one of the aims of our work is to have variationals
+  definable directly within Agda ---rather than having our users learn yet another language.
+  Our exploratory efforts suggest that we may be able to realise \textsf{PackageFormer}s as Agda records
+  of ‘elements’ ---a tuple of qualifier, name, type, and definitional clauses---
+  and, so, the result is a conservative extension to Agda's underlying type theory.
+  However, from a practical standpoint, it is highly
+  likely that we will extend Agda to support the new syntax.
+   #+END_NOTES
+
+** Closing
+
+   {{{myfrag}}}
+   /Our resulting system has turned hand-written instances of structuring schemes from a design/
+   /pattern into full-fledged library methods/.
+
+   {{{myfrag}}}
+   Paraphrasing the “Deriving Via” group,
+   we believe that ~PackageFormer~'s have the potential to dramatically change the way we write instances
+   of structuring mechanisms, as it encourages giving names and documentation to recurring patterns
+   and reusing them where needed.
+
+* Appendix: Example Code
+
+  Full code scripts may be found on the prototype's repository; below are
+  snippets for the presented fragments.
+
+** Module Header
+
+  #+BEGIN_SRC agda
+open import Data.List hiding (concat)
+open import Relation.Binary.PropositionalEquality
+            using (_≡_)
+
+module gpce19 where
+
+open import gpce19-generated
+#+END_SRC
+
+The import of the generated file is automatically produced and
+inserted by the system, if need be.
+
+** Plain ~MonoidP~ PackageFormer
+#+BEGIN_SRC agda
+{-700
+PackageFormer MonoidP : Set₁ where
+  Carrier : Set
+  _⨾_     : Carrier → Carrier → Carrier
+  Id      : Carrier
+  assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+  leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
+  rightId : ∀ {x : Carrier} → x ⨾ Id ≡ x
+-}
+#+END_SRC
+
+** Variational ~record~ and 3 Instantiations
+   In the paper proper we mentioned “unbundled”, which in the prototype
+takes the form of the meta-primitive ~:waist~.
+#+BEGIN_SRC agda
+{-lisp
+(𝒱 record
+  = "Reify a variational as an Agda “record”.
+
+     Elements with equations are construed as
+     derivatives of fields  ---the elements
+     without any equations.
+    "
+  :kind record
+  :alter-elements
+     (λ es → (--map (map-qualifier
+        (λ _ → (unless (element-equations it)
+           "field")) it) es)))
+-}
+#+END_SRC
+
+** Using ~record~
+Notice that the organisational mechanism not only has a name and documentation,
+but also an unambiguous implementation. We may use it as follows.
+
+#+BEGIN_SRC agda
+{-700
+Monoid₀′  = MonoidP record
+Monoid₁″ = MonoidP record ⟴ :waist 1
+Monoid₂″ = MonoidP record ⟴ :waist 2
+-}
+#+END_SRC
+
+# latex: \newpage
+
+** ~termtype~ Variationals
+
+   We may also have shorter variational definitions directly in ~700~-blocks.
+#+BEGIN_SRC agda
+{-700
+𝒱-termtype                carrier  =  ⋯
+𝒱-termtype-with-variables carrier  =  ⋯
+
+Monoid₃′ = MonoidP termtype "Carrier"
+Monoid₄  = MonoidP termtype-with-variables "Carrier"
+-}
+#+END_SRC
+
+** PackageFormers with Equations
+
+#+BEGIN_SRC agda
+{-700
+PackageFormer MonoidPE : Set₁ where
+  -- A few declarations
+  Carrier : Set
+  _⨾_     : Carrier → Carrier → Carrier
+  Id      : Carrier
+  assoc   : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+  -- A few declarations with equations
+  Rid : Carrier → Carrier
+  Rid x = x ⨾ Id
+  concat : List Carrier → Carrier
+  concat = foldr _⨾_ Id
+
+  -- More declarations
+  leftId  : ∀ {x : Carrier} → Id ⨾ x ≡ x
+  rightId : ∀ {x : Carrier} → Rid x ≡ x
+-}
+#+END_SRC
+
+** ~concat₀~ and ~concat₃~
+
+*** Declarations
+#+BEGIN_SRC agda
+{-700
+𝒱-decorated by = ⋯
+Monoid⁰ = MonoidPE decorated "⁰" ⟴ record
+Monoid³ = MonoidPE ⟴ decorated "³"
+                   ⟴ termtype "Carrier³"
+-}
+#+END_SRC
+
+*** Uses
+
+Then, concatenation over an arbitrary monoid:
+#+BEGIN_SRC agda
+concat₀ : {M : Monoid⁰}
+         → let C = Monoid⁰.Carrier⁰ M
+           in List C → C
+concat₀ {M} = Monoid⁰.concat⁰ M
+#+END_SRC
+
+As well as, concatenation over an arbitrary *closed* monoid term:
+#+BEGIN_SRC agda
+concat₃ : let C = Monoid³
+          in List C → C
+concat₃ = concat³
+#+END_SRC
+
+* Thank-you
+
+  /Questions?/
