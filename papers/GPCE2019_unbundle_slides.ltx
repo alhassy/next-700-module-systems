@@ -9,8 +9,8 @@
 %
 % mupdf -r160 $NAME.pdf &
 
-\documentclass[aspectratio=169,handout,t,10pt]{beamer}
-%\documentclass[aspectratio=169,t,10pt]{beamer}
+%\documentclass[aspectratio=169,handout,t,11pt]{beamer}
+\documentclass[aspectratio=169,t,11pt]{beamer}
 
 \usepackage{edcomms}
 \long\def\ignore#1{}
@@ -20,7 +20,7 @@
   A Language Feature to Unbundle Data at Will
   \\(Short Paper)
 \thanks{This research is supported by NSERC (National Science and
- Engineering Research Council of Canada).}
+ Engineering Research Council of Canada).\kern-1em}
 }
 
 
@@ -30,10 +30,10 @@
 Hamilton, Ontario, Canada
 % L8S 4K1,
 \\
-$\{$\textsf{alhassy}$\mid$\textsf{carette}$\mid$\textsf{kahl}$\}$\textsf{@@cas.mcmaster.ca}
+$\{$\textsf{alhassy}$\mid$\textsf{carette}$\mid$\textsf{kahl}$\}$\textsf{@@mcmaster.ca}
 }
 
-\date{GPCE 2019, Athens, Greece, 21st October 2019}
+\date{GPCE 2019, Athens, Greece\\ 21st October 2019}
 %}}}
 
 %{{{ \long\def\HIDE#1
@@ -65,12 +65,13 @@ $\{$\textsf{alhassy}$\mid$\textsf{carette}$\mid$\textsf{kahl}$\}$\textsf{@@cas.m
 %format PackageFormer = "\textsf{\bfseries PackageFormer}"
 %format ^^ = "\kern4em"
 %format ^- = "{\kern0.2em}"
-%format ^! = "\kern-0.5em"
+%%%%format ^! = "\kern-0.5em"
 %%format ↓ = "\kern0.2em" ↓
-%format 『 = "\color{grey}\kern-0.25em"
+%format 『 = "\color{grey}\kern-0.25em\begingroup\footnotesize"
 %format 【 = "\color{DarkRed}\kern-0.25em"
-%format 』 = "\color{black}\kern-0.25em"
-%format ^! = "\onslide<+->{}"
+%format 』 = "\endgroup\color{black}\kern-0.25em"
+%%% %format ^! = "\onslide<+->{}"
+%%% \onslide<+-> does not work here
 
 %\renewcommand{\hsindent}[1]{}
 \mathindent1em
@@ -214,15 +215,18 @@ $\{$\textsf{alhassy}$\mid$\textsf{carette}$\mid$\textsf{kahl}$\}$\textsf{@@cas.m
 %{{{ {frame}\frametitle{Which |Category| Should I use?}
 \begin{frame}\frametitle{Which \textsf{Category} Should I use?}
 
+  \kern-1ex\mathindent-0.6em
+  \onslide<+->
+  \onslide<+->
 ``A category consists of a collection of \textit{objects}, a
   collection of \textit{morphisms}, an operation \ldots'':
   
+  \onslide<+->
   \begin{code}
-record Category 『(i j k : Level)』 : Set 『(suc (i ⊍ j ⊍ k))』
+record Category 『(i j k : Level)』 : Set 『(suc (i ⊍ j ⊍ k))』 where
   field  Obj : Set 『 i 』
          Hom : Obj → Obj → Setoid 『 j k 』
-  Mor : Obj → Obj → Set 『 j 』
-  Mor = λ A B → Setoid.Carrier (Hom A B)
+  Mor = (λ A B → Setoid.Carrier (Hom A B)) : Obj → Obj → Set 『 j 』
   field  _⨾_      :  {A B C : Obj} → Mor A B → Mor B C → Mor A C
          Id       : {A : Obj} → Mor A A
   \end{code}
@@ -232,16 +236,14 @@ record Category 『(i j k : Level)』 : Set 『(suc (i ⊍ j ⊍ k))』
 ``A category over a given collection |Obj| of \textit{objects}, with
   |Hom| providing  \textit{morphisms}, is given by defining an
   operation \ldots'':
+
   \onslide<+->
   \begin{code}
 record Category′ 『{i j k : Level}』 {Obj : Set 『 i 』} (Hom : Obj → Obj → Setoid 『 j k 』) : Set 『(i ⊍ j ⊍ k)』 where
-  Mor : Obj → Obj → Set 『 j 』
-  Mor = λ A B → Setoid.Carrier (Hom A B)
+  Mor = (λ A B → Setoid.Carrier (Hom A B)) : Obj → Obj → Set 『 j 』
   field  _⨾_      :  {A B C : Obj} → Mor A B → Mor B C → Mor A C
          Id       : {A : Obj} → Mor A A
   \end{code}
-
-
   
 \end{frame}
 %}}}
@@ -263,6 +265,7 @@ record Category′ 『{i j k : Level}』 {Obj : Set 『 i 』} (Hom : Obj → Ob
    expose as a parameter anything that any user might reasonably want exposed, because
    once it is bundled, it is not coming back.''
 
+   \kern2ex
 \strut\hfill Tom Hales, 2018-09-18 blog post
 
 \onslide<+->
@@ -276,25 +279,27 @@ record Category′ 『{i j k : Level}』 {Obj : Set 『 i 』} (Hom : Obj → Ob
 %{{{ {frame}\frametitle{Library Design}
 \begin{frame}\frametitle{Library Design}
 
-\onslide<+->
+\onslide<+->\large
 %\kern5ex
-\begin{itemize}[<+->]\itemsep=2ex
-\item Goals:
-  \begin{itemize}[<+->]
-  \item Reusability
-  \item Generality
-  \item (Mathematical) ``Naturality''
+\begin{itemize}[<+->]\itemsep=3ex
+\item \textbf{Goals:}
+  \begin{itemize}[<+->]\itemsep1ex
+  \item \large Reusability
+  \item \large Generality
+  \item \large (Mathematical) ``Naturality''
   \end{itemize}
-\item Result: Conflict of Interests:
+\item \textbf{Result:} \onslide<+-> \textbf{\color{DarkRed}Conflict of Interests:}
 
+  \kern2ex
   \onslide<+->
-    When creating a
-  record to bundle up certain information that ``naturally'' belongs together,
+  For a record type bundling up items that ``naturally'' belong together:
 
-  \onslide<+->
-  \textbf{what parts of that record should be {\color{DarkRed}parameters} and what parts should be
-  {\color{DarkGreen}fields}?}
-  
+  \kern1ex
+ \begin{itemize}[<+->]\itemsep2ex
+ \item \large \textbf{Which parts of that record should be
+    {\color{DarkRed}parameters}?}
+  \item \large \textbf{Which parts should be {\color{DarkGreen}fields}?}
+  \end{itemize}
 \end{itemize}
 \end{frame}
 %}}}
@@ -370,7 +375,7 @@ Use-case: The category of monoids.
 \onslide<+->
 %{{{ record Monoid₂
 \fbox{\begin{minipage}[t]{0.46\columnwidth}
-    A monoid over type |Carrier| with operation |⨾|:
+    A monoid over |Carrier| with operation |⨾|:
 \begin{code}
   record Monoid₂
       (Carrier : Set)
@@ -391,16 +396,18 @@ Use-case: Additive monoid of integers
 %}}}
 
 %{{{ {frame}\frametitle{Related Problem: Control over Parameter Instantiation}
-\begin{frame}\frametitle{Related Problem: Control over Parameter Instantiation}
+\begin{frame}\large\frametitle{Related Problem: Control over Parameter Instantiation}
 
 \onslide<+->
 \onslide<+->
 Instances of Haskell typeclasses
 %\kern5ex
-\begin{itemize}[<+->]\itemsep=2ex
+\begin{itemize}[<+->]\itemsep=1ex
 \item are indexed by \textbf{types} only
 \item so that there can be only one |Monoid| instance for |Bool|
 \end{itemize}
+
+\kern2ex
 \onslide<+->
 Crude solution: Isomorphic copies with different type \textbf{name}:
 \begin{code}
@@ -421,19 +428,39 @@ newtype Any = Any { getAny :: Bool } -- for |Monoid| instance based on disjuncti
 %}}}
 
 %{{{ {frame}\frametitle{Which Items Should be \textbf{field}s, which Parameters?}
-\begin{frame}\frametitle{Which Items Should be \textbf{field}s, which Parameters?}
+\begin{frame}\frametitle{Which Items should be Fields? Which Items should be Parameters?}
+
+  \onslide<+->\large
+%\kern5ex
+  \begin{itemize}[<+->]\itemsep=2ex
+
+\item $\mathsf{Monoid}_0$,  $\mathsf{Monoid}_1$, and
+  $\mathsf{Monoid}_2$
+  showed some combinations of items selected as parameters.
+  
+\item  There are other combinations of what is to be exposed and
+  hidden,
 
   \onslide<+->
-%\kern5ex
-\begin{itemize}[<+->]\itemsep=2ex
-\item  There are other combinations of what is to be exposed and hidden,
     for applications that we might never think of.
 
-\item What to do?
+\item Providing always the most-general parameterisation produces
+  \textbf{\color{DarkRed}awkward}
+  library interfaces!
+    
+    
+\end{itemize}
+
+\onslide<+->
+\kern3ex
+\textbf{\color{DarkBlue}\large Proposed Solution:}
+
+\begin{itemize}[<+->]\itemsep=2ex
 
 \item Commit to no particular formulation and allow on-the-fly ``unbundling''
 
-  \onslide<+->
+  \kern1ex
+ \onslide<+->
   --- This is the \textbf{converse} of instantiation
 
 \item \textbf{\color{DarkGreen}New language feature:} \textsf{PackageFormer}
@@ -442,9 +469,11 @@ newtype Any = Any { getAny :: Bool } -- for |Monoid| instance based on disjuncti
 %}}}
 
 %{{{ {frame}\frametitle{\textit{The} Definition of a Monoid} 0
-\begin{frame}\frametitle{\textit{The} Definition of a Monoid}
+\begin{frame}\frametitle{\textit{The} Definition of a Monoid%
+  \only<6->{, and Recreating $\mathsf{Monoid}_0$}}
 
   \kern-3ex
+  \onslide<+->
   \onslide<+->
 \begin{minipage}[t]{0.48\columnwidth}
 %{{{  PackageFormer MonoidP
@@ -474,6 +503,7 @@ newtype Any = Any { getAny :: Bool } -- for |Monoid| instance based on disjuncti
 \begin{code}
   Monoid₀′  = MonoidP record
 \end{code}
+\onslide<+->
 %{{{ record Monoid₀
 \fbox{\begin{minipage}[t]{0.96\columnwidth}
 \textbf{An arbitrary} monoid:
@@ -498,7 +528,8 @@ Use-case: The category of monoids.
 %}}}
 
 %{{{ {frame}\frametitle{\textit{The} Definition of a Monoid} 1
-\begin{frame}\frametitle{\textit{The} Definition of a Monoid}
+\begin{frame}\frametitle{\textit{The} Definition of a Monoid%
+  \only<2->{, and Recreating $\mathsf{Monoid}_1$}}
 
   \kern-3ex
   \onslide<+->
@@ -515,12 +546,12 @@ Use-case: The category of monoids.
     rightId  : ∀ {x} → x ⨾ Id ≡ x
 \end{code}
 %}}}
-\onslide<+->
+%\onslide<+->
 %\kern5ex
-\begin{itemize}[<+->]\itemsep=2ex
+\begin{itemize}\itemsep=2ex
 \item We regain the different candidates
 
-  \onslide<+->
+  %\onslide<+->
   by applying \textsf{Variational}s
 \end{itemize}
 \end{minipage}
@@ -531,9 +562,12 @@ Use-case: The category of monoids.
   Monoid₁′ = MonoidP record ⟴ unbundled 1
   Monoid₁″ = Monoid₀′ exposing (Carrier)
 \end{code}
+\onslide<+->
 %{{{ record Monoid₁
 \fbox{\begin{minipage}[t]{0.96\columnwidth}
     A monoid \textbf{over} type |Carrier|:
+
+    \kern-2ex
 \begin{code}
   record Monoid₁
       (Carrier : Set)
@@ -546,6 +580,8 @@ Use-case: The category of monoids.
       leftId  : ∀ {x} → Id ⨾ x ≡ x
       rightId : ∀ {x} → x ⨾ Id ≡ x
 \end{code}
+
+    \kern-1.5ex
   Use-case: Sharing the carrier type.
 \end{minipage}}
 %}}}
@@ -554,14 +590,16 @@ Use-case: The category of monoids.
 %}}}
 
 %{{{ {frame}\frametitle{\textit{The} Definition of a Monoid} 2
-\begin{frame}\frametitle{\textit{The} Definition of a Monoid}
+\begin{frame}\frametitle{\textit{The} Definition of a Monoid%
+  \only<2->{, and Recreating $\mathsf{Monoid}_2$}}
 
   \onslide<+->
-  \kern-3ex
+  \kern-4ex
 \begin{minipage}[t]{0.42\columnwidth}
 %{{{  PackageFormer MonoidP
 \begin{code}
-  PackageFormer MonoidP : Set₁ where
+  PackageFormer MonoidP
+    : Set₁ where
     Carrier  : Set
     _⨾_      : Carrier → Carrier → Carrier
     Id       : Carrier
@@ -571,18 +609,17 @@ Use-case: The category of monoids.
     rightId  : ∀ {x} → x ⨾ Id ≡ x
 \end{code}
 %}}}
-\onslide<+->
 %\kern5ex
-\begin{itemize}[<+->]\itemsep=2ex
-\item We regain the different candidates
+\begin{itemize}\itemsep=2ex
+\item We regain the different versions
 
-  \onslide<+->
+ % \onslide<+->
   by applying \textsf{Variational}s
 \end{itemize}
 \end{minipage}
 \onslide<+->
 \hfill
-\begin{minipage}[t]{0.55\columnwidth}\mathindent0pt
+\begin{minipage}[t]{0.55\columnwidth}\mathindent0pt\small
 \begin{code}
 Monoid₂′ = MonoidP record ⟴ unbundled 2
 Monoid₂′ = MonoidP record ⟴ exposing (Carrier; _⨾_)
@@ -591,6 +628,8 @@ Monoid₂″ = Monoid₀′ exposing (Carrier; _⨾_)
 %{{{ record Monoid₂
 \fbox{\begin{minipage}[t]{0.96\columnwidth}
     A monoid over type |Carrier| with operation |⨾|:
+
+    \kern-2ex
 \begin{code}
   record Monoid₂
       (Carrier : Set)
@@ -603,6 +642,8 @@ Monoid₂″ = Monoid₀′ exposing (Carrier; _⨾_)
       leftId  : ∀ {x} → Id ⨾ x ≡ x
       rightId : ∀ {x} → x ⨾ Id ≡ x
 \end{code}
+
+    \kern-2ex
 Use-case: Additive monoid of integers
 \end{minipage}}
 %}}}
@@ -611,7 +652,8 @@ Use-case: Additive monoid of integers
 %}}}
 
 %{{{ {frame}\frametitle{\textit{The} Definition of a Monoid} 012
-\begin{frame}\frametitle{\textit{The} Definition of a Monoid}
+\begin{frame}\frametitle{\textit{The} Definition of a Monoid%
+  \only<4->{, and Instantiations}}
 
   \kern-3ex
   \onslide<+->
@@ -628,14 +670,14 @@ Use-case: Additive monoid of integers
     rightId  : ∀ {x} → x ⨾ Id ≡ x
 \end{code}
 %}}}
-\onslide<+->
+%\onslide<+->
 %\kern5ex
 \begin{itemize}[<+->]\itemsep=2ex
 \item We regain the different candidates
 
-  \onslide<+->
+%  \onslide<+->
   by applying \textsf{Variational}s
-\item \textbf{Linear} effort in number of variations
+\item \textbf{\color{DarkGreen}Linear} effort in number of variations
 \end{itemize}
 \end{minipage}
 \onslide<+->
@@ -683,31 +725,40 @@ Use-case: Additive monoid of integers
   Monoid₃′ = MonoidP termtype "Carrier"
 \end{code}
 
+\onslide<+->
 \kern-2ex
 %{{{ record Monoid₁
 \fbox{\begin{minipage}[t]{0.96\columnwidth}
+\kern-2ex
 \begin{code}
     data Monoid₃ : Set where
       _⨾_ : Monoid₃ → Monoid₃ → Monoid₃
       Id  : Monoid₃
 \end{code}
+
+\kern-2ex
 \end{minipage}}
 %}}}
+\onslide<+->
 \begin{code}
  Monoid₄ = MonoidP
            termtype-with-variables "Carrier"
 \end{code}
 
+\onslide<+->
 \kern-2ex
 %{{{ record Monoid₁
 \fbox{\begin{minipage}[t]{0.96\columnwidth}
+\kern-2ex
 \begin{code}
-    data Monoid₄ (Vars : Set) : Set where
-      inj : Vars → Monoid₄ Vars
-      _⨾_ : Monoid₄ Vars
-          → Monoid₄ Vars → Monoid₄ Vars
-      Id  : Monoid₄ Vars
+    data Monoid₄ (Var : Set) : Set where
+      inj  : Var → Monoid₄ Var
+      _⨾_  : Monoid₄ Var
+           → Monoid₄ Var → Monoid₄ Var
+      Id   : Monoid₄ Var
 \end{code}
+
+\kern-2ex
 \end{minipage}}
 %}}}
 \end{minipage}
@@ -738,10 +789,11 @@ Use-case: Additive monoid of integers
 %{{{ {frame}\frametitle{Variational Polymorphism}
 \begin{frame}\frametitle{Variational Polymorphism}
 
-  \kern-3ex
+  \kern-5ex
   \onslide<+->
 \begin{minipage}[t]{0.48\columnwidth}
-%{{{  PackageFormer MonoidP
+  %{{{  PackageFormer MonoidP
+  \savecolumns
 \begin{code}
   PackageFormer MonoidP : Set₁ where
     Carrier  : Set
@@ -751,12 +803,16 @@ Use-case: Additive monoid of integers
              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
     leftId   : ∀ {x} → Id ⨾ x ≡ x
     rightId  : ∀ {x} → x ⨾ Id ≡ x
-    ^!
+\end{code}
+
+\onslide<+->
+\kern-3.5ex
+\restorecolumns
+\begin{code}
     concat : List Carrier → Carrier
     concat = foldr _⨾_ Id
 \end{code}
 %}}}
-\onslide<+->
 %\kern5ex
 \begin{itemize}[<+->]\itemsep=2ex
 \item Items with default definitions
@@ -774,8 +830,9 @@ Use-case: Additive monoid of integers
 \end{code}
 
 \kern-2ex
-%{{{ record concat*
+%{{{  concat*
 \fbox{\begin{minipage}[t]{0.96\columnwidth}
+\kern-2ex
 \begin{code}
   concat₀ : {M : Monoid₀}
           → let C = Monoid₀.Carrier M
@@ -791,20 +848,21 @@ Use-case: Additive monoid of integers
   concat₃ : let C = Monoid₃
             in List C → C
 \end{code}
+
+\kern-2ex
 \end{minipage}}
 %}}}
 \end{minipage}
 \end{frame}
 %}}}
 
-
 %{{{ {frame}\frametitle{How Does This Work?}
-\begin{frame}\frametitle{How Does This Work?}
+\begin{frame}\large\frametitle{How Does This Work?}
 
 \onslide<+->
 %\kern5ex
 \begin{itemize}[<+->]\itemsep=2ex
-\item Implemented our system as an ``editor tactic'' meta-program
+\item Currently implemented  as an ``editor tactic'' meta-program
 \item Using the ``default IDE'' of Agda\onslide<+->: Emacs
 \item Implementation is an \textbf{\color{DarkGreen}extensible} library built on top of 5 meta-primitives
 \item Generated Agda file is automatically imported into the current file
@@ -814,8 +872,8 @@ Use-case: Additive monoid of integers
 \end{frame}
 %}}}
 
-%{{{ {frame}\frametitle{Generated Code Visualised on Hover}
-\begin{frame}\frametitle{Generated Code Visualised on Hover}
+%{{{ {frame}\frametitle{Generated Code Displayed on Hover}
+\begin{frame}\frametitle{Generated Code Displayed on Hover}
 
   \onslide<+->
   \strut\hfill
@@ -830,39 +888,70 @@ Use-case: Additive monoid of integers
 %}}}
 
 %{{{ {frame}\frametitle{Future Work}
-\begin{frame}\frametitle{Future Work}
+\begin{frame}\large\frametitle{Future Work}
 
 \onslide<+->
 %\kern5ex
 \begin{itemize}[<+->]\itemsep=2ex
-\item Provide explicit (elaboration) semantics for ~PackageFormer~ within a minimal type theory.
+\item Explicit (elaboration) semantics for \textsf{PackageFormer}s and
+  \textsf{Variational}s within a minimal type theory
 
-\item Explain how generative modules
-     are supported by this scheme.
+  \begin{itemize}[<+->]\itemsep=1ex
+  \item Refactor meta-primitives from LISP flavour to Agda flavour
+  \item Integrate with a reflection interface for Agda
+  \end{itemize}
 
-\item. How do multiple default, or optional, clauses for a constituent fit into this
-     language feature.
+  
+%\item Explain how generative modules are supported by this scheme.
+
+\item Explore multiple default definitions
+  
      % This may necessitate a form of limited subtyping.
 
-\item Explore inheritance, coercion, and transport along canonical isomorphisms.
+\item Explore inheritance, coercion, and transport along canonical isomorphisms
+
+\item Generate mutually-recursive definitions for certain instances of
+  many-sorted \textsf{PackageFormer}s?
 \end{itemize}
 \end{frame}
 %}}}
 
 %{{{ {frame}\frametitle{Conclusion}
-\begin{frame}\frametitle{Conclusion}
+\begin{frame}\large\frametitle{Conclusion}
 
 \onslide<+->
-%\kern5ex
+\kern-1ex
 \begin{itemize}[<+->]\itemsep=2ex
-\item Our resulting system has turned hand-written instances of structuring schemes from a design
-  pattern into full-fledged library methods
+\item Naming, terminology, concrete syntax, combinator interfaces
+  are all still in flux!
+\item The present system already allows to replace hand-written
+  instances of structuring schemes
+  with invocations of (generative) library methods
+%\item Our resulting system has turned hand-written instances of structuring schemes from a design
+%  pattern into full-fledged library methods
+\item We already influenced the naming conventions of the Agda ``standard library''
 \item % Paraphrasing the “Deriving Via” group,
-  textsf{PackageFormer}s and \textsf{Variational}s have the potential to dramatically change the way we write instances
-   of structuring mechanisms: Giving names and documentation to recurring patterns
-   and reusing them where needed.
-\item Naming/terminology, concrete syntax, and combinator interfaces
-  are still tentative!
+  Our approach based on \textsf{PackageFormer}s and
+  \textsf{Variational}s makes it possible
+  % has the potential
+  % to dramatically change the way we write instances
+  % of structuring mechanisms:
+  % Giving names and documentation to recurring patterns
+  % and reusing them where needed.
+   \begin{itemize}[<+->]\itemsep=1ex
+     \item \large to codify, name, and document ``design patterns'' of
+       uses of structuring mechanisms
+     \item \large to enable and encourage re-use at a high level of abstraction
+     \item \large to drastically reduce the interface size of ``interface libraries''
+   \end{itemize}
+   \kern1ex
+   \onslide<+->
+   and therewith has the potential to
+
+   \kern1ex
+   \onslide<+->
+     \strut\hfill\textbf{\color{DarkGreen}drastically change how we
+   provide and use structures via libraries}\hfill\strut
 \end{itemize}
 \end{frame}
 %}}}
