@@ -183,31 +183,10 @@ MonoidT₅ = MonoidP ⟴ unbundling 5 ⟴ record
 -}
 
 {-700
--- Intensionally erroenous attempt.
-𝒱-primed-attempt = :alter-elements (λ es → (--map (map-name (λ n → (rename-mixfix (λ op → (concat op "′")) n)) it) es))
+-- Intentionally erroenous attempt.
+𝒱-primed-attempt = :alter-elements (λ es → (--map (map-name (λ n → (rename-mixfix (λ np → (concat np "′")) n)) it) es))
 
 -- M-Set′-attempt = M-Set record ⟴ primed-attempt
--}
-
-{-lisp
-(𝒱 primer = :alter-elements (lambda (es)
-   (let* ((esnew es)
-         ;; Let's try to accomodate for names with underscores
-         (names_ (--map (element-name it) es))
-         (names  (--map (s-replace "_" "" it) names_))
-         (oldies (append names names_)))
-
-     (loop for old in oldies
-           for new in (--map (rename-mixfix (λ n → (concat n "′")) it) oldies)
-           do
-           (setq esnew (--map (element-replace old new it) esnew)))
-
-     ;; return value
-     esnew)))
--}
-
-{-700
-MR′ = M-Set record ⟴ primer
 -}
 
 {-700
@@ -225,20 +204,20 @@ MR𝕏    = M-Set record ⟴ map (λ e → (map-name (λ n → (rename-mixfix (�
 -}
 
 {-700
-MR𝕪    = M-Set record ⟴ rename (λ n → (concat n "𝕪"))
-MR-oh  = M-Set record ⟴ rename (λ n → (pcase n ("Scalar" "S") ("𝟙" "ε") (else else)))
+MR𝕪    = M-Set-Record rename (λ n → (concat n "𝕪"))
+MR-oh  = M-Set-Record rename (λ n → (pcase n ("Scalar" "S") ("𝟙" "ε") (else else)))
 -}
 
 {-700
-MR₁₂   = M-Set record ⟴ decorated "₁" ⟴ decorated "₂"
-the-MR = M-Set record ⟴ co-decorated "the-"
-MR₃₄   = M-Set record ⟴ subscripted₃ ⟴ subscripted₄
-MRₜₒ   = M-Set record ⟴ renaming "Scalar to S; Vector to V; · to nice"
-NearMonoid = M-Set record ⟴ renaming "Scalar to Carrier; Vector to Carrier; · to ×"
+-- MR₁₂   = M-Set-Record decorated "₁" ⟴ decorated "₂" :adjoin-retract nil
+the-MR = M-Set-Record co-decorated "the-"
+-- MR₃₄   = M-Set-Record subscripted₃ ⟴ subscripted₄ :adjoin-retract nil
+MRₜₒ   = M-Set-Record renaming "Scalar to S; Vector to V; · to nice"
+NearMonoid = M-Set-Record renaming "Scalar to Carrier; Vector to Carrier; · to ×"
 -}
 
 {-700
-NearMonoid¹ = M-Set record ⟴ single-sorted "Carrier"
+NearMonoid¹ = M-Set-Record single-sorted "Carrier"
 -}
 
 {-   700
@@ -250,11 +229,11 @@ M-Set-Sorts = M-Set record ⟴ sorts
 -}
 
 {-700
-MonoidSignature = M-Set record ⟴ generated (λ e → (and (s-contains? "Scalar" (element-type e)) (not (s-contains? "Vector" (element-type e)))))
+MonoidSignature = M-Set-Record generated (λ e → (and (s-contains? "Scalar" (element-type e)) (not (s-contains? "Vector" (element-type e)))))
 -}
 
 {-700
-MonSig = M-Set record ⟴ signature
+MonSig = M-Set-Record signature
 -}
 
 {-700
@@ -271,19 +250,19 @@ M-Set-R₁ = M-Set-R ⟴ open (λ x → (concat x "₁"))
 -}
 
 {-700
-M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V"
+-- M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V"
 -}
 
 {-700
 Algebra  = M-Set record
 Algebra′ = Algebra open-with-decoration "′"
 Hom  = Algebra hom
-Hom² = Algebra hom ⟴ renaming "map₁ to scalar; pres-𝟙 to unity"
+Hom² = Algebra hom ⟴ renaming "map₁ to scalar; pres-𝟙 to unity" :adjoin-retract nil
 -}
 
 _ : {Src Tgt : Algebra} → Hom² Src Tgt → Algebra.Scalar Src → Algebra.Scalar Tgt
 _ = Hom².scalar
-
+--
 {-700
 M-Set-R′ = M-Set-R open-with-decoration "′"
 -}

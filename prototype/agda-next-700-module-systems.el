@@ -59,33 +59,7 @@ Property: The resulting number is ≤ length STRING."
 
 (cl-defun pf--get-children (parent the-wild &key (then #'identity))
   "Returns indented text under a PARENT line.
-
-Go into ‘the-wild’ seeking out the first occurence of ‘parent’,
-who once found, ought to have a minimal indentation for its children.
-
-“Minimal” in that if there are items with a greater indentation,
-then they are children of children and should be kept.
-
-The first input argument is of type ‘string’,
-the second argument may be of type ‘string’ or ‘list’ of strings
----if it's a string, we split along new lines---,
-the optional ‘then’ is a function acting on children strings.
-
-Result is the parent followed by its children, as a list of lines,
-where each child has been altered using the optional THEN function.
-Moreover, we also return the rest of the unconsidered portion of THE-WILD:
-
-Result list: (unconsidered-prefix-of-the-wild
-              (cons parent-line children-lines)
-              unconsidered-remaining-lines)
-
-The first element is the porition that does not contain an occurence
-of PARENT.  The second is the parent and its children, if possible.
-The third is the remainder of THE-WILD.
-
-Implementation: Look at the indentation of the
-first child, then use that as a lower bound to find the indentation
-of the remaining children."
+nil"
   (let ((lines (if (stringp the-wild) (s-lines the-wild) the-wild))
         (indentation -1)
         unconsidered
@@ -104,8 +78,8 @@ of the remaining children."
     (setq parent-line (car lines))
     (setq lines (cdr lines))
 
-    ;; How far is the first child indented?
-    (setq indentation (pf--get-indentation (car lines)))
+    ;; How far is the first child indented? At least 1 space; otherwise no children.
+    (setq indentation (max 1 (pf--get-indentation (car lines))))
 
     ;; Keep only the children that have at least this level of indentation.
     (setq lines&more
@@ -122,10 +96,7 @@ of the remaining children."
 
 (cl-defun pf--substring-delimited (prefix suffix string)
   "Assuming “STRING ≈ ⋯PREFIX⟪needle⟫SUFFIX⋯”, return the first such needle.
-
-We convert all adjacent whitespace
-characters to a single space in the input STRING and trim any surrounding
-whitespace from the resulting output needle string."
+nil"
 
   (unless (stringp string)
     (error "PF--SUBSTRING-DELIMITED: Argument STRING must be a string"))
@@ -139,18 +110,7 @@ whitespace from the resulting output needle string."
 
 (cl-defun pf--substring-delimited-here (context string) "\
 Assuming “CONTEXT ≈ PREFIX $here SUFFIX” yield the value of needle ‘$here’.
-
-- That is, assuming “CONTEXT ≈ PREFIX $here SUFFIX”
-  and “STRING ≈ ⋯PREFIX ⟪needle⟫ SUFFIX⋯”, return the /first/ such needle.
-
-  That is, we place template CONTEXT “on top of” provide STRING,
-  then return whatever falls under position ‘$here’.
-
-- NOTE: PREFIX and SUFFIX cannot be empty strings!
-
-- We convert all adjacent whitespace
-  characters to a single space in the input ‘string’ and trim any surrounding
-  whitespace from the resulting output needle string."
+nil"
 
   (-let [pre-post (s-split "$here" context)]
     (pf--substring-delimited (s-trim (car pre-post))
@@ -164,17 +124,7 @@ Assuming “CONTEXT ≈ PREFIX $here SUFFIX” yield the value of needle ‘$her
 (cl-defun pf--buffer-substring-delimited
     (start end &optional more &key (regexp t))
   "Return next delimited substring in the current buffer.
-
-- Get the current buffer's /next/ available substring that is delimited
-  between the regexp tokens START up to END, exclusively.
-
-- If no tokens are found, an error is thrown.
-
-- MORE is a function that is called on the found instance:
-  It is a function of the start and end positions of the occurance.
-
-- REGEXP indicates whether we are using regular expression strings, or literals.
-   It is nil by default."
+nil"
   (let (start-pos end-pos sp ep content)
     (if regexp (re-search-forward start) (search-forward start))
     (setq start-pos (point))
@@ -196,12 +146,7 @@ Assuming “CONTEXT ≈ PREFIX $here SUFFIX” yield the value of needle ‘$her
 ;; pf--declare-type has no support for optionals yet
 (cl-defun pf--buffer-substring-delimited-whole-buffer (start end &optional more)
   "Return all delimited substrings in the current buffer.
-
-- Return a list of all substrings in the current buffer that
-  are delimited by regexp tokens START and END, exclusively.
-
-- MORE is a function that is called on the found instance:
-  It is a function of the start and end positions of the occurance."
+nil"
   ;; Colour 700 keywords red “'error”
   (highlight-phrase start 'error)
   (highlight-phrase end 'error)
@@ -221,25 +166,7 @@ Assuming “CONTEXT ≈ PREFIX $here SUFFIX” yield the value of needle ‘$her
 
 (defun rename-mixfix (f op &optional avoid-mixfix-renaming)
   "Rename an operation by “leaping over” Agda positional markers.
-
-- Given an Agda mixfix operator OP, apply a function on strings F on
-  the inner-most delimiting tokens of the operator, in-particular ignoring
-  outer argument markers ‘_’.
-
-- For example, if you wish to decorate an operator with a prime or a subscript,
-  we cannot simply catenate else we obtain “_⊕_₁” rather than “_⊕₁_”.
-
-- Here are some sample results, assuming “f ≈ (λ it → (format “₀%s¹” it))”:
-  +  _⊕_     ↦  _₀⊕¹_
-  + _[_⊗_]  ↦  _₀[_⊗_]¹
-  + he_lo   ↦  ₀he_lo¹
-  + he-lo   ↦  ₀he-lo¹
-
-- AVOID-MIXFIX-RENAMING is optional; by default renaming “jumps over”
-  underscores, but providing a non-nil value for this argument leaves
-  underscores alone.
-
-  It is a matter of having, say, default “_⊕ₙ_” versus “_⊕_ₙ”."
+nil"
   (let* ((parts (s-split "_" op))
          (front (s-blank? (first parts)))
          (rear (s-blank? (car (last parts)))))
@@ -290,22 +217,7 @@ A BODY must always be supplied, even if the literal nil."
 
 (defstruct pf--package-former
   "Record of components that form a PackageFormer.
-
-- ‘docstring’: Relevant documentation about this structure; e.g.,
-   what is the instance declaration that generated this type, if any.
-
-- ‘kind’: PackageFormer, record, data, module, function, etc.
-
-- ‘name’: The name of the grouping mechanism schema.
-
-- ‘level’: The universe level that the instantiations will inhabit.
-       The universe level of the PackageFormer.
-
-- Finally, the children fields are the typed-names that constitute the body of the
-  grouping mechanism. As long as consistent indentation is selected, it does not matter how much.
-  As such, we keep track of these indentation numerics ourselves in case we need to tweak them.
-
-- The first ‘waist’-many elements are considered parameters."
+nil"
   docstring
   kind
   name
@@ -320,6 +232,14 @@ A BODY must always be supplied, even if the literal nil."
 
 (defvar pf--package-formers nil
   "The list of PackageFormer schema declarations in the current Agda buffer.")
+
+(defun $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 (pf)
+ "Return elements of a given PackageFormer's name, PF.
+
+ This is provided to users; it is one of the few utilities that
+ makes use of implementation specfic details.
+"
+ (pf--package-former-elements (cdr (assoc pf pf--package-formers))))
 
 (defvar pf-highlighting t
   "Should PackageFormer syntactical items be coloured?
@@ -359,17 +279,31 @@ A BODY must always be supplied, even if the literal nil."
              (setf (,loc e′) (funcall f (,loc e′)))
              e′)))))
 
-(defun element-replace (old new e)
-  "Replace every occurance of word OLD by string NEW in element E."
-  (-let [e′ (copy-element e)]
+(defun element-contains (needle e)
+  "Check whether string NEEDLE occurs anywhere in element E."
+    (--any it
+           (-concat (loop for place in '(element-qualifier element-name element-type)
+                         collect (eval `(when (,place e) (s-contains-p needle (,place e)))))
+                   (loop for eq in (element-equations e)
+                         collect (s-contains-p needle eq)))))
+
+(cl-defun element-replace (old new e &key (support-mixfix-names t))
+  "Replace every occurance of word OLD by string NEW in element E.
+
+When SUPPORT-MIXFIX-NAMES is true, we ignore underscores."
+  (let* ((e′    (copy-element e))
+         (score (if support-mixfix-names "" "_"))
+         (old′  (s-replace "_" score old))
+         (new′  (s-replace "_" score new)))
+
     (loop for place in '(element-qualifier element-name element-type)
-          do (eval `(setf (,place e′)
-                          (replace-regexp-in-string (format "\\b%s\\b" old)
-                                                    new (,place e′) t t))))
+          do (eval `(when (,place e′) (setf (,place e′)
+                          (replace-regexp-in-string (format "\\b%s\\b" old′)
+                                                    new′ (,place e′) t t)))))
     ;; Replacements in the equations as well.
     (setf (element-equations e′)
           (loop for eq in (element-equations e′)
-                collect (s-replace old new eq)))
+                collect (s-replace old′ new′ eq)))
     ;; return value
     e′))
 
@@ -385,16 +319,7 @@ or ‘=’.  The qualifier is a ‘special’ word: field, private."
 
 (defun parse-elements (elements)
   "Parse string representation of elements into the ‘element’ record type.
-
-- Given a list of PackageFormer ELEMENTS, as strings, parse them into the
-  ‘element’ datatype.  Declarations and equations may be interspersed, as along
-  as equations of names follow their declarations.
-
-- The order is preserved in-case there are declarations that make use of
-  definitions.
-
-- Types must always be supplied ---in general, type inference is
-  undecidable in DTLs."
+nil"
   (-let [es (mapcar #'list elements)]
     ;; Maintain a list of related items.
     (loop for i from 0
@@ -432,17 +357,57 @@ or ‘=’.  The qualifier is a ‘special’ word: field, private."
                         :type ty
                         :equations (cdr e)))))
 
+;; eval-and-compile
+(defmacro  -ensure (condition message context &rest suggestions)
+  "Ensure provided CONDITION is true, otherwise report an error.
+nil"
+  `(let* ((ლ\(ಠ益ಠ\)ლ
+           (format "700: %s\n\n\t⇨\t%s%s%s" ,message ,context
+                   (if (quote ,suggestions) "\n" "")
+                   (s-join "\n" (--map (format "\t⇨\t%s" it)
+                                       (quote ,suggestions)))))
+          ;; Try to evaluate the condition.
+          (res (condition-case nil ,condition (error ლ\(ಠ益ಠ\)ლ))))
+
+     ;; If we've made it here, then the condition is defined.
+     ;; It remains to check that it's true.
+     (or res (error ლ\(ಠ益ಠ\)ლ))))
+
+;; eval-and-compile
+(defun -wf (key value &optional context args)
+  "Report an error unless provided key-value are well-formed.
+nil"
+  (let* ((case
+            (pcase key
+              (:kind `(,(-contains? '(record data module PackageFormer) value)
+                       This kind “ ,value ” is not support by Agda!
+                       Valid kinds: record⨾ data⨾ module⨾ PackageFormer!))
+              (:waist `(,(numberp value)
+                        The waist should be a number⨾ which “ ,value ” is not!))
+              (:level `(,(-contains? '(inc dec none) value)
+                        The “level” must be “inc” or “dec” or “none”⨾
+                        which “ ,value ” is not!))))
+        (condition (car case))
+        (message   (mapconcat #'prin1-to-string (cdr case) " ")))
+
+    ;; TODO: Acount for alter-elements well-formedness?
+    ;; (:alter-elements (functionp value)
+    ;; (format "Componenet alter-elements should be a function;
+    ;; which “%s” is not." value))
+
+    (when case
+      ( -ensure (or condition (-contains? args value)) message context))
+
+    ;; Return the key-value as a pair for further processing.
+    ;; :kind and :level values are symbols and so cannot be evaluated furthur.
+    (cons key
+          (if (or (-contains? args value) (-contains? '(:kind :level) key))
+              value
+            (eval value)))))
+
 (defun pf--load-package-former (lines)
   "Load a string representation of a ‘package-former’ into our global list.
-
-- The input LINES must be a list of lines forming a full
-  PackageFormer declaration; e.g., obtained by calling ‘pf--get-children’.
-
-- It is parsed and a ‘package-former’ value is returned.
-
-- Whitespace is stripped off of items.
-
-- Docstrings are ignored."
+nil"
   (when (not lines)
       (error "PF--LOAD-PACKAGE-FORMER: Error: Input must be non-empty list"))
 
@@ -475,14 +440,7 @@ or ‘=’.  The qualifier is a ‘special’ word: field, private."
 
 (defun pf--special (f)
   "Test whether an element F is special or not.
-
-- Special elements F, for whatever reason are exceptional, and so
-  are maked as singleton lists and their indentation is lessened.
-  That is, these denote sibling fields rather than more children.
-
-- Special elements include: field, private.
-
-- See ‘show-package-former’ for their use and how their printed."
+nil"
   (--any? (s-contains? it f) '("field" "private" "open" "top-level" "sibling")))
 
 (cl-defun show-element (e &optional omit-qualifier)
@@ -539,12 +497,7 @@ elements are in a parameter position."
 (eval-and-compile
 (defmacro pf--ensure (condition message context &rest suggestions)
   "Ensure provided CONDITION is true, otherwise report an error.
-
-- Ensure CONDITION is true and defined, otherwise emit MESSAGE
-  and indicate the offending CONTEXT.
-  If there are any SUGGESTIONS to the user, then we show those too.
-
-- If CONDITION is defined and non-nil, whence true, we return it."
+nil"
   `(let* ((ლ\(ಠ益ಠ\)ლ
            (format "700: %s\n\n\t⇨\t%s%s%s" ,message ,context
                    (if (quote ,suggestions) "\n" "")
@@ -560,15 +513,7 @@ elements are in a parameter position."
 (eval-and-compile
 (cl-defun pf--wf (key value &optional context args)
   "Report an error unless provided key-value are well-formed.
-
-- This operation checks that the VALUE of KEY
-  is well-formed according to 700-specifications ---which are stated
-  explicitly within this method--- and if it is well-formed we
-  return the VALUE /interpreted/ along with the KEY.
-
-- When the value is not well-formed, we use the provided CONTEXT
-  in an error message.  No error is reported if VALUE is an ARGument, ARGS,
-  of a variational begin declared."
+nil"
   (let* ((case
             (pcase key
               (:kind `(,(-contains? '(record data module PackageFormer) value)
@@ -600,29 +545,7 @@ elements are in a parameter position."
 (eval-and-compile
 (defun 𝒱𝒸 (body-list &optional context args)
   "Parse a single 𝒱ariational 𝒸lause, “[label] (:key :value)*”, as a list.
-
-- If there is a ‘label’, then yield ‘(label :key value ⋯)’
-  since ‘label’ is assumed to exist as a variational having the given
-  keys as arguments.  The result should be a list of pairs.
-
-  BODY-LIST consists of elements of this shape.
-
-- If there is no label, the parse the list of pairs.
-
-- For example,
-
-    (cl-defun 𝒱-test (&key height kind) (list (format \"%s & %s\" height kind)))
-
-    (𝒱𝒸 '(test :height 3 :kind 'data)) ≈ (test :height 3 :kind data) ≈ (“3 & data”)
-
-    (𝒱𝒸 '(     :height 3 :kind data))  ≈ ((:height . 3) (:kind . data))
-
-- Newer items c₀ ⟴ ⋯ ⟴ cₙ should be at the front of the list;
-  access should then be using ‘assoc’.
-
-- CONTEXT is the parent context that contains an invocation of this method.
-
-- ARGS is the list of names that are bound, and so are variational args."
+nil"
   (let (res)
     (loop for clause in (-split-on '⟴ body-list)
           do (setq res (-concat
@@ -670,22 +593,7 @@ elements are in a parameter position."
 (eval-and-compile
 (defmacro 𝒱 (name &rest body)
   "Reify as Lisp a variational declaration using the variational grammar.
-
-- The grammar:
-
-        𝓋   ::= [docstring] identifier ([“(”]identifier[“)”])* = 𝓋𝒸
-
-        𝓋𝒸  ::= [identifier] (:key value)* (⟴ 𝓋𝒸)*
-
-- The result is a function NAME prefixed by 𝒱- whose BODY is an alist
-  obtained from the aforementioned key-value pairs.
-
-- E.g., (𝒱 tes positional (keyword 3) = :kind data)
-  This defines a variational with one positional and one keyword argument having
-  3 as default.
-
-- The resulting generated function has its code embeded as a docstring viewable
-  with “𝑪-𝒉 𝒐” ---catented after any provided user documentation."
+nil"
   ;; Main code follows.
   (let* ((context (mapconcat (λ x → (prin1-to-string x t)) (cons name body) " "))
          (args-body (-split-on '= body))
@@ -763,18 +671,7 @@ elements are in a parameter position."
 
 (cl-defun pf--load-variational (variation-string)
   "Obtain lines of the buffer that start with “𝒱-” as a Lisp alist.
-
-- A VARIATION-STRING line is something like:
-
-      𝒱-name x₀ … xₙ  =  ([label₀] :key₀ val₁ ⋯ :keyₘ valₘ ⟴)*
-
-- The result is a list of 3-tuples (name (x₀ ⋯ xₙ) ((key₀ val₀) ⋯ (keyₘ valₘ))),
-   containing the clause's name, argument list, and key-value pairs.
-
-- For now, the RHS must be an expression of the form
-  “:key₀ value₀ ⋯ :keyₙ valueₙ”
-  + where the valueᵢ are legitmate Lisp expressions
-  + and the LHS is an atomic name, possibly with argument names."
+nil"
   (thread-last variation-string
     (s-replace "𝒱-" "𝒱 ")
     (format "(%s)")
@@ -795,28 +692,7 @@ elements are in a parameter position."
 
 (defun pf--load-instance-declaration (line &optional show-it)
   "Reify concrete instance declarations as ‘package-former’ values.
-
-- If the current LINE string is an instance declaration,
-  then produce a new PackageFormer from it.  Else, do nothing.
-
-- Whitespace is automatically collopased from LINE.
-
-- Nil elements are discarded; e.g., due to a filter.
-
-- Duplicates are discarded; e.g., due to a rename.
-
-- Variational clauses may mention
-  + $𝑛𝑎𝑚𝑒: The name of the PackageFormer currently being declared;
-            i.e., the LHS name.
-  + $𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠: Many variationals will act on individal elements, but may check a
-           property relative to all elements and this name allows us to avoid
-           having variationals that simply accomodate for binary functions
-           that operate on an individual element while also needing to refer to
-           all elements.  For example, a variational that keeps an element if
-           it's related to another element somehow.
-
-- SHOW-IT: For testing, and presentation, this optional value indicates whether
-  the resulting PackageFormer should be pretty-printed or not."
+nil"
   (letf* (
      (pieces (s-split " " (s-collapse-whitespace line)))
      ($𝑛𝑎𝑚𝑒      (nth 0 pieces))
@@ -857,7 +733,9 @@ elements are in a parameter position."
     ;; Ensure the PackageFormer to be instantiated is defined.
     (pf--ensure self
                 (format "Parent “%s” not defined." $𝑝𝑎𝑟𝑒𝑛𝑡)
-                line)
+                line
+                "Use the PackageFormer Emacs menu to see which PackageFormers are defined."
+                "Perhaps you did not enclose the parent in 700-comments?")
 
     ;; Update the new PackageFormer with a docstring of its instantiation
     ;; as well as its name.
@@ -941,16 +819,7 @@ If this variable does not change, we short-circut all processing.")
 
 (cl-defun pf--load-pf--annotations ()
   "Parse and load {-700⋯-} syntax.
-
-- Parse comments of the form “{-700 ⋯ -}” and add all PackageFormer declarations
-  to the ‘package-formers’ list and load all instantations to the list as well.
-
-- We also execute any valid Lisp code in “{-lisp -}” comments;
-  which may contain an arbitrary number of Lisp forms
-  ---a ‘progn’ is auto provided.
-
-  Lisp is executed before any pf--annotations are; which is preferable
-  due to Lisp's dynamic scope."
+nil"
   (interactive)
 
   ;; First, let's run all the lisp. We enclose each in a progn in-case the user
@@ -1028,8 +897,7 @@ If this variable does not change, we short-circut all processing.")
 
 (defun pf--tooltipify (phrase notification)
   "Add a tooltip to every instance of PHRASE to show NOTIFICATION.
-
-We only add tooltips to PHRASE as a standalone word, not as a subword."
+nil"
   (should (stringp phrase))
   (should (stringp notification))
   (save-excursion  ;; Return cursour to current-point afterwards.
@@ -1092,7 +960,7 @@ ORIG-FUN is intended to be the Agda loading process with arguments ARGS."
       (insert (s-join "\n" `(
          "{- This file is generated ;; do not alter. -}\n"
          ,parent-imports
-         "open import Level as Level"
+         "open import Level as Level using (Level)"
          ,(format "module %s where " generatedmodule))))
 
      ;; Print the package-formers
@@ -1292,35 +1160,95 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
 
 (eval-and-compile ;; begin eval-and-compile for standard library of 𝒱ariationals
 
+  (cl-defun element-retract (parent es &key (new es))
+    "Realise a list of elements as an Agda no-op record.
+  
+  E.g., list “Carrier : Set; e : Carrier”
+  maps to the following element value.
+  
+        toParent : parent
+        toParent = record {Carrier = Carrier; e = e}
+  
+  See also 𝒱-renaming, which may be useful to change ‘toParent’.
+  
+  NEW is a new updated version of ES, if any.
+  "
+  
+    (-let [toParent (format "to%s" parent)]
+      (car (parse-elements (list
+        (format "%s : let View X = X in View %s" toParent parent)
+        (format "%s = record {%s}" toParent
+  
+          (s-join ";"
+          (loop for e  in es
+                for e′ in new
+                unless (or (s-contains-p "let View X = X" (element-type e)) ;; Ignore source view morphisms
+                           (element-equations e))                           ;; Ignore “derivied” elements
+                collect (format "%s = %s" (element-name e) (element-name e′))))))))))
+  
+  (𝒱 extended-by ds
+     = "Extend a given presentation by a list of ;-separated declarations.
+  
+        The resuling presentation has a “toX” retract method,
+        where ‘X’ is the parent presentation.
+       "
+       :alter-elements (λ es → (-concat es (parse-elements (mapcar #'s-trim (s-split ";" ds))) (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es)))))
+  (𝒱 union pf
+   = "Union parent PackageFormer with given PF.
+  
+  Union the elements of the parent PackageFormer with those of
+  the provided PF, then adorn the result with two views:
+  One to the parent and one to the provided PF.
+  
+  If an identifer is shared but has different types, then crash.
+  "
+   :alter-elements (λ es →
+      (-concat
+         es
+         ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf)
+         (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es)
+               (element-retract pf ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf))))))
+  (defun flip-type (τ)
+    "Given a binary operation's type, as a string, flip the first two types.
+  
+  E.g., “A → B → C” becomes “B → A → C”.
+    "
+    (-let [ts (s-split "→" τ)]
+     (s-join " → " (list (nth 1 ts) (nth 0 ts) (nth 2 ts)))))
+  (defun flip (name op)
+   "If element OP is named NAME, then flip its type; else leave it alone-ish.
+  
+  If OP mentions NAME, then prefix its type with
+  “let NAME = λ x y → NAME y x in”, which results in valid Agda
+  due to its identifier scoping rules.
+  "
+   (cond ((equal name (element-name op))
+                 (map-type #'flip-type op))
+         ((element-contains (s-replace "_" "" name) op)
+                 (-let [letin (format "let %s = λ x y → %s y x in " name name)]
+                   (thread-last op
+                     (map-type (λ τ → (concat letin τ)))
+                     (map-equations (λ eqs → (--map (-let [ps (s-split "=" it)] (format "%s = %s %s" (car ps) letin (s-join "=" (cdr ps)))) eqs))))))
+         (t op)))
+  (𝒱 flipping name (renaming "")
+   = "Flip a single binary operation, or predicate, NAME.
+  
+      Dual constructs usual require some identifiers to be renamed,
+      and these may be supplied as a “;”-separated “to”-separated string list, RENAMING.
+  
+      There is no support for underscores; mixfix names must be given properly.
+    "
+      renaming 'renaming :adjoin-retract nil
+   ⟴ :alter-elements (λ es →
+                        (let ((es′ (--map (flip name it) es)))
+                          (-concat es′ (list (flip name (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 $𝑝𝑎𝑟𝑒𝑛𝑡) :new es′)))))))
   (defvar ♯standard-variationals 10
     "The number of variationals exported with the PackageFormer system.")
   ;; p ≈ symptom; f ≈ medicine; adj ≈ neighbouring dependency
   ;;
-  (defun graph-map (p f adj xs)
+  (cl-defun graph-map (p f adj xs &optional keep-only-marked)
     "Map the nodes XS satisfying P by F along adjacency ADJ.
-  
-  - F is performed on nodes satisfying P,
-    all neighbours are then considered to satisfy P
-    and the process repeats recursively.
-  
-  -  E.g., nodes exhibiting symptoms P are given medicine F,
-    and their sickness spreads to their neighbours who in turn
-    become ill thereby requiring medication, and the process continues.
-  
-  - ADJ is a binary relation denoting adjacency.
-    + (adj x y)  ≈  “x depends on, or is a neighbour, of y.”
-  
-  - For example, a graph of 10 nodes, with an edge between multiples;
-    where nodes 3, 4, 5 are initally ill.
-  
-    #+BEGIN_SRC emacs-lisp :tangle no
-     (graph-map (λ x → (-contains-p '(3 4 5) x))
-                (λ x → (format \"medicated-%s\" x))
-                (λ x y → (zerop (mod x y))) '(1 2 3 4 5 6 7 8 9 10))
-    ⇒
-      (1 2 medicated-3 medicated-4 medicated-5 medicated-6 7
-         medicated-8 medicated-9 medicated-10)
-    #+END_SRC"
+  nil"
     (let* (;; Using -map instead of -filter since nodes may become
            ;; sickly later on, position matters.
            (sickly (-map p xs))
@@ -1337,27 +1265,25 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
                       do (when (funcall infected x) (setf (nth i sickly) t))))
   
        ;; Apply medication to sickly elements only.
-       (--map (if (-contains-p (funcall get-sickly) it) (funcall f it) it) xs)))
-  (defmacro --graph-map (mark alter elements)
+       (--filter it (--map (if (-contains-p (funcall get-sickly) it)
+                  (funcall f it)
+                  (unless keep-only-marked it))
+              xs))))
+  (cl-defmacro --graph-map (mark alter elements &optional (keep-only-marked t))
     "Recursively ALTER and MARK elements and their dependents.
-  
-  - Mark elements in a given list, and recursively mark all those that depend on
-    them.  Return the list of elements with the marked ones being altered.
-  
-  - MARK and ALTER are expressions mentioning IT, a value of ELEMENTS,
-    and so are implicit functional expressions."
+  nil"
     `(graph-map (λ it → ,mark)
                 (λ it → ,alter)
                 ;; x depends on y  ≡  x mentions y, with all or no undescores,
                 ;;                    in its type or equations.
                 (λ x y →
-                   (or (s-contains? (s-replace "_" " " (element-name y))
-                                    (s-join " " (cons (element-type x)
-                                                      (element-equations x))))
-                       (s-contains? (element-name y)
-                                    (s-join " " (cons (element-type x)
-                                                      (element-equations x))))))
-                ,elements))
+                   (or (s-contains? (s-replace "_" " " (element-name x))
+                                    (s-join " " (cons (element-type y)
+                                                      (element-equations y))))
+                       (s-contains? (element-name x)
+                                    (s-join " " (cons (element-type y)
+                                                      (element-equations y))))))
+                ,elements ,keep-only-marked))
   (𝒱 record (discard-equations nil) (and-names nil)
    = "Reify a variational as an Agda “record”.
   
@@ -1366,23 +1292,25 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
       without any equations.
   
       ⇨ DISCARD-EQUATIONS is nil by default.
-        If provided with a non-nil value, equations are dropped.
+        If provided with a non-nil value, equations are dropped indiscriminately.
   
       ⇨ AND-NAMES is nil by default and only takes
         effect when DISCARD-EQUATIONS is active.
         If provided with a non-nil value, names with
-        equations are dropped altogether.
+        equations are dropped altogether; but some may be kept
+        if they are needed for some fields to be well-defined.
      "
     :kind record
     :alter-elements
       (λ es →
         (thread-last es
-        ;; Keep or drop eqns depending on “discard-equationals”
-        (--graph-map (and discard-equations (element-equations it))
-                     (map-equations (-const nil)
-                       (map-name (λ n → (if and-names "_" n)) it)))
-        ;; Discard all “_” named items.
-        (--reject (equal "_" (element-name it)))
+  
+        (funcall (λ es′ → (if (not discard-equations) es′
+                 (--map (map-equations (-const nil) (map-qualifier (-const (when (element-equations it) 'eqns)) it)) es′))))
+  
+        (funcall (λ es′ → (if (not and-names) es′
+          (--graph-map (not (equal 'eqns (element-qualifier it))) it es′))))
+  
         ;; Unless there's equations, mark elements as fields.
         (--map (map-qualifier
           (λ _ → (unless (element-equations it)
@@ -1399,31 +1327,54 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
          (--graph-map (progn (incf i) (<= i n))
                       (map-equations (-const nil) it)
                       es))))
-  (𝒱 map elements (support-mixfix-names t)
+  (𝒱 map elements (support-mixfix-names t) (adjoin-retract nil)
      = "Apply function ELEMENTS that acts on PackageFormer elements,
         then propogate all new name changes to subsequent elements.
   
         There is minimal support for mixfix names, but it may be
         ignored by setting SUPPORT-MIXFIX-NAMES to be nil.
-       "
+  
+        When ADJOIN-RETRACT is non-nil, we adjoin a “record {oldᵢ = nameᵢ}”
+        view morphism; i.e., record translation.
+  
+        Clauses “f = f” are considered to occur only in views, record translations,
+        and so only the RHS occurance is updated to a new name.
+        C.f. the definition of element-retract.
+        "
        :alter-elements (lambda (es)
-      (let* ((esnew   (mapcar elements es))
-             (_       (if support-mixfix-names "" "_"))
-             (names   (--map (s-replace "_" _ (element-name it)) es))
-             (names′  (--map (s-replace "_" _ (element-name it)) esnew)))
+  
+      (let* ((es′    (mapcar elements es))
+             (names  (mapcar #'element-name es))
+             (names′ (mapcar #'element-name es′)))
+  
+        ;; Replace all occurances of old names with corresponding new ones.
         (loop for old in names
               for new in names′
-              do (setq esnew (--map (element-replace old new it) esnew)))
-        ;; return value
-        esnew)))
-  (𝒱 rename f (support-mixfix-names t)
+              do (setq es′ (--map (element-replace old new it :support-mixfix-names support-mixfix-names) es′)))
+  
+       ;; Account for “f = f” translations; c.f., element-retract.
+       (loop for old in names
+             for new in names′
+             for offend  = (format "%s = %s" new new)
+             for correct = (format "%s = %s" old new)
+             do  (setq es′ (loop for e′ in es′
+             collect (if (element-contains offend e′)
+                         (element-replace offend correct e′ :support-mixfix-names nil)
+                         e′))))
+       ;; return value
+       (-concat es′ (when adjoin-retract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es′)))))))
+  (𝒱 rename f (support-mixfix-names t) (adjoin-retract t)
     =  "Rename elements using a string-to-string function F acting on names.
   
         There is minimal support for mixfix names, but it may be
         ignored by setting SUPPORT-MIXFIX-NAMES to be nil.
+  
+        When ADJOIN-RETRACT is non-nil, we adjoin a “record {oldᵢ = nameᵢ}”
+        view morphism; i.e., record translation.
        "
        map (λ e → (map-name (λ n → (rename-mixfix f n)) e))
-           :support-mixfix-names 'support-mixfix-names)
+           :support-mixfix-names 'support-mixfix-names
+           :adjoin-retract 'adjoin-retract)
   (𝒱 decorated by
     = "Rename all elements by suffixing string BY to them."
        rename (λ name → (concat name by)))
@@ -1435,33 +1386,27 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
   (𝒱 primed
     = "All elements are renamed with a postfix prime."
       decorated "′")
-  (defun reify-to-list (str &optional otherwise)
-   "Transform “to list” STR with default OTHERWISE into a Lisp function.
+  ;; Neato: (reify-to-list "x₀; ⋯; xₙ" nil) ⇒ (λ x ↦ If ∃ i • x ≈ xᵢ then "" else nil)
+  ;; KEY is a function applied to the input argument /before/ casing on LHS ↦ RHS names.
+     (cl-defun reify-to-list (str &key (otherwise 'otherwise) (key #'identity))
+     "Transform “to list” STR with default OTHERWISE into a Lisp function.
+  nil"
+     (let (clauses)
+       (thread-last str
+         (s-split ";")
+         (--map (s-split " to " it))
+         (--map (list (s-trim (car it)) (s-trim (or (cadr it) "")))) ;; accomodate empty str.
+         (-cons* 'pcase `(,key arg))
+         (setq clauses))
+       `(lambda (arg) ,(append clauses `((otherwise ,otherwise))))))
   
-  - Given a string of “;”-separated items consisting of “to”-separated pairs,
-    interpret it as a Lisp function where “to”-pairs denote mapping clauses.
+  (𝒱 renaming by (adjoin-retract t)
+    = "Rename elements using BY, a “;”-separated string of “to”-separated pairs.
   
-  - E.g., “x₀ to y₀; …; xₙ to yₙ” becomes the function sending value xᵢ to yᵢ,
-    and behaves as the identity function otherwise unless OTHERWISE is provided,
-    in which case it acts as a fallback.
-  
-  - Concretely:
-    #+BEGIN_SRC emacs-lisp :tangle no
-        (reify-to-list \"1 to x; 2 to y; p to q\")
-      ≈ (λ arg → (pcase arg (\"1\" \"x\") (\"2\" \"y\") (\"p\" \"q\") (otherwise otherwise)))
-    #+END_SRC"
-   (let (clauses (fallback (or otherwise 'otherwise)))
-     (thread-last str
-       (s-split ";")
-       (--map (s-split " to " it))
-       (--map (list (s-trim (car it)) (s-trim (cadr it))))
-       (-cons* 'pcase 'arg)
-       (setq clauses))
-     `(lambda (arg) ,(append clauses `((otherwise ,fallback))))))
-  
-  (𝒱 renaming by
-    = "Rename elements using BY, a “;”-separated string of “to”-separated pairs."
-      rename '(reify-to-list by))
+        When ADJOIN-RETRACT is non-nil, we adjoin a “record {oldᵢ = nameᵢ}”
+        view morphism; i.e., record translation.
+  "
+      rename '(reify-to-list by) :adjoin-retract 'adjoin-retract)
   (defun to-subscript (n)
     "Associate digit N with its subscript.
   
@@ -1505,21 +1450,8 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
   
        BY is a predicate on elements.
       "
-      :alter-elements  (lambda (fs)
-        (let* ( (yeses (--map (funcall by it) fs))
-                (get-yeses (lambda () (--filter it (--zip-with (if it other) yeses fs))))
-                (in-yeses (lambda (e)
-                            (--any
-                             (s-contains? (s-replace "_" " " (element-name e)) (element-type it))
-                             (funcall get-yeses)))))
+      :alter-elements (λ es → (--graph-map (funcall by it) it es)))
   
-          (loop for _ in fs do
-                (loop for f in fs
-                      for i from 0
-                      do ;; when f in yess, set f to be yes.
-                      (when (funcall in-yeses f) (setf (nth i yeses) t))))
-  
-          (funcall get-yeses))))
   (𝒱 sorts
    = "Obtaining the types declared in a grouping mechanism.
   
