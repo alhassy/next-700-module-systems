@@ -28,16 +28,11 @@
 <body>
 <div class="reveal">
 <div class="slides">
-<section id="sec-title-slide"><h1>A Language Feature to Unbundle Data at Will</h1> <h3>Musa Al-hassy, Jacques Carette, Wolfram Kahl</h3>
-<font size="1">
-<a href="?print-pdf&showNotes=true">
-⟪ Flattened View ; Press <code>?</code> for Help ⟫
-</a>
-</font>
+<section id="sec-title-slide">
 </section>
 <section>
-<section id="slide-orgb374a67">
-<h2 id="orgb374a67"><span class="section-number-2">1</span> Selecting the ‘Right’ Perspective</h2>
+<section id="slide-org975498c">
+<h2 id="org975498c"><span class="section-number-2">1</span> Selecting the ‘Right’ Perspective</h2>
 <ul>
 <li class="fragment appear"><p>
 Library Design
@@ -59,14 +54,17 @@ Library Design
 <p class="fragment (appear)">
 When creating a
 record to bundle up certain information that “naturally” belongs together,
+</p>
+
+<p>
 <b>what parts of that record should be <i>parameters</i> and what parts should be
 <i>fields</i>?</b>
 </p>
 </div>
 
 </section>
-<section id="slide-org0a4a4c0">
-<h3 id="org0a4a4c0"><span class="section-number-3">1.1</span> ‘Parameter’ vs ‘Field’</h3>
+<section id="slide-org6df64f5">
+<h3 id="org6df64f5"><span class="section-number-3">1.1</span> ‘Parameter’ vs ‘Field’</h3>
 <font size="5">
 <div class="quoting">
 <p>
@@ -104,8 +102,8 @@ once it is bundled, it is not coming back.
 </table>
 
 </section>
-<section id="slide-org3dbd6dc">
-<h3 id="org3dbd6dc"><span class="section-number-3">1.2</span> Current Approach &#x2014;Monoids</h3>
+<section id="slide-org5cd1416">
+<h3 id="org5cd1416"><span class="section-number-3">1.2</span> Current Approach &#x2014;Monoids</h3>
 <ul>
 <li class="fragment appear">Haskell typeclasses can have only one instance per datatype</li>
 
@@ -115,11 +113,11 @@ once it is bundled, it is not coming back.
 
 <div class="org-src-container">
 
-<pre  class="fragment (appear)"><code trim><span style="color: #3a81c3; font-weight: bold;">data</span> <span style="color: #ba2f59; font-weight: bold;">Bool</span>   <span style="color: #715ab1;">=</span> <span style="color: #ba2f59; font-weight: bold;">False</span> <span style="color: #715ab1;">|</span> <span style="color: #ba2f59; font-weight: bold;">True</span>
+<pre  class="fragment (appear)"><code trim><span style="color: #00ffff;">data</span> <span style="color: #98fb98;">Bool</span>   <span style="color: #eedd82;">=</span> <span style="color: #98fb98;">False</span> <span style="color: #eedd82;">|</span> <span style="color: #98fb98;">True</span>
 
-<span style="color: #3a81c3; font-weight: bold;">newtype</span> <span style="color: #ba2f59; font-weight: bold;">All</span> <span style="color: #715ab1;">=</span> <span style="color: #ba2f59; font-weight: bold;">All</span> <span style="color: #3a81c3;">{</span> getAll <span style="color: #715ab1;">::</span> <span style="color: #ba2f59; font-weight: bold;">Bool</span> <span style="color: #3a81c3;">}</span>
+<span style="color: #00ffff;">newtype</span> <span style="color: #98fb98;">All</span> <span style="color: #eedd82;">=</span> <span style="color: #98fb98;">All</span> { getAll <span style="color: #eedd82;">::</span> <span style="color: #98fb98;">Bool</span> }
 
-<span style="color: #3a81c3; font-weight: bold;">newtype</span> <span style="color: #ba2f59; font-weight: bold;">Any</span> <span style="color: #715ab1;">=</span> <span style="color: #ba2f59; font-weight: bold;">Any</span> <span style="color: #3a81c3;">{</span> getAny <span style="color: #715ab1;">::</span> <span style="color: #ba2f59; font-weight: bold;">Bool</span> <span style="color: #3a81c3;">}</span>
+<span style="color: #00ffff;">newtype</span> <span style="color: #98fb98;">Any</span> <span style="color: #eedd82;">=</span> <span style="color: #98fb98;">Any</span> { getAny <span style="color: #eedd82;">::</span> <span style="color: #98fb98;">Bool</span> }
 </code></pre>
 </div>
 
@@ -130,27 +128,27 @@ once it is bundled, it is not coming back.
 </section>
 </section>
 <section>
-<section id="slide-orge2980e8">
-<h2 id="orge2980e8"><span class="section-number-2">2</span> What is a Monoid?</h2>
+<section id="slide-orgd7e972a">
+<h2 id="orgd7e972a"><span class="section-number-2">2</span> What is a Monoid?</h2>
 <p>
 For the monoid example,
 it <i>seems</i> that there are three contenders for the monoid interface.
 </p>
 
 </section>
-<section id="slide-orgb17088c">
-<h3 id="orgb17088c"><span class="section-number-3">2.1</span> <i>An</i> Arbitrary Monoid</h3>
+<section id="slide-orgef33f46">
+<h3 id="orgef33f46"><span class="section-number-3">2.1</span> <i>An</i> Arbitrary Monoid</h3>
 <div class="org-src-container">
 
-<pre  class="src src-agda"><code trim>  record Monoid₀ : Set₁ where
-    field
-      Carrier : Set
-      _⨾_     : Carrier → Carrier → Carrier
-      Id      : Carrier
-      assoc   : ∀ {x y z}
-              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-      leftId  : ∀ {x} → Id ⨾ x ≡ x
-      rightId : ∀ {x} → x ⨾ Id ≡ x
+<pre  class="src src-agda"><code trim>record Monoid₀ : Set₁ where
+  field
+    Carrier : Set
+    _⨾_     : Carrier → Carrier → Carrier
+    Id      : Carrier
+    assoc   : ∀ {x y z}
+            → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId  : ∀ {x} → Id ⨾ x ≡ x
+    rightId : ∀ {x} → x ⨾ Id ≡ x
 </code></pre>
 </div>
 
@@ -167,18 +165,18 @@ while we call it “exposed” in <code>Monoid₁</code> and <code>Monoid₂</co
 </aside>
 
 </section>
-<section id="slide-org372bbe3">
-<h3 id="org372bbe3"><span class="section-number-3">2.2</span> A Monoid <i>over</i> A Given Carrier Type</h3>
+<section id="slide-org1e20b98">
+<h3 id="org1e20b98"><span class="section-number-3">2.2</span> A Monoid <i>over</i> A Given Carrier Type</h3>
 <div class="org-src-container">
 
-<pre  class="src src-agda"><code trim>  record Monoid₁ (Carrier : Set) : Set where
-    field
-      _⨾_     : Carrier → Carrier → Carrier
-      Id      : Carrier
-      assoc   : ∀ {x y z}
-              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-      leftId  : ∀ {x} → Id ⨾ x ≡ x
-      rightId : ∀ {x} → x ⨾ Id ≡ x
+<pre  class="src src-agda"><code trim>record Monoid₁ (Carrier : Set) : Set where
+  field
+    _⨾_     : Carrier → Carrier → Carrier
+    Id      : Carrier
+    assoc   : ∀ {x y z}
+            → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId  : ∀ {x} → Id ⨾ x ≡ x
+    rightId : ∀ {x} → x ⨾ Id ≡ x
 </code></pre>
 </div>
 
@@ -187,20 +185,20 @@ Use-case: Sharing the carrier type.
 </p>
 
 </section>
-<section id="slide-org796402c">
-<h3 id="org796402c"><span class="section-number-3">2.3</span> A Monoid over a Given Carrier <i>and</i> Operation</h3>
+<section id="slide-org52fec51">
+<h3 id="org52fec51"><span class="section-number-3">2.3</span> A Monoid over a Given Carrier <i>and</i> Operation</h3>
 <div class="org-src-container">
 
-<pre  class="src src-agda"><code trim>  record Monoid₂
-           (Carrier : Set)
-           (_⨾_ : Carrier → Carrier → Carrier)
-         : Set  where
-    field
-      Id      : Carrier
-      assoc   : ∀ {x y z}
-              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-      leftId  : ∀ {x} → Id ⨾ x ≡ x
-      rightId : ∀ {x} → x ⨾ Id ≡ x
+<pre  class="src src-agda"><code trim>record Monoid₂
+         (Carrier : Set)
+         (_⨾_ : Carrier → Carrier → Carrier)
+       : Set  where
+  field
+    Id      : Carrier
+    assoc   : ∀ {x y z}
+            → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId  : ∀ {x} → Id ⨾ x ≡ x
+    rightId : ∀ {x} → x ⨾ Id ≡ x
 </code></pre>
 </div>
 
@@ -210,23 +208,23 @@ the sake of attaching instances to them.
 </p>
 
 </section>
-<section id="slide-org4738983">
-<h3 id="org4738983"><span class="section-number-3">2.4</span> Monoids as Reified Syntax</h3>
+<section id="slide-org50df5ca">
+<h3 id="org50df5ca"><span class="section-number-3">2.4</span> Monoids as Reified Syntax</h3>
 <p>
 A monoid is an <i>interpretation</i> mapping from terms.
 </p>
 
 <div class="org-src-container">
 
-<pre  class="src src-agda"><code trim>    data Monoid₃ : Set where
-      _⨾_ : Monoid₃ → Monoid₃ → Monoid₃
-      Id  : Monoid₃
+<pre  class="src src-agda"><code trim>data Monoid₃ : Set where
+  _⨾_ : Monoid₃ → Monoid₃ → Monoid₃
+  Id  : Monoid₃
 </code></pre>
 </div>
 
 </section>
-<section id="slide-orge635e9d">
-<h3 id="orge635e9d"><span class="section-number-3">2.5</span> A Monoid <i>over</i> ⋯</h3>
+<section id="slide-org46deab4">
+<h3 id="org46deab4"><span class="section-number-3">2.5</span> A Monoid <i>over</i> ⋯</h3>
 <ul>
 <li class="fragment appear">There are other combinations of what is to be exposed and hidden,
 for applications that we might never think of.</li>
@@ -246,8 +244,8 @@ This desire for reusability motivates a new language feature: The <code>PackageF
 </p>
 
 </section>
-<section id="slide-org9a7dac1">
-<h3 id="org9a7dac1"><span class="section-number-3">2.6</span> Making Modules with Meta-Programmed Meta-Primitives</h3>
+<section id="slide-org6d960d6">
+<h3 id="org6d960d6"><span class="section-number-3">2.6</span> Making Modules with Meta-Programmed Meta-Primitives</h3>
 <ul>
 <li class="fragment appear"><b>All</b> previous presentation can be generated from a <b>single</b> explicit declaration + 4 lines
 &#x2014;one line for each presentation
@@ -283,37 +281,37 @@ To demonstrate the generality of the notion of package formers we shall demonstr
 </aside>
 
 </section>
-<section id="slide-org9392953">
-<h3 id="org9392953"><span class="section-number-3">2.7</span> <i>The</i> Definition of a Monoid</h3>
+<section id="slide-org5910125">
+<h3 id="org5910125"><span class="section-number-3">2.7</span> <i>The</i> Definition of a Monoid</h3>
 <pre class="example">
-  PackageFormer MonoidP : Set₁ where
-    Carrier : Set
-     _⨾_    : Carrier → Carrier → Carrier
-    Id      : Carrier
-    assoc   : ∀ {x y z}
-            → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
-    leftId  : ∀ {x} → Id ⨾ x ≡ x
-    rightId : ∀ {x} → x ⨾ Id ≡ x
+PackageFormer MonoidP : Set₁ where
+  Carrier : Set
+   _⨾_    : Carrier → Carrier → Carrier
+  Id      : Carrier
+  assoc   : ∀ {x y z}
+          → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+  leftId  : ∀ {x} → Id ⨾ x ≡ x
+  rightId : ∀ {x} → x ⨾ Id ≡ x
 </pre>
 
 </section>
 </section>
 <section>
-<section id="slide-orgd174123">
-<h2 id="orgd174123"><span class="section-number-2">3</span> Using Variationals To Be Non-Committal</h2>
+<section id="slide-org4ff8e55">
+<h2 id="org4ff8e55"><span class="section-number-2">3</span> Using Variationals To Be Non-Committal</h2>
 <p class="fragment (appear)">
 We declare a <code>PackageFormer</code> then <i>instantiate</i> it using directives:
 </p>
 <div class="org-src-container">
 
-<pre  class="src src-agda"><code trim>  id          :  Variational
-  record      :  Variational
-  typeclass   :  Variational
-  termtype    :  String → Variational
-  unbundled   :  ℕ → Variational
-  exposing    :  List Name → Variational
-  _⟴_        :  Variational
-              →  Variational → Variational
+<pre  class="src src-agda"><code trim>id          :  Variational
+record      :  Variational
+typeclass   :  Variational
+termtype    :  String → Variational
+unbundled   :  ℕ → Variational
+exposing    :  List Name → Variational
+_⟴_        :  Variational
+            →  Variational → Variational
 </code></pre>
 </div>
 
@@ -328,20 +326,20 @@ write any <i>instantiation</i> as a sequence of ⟴-separated clauses:
 </div>
 
 </section>
-<section id="slide-org639829e">
-<h3 id="org639829e"><span class="section-number-3">3.1</span> Obtaining The Previous Presentations</h3>
+<section id="slide-orge2ed16a">
+<h3 id="orge2ed16a"><span class="section-number-3">3.1</span> Obtaining The Previous Presentations</h3>
 <div class="outline-text-3" id="text-3-1">
 </div>
 </section>
-<section id="slide-org38bfd4e">
-<h4 id="org38bfd4e"><span class="section-number-4">3.1.1</span> Sematincal <code>record</code></h4>
+<section id="slide-org8aa8456">
+<h4 id="org8aa8456"><span class="section-number-4">3.1.1</span> Semantical <code>record</code></h4>
 <pre class="example">
- Monoid₀′  = MonoidP record
+Monoid₀′  = MonoidP record
 
- Monoid₁′ = MonoidP record ⟴ unbundled 1
- Monoid₁″ = Monoid₀′ exposing (Carrier)
+Monoid₁′ = MonoidP record ⟴ unbundled 1
+Monoid₁″ = Monoid₀′ exposing (Carrier)
 
- Monoid₂″ = Monoid₀′ exposing (Carrier; _⨾_)
+Monoid₂″ = Monoid₀′ exposing (Carrier; _⨾_)
 </pre>
 
 <aside class="notes">
@@ -353,8 +351,8 @@ the same footing as <i>record</i> <code>Monoid₀′</code>: Both may be subject
 </aside>
 
 </section>
-<section id="slide-org4476fcc">
-<h4 id="org4476fcc"><span class="section-number-4">3.1.2</span> Syntactical <code>data</code></h4>
+<section id="slide-org6fc0f61">
+<h4 id="org6fc0f61"><span class="section-number-4">3.1.2</span> Syntactical <code>data</code></h4>
 <pre class="example">
  Monoid₃′ = MonoidP termtype "Carrier"
 
@@ -386,8 +384,8 @@ the following after extending the system with a user defined variational <code>t
 </aside>
 
 </section>
-<section id="slide-org284d973">
-<h3 id="org284d973"><span class="section-number-3">3.2</span> Quadratic to Linear</h3>
+<section id="slide-org780f14a">
+<h3 id="org780f14a"><span class="section-number-3">3.2</span> Quadratic to Linear</h3>
 <ul>
 <li class="fragment appear">Notice that the previous 5 monoid presentations, <code>Monoid₀</code> to <code>Monoid₄</code>, spanned 32
 lines
@@ -406,13 +404,13 @@ with the initial lines being a model, and then 1-2 lines to specify variants.</l
 </section>
 </section>
 <section>
-<section id="slide-org895260b">
-<h2 id="org895260b"><span class="section-number-2">4</span> Variational Polymorphism</h2>
+<section id="slide-org7a81424">
+<h2 id="org7a81424"><span class="section-number-2">4</span> Variational Polymorphism</h2>
 <div class="outline-text-2" id="text-4">
 </div>
 </section>
-<section id="slide-org15836c4">
-<h3 id="org15836c4"><span class="section-number-3">4.1</span> Summing Elements from a Monoid?</h3>
+<section id="slide-orga149f05">
+<h3 id="orga149f05"><span class="section-number-3">4.1</span> Summing Elements from a Monoid?</h3>
 <aside class="notes">
 <p>
 Suppose we want to produce the function <code>concat</code>, which folds over the elements of a list
@@ -427,25 +425,25 @@ the resulting function may have types such as the following:
 
 <div class="org-src-container">
 
-<pre  class="src src-agda"><code trim>  concat₀ : {M : Monoid₀}
-          → let C = Monoid₀.Carrier M
-             in  List C → C
+<pre  class="src src-agda"><code trim>concat₀ : {M : Monoid₀}
+        → let C = Monoid₀.Carrier M
+           in  List C → C
 
-  concat₁ : {C : Set} {M : Monoid₁ C}
-          → List C → C
+concat₁ : {C : Set} {M : Monoid₁ C}
+        → List C → C
 
-  concat₂ : {C : Set} {_⨾_ : C → C→ C}
-            {M : Monoid₂ C _⨾_}
-          → List C → C
+concat₂ : {C : Set} {_⨾_ : C → C→ C}
+          {M : Monoid₂ C _⨾_}
+        → List C → C
 
-  concat₃ : let C = Monoid₃
-            in List C → C
+concat₃ : let C = Monoid₃
+          in List C → C
 </code></pre>
 </div>
 
 </section>
-<section id="slide-org3c0d3c5">
-<h3 id="org3c0d3c5"><span class="section-number-3">4.2</span> Easy: Add a new clause!</h3>
+<section id="slide-org60b52f2">
+<h3 id="org60b52f2"><span class="section-number-3">4.2</span> Easy: Add a new clause!</h3>
 <aside class="notes">
 <p>
 Given our previous work, and providing that the variationals are already
@@ -469,8 +467,8 @@ The variationals is where this power comes from!
 </p>
 
 </section>
-<section id="slide-orgd5aeed5">
-<h3 id="orgd5aeed5"><span class="section-number-3">4.3</span> What is a Variational?</h3>
+<section id="slide-org047bbef">
+<h3 id="org047bbef"><span class="section-number-3">4.3</span> What is a Variational?</h3>
 <p class="fragment (appear)">
 \[Variational \\ \quad ≅ \quad (PackageFormer → PackageFormer)\]
 </p>
@@ -489,8 +487,8 @@ ingredients that enable them to be well-defined.
 </section>
 </section>
 <section>
-<section id="slide-org1d91fb7">
-<h2 id="org1d91fb7"><span class="section-number-2">5</span> How Does This Work?</h2>
+<section id="slide-org59a958d">
+<h2 id="org59a958d"><span class="section-number-2">5</span> How Does This Work?</h2>
 <p>
 We have implemented our system as an “editor tactic” meta-program.
 </p>
@@ -531,8 +529,8 @@ of hierarchical structures.</li>
 </ul>
 
 </section>
-<section id="slide-orgd6f3d50">
-<h3 id="orgd6f3d50"><span class="section-number-3">5.1</span> Demonstration</h3>
+<section id="slide-org03fa375">
+<h3 id="org03fa375"><span class="section-number-3">5.1</span> Demonstration</h3>
 
 <div class="figure">
 <p><img src="./gpce19-mousing-over-large.png" alt="gpce19-mousing-over-large.png" />
@@ -555,8 +553,8 @@ derived from the meta-primitives can be found on the prototype's homepage:
 </section>
 </section>
 <section>
-<section id="slide-org496b346">
-<h2 id="org496b346"><span class="section-number-2">6</span> Conclusion and Next Steps</h2>
+<section id="slide-orgd29af12">
+<h2 id="orgd29af12"><span class="section-number-2">6</span> Conclusion and Next Steps</h2>
 <aside class="notes">
 <p>
 We have outlined a new language feature that is intended to reduce
@@ -569,8 +567,8 @@ its usefulness with some examples.
 </aside>
 
 </section>
-<section id="slide-orgd2deb29">
-<h3 id="orgd2deb29"><span class="section-number-3">6.1</span> Future Work</h3>
+<section id="slide-org0cdc9b3">
+<h3 id="org0cdc9b3"><span class="section-number-3">6.1</span> Future Work</h3>
 <ol>
 <li class="fragment appear">Provide explicit (elaboration) semantics for <code>PackageFormer</code> within a minimal type theory.</li>
 
@@ -585,8 +583,8 @@ language feature.</li>
 </ol>
 
 </section>
-<section id="slide-orgf8bde8a">
-<h3 id="orgf8bde8a"><span class="section-number-3">6.2</span> <span class="todo TODO">TODO</span> Contributions</h3>
+<section id="slide-org5c58d52">
+<h3 id="org5c58d52"><span class="section-number-3">6.2</span> <span class="todo TODO">TODO</span> Contributions</h3>
 <aside class="notes">
 <p>
 This short paper proposes a language feature that enables users to selectively
@@ -613,8 +611,8 @@ likely that we will extend Agda to support the new syntax.
 </aside>
 
 </section>
-<section id="slide-org120966c">
-<h3 id="org120966c"><span class="section-number-3">6.3</span> Closing</h3>
+<section id="slide-org7efff76">
+<h3 id="org7efff76"><span class="section-number-3">6.3</span> Closing</h3>
 <p class="fragment (appear)">
 <i>Our resulting system has turned hand-written instances of structuring schemes from a design</i>
 <i>pattern into full-fledged library methods</i>.
@@ -630,16 +628,16 @@ and reusing them where needed.
 </section>
 </section>
 <section>
-<section id="slide-org739e2a2">
-<h2 id="org739e2a2"><span class="section-number-2">7</span> Appendix: Example Code</h2>
+<section id="slide-org6a12009">
+<h2 id="org6a12009"><span class="section-number-2">7</span> Appendix: Example Code</h2>
 <p>
 Full code scripts may be found on the prototype's repository; below are
 snippets for the presented fragments.
 </p>
 
 </section>
-<section id="slide-orgc50269d">
-<h3 id="orgc50269d"><span class="section-number-3">7.1</span> Module Header</h3>
+<section id="slide-org77b85b1">
+<h3 id="org77b85b1"><span class="section-number-3">7.1</span> Module Header</h3>
 <div class="org-src-container">
 
 <pre  class="src src-agda"><code trim>open import Data.List hiding (concat)
@@ -658,8 +656,8 @@ inserted by the system, if need be.
 </p>
 
 </section>
-<section id="slide-orgaf2ac08">
-<h3 id="orgaf2ac08"><span class="section-number-3">7.2</span> Plain <code>MonoidP</code> PackageFormer</h3>
+<section id="slide-orgb50aaea">
+<h3 id="orgb50aaea"><span class="section-number-3">7.2</span> Plain <code>MonoidP</code> PackageFormer</h3>
 <div class="org-src-container">
 
 <pre  class="src src-agda"><code trim>{-700
@@ -675,8 +673,8 @@ PackageFormer MonoidP : Set₁ where
 </div>
 
 </section>
-<section id="slide-orga25dce2">
-<h3 id="orga25dce2"><span class="section-number-3">7.3</span> Variational <code>record</code> and 3 Instantiations</h3>
+<section id="slide-org3004b3d">
+<h3 id="org3004b3d"><span class="section-number-3">7.3</span> Variational <code>record</code> and 3 Instantiations</h3>
 <p>
    In the paper proper we mentioned “unbundled”, which in the prototype
 takes the form of the meta-primitive <code>:waist</code>.
@@ -701,8 +699,8 @@ takes the form of the meta-primitive <code>:waist</code>.
 </div>
 
 </section>
-<section id="slide-orgfd5e6b4">
-<h3 id="orgfd5e6b4"><span class="section-number-3">7.4</span> Using <code>record</code></h3>
+<section id="slide-org2763ecf">
+<h3 id="org2763ecf"><span class="section-number-3">7.4</span> Using <code>record</code></h3>
 <p>
 Notice that the organisational mechanism not only has a name and documentation,
 but also an unambiguous implementation. We may use it as follows.
@@ -719,8 +717,8 @@ Monoid₂″ = MonoidP record ⟴ :waist 2
 </div>
 
 </section>
-<section id="slide-org903bba5">
-<h3 id="org903bba5"><span class="section-number-3">7.5</span> <code>termtype</code> Variationals</h3>
+<section id="slide-orga6556d8">
+<h3 id="orga6556d8"><span class="section-number-3">7.5</span> <code>termtype</code> Variationals</h3>
 <p>
 We may also have shorter variational definitions directly in <code>700</code>-blocks.
 </p>
@@ -737,8 +735,8 @@ Monoid₄  = MonoidP termtype-with-variables "Carrier"
 </div>
 
 </section>
-<section id="slide-org488e345">
-<h3 id="org488e345"><span class="section-number-3">7.6</span> PackageFormers with Equations</h3>
+<section id="slide-orgc4a3fb5">
+<h3 id="orgc4a3fb5"><span class="section-number-3">7.6</span> PackageFormers with Equations</h3>
 <div class="org-src-container">
 
 <pre  class="src src-agda"><code trim>{-700
@@ -763,13 +761,13 @@ PackageFormer MonoidPE : Set₁ where
 </div>
 
 </section>
-<section id="slide-orge0b0bd9">
-<h3 id="orge0b0bd9"><span class="section-number-3">7.7</span> <code>concat₀</code> and <code>concat₃</code></h3>
+<section id="slide-org587a6d1">
+<h3 id="org587a6d1"><span class="section-number-3">7.7</span> <code>concat₀</code> and <code>concat₃</code></h3>
 <div class="outline-text-3" id="text-7-7">
 </div>
 </section>
-<section id="slide-org97effa9">
-<h4 id="org97effa9"><span class="section-number-4">7.7.1</span> Declarations</h4>
+<section id="slide-org51c0648">
+<h4 id="org51c0648"><span class="section-number-4">7.7.1</span> Declarations</h4>
 <div class="org-src-container">
 
 <pre  class="src src-agda"><code trim>{-700
@@ -782,8 +780,8 @@ Monoid³ = MonoidPE ⟴ decorated "³"
 </div>
 
 </section>
-<section id="slide-org26af841">
-<h4 id="org26af841"><span class="section-number-4">7.7.2</span> Uses</h4>
+<section id="slide-orge4f1021">
+<h4 id="orge4f1021"><span class="section-number-4">7.7.2</span> Uses</h4>
 <p>
 Then, concatenation over an arbitrary monoid:
 </p>
@@ -810,8 +808,8 @@ concat₃ = concat³
 </section>
 </section>
 <section>
-<section id="slide-orgd4efcfb">
-<h2 id="orgd4efcfb"><span class="section-number-2">8</span> Thank-you</h2>
+<section id="slide-org985dcda">
+<h2 id="org985dcda"><span class="section-number-2">8</span> Thank-you</h2>
 <p>
 <i>Questions?</i>
 </p>

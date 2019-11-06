@@ -1,0 +1,988 @@
+% NAME=GPCE2019_unbundle_slides
+%
+% export TEXINPUTS=.:../../../RATH-Agda/ltx:
+
+% ln -s $NAME.ltx $NAME.lagda
+% lhs2TeX --agda $NAME.lagda > $NAME.tex; pdflatex $NAME.tex
+% pdfjam --nup 2x3 --delta "2 20" --offset "0 0" --frame true --noautoscale true --scale 0.81 --paper letter $NAME.pdf -o $NAME''_6up_letter.pdf
+%
+%
+% mupdf -r160 $NAME.pdf &
+
+% GPCE: 25 papers submitted; 9 long + 3 short accepted.
+% SLE:  42 papers submitted, 14 + 1 experience + 2 tool + 3 vision %accepted
+
+%\documentclass[aspectratio=169,handout,t,11pt]{beamer}
+\documentclass[aspectratio=169,t,11pt]{beamer}
+
+\usepackage{edcomms}
+\long\def\ignore#1{}
+
+%{{{ TITLE
+\title{%
+  A Language Feature to Unbundle Data at Will
+  \\(Short Paper)
+\thanks{This research is supported by NSERC (National Science and
+ Engineering Research Council of Canada).\kern-1em}
+}
+
+
+\author{\textbf{Musa Al-hassy}, Jacques Carette, \underline{Wolfram Kahl}}
+\institute{McMaster University,
+%1280 Main St. West,
+Hamilton, Ontario, Canada
+% L8S 4K1,
+\\
+$\{$\textsf{alhassy}$\mid$\textsf{carette}$\mid$\textsf{kahl}$\}$\textsf{@@mcmaster.ca}
+}
+
+\date{GPCE 2019, Athens, Greece\\ 21st October 2019}
+%}}}
+
+%{{{ \long\def\HIDE#1
+\long\def\HIDE#1{\par\smallskip
+\smash{\vrule height0ex width0.2ex depth2ex}
+\hrule
+\par
+#1
+\par
+\noindent
+\vrule height2ex width0.2ex depth0ex
+\hrule\smallskip}
+%}}}
+%\long\def\HIDE#1{}
+
+\newif\ifSLIDES
+%\SLIDEStrue
+\SLIDESfalse
+
+\newif\ifHANDOUT
+\HANDOUTtrue
+%\HANDOUTfalse
+
+%{{{ lhs2TeX and RathAgda
+%include agda.fmt
+%\renewcommand{\hscodestyle}{\small}
+
+
+%format PackageFormer = "\textsf{\bfseries PackageFormer}"
+%format ^^ = "\kern4em"
+%format ^- = "{\kern0.2em}"
+%%%%format ^! = "\kern-0.5em"
+%%format ↓ = "\kern0.2em" ↓
+%format 『 = "\color{grey}\kern-0.25em\begingroup\footnotesize"
+%format 【 = "\color{DarkRed}\kern-0.25em"
+%format 』 = "\endgroup\color{black}\kern-0.25em"
+%%% %format ^! = "\onslide<+->{}"
+%%% \onslide<+-> does not work here
+
+%\renewcommand{\hsindent}[1]{}
+\mathindent1em
+
+%include RathAgdaChars.sty
+\DeclareUnicodeCharacter{10228}{\ensuremath{\kern0.28em\oplus\kern-1.33em\longrightarrow}}
+  % U+27F4: RIGHT ARROW WITH CIRCLED PLUS
+
+\def\fcmp{\fatsemi}
+\def\spot{\ \bullet\ }
+%}}}
+
+%{{{ packages and defs
+%\usepackage{objA}
+%\input diagram-2.2
+
+%\usepackage{listings}
+
+%\pdfmapfile{+mathpple.map}
+%\usepackage{mathpple} % Palatino --- for better visibility of commas in math
+
+\def\etal{\textsl{et al.\null{}}}
+
+%\usepackage{verbatim}
+%\usepackage{listings}
+\usepackage{edcomms}
+
+\usepackage{CalcStyleV12}
+\let\withspot=\spot
+\usepackage{graphicx}
+
+\def\src{\mathsf{src}}
+\def\trg{\mathsf{trg}}
+
+\usepackage{tikz}
+\usepackage{tikz-qtree}
+\usetikzlibrary{arrows,shadows, shapes,trees,automata,calc, intersections} % loads some tikz extensions
+
+%}}}
+
+%{{{ beamer style overriding
+\usefonttheme{serif}
+
+%\usepackage{palatino} %%% Overrides too many things!
+%\usepackage{newcent}
+%\usepackage{bookman}
+
+\useinnertheme{rounded}
+
+\let\emph=\textbf
+
+% currently not available
+%\usepackage{lmodern}
+%\usepackage[T1]{fontenc}
+
+%\usepackage{mathptmx}
+%\usepackage{euler}
+
+\setbeamerfont{alerted text}{series=\bfseries}
+\setbeamerfont{block body}{shape=\upshape}
+
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+
+\setbeamertemplate{frametitle}
+{
+\centerline{\insertframetitle}
+\par
+}
+
+\setbeamertemplate{frame begin}{\par\kern1ex\hrule\kern1ex}
+\setbeamertemplate{frame end}{\par\kern1ex\hrule}
+%\setbeamertemplate{frame begin}{\par\fbox\begingroup\begin{minipage}{140mm}}
+%\setbeamertemplate{frame end}{\end{minipage}\endgroup}
+
+\setlength{\hoffset}{-6mm}
+\setlength{\textwidth}{151mm}
+\makeatletter
+%\setlength{\beamer@leftmargin}{1ex}
+\makeatother
+
+%% \makeatletter
+%% \def\@listI{\leftmargin\leftmargini
+%%             \parsep 0\p@ \@plus1\p@ \@minus\p@
+%%             \topsep 1\p@ \@plus1\p@ \@minus0\p@
+%%             \itemsep0\p@}
+%% \let\@listi\@listI
+%% \@listi
+%% \makeatother
+%}}}
+
+\renewcommand{\arraystretch}{1.2}
+
+%{{{ macros
+%\usepackage{CS1FC3}
+\def\CalcCheckWeb{\CalcCheck{}${}_{\mathrm{Web}}$}
+
+\usepackage{color}
+
+\definecolor{DarkGreen}{rgb}{0,0.6,0}
+\definecolor{DarkRed}{rgb}{0.6,0,0}
+\definecolor{DarkBlue}{rgb}{0,0,0.6}
+\definecolor{grey}{rgb}{0.5,0.5,0.5}
+\definecolor{DarkGrey}{rgb}{0.4,0.4,0.4}
+\definecolor{DGreen}{rgb}{0,0.4,0.2}
+
+
+%}}}
+
+%{{{ SubstCat macros
+%%\usepackage{cooltooltips}
+%\usepackage[draft]{pdfcomment}
+%\def\CHECK#1{\vrule height2.1ex width0pt depth0pt%
+%\raise0.4ex\hbox{\smash{\pdftooltip{$\checkmark$}{#1}}}}
+\def\CHECK#1{\relax}
+
+\input diagram-2.2
+
+\def\upsilon{\zeta}
+
+\def\myUnderline#1{\vrule height1.2ex width0pt depth0pt\underline{\smash{#1}}}
+\usepackage{CalABC}
+%\usepackage{mathrsfs} % required for \mathscr Formating Mathematics symbols A B C D 
+
+\usepackage{CAT}
+\usepackage{ALG}
+\def\CatC{\mathcal{C}}
+\usepackage{dsfont}
+\def\triv{\mathds{1}}
+%\usepackage{RelNotation}
+%\RELsquareSymbols
+%}}}
+
+\usepackage{hyperref}
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+
+%{{{ {frame}\frametitle{Which |Category| Should I use?}
+\begin{frame}\frametitle{Which \textsf{Category} Should I use?}
+
+  \kern-1ex\mathindent-0.6em
+  \onslide<+->
+  \onslide<+->
+``A category consists of a collection of \textit{objects}, a
+  collection of \textit{morphisms}, an operation \ldots'':
+  
+  \onslide<+->
+  \begin{code}
+record Category 『(i j k : Level)』 : Set 『(suc (i ⊍ j ⊍ k))』 where
+  field  Obj : Set 『 i 』
+         Hom : Obj → Obj → Setoid 『 j k 』
+  Mor = (λ A B → Setoid.Carrier (Hom A B)) : Obj → Obj → Set 『 j 』
+  field  _⨾_      :  {A B C : Obj} → Mor A B → Mor B C → Mor A C
+         Id       : {A : Obj} → Mor A A
+  \end{code}
+
+  \onslide<+->
+  \kern2ex
+``A category over a given collection |Obj| of \textit{objects}, with
+  |Hom| providing  \textit{morphisms}, is given by defining an
+  operation \ldots'':
+
+  \onslide<+->
+  \begin{code}
+record Category′ 『{i j k : Level}』 {Obj : Set 『 i 』} (Hom : Obj → Obj → Setoid 『 j k 』) : Set 『(i ⊍ j ⊍ k)』 where
+  Mor = (λ A B → Setoid.Carrier (Hom A B)) : Obj → Obj → Set 『 j 』
+  field  _⨾_      :  {A B C : Obj} → Mor A B → Mor B C → Mor A C
+         Id       : {A : Obj} → Mor A A
+  \end{code}
+  
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{Tom Hales about Lean}
+\begin{frame}\frametitle{Tom Hales (of Kepler conjecture / Flyspeck fame) about Lean:}
+
+\onslide<+->
+\onslide<+->
+``Structures are meaninglessly parameterized from a mathematical perspective.
+    [\ldots] I think of the parametric versus bundled variants as analogous to currying
+    or not; are the arguments to a function presented in succession or as a single
+    ordered tuple? However, there is a big difference between currying functions
+    and currying structures. Switching between curried and uncurried functions is
+    cheap, but it is nearly impossible in Lean to curry a structure. That is, what
+    is bundled cannot be later opened up as a parameter. (Going the other direction
+    towards increased bundling of structures is easily achieved with sigma types.)
+   This means that library designers are forced to take a conservative approach and
+   expose as a parameter anything that any user might reasonably want exposed, because
+   once it is bundled, it is not coming back.''
+
+   \kern2ex
+\strut\hfill Tom Hales, 2018-09-18 blog post
+
+\onslide<+->
+\kern5ex
+\strut\hfill\textbf{\color{DarkGreen}\Large
+  This is the problem we are solving!
+  }\hfill\strut
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{Library Design}
+\begin{frame}\frametitle{Library Design}
+
+\onslide<+->\large
+%\kern5ex
+\begin{itemize}[<+->]\itemsep=3ex
+\item \textbf{Goals:}
+  \begin{itemize}[<+->]\itemsep1ex
+  \item \large Reusability
+  \item \large Generality
+  \item \large (Mathematical) ``Naturality''
+  \end{itemize}
+\item \textbf{Result:} \onslide<+-> \textbf{\color{DarkRed}Conflict of Interests:}
+
+  \kern2ex
+  \onslide<+->
+  For a record type bundling up items that ``naturally'' belong together:
+
+  \kern1ex
+ \begin{itemize}[<+->]\itemsep2ex
+ \item \large \textbf{Which parts of that record should be
+    {\color{DarkRed}parameters}?}
+  \item \large \textbf{Which parts should be {\color{DarkGreen}fields}?}
+  \end{itemize}
+\end{itemize}
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{Candidate Types for Monoids}
+\begin{frame}\frametitle{Candidate Types for Monoids}
+
+\onslide<+->
+\fbox{\begin{minipage}[t]{0.46\columnwidth}
+\textbf{An arbitrary} monoid:
+\begin{code}
+  record Monoid₀
+    : Set₁ where
+    field
+      Carrier : Set
+      _⨾_     : Carrier → Carrier → Carrier
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+
+Use-case: The category of monoids.
+\end{minipage}}
+\hfill
+\onslide<+->
+%{{{ record Monoid₁
+\fbox{\begin{minipage}[t]{0.46\columnwidth}
+    A monoid \textbf{over} type |Carrier|:
+\begin{code}
+  record Monoid₁
+      (Carrier : Set)
+    : Set where
+    field
+      _⨾_     : Carrier → Carrier → Carrier
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+  Use-case: Sharing the carrier type.
+\end{minipage}}
+%}}}
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{Candidate Types for Monoids (2)}
+\begin{frame}\frametitle{Candidate Types for Monoids (2)}
+
+  \onslide<+->
+%{{{ record Monoid₀
+\fbox{\begin{minipage}[t]{0.46\columnwidth}
+\textbf{An arbitrary} monoid:
+\begin{code}
+  record Monoid₀
+    : Set₁ where
+    field
+      Carrier : Set
+      _⨾_     : Carrier → Carrier → Carrier
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+
+Use-case: The category of monoids.
+\end{minipage}}
+%}}}
+\hfill
+\onslide<+->
+%{{{ record Monoid₂
+\fbox{\begin{minipage}[t]{0.46\columnwidth}
+    A monoid over |Carrier| with operation |⨾|:
+\begin{code}
+  record Monoid₂
+      (Carrier : Set)
+      (_⨾_ : Carrier → Carrier → Carrier)
+    : Set  where
+    field
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+Use-case: Additive monoid of integers
+\end{minipage}}
+%}}}
+  
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{Related Problem: Control over Parameter Instantiation}
+\begin{frame}\large\frametitle{Related Problem: Control over Parameter Instantiation}
+
+\onslide<+->
+\onslide<+->
+Instances of Haskell typeclasses
+%\kern5ex
+\begin{itemize}[<+->]\itemsep=1ex
+\item are indexed by \textbf{types} only
+\item so that there can be only one |Monoid| instance for |Bool|
+\end{itemize}
+
+\kern2ex
+\onslide<+->
+Crude solution: Isomorphic copies with different type \textbf{name}:
+\begin{code}
+data Bool   = False | True
+\end{code}
+
+\onslide<+->
+\begin{code}
+newtype All = All { getAll :: Bool } -- for |Monoid| instance based on conjunction
+\end{code}
+
+\onslide<+->
+\begin{code}
+newtype Any = Any { getAny :: Bool } -- for |Monoid| instance based on disjunction
+\end{code}
+
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{Which Items Should be \textbf{field}s, which Parameters?}
+\begin{frame}\frametitle{Which Items should be Fields? Which Items should be Parameters?}
+
+  \onslide<+->\large
+%\kern5ex
+  \begin{itemize}[<+->]\itemsep=2ex
+
+\item $\mathsf{Monoid}_0$,  $\mathsf{Monoid}_1$, and
+  $\mathsf{Monoid}_2$
+  showed some combinations of items selected as parameters.
+  
+\item  There are other combinations of what is to be exposed and
+  hidden,
+
+  \onslide<+->
+    for applications that we might never think of.
+
+\item Providing always the most-general parameterisation produces
+  \textbf{\color{DarkRed}awkward}
+  library interfaces!
+    
+    
+\end{itemize}
+
+\onslide<+->
+\kern3ex
+\textbf{\color{DarkBlue}\large Proposed Solution:}
+
+\begin{itemize}[<+->]\itemsep=2ex
+
+\item Commit to no particular formulation and allow on-the-fly ``unbundling''
+
+  \kern1ex
+ \onslide<+->
+  --- This is the \textbf{converse} of instantiation
+
+\item \textbf{\color{DarkGreen}New language feature:} \textsf{PackageFormer}
+\end{itemize}
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{\textit{The} Definition of a Monoid} 0
+\begin{frame}\frametitle{\textit{The} Definition of a Monoid%
+  \only<6->{, and Recreating $\mathsf{Monoid}_0$}}
+
+  \kern-3ex
+  \onslide<+->
+  \onslide<+->
+\begin{minipage}[t]{0.48\columnwidth}
+%{{{  PackageFormer MonoidP
+\begin{code}
+  PackageFormer MonoidP : Set₁ where
+    Carrier  : Set
+    _⨾_      : Carrier → Carrier → Carrier
+    Id       : Carrier
+    assoc    : ∀ {x y z}
+             → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId   : ∀ {x} → Id ⨾ x ≡ x
+    rightId  : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+%}}}
+\onslide<+->
+%\kern5ex
+\begin{itemize}[<+->]\itemsep=2ex
+\item We regain the different candidates
+
+  \onslide<+->
+  by applying \textsf{Variational}s
+\end{itemize}
+\end{minipage}
+\onslide<+->
+\hfill
+\begin{minipage}[t]{0.5\columnwidth}
+\begin{code}
+  Monoid₀′  = MonoidP record
+\end{code}
+\onslide<+->
+%{{{ record Monoid₀
+\fbox{\begin{minipage}[t]{0.96\columnwidth}
+\textbf{An arbitrary} monoid:
+\begin{code}
+  record Monoid₀
+    : Set₁ where
+    field
+      Carrier : Set
+      _⨾_     : Carrier → Carrier → Carrier
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+
+Use-case: The category of monoids.
+\end{minipage}}
+%}}}
+\end{minipage}
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{\textit{The} Definition of a Monoid} 1
+\begin{frame}\frametitle{\textit{The} Definition of a Monoid%
+  \only<2->{, and Recreating $\mathsf{Monoid}_1$}}
+
+  \kern-3ex
+  \onslide<+->
+\begin{minipage}[t]{0.48\columnwidth}
+%{{{  PackageFormer MonoidP
+\begin{code}
+  PackageFormer MonoidP : Set₁ where
+    Carrier  : Set
+    _⨾_      : Carrier → Carrier → Carrier
+    Id       : Carrier
+    assoc    : ∀ {x y z}
+             → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId   : ∀ {x} → Id ⨾ x ≡ x
+    rightId  : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+%}}}
+%\onslide<+->
+%\kern5ex
+\begin{itemize}\itemsep=2ex
+\item We regain the different candidates
+
+  %\onslide<+->
+  by applying \textsf{Variational}s
+\end{itemize}
+\end{minipage}
+\onslide<+->
+\hfill
+\begin{minipage}[t]{0.5\columnwidth}
+\begin{code}
+  Monoid₁′ = MonoidP record ⟴ unbundled 1
+  Monoid₁″ = Monoid₀′ exposing (Carrier)
+\end{code}
+\onslide<+->
+%{{{ record Monoid₁
+\fbox{\begin{minipage}[t]{0.96\columnwidth}
+    A monoid \textbf{over} type |Carrier|:
+
+    \kern-2ex
+\begin{code}
+  record Monoid₁
+      (Carrier : Set)
+    : Set where
+    field
+      _⨾_     : Carrier → Carrier → Carrier
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+
+    \kern-1.5ex
+  Use-case: Sharing the carrier type.
+\end{minipage}}
+%}}}
+\end{minipage}
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{\textit{The} Definition of a Monoid} 2
+\begin{frame}\frametitle{\textit{The} Definition of a Monoid%
+  \only<2->{, and Recreating $\mathsf{Monoid}_2$}}
+
+  \onslide<+->
+  \kern-4ex
+\begin{minipage}[t]{0.42\columnwidth}
+%{{{  PackageFormer MonoidP
+\begin{code}
+  PackageFormer MonoidP
+    : Set₁ where
+    Carrier  : Set
+    _⨾_      : Carrier → Carrier → Carrier
+    Id       : Carrier
+    assoc    : ∀ {x y z}
+             → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId   : ∀ {x} → Id ⨾ x ≡ x
+    rightId  : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+%}}}
+%\kern5ex
+\begin{itemize}\itemsep=2ex
+\item We regain the different versions
+
+ % \onslide<+->
+  by applying \textsf{Variational}s
+\end{itemize}
+\end{minipage}
+\onslide<+->
+\hfill
+\begin{minipage}[t]{0.55\columnwidth}\mathindent0pt\small
+\begin{code}
+Monoid₂′ = MonoidP record ⟴ unbundled 2
+Monoid₂′ = MonoidP record ⟴ exposing (Carrier; _⨾_)
+Monoid₂″ = Monoid₀′ exposing (Carrier; _⨾_)
+\end{code}
+%{{{ record Monoid₂
+\fbox{\begin{minipage}[t]{0.96\columnwidth}
+    A monoid over type |Carrier| with operation |⨾|:
+
+    \kern-2ex
+\begin{code}
+  record Monoid₂
+      (Carrier : Set)
+      (_⨾_ : Carrier → Carrier → Carrier)
+    : Set  where
+    field
+      Id      : Carrier
+      assoc   : ∀ {x y z}
+              → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+      leftId  : ∀ {x} → Id ⨾ x ≡ x
+      rightId : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+
+    \kern-2ex
+Use-case: Additive monoid of integers
+\end{minipage}}
+%}}}
+\end{minipage}
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{\textit{The} Definition of a Monoid} 012
+\begin{frame}\frametitle{\textit{The} Definition of a Monoid%
+  \only<4->{, and Instantiations}}
+
+  \kern-3ex
+  \onslide<+->
+\begin{minipage}[t]{0.48\columnwidth}
+%{{{  PackageFormer MonoidP
+\begin{code}
+  PackageFormer MonoidP : Set₁ where
+    Carrier  : Set
+    _⨾_      : Carrier → Carrier → Carrier
+    Id       : Carrier
+    assoc    : ∀ {x y z}
+             → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId   : ∀ {x} → Id ⨾ x ≡ x
+    rightId  : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+%}}}
+%\onslide<+->
+%\kern5ex
+\begin{itemize}[<+->]\itemsep=2ex
+\item We regain the different candidates
+
+%  \onslide<+->
+  by applying \textsf{Variational}s
+\item \textbf{\color{DarkGreen}Linear} effort in number of variations
+\end{itemize}
+\end{minipage}
+\onslide<+->
+\hfill
+\begin{minipage}[t]{0.5\columnwidth}
+\begin{code}
+ Monoid₀′  = MonoidP record
+
+ Monoid₁′ = MonoidP record ⟴ unbundled 1
+
+ Monoid₂″ = Monoid₀′ exposing (Carrier; _⨾_)
+\end{code}
+\end{minipage}
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{Monoid Syntax}
+\begin{frame}\frametitle{Monoid Syntax}
+
+  \kern-3ex
+  \onslide<+->
+\begin{minipage}[t]{0.48\columnwidth}
+%{{{  PackageFormer MonoidP
+\begin{code}
+  PackageFormer MonoidP : Set₁ where
+    Carrier  : Set
+    _⨾_      : Carrier → Carrier → Carrier
+    Id       : Carrier
+    assoc    : ∀ {x y z}
+             → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId   : ∀ {x} → Id ⨾ x ≡ x
+    rightId  : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+%}}}
+\onslide<+->
+%\kern5ex
+\begin{itemize}[<+->]\itemsep=2ex
+\item \ldots and we can do more
+\end{itemize}
+\end{minipage}
+\onslide<+->
+\hfill
+\begin{minipage}[t]{0.5\columnwidth}
+\begin{code}
+  Monoid₃′ = MonoidP termtype "Carrier"
+\end{code}
+
+\onslide<+->
+\kern-2ex
+%{{{ record Monoid₁
+\fbox{\begin{minipage}[t]{0.96\columnwidth}
+\kern-2ex
+\begin{code}
+    data Monoid₃ : Set where
+      _⨾_ : Monoid₃ → Monoid₃ → Monoid₃
+      Id  : Monoid₃
+\end{code}
+
+\kern-2ex
+\end{minipage}}
+%}}}
+\onslide<+->
+\begin{code}
+ Monoid₄ = MonoidP
+           termtype-with-variables "Carrier"
+\end{code}
+
+\onslide<+->
+\kern-2ex
+%{{{ record Monoid₁
+\fbox{\begin{minipage}[t]{0.96\columnwidth}
+\kern-2ex
+\begin{code}
+    data Monoid₄ (Var : Set) : Set where
+      inj  : Var → Monoid₄ Var
+      _⨾_  : Monoid₄ Var
+           → Monoid₄ Var → Monoid₄ Var
+      Id   : Monoid₄ Var
+\end{code}
+
+\kern-2ex
+\end{minipage}}
+%}}}
+\end{minipage}
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{The Language of \textsf{Variational}s}
+\begin{frame}\large\frametitle{The Language of \textsf{Variational}s}
+
+  \onslide<+->
+  \onslide<+->
+  $$\mathsf{Variational} \quad ≅ \quad (\mathsf{PackageFormer} → \mathsf{PackageFormer})$$
+
+  \onslide<+->\baselineskip22pt
+\begin{code}
+  id                       :  Variational
+  _⟴_                      :  Variational → Variational → Variational
+  record                   :  Variational
+  termtype                 :  String → Variational
+  termtype-with-variables  :  String → Variational
+  unbundled                :  ℕ → Variational
+  exposing                 :  List Name → Variational
+\end{code}
+
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{Variational Polymorphism}
+\begin{frame}\frametitle{Variational Polymorphism}
+
+  \kern-5ex
+  \onslide<+->
+\begin{minipage}[t]{0.48\columnwidth}
+  %{{{  PackageFormer MonoidP
+  \savecolumns
+\begin{code}
+  PackageFormer MonoidP : Set₁ where
+    Carrier  : Set
+    _⨾_      : Carrier → Carrier → Carrier
+    Id       : Carrier
+    assoc    : ∀ {x y z}
+             → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+    leftId   : ∀ {x} → Id ⨾ x ≡ x
+    rightId  : ∀ {x} → x ⨾ Id ≡ x
+\end{code}
+
+\onslide<+->
+\kern-3.5ex
+\restorecolumns
+\begin{code}
+    concat : List Carrier → Carrier
+    concat = foldr _⨾_ Id
+\end{code}
+%}}}
+%\kern5ex
+\begin{itemize}[<+->]\itemsep=2ex
+\item Items with default definitions
+  get adapted types
+\end{itemize}
+\end{minipage}
+\onslide<+->
+\hfill
+\begin{minipage}[t]{0.5\columnwidth}
+\begin{code}
+  Monoid₀′  = MonoidP record
+  Monoid₁′ = MonoidP record ⟴ unbundled 1
+  Monoid₂″ = Monoid₀′ exposing (Carrier; _⨾_)
+  Monoid₃′ = MonoidP termtype "Carrier"
+\end{code}
+
+\kern-2ex
+%{{{  concat*
+\fbox{\begin{minipage}[t]{0.96\columnwidth}
+\kern-2ex
+\begin{code}
+  concat₀ : {M : Monoid₀}
+          → let C = Monoid₀.Carrier M
+             in  List C → C
+
+  concat₁ : {C : Set} {M : Monoid₁ C}
+          → List C → C
+
+  concat₂ : {C : Set} {_⨾_ : C → C→ C}
+            {M : Monoid₂ C _⨾_}
+          → List C → C
+
+  concat₃ : let C = Monoid₃
+            in List C → C
+\end{code}
+
+\kern-2ex
+\end{minipage}}
+%}}}
+\end{minipage}
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{How Does This Work?}
+\begin{frame}\large\frametitle{How Does This Work?}
+
+\onslide<+->
+%\kern5ex
+\begin{itemize}[<+->]\itemsep=2ex
+\item Currently implemented  as an ``editor tactic'' meta-program
+\item Using the ``default IDE'' of Agda\onslide<+->: Emacs
+\item Implementation is an \textbf{\color{DarkGreen}extensible} library built on top of 5 meta-primitives
+\item Generated Agda file is automatically imported into the current file
+\item Special-purpose IDE support
+%  Menus, highlighting new syntax, fold away 700-blocks, discard annotations.
+\end{itemize}
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{Generated Code Displayed on Hover}
+\begin{frame}\frametitle{Generated Code Displayed on Hover}
+
+  \onslide<+->
+  \strut\hfill
+  \includegraphics[height=0.9\textheight]{gpce19-mousing-over-large}
+  \hfill\strut
+
+  \vfill
+  \strut\hfill
+  \url{https://alhassy.github.io/next-700-module-systems/prototype/package-former.html}
+  \hfill\strut
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{Future Work}
+\begin{frame}\large\frametitle{Future Work}
+
+\onslide<+->
+%\kern5ex
+\begin{itemize}[<+->]\itemsep=2ex
+\item Explicit (elaboration) semantics for \textsf{PackageFormer}s and
+  \textsf{Variational}s within a minimal type theory
+
+  \begin{itemize}[<+->]\itemsep=1ex
+  \item Refactor meta-primitives from LISP flavour to Agda flavour
+  \item Integrate with a reflection interface for Agda
+  \end{itemize}
+
+  
+%\item Explain how generative modules are supported by this scheme.
+
+\item Explore multiple default definitions
+  
+     % This may necessitate a form of limited subtyping.
+
+\item Explore inheritance, coercion, and transport along canonical isomorphisms
+
+\item Generate mutually-recursive definitions for certain instances of
+  many-sorted \textsf{PackageFormer}s?
+\end{itemize}
+\end{frame}
+%}}}
+
+%{{{ {frame}\frametitle{Conclusion}
+\begin{frame}\large\frametitle{Conclusion}
+
+\onslide<+->
+\kern-1ex
+\begin{itemize}[<+->]\itemsep=2ex
+\item Naming, terminology, concrete syntax, combinator interfaces
+  are all still in flux!
+\item The present system already allows to replace hand-written
+  instances of structuring schemes
+  with invocations of (generative) library methods
+%\item Our resulting system has turned hand-written instances of structuring schemes from a design
+%  pattern into full-fledged library methods
+\item We already influenced the naming conventions of the Agda ``standard library''
+\item % Paraphrasing the “Deriving Via” group,
+  Our approach based on \textsf{PackageFormer}s and
+  \textsf{Variational}s makes it possible
+  % has the potential
+  % to dramatically change the way we write instances
+  % of structuring mechanisms:
+  % Giving names and documentation to recurring patterns
+  % and reusing them where needed.
+   \begin{itemize}[<+->]\itemsep=1ex
+     \item \large to codify, name, and document ``design patterns'' of
+       uses of structuring mechanisms
+     \item \large to enable and encourage re-use at a high level of abstraction
+     \item \large to drastically reduce the interface size of ``interface libraries''
+   \end{itemize}
+   \kern1ex
+   \onslide<+->
+   and therewith has the potential to
+
+   \kern1ex
+   \onslide<+->
+     \strut\hfill\textbf{\color{DarkGreen}drastically change how we
+   provide and use structures via libraries}\hfill\strut
+\end{itemize}
+\end{frame}
+%}}}
+
+\end{document}
+%{{{ {frame}
+\begin{frame}
+\Huge{?}
+\end{frame}
+%}}}
+
+
+%{{{ {frame}\frametitle{.}
+\begin{frame}\frametitle{.}
+
+\onslide<+->
+%\kern5ex
+\begin{itemize}[<+->]\itemsep=4ex
+\item .
+\item .
+\end{itemize}
+\end{frame}
+%}}}
+
+
+%{{{ EMACS lv
+% Local Variables:
+% folded-file: t
+% fold-internal-margins: 0
+% end:
+%}}}
