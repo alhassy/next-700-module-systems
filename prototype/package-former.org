@@ -1,35 +1,87 @@
+# 𝒱-flipping broke!
+# FIXME: RightUnitalActionR = LeftUnitalActionR flipping "_·_" :renaming "leftId to rightId" ⟴ record
+:TODO:
+ADJOIN-RETRACTᵢ, for i : 1..2, are the optional names of the resulting morphisms.
+Provide nil if you do not want the morphisms adjoined.
+
++ [ ] Provide support for no colouring; in menu.
+:END:
 :Changelog:
-➩ NEW variational: Extension.
-  The resulting extended theory comes with a FREE view to the old, parent, theory.
 
-➩ NEW variational: Union.
-  The resulting extended theory comes with two FREE views to the old, parent, theories.
+➩ NEW, Pushout construction!
 
-➩ NEW variational: Flipping.
-  The variational supports renaming of dualised concepts.
-  The resulting extended theory comes with a FREE view to the old, parent, theory.
+  𝒱-union forms pushouts in the category of signatures ^_^
 
-➩ Resurrected variational: keeping.
-  Essentially an opposite of extend-by.
-  This lets us perform little theories after the fact; c.f. user manual part I.
+  My implementation solves some of TPC paper's issues regarding the number of inputs: I use optional inputs
+  and defaults otherwise. I'm also using input function f,g in the reverse direction ---I haven't seen this
+  before, but it works lol
 
-➩ Fixed bug regarding barren top-level PackageFormers; e.g.,
-  “PackageFormer Empty : Set₁ where” now parses correctly.
+➩ NEW, Pullback construction ^_^
 
-➩ Split up user manual into multiple sections.
-  First section is motivational; inspired by §2 of Theory Presentation Combinators paper.
-  Second section is now for more ‘advanced’ issues.
+  This is much harder to do than pushout; but shares the same ideas for reducing the number of input arguments.
 
-➩ A listing of variationals borne from the 5 meta-primitives is added to the user manual.
+➩ “to”-lists can now be interpreted bijectively!
 
-➩ Fixed bug with renaming: It was an issue with 𝒱-map.
+   𝒱-renaming now has an optional parameter “:adjoin-coretract” to form
+   the other half of the bijection. Unlike “:adjoin-retract”, it's off by default.
 
-➩ 𝒱-map now accounts for view morphisms: Items of the form “f = f” only have RHS instance altered.
-  Moreover, it /optionally/ produces retract morphisms! ^_^
+➩ Add remarks on commutativity of combinators in user manual section on renaming.
 
-➩ Experimented with Emacs Lisp namespacing.
-  I wish Elisp had proper modules; this issue will stall the melpa release of this system.
+➩ NEW variational, “postulating”.
+
+    This was mentioned in an in-discussion exercise in the user manual.
+    The solution to the exercise has been formalised and has a section in the user manual.
+
+    It serves as an accessible example of extending the system by users.
+
+➩ Redirected extraction of 𝒱ariationals defined in the first part of the user manual
+  via reference 𝒱-user-man-pt-1.
+
+  Since they relied on the variationals defined in part 2, they caused an error during compilation.
+
+➩ Fixed indentation issue; using at least 4 spaces in elaborated code.
+
+➩ Support crazy names, like [],+,\,^,*,?
+
+➩ Experimented with having anonymous PackageFormers.
+
+➩ Made support-for-mixfix names off by default.
+
+➩ Added adjoin-retract option to 𝒱-extended-by.
+
+➩ Fixed tooltip calculation to account for regular expression operators, such as [],+,\,^,*,?.
+
+➩ NEW, 𝒱-PackageFormer
+
+  variational to mark a grouping mechanism as abstract, so that it is NOT elaborated into concrete Agda.
 :End:
+:FIXME:
+-- MR₁₂   = M-Set-Record decorated "₁" ⟴ decorated "₂" :adjoin-retract nil
+the-MR = M-Set-Record co-decorated "the-"
+-- MR₃₄   = M-Set-Record subscripted₃ ⟴ subscripted₄ :adjoin-retract nil
+-- M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V"
+:END:
+:more_ideas:
+[ ] In abstract, mention how the meta-primitives and provided interface allow the current system
+    to be used as a quick-n-dirty sandbox for experimenting on novel concepts of grouping mechanisms
+    and operations upon them.
+
+[ ] Provide support for multi-line element parsing, so that 𝕀-unique looks nice!
+
+[ ] Add to abstract words about extensions, union, flipping, freely created views, PL research is about getting stuff for free,
+    and support for equations ---i.e., transport of results via variationals.
+
+[ ] All M-Set-Record instantiations have their resulting Agda, in the user manual, missing the new elements. Go fix this.
+
+[ ] Mention how we solve RATH's duality issue, such as join and meet semilattices using a flipping variational.
+
+[ ] Simplify 𝒱-map's “f = f” issue using the “let f = f in” trick; c.f. 𝒱-flip.
+
+[ ] Idea: Add ;-to-lists to union that take optional pushout maps (งಠ_ಠ)ง
+     ➩ Maybe union takes actual maps, while unioning takes ;-to-list so as to be consisting with renaming and opening.
+
+[ ] In the case of “data”, ⊙, we could provide a semantics mapping.
+:end:
 :org-ref:
  + org-ref :: [[https://github.com/jkitchin/org-ref][An exquisite system]] for handling references.
 
@@ -45,12 +97,12 @@
 
 ;; Files to look at when no “╲bibliography{⋯}” is not present in a file.
 ;; Most useful for non-LaTeX files.
-(setq reftex-default-bibliography '("../papers/References.bib"))
+(setq reftex-default-bibliography (list (f-full "../papers/References.bib")))
 
 (use-package helm-bibtex :demand t)
 ;; If you use helm-bibtex as the citation key completion method you should set these variables too.
 
-(setq bibtex-completion-bibliography "../papers/References.bib")
+(setq bibtex-completion-bibliography (f-full "../papers/References.bib"))
 #+END_SRC
 
 #+RESULTS:
@@ -135,6 +187,77 @@ second-problem-better = ???
 
 # [ ] We have morphisms from children presentations to their parents, but sometimes these are invertible.
 #    We can also form the inverses. Something to consider.
+
+* COMMENT Experiments
+  :PROPERTIES:
+  :CUSTOM_ID: COMMENT-Experiments
+  :END:
+** A Better “ensure” operation
+   :PROPERTIES:
+   :CUSTOM_ID: A-Better--ensure--operation
+   :END:
+#+BEGIN_SRC emacs-lisp
+; ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 "Magma")
+; (format "%s" (nth 1 (backtrace-frame 2))) ;; get's name of most recent function called
+
+  (defmacro Dpf--ensure (condition message context &rest suggestions)
+  "Ensure provided CONDITION is true, otherwise report an error.
+<<docs('ensure)>>"
+  `(let* ((ლ\(ಠ益ಠ\)ლ
+           (format "700: %s\n\n\t⇨\t%s%s%s" ,message ,context
+                   (if (quote ,suggestions) "\n" "")
+                   (s-join "\n" (--map (format "\t⇨\t%s" (s-collapse-whitespace it))
+                                       (list ,@suggestions)))))
+          ;; Try to evaluate the condition.
+          (res (condition-case nil ,condition (error ლ\(ಠ益ಠ\)ლ))))
+
+     ;; If we've made it here, then the condition is defined.
+     ;; It remains to check that it's true.
+     (or res (error ლ\(ಠ益ಠ\)ლ))))
+
+(defmacro ALTERNATE-pf--ensure (condition message context &rest suggestions)
+  "Ensure provided CONDITION is true, otherwise report an error.
+nil"
+  `(let* ((debug-on-error t)) ;; Errors are shown in mini-buffer, not in *Backtrace* buffer.
+
+     (or (condition-case nil ,condition
+         (error            (format "700: %s\n\n\t⇨\t%s%s%s" ,message
+                   (if (not (consp ,context))
+                       ,context
+                     (goto-char (point-min)) (search-forward (car ,context)) (s-trim (thing-at-point 'line 'no-properties))) ;; if context is singleton list, use car as keyphrase for current line ^_^
+                   (if (quote ,suggestions) "\n" "")
+                   (s-join "\n" (--map (format "\t⇨\t%s" it)
+                                       (list ,@suggestions))))
+         )))))
+
+#+END_SRC
+
+** anonymouse PF -- wip
+   :PROPERTIES:
+   :CUSTOM_ID: anonymouse-PF----wip
+   :END:
+#+BEGIN_SRC agda
+{-lisp
+(defmacro the-pf (decls)
+  `(progn (pf--load-package-former (cons "PackageFormer _ : Set where" (s-split ";" ,decls)))
+  "_") ;; return name of the anonymous PackageFormer
+)
+-}
+
+{- 700
+-- ➩ NEW, Support for anonymous PackageFormers.
+
+PackageFormer the : Set where
+-- 𝒱-pf decls = extended-by 'decls :adjoin-retract nil
+
+_ = M-Set
+A = Empty union (the-pf "A : Set")
+-- A = the-pf "A : Set" ⟴ union (the pf "B : Set")
+
+-- re: shift to auto-quoting args:
+-- union checks its argument: if consp, then eval; else invoke directly.
+-}
+#+END_SRC
 
 * COMMENT Issues to fix
   :PROPERTIES:
@@ -419,6 +542,37 @@ Ni = M-Set record ⟴ try :this '(list "ᵢ" "ⱼ" "ₖ")
    :PROPERTIES:
    :CUSTOM_ID: COMMENT-Changelog
    :END:
+
+➩ NEW variational: Extension.
+  The resulting extended theory comes with a FREE view to the old, parent, theory.
+
+➩ NEW variational: Union.
+  The resulting extended theory comes with two FREE views to the old, parent, theories.
+
+➩ NEW variational: Flipping.
+  The variational supports renaming of dualised concepts.
+  The resulting extended theory comes with a FREE view to the old, parent, theory.
+
+➩ Resurrected variational: keeping.
+  Essentially an opposite of extend-by.
+  This lets us perform little theories after the fact; c.f. user manual part I.
+
+➩ Fixed bug regarding barren top-level PackageFormers; e.g.,
+  “PackageFormer Empty : Set₁ where” now parses correctly.
+
+➩ Split up user manual into multiple sections.
+  First section is motivational; inspired by §2 of Theory Presentation Combinators paper.
+  Second section is now for more ‘advanced’ issues.
+
+➩ A listing of variationals borne from the 5 meta-primitives is added to the user manual.
+
+➩ Fixed bug with renaming: It was an issue with 𝒱-map.
+
+➩ 𝒱-map now accounts for view morphisms: Items of the form “f = f” only have RHS instance altered.
+  Moreover, it /optionally/ produces retract morphisms! ^_^
+
+➩ Experimented with Emacs Lisp namespacing.
+  I wish Elisp had proper modules; this issue will stall the melpa release of this system.
 
  ### Backend ###
 
@@ -1861,6 +2015,8 @@ or [[https://alhassy.github.io/next-700-module-systems/][the next 700 module sys
 Herein we demonstrate how to use this system from the perspective of /library designers/.
 We use constructs that are discussed in the next section ---which are examples of how
 users may extend the system to produce grouping mechanisms for any desired purpose.
+The exposition here follows section 2 of the /Theory Presentation Combinators/ [cite:tpc]
+paper, reiterating many the ideas therein.
 
 The few constructs demonstrated in this section not only create new grouping mechanisms
 from old ones, but also create maps from the new, child, presentations to the old parent
@@ -1877,6 +2033,16 @@ module package-former-user-manual-i where
 import Relation.Binary.PropositionalEquality as ≡; open ≡ using (_≡_)
 #+END_SRC
 :End:
+
+#+begin_center
+It is important to clarify that *the purpose of this work is the development of a core kernel of meta-primitives for modules*. This section demonstrates the power and
+expressivity of the meta-primitives by showcasing a series of ubiquitous combinators
+/which may be defined using the meta-primitives and Lisp/. The section afterwards goes into the detail of how to *extend the system to build any desired operations on any notion of grouping mechanism*.
+#+end_center
+
+# As such, some of the definitions of combinators are biased or have some shortcomings:
+# Our goal is to show the meta-primitives allow for such definitions, and to provide
+# examples (mostly in the second part of the user manual) for users to build what they want.
 
 ** Installation
    :PROPERTIES:
@@ -2084,8 +2250,8 @@ a member of ~CommutativeMonoidR~.
 As a teaser, here's how the ~extended-by~ variational is defined ---we leave the details of which
 to the second part of the user manual.
 {{{fold(Definition of extended-by)}}}
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref std-𝒱-lib :noweb yes
-(cl-defun element-retract (parent es &key (new es))
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
+(cl-defun element-retract (parent es &key (new es) name contravariant)
   "Realise a list of elements as an Agda no-op record.
 
 E.g., list “Carrier : Set; e : Carrier”
@@ -2097,27 +2263,41 @@ maps to the following element value.
 See also 𝒱-renaming, which may be useful to change ‘toParent’.
 
 NEW is a new updated version of ES, if any.
+
+NAME is the name of the new retract element; by default it's “toParent” or “fromParent”
+depending on whether CONTRAVARIANT is true or not.
 "
 
-  (-let [toParent (format "to%s" parent)]
+  ;; the name of the newly defined PackageFormer ---which we may access using the special identifier ~$𝑛𝑎𝑚𝑒~.
+  (let* ((toParent (or (unless (equal t name) name) (format "%s%s" (if contravariant "from" "to") parent)))
+         ;; NAME may be "t", but not the symbol t. This is useful in any 𝒱artional that has an optional adjoin-retract
+         ;; argument, which the user may set to be nil, t, or a string to obtain nothing, default name, and given name for the morphism; respectively.
+        (τarg     (if contravariant (format "%s → " parent) ""))
+        (δvar     (gensym)) ;; unique argument name to avoid accidental shawdowing of any “e in es”.
+        (δarg     (if contravariant (format "λ %s → " δvar) ""))
+        )
     (car (parse-elements (list
-      (format "%s : let View X = X in View %s" toParent parent)
-      (format "%s = record {%s}" toParent
+      (format "%s : let View X = X in %sView %s" toParent τarg (if contravariant $𝑛𝑎𝑚𝑒 parent))
+      (format "%s = %srecord {%s}" toParent δarg
 
         (s-join ";"
         (loop for e  in es
               for e′ in new
               unless (or (s-contains-p "let View X = X" (element-type e)) ;; Ignore source view morphisms
                          (element-equations e))                           ;; Ignore “derivied” elements
-              collect (format "%s = %s" (element-name e) (element-name e′))))))))))
+              collect (if (not contravariant)
+                          (format "%s = %s" (element-name e) (element-name e′))
+                        (format "%s = %s.%s %s" (element-name e) parent (element-name e′) δvar))))))))))
 
-(𝒱 extended-by ds
+(𝒱 extended-by ds (adjoin-retract t)
    = "Extend a given presentation by a list of ;-separated declarations.
 
       The resuling presentation has a “toX” retract method,
-      where ‘X’ is the parent presentation.
+      where ‘X’ is the parent presentation. To avoid this,
+      set ADJOIN-RETRACT to be nil. To provide a preferred name for
+      the morphism, then set ADJOIN-RETRACT to the desired string.
      "
-     :alter-elements (λ es → (-concat es (parse-elements (mapcar #'s-trim (s-split ";" ds))) (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es)))))
+     :alter-elements (λ es → (-concat es (parse-elements (mapcar #'s-trim (s-split ";" ds))) (when adjoin-retract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :name adjoin-retract))))))
 #+END_SRC
 {{{end-fold}}}
 
@@ -2134,6 +2314,99 @@ using a /single/ ~extended-by~ clause where the necessary items are separated by
 GroupR = MonoidR extended-by "_⁻¹ : Carrier → Carrier; left⁻¹ : ∀ {x} → (x ⁻¹) · x ≡ 𝕀; right⁻¹ : ∀ {x} → x · (x ⁻¹) ≡ 𝕀" ⟴ record
 -}
 #+END_SRC
+
+A more fine grained approach may be as follows.
+#+BEGIN_SRC agda
+{-700
+PackageFormer Empty : Set₁ where {- No elements -}
+Type  = Empty extended-by "Carrier : Set" :adjoin-retract nil ⟴ record
+Magma = Type  extended-by "_·_ : Carrier → Carrier → Carrier" ⟴ record
+CommutativeMagma = Magma extended-by "comm : {x y : Carrier} →  x · y  ≡  y · x" ⟴ record
+-}
+#+END_SRC
+
+
+** Defining a Concept Only Once
+   :PROPERTIES:
+   :CUSTOM_ID: Defining-a-Concept-Only-Once
+   :END:
+
+   From a library-designer's perspective, our definition of ~CommutativeMonoid~ has the commutativity property ‘hard coded’ into it.
+   If we wish to speak of commutative magmas ---types with a single commutative operation--- we need to hard-code the property once again.
+   If, at a later time, we wish to move from having arguments be implicit to being explicit then we need to track down every hard-coded
+   instance of the property then alter them ---having them in-sync becomes an issue.
+
+   Instead, the system lets us ‘build upon’ the ~extended-by~ combinator: We make an associative list of
+   names and properties, then string-replace the meta-names /op, op′, rel/ with the provided user names.
+
+#+BEGIN_SRC emacs-lisp  :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
+(𝒱 postulating bop prop (using bop) (adjoin-retract t)
+ = "Adjoin a property PROP for a given binary operation BOP.
+
+   PROP may be a string: associative, commutative, idempotent, etc.
+
+   Some properties require another operator or a relation; which may
+   be provided via USING.
+
+   ADJOIN-RETRACT is the optional name of the resulting retract morphism.
+   Provide nil if you do not want the morphism adjoined.
+
+   With this variational, a definition is only written once.
+   "
+   extended-by '(s-replace "op" bop (s-replace "rel" using (s-replace "op′" using
+    (pcase prop
+     ("associative"   "assoc : ∀ x y z → op (op x y) z ≡ op x (op y z)")
+     ("commutative"   "comm  : ∀ x y   → op x y ≡ op y x")
+     ("idempotent"    "idemp : ∀ x     → op x x ≡ x")
+     ("involutive"    "inv   : ∀ x     → op (op x) ≡ x") ;; assuming bop is unary
+     ("left-unit"     "unitˡ : ∀ x y z → op e x ≡ e")
+     ("right-unit"    "unitʳ : ∀ x y z → op x e ≡ e")
+     ("distributiveˡ" "distˡ : ∀ x y z → op x (op′ y z) ≡ op′ (op x y) (op x z)")
+     ("distributiveʳ" "distʳ : ∀ x y z → op (op′ y z) x ≡ op′ (op y x) (op z x)")
+     ("absorptive"    "absorp  : ∀ x y  → op x (op′ x y) ≡ x")
+     ("reflexive"     "refl    : ∀ x y  → rel x x")
+     ("transitive"    "trans   : ∀ x y z → rel x y → rel y z → rel x z")
+     ("antisymmetric" "antisym : ∀ x y → rel x y → rel y x → x ≡ z")
+     ("congruence"    "cong    : ∀ x x′ y y′ → rel x x′ → rel y y′ → rel (op x x′) (op y y′)")
+     (t (error "𝒱-postulating does not know the property “%s”" prop)))))) :adjoin-retract 'adjoin-retract)
+#+END_SRC
+
+  We can extend this database of properties as needed with relative ease. Here is an example use along with its elaboration.
+#+BEGIN_SRC agda
+{-700
+PackageFormer Magma : Set where
+  Carrier : Set
+  op      : Carrier → Carrier → Carrier
+
+RawRelationalMagma = Magma extended-by "_≈_ : Carrier → Carrier → Set" ⟴ record
+
+RelationalMagma    = RawRelationalMagma postulating "_·_" "congruence" :using "_≈_" ⟴ record
+-}
+#+END_SRC
+
+#+BEGIN_SRC results-agda :tangle no
+record RawRelationalMagma : Set₁ where
+    field Carrier       : Set
+    field op        : Carrier → Carrier → Carrier
+    toType      : let View X = X in View Type ; toType = record {Carrier = Carrier}
+    field _≈_       : Carrier → Carrier → Set
+    toMagma     : let View X = X in View Magma ;    toMagma = record {Carrier = Carrier;op = op}
+
+record RelationalMagma : Set₁ where
+    field Carrier       : Set
+    field op        : Carrier → Carrier → Carrier
+    toType      : let View X = X in View Type ; toType = record {Carrier = Carrier}
+    field _≈_       : Carrier → Carrier → Set
+    toMagma     : let View X = X in View Magma ;    toMagma = record {Carrier = Carrier;op = op}
+    field cong      : ∀ x x′ y y′ → _≈_ x x′ → _≈_ y y′ → _≈_ (op x x′) (op y y′)
+    toRawRelationalMagma        : let View X = X in View RawRelationalMagma ;   toRawRelationalMagma = record {Carrier = Carrier;op = op;_≈_ = _≈_}
+#+END_SRC
+
+    + Regarding the idea that /“each piece of mathematical knowledge should be formalized only once”,/
+      see the paper [[https://inf.ug.edu.pl/~schwarzw/papers/mkm2010.pdf][On Duplication in Mathematical Repositories]].
+
+    + The above Lisp serves as an accessible example of extending the system by users.
+      - See this [[https://alhassy.github.io/ElispCheatSheet/][Elisp Cheat Sheet]] to get the basics of Lisp.
 
 ** Renaming
    :PROPERTIES:
@@ -2154,7 +2427,71 @@ AbealianMonoidR = CommutativeMonoidR renaming "· to +"
    The above declaration freely maintains these relationships: The resulting record
    comes with a new projection ~toCommutativeMonoidR~, and still has the inherited projection ~toMonoidR~.
 
-** Union
+   Since renaming and extension (including postulating) both adjoin retract morphisms, by default,
+   we are lead to wonder how about the result of performing these operations in sequence ‘on the fly’,
+   rather than naming each application. Since ~P renaming X ⟴ postulating Y~ comes with a retract ~toP~ via
+   the renaming and another, distinctly defined, ~toP~ via the postulating, we have that the operations
+   commute if /only/ the first permits the creation of a retract. Here's a concrete example:
+#+BEGIN_SRC agda
+{-700
+IdempotentMagma  = Magma renaming "_·_ to _⊔_" ⟴ postulating "_⊔_" "idempotent"   :adjoin-retract nil ⟴ record
+-}
+#+END_SRC
+
+  These both elaborate to the same thing, up to order of constituents.
+
+  It is important to realise that the renaming and postulating combinators are /user-defined/, and
+  could have been defined without adjoining a retract by default; consequently, we would have unconditional
+  commutativity of these combinators. You, as the user, can make these alternative combinators as follows:
+#+BEGIN_SRC agda
+{-700
+
+𝒱-renaming′ by = renaming 'by :adjoin-retract nil
+
+𝒱-postulating′ p bop (using) = postulating 'p 'bop :using 'using :adjoin-retract nil
+
+-- Example use: We need the “𝒱-” in the declaration site, but not in use sites, as below.
+
+IdempotentMagma″ = Magma postulating′ "_⊔_" "idempotent" ⟴ renaming′ "_·_ to _⊔_" ⟴ record
+-}
+#+END_SRC
+
+Super near stuff!
+
+Finally, renaming is an invertible operation ---ignoring the adjoined retracts,
+~Magmaʳʳ~ is identical to ~Magma~.
+#+BEGIN_SRC agda
+{-700
+Magmaʳ  = Magma  renaming "_·_  to op"
+Magmaʳʳ = Magmaʳ renaming "op   to _·_"
+-}
+#+END_SRC
+
+Alternatively, ~renaming~ has an optional argument ~:adjoin-coretract~ which can be provided
+with ~t~ to use a default name or provided with a string to use a desired name for
+the inverse part of a projection, ~fromMagma~ below.
+#+BEGIN_SRC agda
+{-700
+Sequential = Magma renaming "op to _⨾_" :adjoin-coretract t
+-}
+#+END_SRC
+#+BEGIN_SRC results-agda :tangle no
+record Sequential : Set₁ where
+    field Carrier : Set
+    field _⨾_     : Carrier → Carrier → Carrier
+
+    toType : let View X = X in View Type
+    toType = record {Carrier = Carrier}
+
+    toMagma : let View X = X in View Magma
+    toMagma = record {Carrier = Carrier;op = _⨾_}
+
+    fromMagma : let View X = X in Magma → View Sequential
+    fromMagma = λ g227742 → record {Carrier = Magma.Carrier g227742;_⨾_ = Magma.op g227742}
+#+END_SRC
+We are using gensym's for λ-arguments to avoid name clashes.
+
+** Union (and intersection)
    :PROPERTIES:
    :CUSTOM_ID: Union
    :END:
@@ -2181,32 +2518,278 @@ The resulting record, ~CommutativeMonoidR~, comes with three derived fields
 with its hierarchical construction.
 
 This approach “works” to build a sizeable library, say of the order of 500 concepts, in
-a fairly economical way [TODO:citation:???]. The union operation is an instance of a /pushout/
+a fairly economical way [cite:tpc]. The union operation is an instance of a /pushout/
 operation, which consists of 5 arguments ---three objects and two morphisms--- which may
-be included into the ~union~ operation as optional keyword arguments, which we will return to
-in the second part of the user manual. The more general notion of pushout is required if
-we were to combine ~GroupR~ with ~AbealianMonoidR~, which have non-identical syntactic
-copies of ~MonoidR~.
+be included into the ~union~ operation as optional keyword arguments.
+The more general notion of pushout is required if we were to combine ~GroupR~ with ~AbealianMonoidR~,
+which have non-identical syntactic copies of ~MonoidR~.
 
-{{{fold(Definition of union -- Feel free to ignore until later)}}}
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref std-𝒱-lib :noweb yes
-(𝒱 union pf
+{{{fold(Definition of union & intersection -- Ignore for now)}}}
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
+(defun find-duplicates (list)
+"Return a list that contains each element from LIST that occurs more than once.
+
+Source: https://emacs.stackexchange.com/a/31449/10352"
+  (--> list
+       (-group-by #'identity it)
+       (-filter (lambda (ele) (> (length ele) 2)) it)
+       (mapcar #'car it)))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
+(cl-defmacro alter-elements (elements variational &body rest)
+  "Alter ELEMENTS using a given VARIATIONAL along with its arguments, REST.
+
+   The result is a list of elements.
+
+   This is essentially “:alter-elements” but with the ability to work on the elements
+   of **any** PackageFormer by using “($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf)”.
+
+   This method is only well-defined within the RHS of a variational, or instantiation, declaration.
+   E.g., use it to alter elements in an “:alter-elements” clause using a predefined variational;
+   see 𝒱-union and 𝒱-intersect for sample uses.
+  "
+  `(funcall (cdr (assoc :alter-elements (,(𝒱- variational) ,@rest))) ,elements))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
+(𝒱 union pf (renaming₁ "") (renaming₂ "") (adjoin-retract₁ t) (adjoin-retract₂ t)
  = "Union parent PackageFormer with given PF.
 
-Union the elements of the parent PackageFormer with those of
-the provided PF, then adorn the result with two views:
-One to the parent and one to the provided PF.
+    Union the elements of the parent PackageFormer with those of
+    the provided PF, then adorn the result with two views:
+    One to the parent and one to the provided PF.
 
-If an identifer is shared but has different types, then crash.
-"
+    If an identifer is shared but has different types, then crash.
+
+    ADJOIN-RETRACTᵢ, for i : 1..2, are the optional names of the resulting morphisms.
+    Provide nil if you do not want the morphisms adjoined.
+    "
+   :alter-elements (λ es →
+     (let* ((es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
+            (es₂ (alter-elements ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf) renaming renaming₂ :adjoin-retract nil))
+            (es′ (-concat es₁ es₂)))
+
+      ;; Ensure no name clashes!
+      (loop for n in (find-duplicates (mapcar #'element-name es′))
+            for e = (--filter (equal n (element-name it)) es′)
+            unless (--all-p (equal (car e) it) e)
+            do (-let [debug-on-error nil]
+              (error "%s = %s union %s \n\n\t\t ➩ Error: Elements “%s” conflict!\n\n\t\t\t%s"
+                     $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 pf (element-name (car e)) (s-join "\n\t\t\t" (mapcar #'show-element e)))))
+
+   ;; return value
+   (-concat
+       es′
+       (when adjoin-retract₁ (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es₁ :name adjoin-retract₁)))
+       (when adjoin-retract₂ (list (element-retract pf     ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf) :new es₂ :name adjoin-retract₂)))))))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
+(𝒱 intersect pf (adjoin-retract₁ t) (adjoin-retract₂ t) (renaming₁ "") (renaming₂ "")
+ = "Intersect parent PackageFormer with given PF.
+
+  “pf₁ intersect pf₂ :renaming₁ f :renaming₂ g”  ≅  f(pf₁) ∩ g(pf₂)
+
+  This is essentially the pullback:
+  { (x, y) ∈ pf₁ × pf₂ ❙ f x = g y }.
+
+  Intersect the elements of the parent PackageFormer with those of
+  the provided PF, then adorn the result with two views
+  from the result PackageFormer to the input PackageFormers.
+
+  ADJOIN-RETRACTᵢ, for i : 1..2, are the optional names of the resulting morphisms.
+  Provide nil if you do not want the morphisms adjoined.
+  "
  :alter-elements (λ es →
-    (-concat
-       es
-       ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf)
-       (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es)
-             (element-retract pf ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf))))))
+   (let* ((es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
+          (es₂ (alter-elements ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf) renaming renaming₂ :adjoin-retract nil))
+          (es′      (reverse (intersection
+                               (--reject (element-contains "View" it) es₁) es₂
+                               :key #'element-name :test #'string-equal)))
+          ;; names not mentioned in the intersection.
+          (dangling (set-difference (-concat es₁ es₂) es′
+                      :key #'element-name :test #'string-equal)))
+
+  ;; drop the dangling names
+  (setq es′ (-reject (λ e → (-some (λ d → (element-contains (element-name d) e)) dangling)) es′))
+
+  ;; Get old names so as to adjoin the co-retracts; i.e., the projections with renaming.
+  (setq es₁ (alter-elements es′ rename (reify-to-list renaming₁ :inverse t) :adjoin-retract nil))
+  (setq es₂ (alter-elements es′ rename (reify-to-list renaming₂ :inverse t) :adjoin-retract nil))
+
+   (-concat
+       es′
+       (when adjoin-retract₁ (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es′ :new es₁ :name adjoin-retract₁ :contravariant t)))
+       (when adjoin-retract₂ (list (element-retract pf    es′ :new es₂ :name adjoin-retract₂ :contravariant t)))))))
 #+END_SRC
 {{{end-fold}}}
+
+The pushout of $f : X → A$ and $g : X → B$ is, essentially, the disjoint sum of $A$ and $B$ where embedded elements
+are considered ‘indistinguishable’ when the share the same origin in $X$ via the paths $f$ and $g$.
+Unfortunately, the resulting ‘indistinguishable’ elements are actually distinguishable: They may be the /A/-name or the /B/-name
+and a choice must be made as to which name is preferred since users actually want to refer to them later on.
+Hence, to be useful for library construction, the pushout construction actually requires at least another input function
+that provides canonical names to the supposedly ‘indistinguishable’ elements.
+
+Since a ~PackageFormer~ is essentially just a /signature/ ---a collection of typed names---, we can make a ‘partial choice of
+pushout’ to reduce the number of arguments from 6 to 4 by letting the typed-names object $X$ be ‘inferred’ and encoding
+the canonical names function into the operations $f$ and $g$.
+The inputs functions $f, g$ are necessarily /signature morphisms/ ---mappings of names that preserve types--- and
+so are simply lists associating names of $X$ to names of $A$ and $B$. If we instead consider $f′ : X′ ← A$ and
+$g′ : X′ ← B$, in the /opposite direction/, then we may reconstruct a pushout by
+setting $X$ to be common image of $f′, g′$, and set $f, g$ to be inclusions
+In-particular, the full identity of $X′$ is not necessarily relevant for
+the pushout reconstruction and so it may be omitted. Moreover, the issue of canonical names is resolved:
+If $a ∈ A$ is intended to be identified with $b ∈ B$ such that the resulting element has $c$ as the chosen
+canonical name, then we simply require $f′\, a = c = g′ \, b$.
+
+At first, a pushout construction needs 5 inputs, to be practical it further needs a function for canonical names
+for a total of 6 inputs. However, a pushout of $f : X → A$ and $g : X → B$ is intended to be the ‘smallest object $P$
+that contains a copy of $A$ and of $B$ sharing the common substructure $X$’, and as such it outputs two functions
+$inj₁ : A → P,\, inj₂ : B → P$ that inject the names of $A$ and $B$ into $P$.
+If we realise $P$ as a record ---a type of models--- then the embedding functions are /reversed/, to obtain
+projections $P → A$ and $P → B$: If we have a model of $P$, then we can forget some structure and rename
+via $f$ and $g$ to obtain models of $A$ and $B$.
+For the resulting construction to be useful, these names could be automated such as $toA : P → A$ and $toB : P → B$
+but such a naming scheme does not scale ---but we shall use it for default names. As such, we need two more inputs
+to the pushout construction so the names of the resulting output functions can be used later on.
+/Hence, a practical choice of pushout needs 8 inputs!/
+
+Using the above issue to reverse the directions of $f, g$ via $f′, g′$, we can infer the shared structure $X$
+and the canonical name function. Likewise, by using $toChild : P → Child$ default-naming scheme, we may omit
+the names of the retract functions. If we wish to rename these retracts or simply omit them altogether,
+we make the /optional/ arguments: Provide ~:adjoin-retractᵢ "new-function-name"~ to use a new name, or ~nil~ instead
+of a string to omit the retract. Here are some examples of this construction of mine.
+
+Here we provide all arguments, optional and otherwise.
+#+BEGIN_SRC agda
+{-700
+TwoBinaryOps = Magma union "Magma" :renaming₁ "op to _+_" :renaming₂ "op to _×_"  :adjoin-retract₁ "left" :adjoin-retract₂ "right"
+-}
+#+END_SRC
+#+BEGIN_SRC results-agda :tangle no
+record TwoBinaryOps : Set₁ where
+    field Carrier : Set
+    field _+_     : Carrier → Carrier → Carrier
+
+    toType : let View X = X in View Type
+    toType = record {Carrier = Carrier}
+
+    field _×_     : Carrier → Carrier → Carrier
+
+    left : let View X = X in View Magma
+    left = record {Carrier = Carrier;op = _+_}
+
+    right : let View X = X in View Magma
+    right = record {Carrier = Carrier;op = _×_}
+#+END_SRC
+
+The next example is one of the reasons the construction is named ‘union’ instead of ‘pushout’:
+It's idempotent, if we ignore the addition of the retract.
+#+BEGIN_SRC agda
+{-700
+MagmaAgain   = Magma union "Magma"
+-}
+#+END_SRC
+#+BEGIN_SRC results-agda :tangle no
+record MagmaAgain : Set₁ where
+    field Carrier : Set
+    field op      : Carrier → Carrier → Carrier
+
+    toType : let View X = X in View Type
+    toType = record {Carrier = Carrier}
+
+    toMagma : let View X = X in View Magma
+    toMagma = record {Carrier = Carrier;op = op}
+#+END_SRC
+
+We may perform disjoint sums ---simply distinguish all the names of one of the input objects.
+#+BEGIN_SRC agda
+{-700
+Magma′    = Magma primed
+SumMagmas = Magma union "Magma′" :adjoin-retract₁ nil ⟴ record
+-}
+#+END_SRC
+#+BEGIN_SRC results-agda :tangle no
+record SumMagmas : Set₁ where
+    field Carrier  : Set
+    field op       : Carrier → Carrier → Carrier
+
+    toType         : let View X = X in View Type
+    toType = record {Carrier = Carrier}
+
+    field Carrier′ : Set
+    field op′      : Carrier′ → Carrier′ → Carrier′
+
+    toType′ : let View X = X in View Type
+    toType′ = record {Carrier = Carrier′}
+
+    toMagma : let View X = X in View Magma
+    toMagma = record {Carrier = Carrier′;op = op′}
+
+    toMagma′ : let View X = X in View Magma′
+    toMagma′ = record {Carrier′ = Carrier′;op′ = op′}
+#+END_SRC
+
+A common scenario is extending a structure, say ~Magma~, into orthogonal directions, such as by making
+it operation associative or idempotent, then closing the resulting diamond by combining them, to obtain
+a semilattice. However, the orthogonal extensions may involve different names and so the resulting
+semilattice presentation can only be formed via pushout; below are three ways to form it.
+#+BEGIN_SRC agda
+{-700
+Semigroup          = Magma postulating "_·_" "associative" ⟴ record
+-- IdempotentMagma = Magma renaming "_·_ to _⊔_" ⟴ postulating "_⊔_" "idempotent"  :adjoin-retract nil ⟴ record
+
+⊔-SemiLattice      = Semigroup union "IdempotentMagma" :renaming₁ "_·_ to _⊔_" ⟴ record
+·-SemiLattice     = Semigroup union "IdempotentMagma" :renaming₂ "_⊔_ to _·_" ⟴ record
+↑-SemiLattice      = Semigroup union "IdempotentMagma" :renaming₁ "_·_ to _↑_" :renaming₂ "_⊔_ to _↑_" ⟴ record
+-}
+#+END_SRC
+
+Let's close with the classic example of forming a ring structure by combining two monoidal structures.
+This example also serves to further showcasing how using ~𝒱-postulating~ can make for more granular, modular, developments.
+#+BEGIN_SRC agda
+{-700
+Additive           = Magma renaming "_·_ to _+_" ⟴ postulating "_+_" "commutative"  :adjoin-retract nil ⟴ record
+Multiplicative     = Magma renaming "_·_ to _×_" :adjoin-retract nil ⟴ record
+AddMult            = Additive union "Multiplicative" ⟴ record
+AlmostNearSemiRing = AddMult ⟴ postulating "_×_" "distributiveˡ" :using "_+_" ⟴ record
+-}
+#+END_SRC
+#+BEGIN_SRC results-agda :tangle no
+record AlmostNearSemiRing : Set₁ where
+    field Carrier : Set
+    field _+_     : Carrier → Carrier → Carrier
+
+    toType : let View X = X in View Type
+    toType = record {Carrier = Carrier}
+
+    toMagma : let View X = X in View Magma
+    toMagma = record {Carrier = Carrier;op = _+_}
+
+    field comm       : ∀ x y   → _+_ x y ≡ _+_ y x
+    field _×_        : Carrier → Carrier → Carrier
+
+    toAdditive : let View X = X in View Additive
+    toAdditive = record {Carrier = Carrier;_+_ = _+_;comm = comm}
+
+    toMultiplicative : let View X = X in View Multiplicative
+    toMultiplicative = record {Carrier = Carrier;_×_ = _×_}
+
+    field distˡ      : ∀ x y z → _×_ x (_+_ y z) ≡ _+_ (_×_ x y) (_×_ x z)
+#+END_SRC
+
+Following the reasoning for pushouts, we implement pullbacks in the same way with the same optional arguments.
+Here's an example use:
+#+BEGIN_SRC agda
+{-700
+Just-Carrier    = Additive intersect "Multiplicative"
+Magma-yet-again = Additive intersect "Multiplicative" :renaming₁ "_+_ to op" :renaming₂ "_×_ to op"
+-}
+#+END_SRC
+Moreover the absorptive law $X ∩ (X ∪ Z) = X$ also holds for these operations:
+~Additive intersect "AddMult"~ is just ~Additive~, when we ignore all adjoined retracts.
 
 ** Duality
    :PROPERTIES:
@@ -2254,19 +2837,19 @@ Informally, one now ‘defines’ a right unital action by duality, flipping the
 and renaming ~leftId~ to be ~rightId~. Such informal parlance is in-fact nearly formally, as the following:
 #+BEGIN_SRC agda
 {-700
-RightUnitalActionR = LeftUnitalActionR flipping "_·_" :renaming "leftId to rightId" ⟴ record
+-- RightUnitalActionR = LeftUnitalActionR flipping "_·_" :renaming "leftId to rightId" ⟴ record
 -}
 #+END_SRC
 Of-course the resulting representation is semantically identical to the previous one, and so it is
 furnished with a ~to⋯~ mapping:
 #+BEGIN_SRC agda
-forget : RightUnitalActionR → LeftUnitalActionR
-forget = RightUnitalActionR.toLeftUnitalActionR
+-- forget : RightUnitalActionR → LeftUnitalActionR
+-- forget = RightUnitalActionR.toLeftUnitalActionR
 #+END_SRC
 
 Likewise for the RATH-Agda library's example from above, to define semi-lattice structures by duality:
 #+BEGIN_SRC agda
-open import Data.Product using (_×_)
+import Data.Product as P
 
 {-700
 PackageFormer JoinSemiLattice : Set₁ where
@@ -2277,15 +2860,15 @@ PackageFormer JoinSemiLattice : Set₁ where
   antisym : ∀ {x y} → x ⊑ y → y ⊑ x → x ≡ y
   _⊔_     : Carrier → Carrier → Carrier
   ⊔-lub   : ∀ {x y z} → x ⊑ z → y ⊑ z → (x ⊔ y) ⊑ z
-  ⊔-lub˘  : ∀ {x y z}  → (x ⊔ y) ⊑ z  → x ⊑ z × y ⊑ z
+  ⊔-lub˘  : ∀ {x y z}  → (x ⊔ y) ⊑ z  → x ⊑ z P.× y ⊑ z
 
 JoinSemiLatticeR = JoinSemiLattice record
-MeetSemiLatticeR = JoinSemiLatticeR flipping "_⊑_" :renaming "⊔ to ⊓; ⊔-lub to ⊓-glb"
+-- MeetSemiLatticeR = JoinSemiLatticeR flipping "_⊑_" :renaming "⊔ to ⊓; ⊔-lub to ⊓-glb"
 -}
 #+END_SRC
 In this example, besides the map from meet semi-lattices to join semi-lattices, the types of
 the dualised names, such as ~⊓-glb~, are what one would expect were the definition written out explicitly:
-#+BEGIN_SRC agda
+#+BEGIN_SRC agda :tangle no
 module woah (M : MeetSemiLatticeR) where
   open MeetSemiLatticeR M
 
@@ -2298,7 +2881,7 @@ module woah (M : MeetSemiLatticeR) where
 #+END_SRC
 
 {{{fold(Definition of flipping -- Feel free to ignore until later)}}}
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref std-𝒱-lib :noweb yes
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
 (defun flip-type (τ)
   "Given a binary operation's type, as a string, flip the first two types.
 
@@ -2311,7 +2894,7 @@ E.g., “A → B → C” becomes “B → A → C”.
 (flip-type "A → B → C")
 :end:
 
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref std-𝒱-lib :noweb yes
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
 (defun flip (name op)
  "If element OP is named NAME, then flip its type; else leave it alone-ish.
 
@@ -2333,7 +2916,7 @@ due to its identifier scoping rules.
 (flip "_+_" (car (parse-elements '("_⊕_ : A → B → C"))))  ⇒  _⊕_ : A → B → C
 :end:
 
-#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref std-𝒱-lib :noweb yes
+#+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
 (𝒱 flipping name (renaming "")
  = "Flip a single binary operation, or predicate, NAME.
 
@@ -2354,7 +2937,7 @@ due to its identifier scoping rules.
    :CUSTOM_ID: Extracting-Little-Theories
    :END:
 
-The ~extended-by~ variational allows Agda users to easily employ the /tiny theories/ [little_theories,mathscheme]
+The ~extended-by~ variational allows Agda users to easily employ the /tiny theories/ [cite:little_theories][mathscheme]
 approach to library design: New structures are built from old ones by augmenting one concept at a time,
 then one uses mixins such as ~union~, below, to obtain a complex structure.
 This approach lets us write a program, or proof, in a context that only
@@ -2363,7 +2946,7 @@ In this way, we obtain /maximal generality/ for re-use!
 This approach can be construed as /The Interface Segregation Principle [design-patterns-solid]:
 /No client should be forced to depend on methods it does not use./
 
-#+BEGIN_SRC agda
+#+BEGIN_SRC agda :tangle no
 {-700
 PackageFormer Empty : Set₁ where {- No elements -}
 Type  = Empty extended-by "Carrier : Set"
@@ -2384,11 +2967,11 @@ For example, suppose we quickly formed ~Monoid~, from earlier, but later wished
 to utilise other substrata. This is easily achieved with the following declarations.
 #+BEGIN_SRC agda
 {-700
-Empty′        = Monoid keeping ""
-Type′         = Monoid keeping "Carrier"
-Magma′        = Monoid keeping "_·_"
-Semigroup′    = Monoid keeping "assoc"
-PointedMagma′ = Monoid keeping "𝕀; _·_"
+Empty″        = Monoid keeping ""
+Type″         = Monoid keeping "Carrier"
+Magma″        = Monoid keeping "_·_"
+Semigroup″    = Monoid keeping "assoc"
+PointedMagma″ = Monoid keeping "𝕀; _·_"
 -- ↪ Carrier; _·_; 𝕀
 -}
 #+END_SRC
@@ -2481,6 +3064,7 @@ or ‘little theories’, after the fact.
 * User Manual II: Extending the System
 :PROPERTIES:
 :header-args: :tangle "package-former.agda"
+:CUSTOM_ID: User-Manual-II--Extending-the-System
 :END:
 
 :Hide:
@@ -2495,6 +3079,8 @@ grouping mechanism as well as operation between groupings.
 
 We begin with a brief review of Lisp basics such as list operations then immediately dive into
 creating an Agda module that contains our new user-defined constructs, within 700-comments.
+
+
 
 ** Lisp Interface
    :PROPERTIES:
@@ -2950,6 +3536,11 @@ record Monoid-Record-cons : Set₁ where
     field rightId       : ∀ {x : Carrier} → Rid x ≈ x
     field Id²       : (Id ⨾ Id) ≈ Id
     field concatₚ       : List Carrier → Carrier
+#+END_SRC
+
+Let's also codify the converse operation of marking a grouping mechanism abstract to avoid elaboration.
+#+BEGIN_SRC emacs-lisp emacs-lisp :tangle "variationals.tmp" :noweb-ref std-𝒱-lib :noweb yes
+(𝒱 PackageFormer = "Mark a grouping mechanism as abstract, so that it is NOT elaborated into concrete Agda." :kind PackageFormer)
 #+END_SRC
 
 ** A Coherent Equation Accommodating Record Variational
@@ -3543,7 +4134,7 @@ record M-Set0-Typeclass₃ (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vect
 
    Let's code up the priming operation as a reusable pattern ---call it ~map~.
 #+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
-(𝒱 map elements (support-mixfix-names t) (adjoin-retract nil)
+(𝒱 map elements (support-mixfix-names nil) (adjoin-retract nil) (adjoin-coretract nil)
    = "Apply function ELEMENTS that acts on PackageFormer elements,
       then propogate all new name changes to subsequent elements.
 
@@ -3568,40 +4159,10 @@ record M-Set0-Typeclass₃ (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vect
             for new in names′
             do (setq es′ (--map (element-replace old new it :support-mixfix-names support-mixfix-names) es′)))
 
-     ;; Account for “f = f” translations; c.f., element-retract.
-     (loop for old in names
-           for new in names′
-           for offend  = (format "%s = %s" new new)
-           for correct = (format "%s = %s" old new)
-           do  (setq es′ (loop for e′ in es′
-           collect (if (element-contains offend e′)
-                       (element-replace offend correct e′ :support-mixfix-names nil)
-                       e′))))
      ;; return value
-     (-concat es′ (when adjoin-retract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es′)))))))
+     (-concat es′ (when adjoin-retract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es′ :name adjoin-retract)))
+                  (when adjoin-coretract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es′ :new es :name adjoin-coretract :contravariant t)))))))
 #+END_SRC
-
-:old:
-#+BEGIN_SRC emacs-lisp :tangle no
-(𝒱 map elements (support-mixfix-names t)
-   = "Apply function ELEMENTS that acts on PackageFormer elements,
-      then propogate all new name changes to subsequent elements.
-
-      There is minimal support for mixfix names, but it may be
-      ignored by setting SUPPORT-MIXFIX-NAMES to be nil.
-     "
-     :alter-elements (lambda (es)
-    (let* ((esnew   (mapcar elements es))
-           (_       (if support-mixfix-names "" "_"))
-           (names   (--map (s-replace "_" _ (element-name it)) es))
-           (names′  (--map (s-replace "_" _ (element-name it)) esnew)))
-      (loop for old in names
-            for new in names′
-            do (setq esnew (--map (element-replace old new it) esnew)))
-      ;; return value
-      esnew)))
-#+END_SRC
-:end:
 
   This is a prototype; ideally the variational definition would be rendered in
   Agda code. Rather than using functional combinators such as
@@ -3643,16 +4204,16 @@ record MR𝕏 : Set₁ where
 Now for some useful corollaries.
 # For diversity, we render these in lisp-blocks.
 #+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
-(𝒱 rename f (support-mixfix-names t) (adjoin-retract t)
+(𝒱 rename f (support-mixfix-names nil) (adjoin-retract t)
   =  "Rename elements using a string-to-string function F acting on names.
 
-      There is minimal support for mixfix names, but it may be
-      ignored by setting SUPPORT-MIXFIX-NAMES to be nil.
+      There is minimal support for mixfix names, which may be tried
+      by setting SUPPORT-MIXFIX-NAMES to be t.
 
       When ADJOIN-RETRACT is non-nil, we adjoin a “record {oldᵢ = nameᵢ}”
       view morphism; i.e., record translation.
      "
-     map (λ e → (map-name (λ n → (rename-mixfix f n)) e))
+     map (λ e → (map-name (λ n → (rename-mixfix f n (not 'support-mixfix-names))) e))
          :support-mixfix-names 'support-mixfix-names
          :adjoin-retract 'adjoin-retract)
 #+END_SRC
@@ -3722,7 +4283,8 @@ For now, such lists are necessarily enclosed in double-quotes.
 #+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 ;; Neato: (reify-to-list "x₀; ⋯; xₙ" nil) ⇒ (λ x ↦ If ∃ i • x ≈ xᵢ then "" else nil)
 ;; KEY is a function applied to the input argument /before/ casing on LHS ↦ RHS names.
-   (cl-defun reify-to-list (str &key (otherwise 'otherwise) (key #'identity))
+;; INVERSE means to interpret clauses “x to y” as mappings “y ↦ x”.
+   (cl-defun reify-to-list (str &key (otherwise 'otherwise) (key #'identity) inverse)
    "Transform “to list” STR with default OTHERWISE into a Lisp function.
 <<docs('reify-to-list)>>"
    (let (clauses)
@@ -3730,17 +4292,27 @@ For now, such lists are necessarily enclosed in double-quotes.
        (s-split ";")
        (--map (s-split " to " it))
        (--map (list (s-trim (car it)) (s-trim (or (cadr it) "")))) ;; accomodate empty str.
+       (funcall (λ cs → (if inverse (--map (-rotate 1 it) cs) cs)))
        (-cons* 'pcase `(,key arg))
        (setq clauses))
      `(lambda (arg) ,(append clauses `((otherwise ,otherwise))))))
 
-(𝒱 renaming by (adjoin-retract t)
+;; (reify-to-list "a to b; c to d" :inverse t) ;; neato!
+
+(𝒱 renaming by (adjoin-retract t) (adjoin-coretract nil) (support-mixfix-names nil)
   = "Rename elements using BY, a “;”-separated string of “to”-separated pairs.
+
+      There is minimal support for mixfix names, which may be tried
+      by setting SUPPORT-MIXFIX-NAMES to be t.
 
       When ADJOIN-RETRACT is non-nil, we adjoin a “record {oldᵢ = nameᵢ}”
       view morphism; i.e., record translation.
 "
-    rename '(reify-to-list by) :adjoin-retract 'adjoin-retract)
+  map (λ e → (map-name (λ n → (rename-mixfix (reify-to-list by) n (not 'support-mixfix-names))) e))
+         :support-mixfix-names 'support-mixfix-names
+         :adjoin-retract 'adjoin-retract
+         :adjoin-coretract 'adjoin-coretract
+         )
 #+END_SRC
 It is common in Agda to provide “to”-lists, so we've provide a variant that supports those
 instead of forcing users to produce functions explicitly.
@@ -3765,9 +4337,9 @@ If N ∈ 0..9, then yield ₙ, else N."
 Here are some example uses.
 #+BEGIN_SRC agda
 {-700
-MR₁₂   = M-Set-Record decorated "₁" ⟴ decorated "₂" :adjoin-retract nil
+-- MR₁₂   = M-Set-Record decorated "₁" ⟴ decorated "₂" :adjoin-retract nil
 the-MR = M-Set-Record co-decorated "the-"
-MR₃₄   = M-Set-Record subscripted₃ ⟴ subscripted₄ :adjoin-retract nil
+-- MR₃₄   = M-Set-Record subscripted₃ ⟴ subscripted₄ :adjoin-retract nil
 MRₜₒ   = M-Set-Record renaming "Scalar to S; Vector to V; · to nice"
 NearMonoid = M-Set-Record renaming "Scalar to Carrier; Vector to Carrier; · to ×"
 -}
@@ -3962,10 +4534,13 @@ data No : Set where
 {- Crashes since type No′ is not defined! -}
 #+END_SRC
 
-** Subpacakges with ~generated, sorts, signature~
-   :PROPERTIES:
-   :CUSTOM_ID: Subpacakges-with--generated--sorts--signature-
-   :END:
+mention these:
+
+   + [ ] Interpretation functions from termtypes to recordtypes ---which give terms meaning.
+         - [ ] With an environment argument for open termtypes.
+   + [ ] Staged terms and partial evaluators
+
+** Subpackages with ~generated, sorts, signature~
 
     A common grouping operation is to zoom-in to the minimal well-formed
     package that contains only certain specified elements. For example,
@@ -4088,7 +4663,7 @@ record MonSig : Set₁ where
    For practicality, let's also introduce a more concrete syntax
    analogous to that of ~renaming~:
    # Magma = Monoid generated (λ e → (equal "__·__" (element-name e)))
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp  :tangle "variationals.tmp" :noweb yes :noweb-ref std-𝒱-lib
 (𝒱 keeping those
   = "Keep THOSE elements, a “;”-separated string of proper names,
     along with the elements that ensure THOSE is well-defined.
@@ -4197,7 +4772,7 @@ module M-Set-R₁ (Arg6926 : M-Set-R) where
 
     WITH is a string of “;”-separated items consisting of “to”-separated pairs.
     "
-    open (λ x → (funcall (reify-to-list with "_") x)) :avoid-mixfix-renaming t)
+    open (λ x → (funcall (reify-to-list with :otherwise "_") x)) :avoid-mixfix-renaming t)
 
     ;; Alternatively, we could have used ‘trash’ names,
     ;; something like (format "%s" (gensym)), instead of "_".
@@ -4695,6 +5270,27 @@ The full source of this discussion is as follows.
 #+INCLUDE: "CaseStudy.agda" src agda
 {{{end-fold}}}
 
+** regular expression tests :ignore:
+   :PROPERTIES:
+   :CUSTOM_ID: regular-expression-tests
+   :END:
+   :Hide:
+   Names may involve (Emacs) regular expression operators such as [],+,*,?, etc.
+#+BEGIN_SRC agda
+{-700
+-- regular expression test --
+
+crazy-name-[]-+-\-^-*-? = M-Set extended-by "_+_ : Scalar; _*_ : Vector; ^ : Set; [_] : Set" :adjoin-retract nil ⟴ record
+
+Pointed   = Magma extended-by "e : let Carrier = Carrier in Carrier" ⟴ record
+Additive+ = Pointed renaming "op to _+_; e to O; Carrier to C" ⟴ record
+Additive× = Additive+ renaming "_+_ to _×_"
+
+crazy-name-test  = Pointed map (λ e → (map-name (λ n → (concat n "/crazy-name-[]-+-\-^-*-?")) e)) ⟴ record
+crazy-name-test2 = crazy-name-test map (λ e → (map-name (λ n → (concat n "+2")) e)) ⟴ record
+-}
+#+END_SRC
+   :End:
 * COMMENT User Manual III: Semantics
   :PROPERTIES:
   :CUSTOM_ID: COMMENT-User-Manual-III--Semantics
@@ -5736,6 +6332,18 @@ We will keep track of all such declarations in a global list, and provide a mini
  This is provided to users; it is one of the few utilities that
  makes use of implementation specfic details.
 "
+
+;; (message-box (format "%s" (nth 1 (backtrace-frame 30))))
+;; -let [here (progn (goto-char (point-min)) (search-forward pf) (thing-at-point 'line 'no-properties))]
+
+ ;; Ensure the given PackageFormer is defined.
+ (pf--ensure (assoc pf pf--package-formers)
+             (format "Undefined PackageFormer “%s”" pf)
+             (list pf)
+             "Ensure you spelled the name correctly."
+             "Use the PackageFormer menu to see which PackageFormers are defined.")
+
+ ;; Return its elements.
  (pf--package-former-elements (cdr (assoc pf pf--package-formers))))
 #+END_SRC
 
@@ -5816,34 +6424,52 @@ Now a method for replacing textual strings within an element structure.
   "Check whether string NEEDLE occurs anywhere in element E."
     (--any it
            (-concat (loop for place in '(element-qualifier element-name element-type)
-                         collect (eval `(when (,place e) (s-contains-p needle (,place e)))))
+                         collect (eval `(when (,place e) (string-match-p (format "\\b%s\\b" (regexp-quote needle)) (,place e)))))
                    (loop for eq in (element-equations e)
-                         collect (s-contains-p needle eq)))))
+                         collect (string-match-p (format "\\b%s\\b" (regexp-quote needle))
+                                 (s-join "=" (cdr (s-split "=" eq)))))))) ;; Ensure we do not consider the LHS of an equation.
 #+END_SRC
 :Test:
   (element-contains "a" (car (parse-elements '("A : Set"))))
 ⇒ nil
 :End:
 #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
-(cl-defun element-replace (old new e &key (support-mixfix-names t))
+(cl-defun element-replace (old new e &key (support-mixfix-names nil))
   "Replace every occurance of word OLD by string NEW in element E.
+
+We account for “OLD = [qualifier.]OLD” translations, as in function ELEMENT-RETRACT,
+by transforming them into “OLD = [qualifier.]NEW”.
 
 When SUPPORT-MIXFIX-NAMES is true, we ignore underscores."
   (let* ((e′    (copy-element e))
          (score (if support-mixfix-names "" "_"))
-         (old′  (s-replace "_" score old))
-         (new′  (s-replace "_" score new)))
+         (old′  (regexp-quote (s-replace "_" score old)))
+         (temp  (format "%s%s" new (gensym)))
+         (new′  (s-replace "_" score new))
+         (offend  (format "%s = \\(.+\\)?%s" (regexp-quote temp) (regexp-quote temp))) ;; “l = [qualifier.]l”
+         (correct (format "%s = \\1%s" old new)))     ;; “\\1” refers to the matched qualifier.
 
-    (loop for place in '(element-qualifier element-name element-type)
-          do (eval `(when (,place e′) (setf (,place e′)
-                          (replace-regexp-in-string (format "\\b%s\\b" old′)
-                                                    new′ (,place e′) t t)))))
-    ;; Replacements in the equations as well.
-    (setf (element-equations e′)
-          (loop for eq in (element-equations e′)
-                collect (s-replace old′ new′ eq)))
+    ;; Also account for “l = l” translations; c.f., element-retract.
+    ;; E.g., with “old, new ≔ y, x” we have
+    ;; “let x = y in f x  ⟿  let x = temp in f x  ⟿  let x = x in f x”
+    ;; Without the ‘temp’ switch, we would have had: “let x = y in f x  ⟿ let x = x in f x ⟿ let y = x in f x”,
+    ;; which may be fine in a let-clause, but ruins a record having “x” as a field.
+    (loop for (this . that) in `((,old′ . ,temp) (,offend . ,correct) (,(regexp-quote temp) . ,new′))
+          do
+
+          (loop for place in '(element-qualifier element-name element-type)
+                do (eval `(when (,place e′)
+                            (setf (,place e′)
+                                  (replace-regexp-in-string (format "\\b%s\\b" ,this)
+                                                            that (,place e′) t)))))
+
+          ;; Replacements in the equations as well.
+          (setq e′ (map-equations (λ eqs → (--map (replace-regexp-in-string (format "\\b%s\\b" this) that it t) eqs)) e′))
+   )
     ;; return value
     e′))
+
+;; Above test: (element-replace "y" "x" (car (parse-elements '("here : let R = {x = y} in R.x f"))))
 #+END_SRC
 
 :Test:
@@ -5928,6 +6554,8 @@ Parsing a list of interleaved elements in concrete syntax.
     (loop for e in es
           for τ    = (s-split " : " (car e))
           for nom  = (parse-name (car τ))
+          ;; In case there is no qualifier; regexp-quote to avoid regexp ops in a name.
+          for qual = (-let [pts (s-split (regexp-quote nom) (car τ))] (when (= 2 (length pts)) (car pts)))
           for qual = (car (s-split nom (car τ)))
           for _    = (pf--ensure (cdr τ)
                                  (format "Type not supplied for %s!" nom)
@@ -6086,7 +6714,7 @@ With this in hand, let's produce a robust parser.
            :level                    level
            :waist                    0
            ;; TODO: Currently no parameter support for arbitrary PackageFormers.
-           :indentation              (pf--get-indentation (cadr lines))
+           :indentation              (max 4 (pf--get-indentation (cadr lines))) ;; 4 spaces is the minimum
            :elements  (parse-elements (--remove (s-starts-with? "-- " it)
                                                 (--map (s-trim it)
                                                        (cdr lines))))))
@@ -6441,9 +7069,9 @@ Parsing variational clauses is then straightforward:
                                                   (car clause)
                                                   "is not defined.")
                                           context
-                                          (concat "Use the PackageFormer menu"
-                                                  "to see which variationals"
-                                                  "are defined."))
+                                          "Use the PackageFormer menu
+                                                 to see which variationals
+                                                 are defined.")
                               (eval `( ,(𝒱- (car clause)) ,@(cdr clause))))
                           ;; List of key-value pairs
                           `,(loop for key   in clause by #'cddr
@@ -6796,10 +7424,11 @@ Loading an instantiation into our list is now trivial.
                 line)
 
     ;; Let's not overwrite existing PackageFormers.
-    (pf--ensure (not (assoc $𝑛𝑎𝑚𝑒 pf--package-formers))
+    (pf--ensure (or (not (assoc $𝑛𝑎𝑚𝑒 pf--package-formers)) (equal $𝑛𝑎𝑚𝑒 "_"))
                 (format "PackageFormer “%s” is already defined; use a new name."
                         $𝑛𝑎𝑚𝑒)
                 line)
+                ;; "Also, “_” is the name of anonymous PackageFormers."
 
     ;; Ensure the PackageFormer to be instantiated is defined.
     (pf--ensure self
@@ -6881,7 +7510,7 @@ Loading an instantiation into our list is now trivial.
       ;; We've just formed a new PackageFormer, which can be modified,
       ;; specialised, later on.
       (add-to-list 'pf--package-formers (cons $𝑛𝑎𝑚𝑒 self))
-      (when show-it (pf--show-package-former self))))
+      (if show-it (pf--show-package-former self) $𝑛𝑎𝑚𝑒)))
 #+END_SRC
 
 ** ~pf--load-700-comments~ and ~lisp~ blocks
@@ -7278,9 +7907,6 @@ nil
    :PROPERTIES:
    :CUSTOM_ID: Tooltips
    :END:
-   :PROPERTIES:
-
-   :END:
 
    It gets rather tedious to jump to the generated files to see the elaborations
    of 700-syntactical items. As such, let's tie existing occurrences of a PackageFormer's
@@ -7288,6 +7914,8 @@ nil
 
    #+name: tooltipify
    We only add tooltips to PHRASE as a standalone word, not as a subword.
+
+   The PHRASE is taken literally; no regexp operators are recognised.
 
    Useful info on tooltips:
     + http://kitchingroup.cheme.cmu.edu/blog/2013/04/12/Tool-tips-on-text-in-Emacs/
@@ -7313,7 +7941,7 @@ nil
   (save-excursion  ;; Return cursour to current-point afterwards.
     (goto-char 1)
     ;; The \b are for empty-string at the start or end of a word.
-    (while (search-forward-regexp (format "\\b%s\\b" phrase) (point-max) t)
+    (while (search-forward-regexp (format "\\b%s\\b" (regexp-quote phrase)) (point-max) t)
       (put-text-property (match-beginning 0)
                          (match-end 0)
                          'help-echo
@@ -7393,13 +8021,14 @@ ORIG-FUN is intended to be the Agda loading process with arguments ARGS."
 
      ;; Print the package-formers
       (setq printed-pfs
-            (--map
-             (if (equal 'porting (car it)) (format "%s" (cdr it))
-               (format
+            (--map (cond
+               ((equal 'porting (car it)) (format "%s" (cdr it)))
+               ((equal "_" (car it))      "") ;; Anonymous PackageFormers
+               (t (format
                 (if (equal "PackageFormer" (pf--package-former-kind (cdr it)))
                     (concat "{- Kind “PackageFormer” does not correspond "
-                            " to a concrete Agda type. \n%s -}")
-                       "%s") (pf--show-package-former (cdr it))))
+                            " to a concrete Agda type. \n%s\n -}")
+                       "%s") (pf--show-package-former (cdr it)))))
              (reverse pf--package-formers)))
       ;;
       (insert (s-join "\n\n\n" printed-pfs))
@@ -7434,6 +8063,8 @@ ORIG-FUN is intended to be the Agda loading process with arguments ARGS."
     (loop for (name . pf) in pf--package-formers
           do (unless (equal 'porting name)
                (pf--tooltipify name (pf--show-package-former pf))))
+    ;; Special anonymous names.
+    (pf--tooltipify "_" "“_” is the name of anonymous PackageFormers, which cannot be elaborated.")
 
     ;; Let's also add tooltips for the variationals & colour them.
     (loop for (v . docs) in pf--variationals
@@ -7640,7 +8271,7 @@ The file ought to also contain one or more autoload magic comments, as explained
 
  {{{end-fold}}}
 
-* Future Work
+* Future & Related Work
   :PROPERTIES:
   :CUSTOM_ID: Work
   :END:
@@ -7655,7 +8286,10 @@ any feedback or pointers!
 ★ ★ ★
 #+end_center
 
-Below are some desirable features to work on.
+** Features Wish-list
+   :PROPERTIES:
+   :CUSTOM_ID: Features-Wish-list
+   :END:
 
 We check them off, rather than deleting them,
 to produce a ‘tada’ list of features ;-)
@@ -7858,7 +8492,7 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
  #+END_SRC
        :End:
 
-** Flip Combinator
+** COMMENT DONE Flip Combinator
    :PROPERTIES:
    :CUSTOM_ID: Flip-Combinator
    :END:
@@ -7876,7 +8510,7 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
      - http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Props.Lattice.html#1029
      - See RATH for a fine-grained approach to lattices.
 
-** Extensions
+** COMMENT DONE Extensions
    :PROPERTIES:
    :CUSTOM_ID: Extensions
    :END:
@@ -7896,36 +8530,62 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
    + [ ] ~B = cs ⟨+ A ⟨+ cs′~ where each cs is a single name-type declaration and the operation is left-associative, and A is an existing packageformer. This gives us a nice way to build a hierarchy. Note that since only A has a name, we may form a forgetful coercion B⇒A automatically.
   E.g., ~Monoid = Type ⟨+ Pointed ⟨+ (Magma renaming (_⊕_ to _⨾_)) ⟨+ LeftUnital ⟨+ RightUnital ⟨+ assoc : ∀ {x y z} → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)~ gives, automatically, ~Monoid⇒Type, Monoid⇒Pointed, Monoid⇒Magma, Monoid⇒LeftUnital, Magma⇒RightUnital~ (•̀ᴗ•́)و MA: To begin with, ignore the rename and work up the sequence one ⟨+ at a time.
 
-** Sharoda's “Leveraging the information contained in theory presentations”
+** Related Work
    :PROPERTIES:
-   :CUSTOM_ID: Sharoda-s--Leveraging-the-information-contained-in-theory-presentations-
+   :CUSTOM_ID: Related-Work
    :END:
 
-   In her PhD proposal, pages 1-3, she shows how an explicit definition of monoid can mechanically gives rise
-   to:
-   + [X] signatures
-   + [X] termtypes
-     - Covered in our gpce_19 paper.
-   + [X] open termtypes, those with variables
-     - Covered in our gpce_19 paper.
-   + [ ] Interpretation functions from termtypes to recordtypes ---which give terms meaning.
-         - [ ] With an environment argument for open termtypes.
-   + [ ] Staged terms and partial evaluators
+   + Theory Presentation Combinators [cite:tpc]
 
-   She proposes that universal algebra ---a uniform approach to studying different algebras---
-   is currently performed on-demand and manually in computing, which it needn't be.
+     This work aims to provide a sound categorical basis for most of the combinators
+     in section 2 above, in-particular: Extensions, renames, and pushouts.
+     The work emphasises the importance of these combinators at the PackageFormer
+     level but also at the level of morphisms between them ---which is not something
+     we are even considering.
+
+   + [[https://github.com/ysharoda/PhD-Proposal/blob/master/proposal.pdf][Leveraging the information contained in theory presentations]] (PhD Proposal)
+
+     This work focuses on /library combinators that give free common constructions/
+     such as deriving the type of homomorphisms from a given PackageFormer.
+     We have shown this particular example, in section 2 of the user manual, to
+     demonstrate how our low-level setup can be used in the creation of such
+     combinators.
+
+     *We provide a low-level kernel which supports the creation of such combinators, but we are not studying such combinators, their use, their classifications, nor their theory.*
+
+   + A Scalable Module System [link]
+     # cite:mmt_main_paper
+
+     An impressive work, the MMT language ---a module system for mathematical theories---
+     may serve as a standardised representation format for a formal,
+     web-scalable, digital
+     library that supports mathematical knowledge management ‘in the large’.
+     The resulting system is not only logic-independent but also foundation-independent;
+     unlike [cite:tpc], it shifts semantic concerns to concrete instances but
+     allows more than first-class morphisms between contexts, going up to morphisms
+     between logics.
+
+     *Whereas one focus of this work is the developement of a standardised format and library of mathematical knowledge management, our aims are more humble: An extensible and mouldable module system for programmers via a kernel of meta-primitives.*
+** COMMENT more
+   :PROPERTIES:
+   :CUSTOM_ID: COMMENT-more
+   :END:
+
+  + TODO: [[cite:casl_user_manual][CASL (Common Algebraic Specfication Language)]] ; [[cite:maude][Maude]] ; Specware ; Hets
 
 * Bibliography :ignore:
   :PROPERTIES:
   :CUSTOM_ID: Bibliography
   :END:
-  bibliography:../papers/References.bib
+  # The style is only relevant for LaTeX export.
+  bibliographystyle:unsrtnat
+  bibliography:/Users/musa/thesis-proposal/papers/References.bib
 * TODO Works to look into
   :PROPERTIES:
   :CUSTOM_ID: Works-to-look-into
   :END:
 
-+ [ ] Mei — A Module System for Mechanized MathematicsSystems
++ [ ] Mei — A Module System for Mechanized Mathematics Systems
       J. Xu
       In: J. Carette and F. Wiedijk, eds., Proceedings of Programming Languages for Mechanized Mathematics (PLMMS 2007), 17 pp., Hagenburg, Austria, June 29-30, 2007.
 
@@ -7981,6 +8641,7 @@ PackageFormer LawfullyPointed (v : Variation) : Set where
 (eval-and-compile ;; begin eval-and-compile for standard library of 𝒱ariationals
 
   <<std-𝒱-lib>>
+  <<𝒱-user-man-pt-1>>
 
 ) ;; End eval-and-compile for standard library of 𝒱ariationals
 #+END_SRC

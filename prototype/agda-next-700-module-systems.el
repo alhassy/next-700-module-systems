@@ -239,6 +239,18 @@ nil"
  This is provided to users; it is one of the few utilities that
  makes use of implementation specfic details.
 "
+
+;; (message-box (format "%s" (nth 1 (backtrace-frame 30))))
+;; -let [here (progn (goto-char (point-min)) (search-forward pf) (thing-at-point 'line 'no-properties))]
+
+ ;; Ensure the given PackageFormer is defined.
+ (pf--ensure (assoc pf pf--package-formers)
+             (format "Undefined PackageFormer “%s”" pf)
+             (list pf)
+             "Ensure you spelled the name correctly."
+             "Use the PackageFormer menu to see which PackageFormers are defined.")
+
+ ;; Return its elements.
  (pf--package-former-elements (cdr (assoc pf pf--package-formers))))
 
 (defvar pf-highlighting t
@@ -283,29 +295,47 @@ nil"
   "Check whether string NEEDLE occurs anywhere in element E."
     (--any it
            (-concat (loop for place in '(element-qualifier element-name element-type)
-                         collect (eval `(when (,place e) (s-contains-p needle (,place e)))))
+                         collect (eval `(when (,place e) (string-match-p (format "\\b%s\\b" (regexp-quote needle)) (,place e)))))
                    (loop for eq in (element-equations e)
-                         collect (s-contains-p needle eq)))))
+                         collect (string-match-p (format "\\b%s\\b" (regexp-quote needle))
+                                 (s-join "=" (cdr (s-split "=" eq)))))))) ;; Ensure we do not consider the LHS of an equation.
 
-(cl-defun element-replace (old new e &key (support-mixfix-names t))
+(cl-defun element-replace (old new e &key (support-mixfix-names nil))
   "Replace every occurance of word OLD by string NEW in element E.
+
+We account for “OLD = [qualifier.]OLD” translations, as in function ELEMENT-RETRACT,
+by transforming them into “OLD = [qualifier.]NEW”.
 
 When SUPPORT-MIXFIX-NAMES is true, we ignore underscores."
   (let* ((e′    (copy-element e))
          (score (if support-mixfix-names "" "_"))
-         (old′  (s-replace "_" score old))
-         (new′  (s-replace "_" score new)))
+         (old′  (regexp-quote (s-replace "_" score old)))
+         (temp  (format "%s%s" new (gensym)))
+         (new′  (s-replace "_" score new))
+         (offend  (format "%s = \\(.+\\)?%s" (regexp-quote temp) (regexp-quote temp))) ;; “l = [qualifier.]l”
+         (correct (format "%s = \\1%s" old new)))     ;; “\\1” refers to the matched qualifier.
 
-    (loop for place in '(element-qualifier element-name element-type)
-          do (eval `(when (,place e′) (setf (,place e′)
-                          (replace-regexp-in-string (format "\\b%s\\b" old′)
-                                                    new′ (,place e′) t t)))))
-    ;; Replacements in the equations as well.
-    (setf (element-equations e′)
-          (loop for eq in (element-equations e′)
-                collect (s-replace old′ new′ eq)))
+    ;; Also account for “l = l” translations; c.f., element-retract.
+    ;; E.g., with “old, new ≔ y, x” we have
+    ;; “let x = y in f x  ⟿  let x = temp in f x  ⟿  let x = x in f x”
+    ;; Without the ‘temp’ switch, we would have had: “let x = y in f x  ⟿ let x = x in f x ⟿ let y = x in f x”,
+    ;; which may be fine in a let-clause, but ruins a record having “x” as a field.
+    (loop for (this . that) in `((,old′ . ,temp) (,offend . ,correct) (,(regexp-quote temp) . ,new′))
+          do
+
+          (loop for place in '(element-qualifier element-name element-type)
+                do (eval `(when (,place e′)
+                            (setf (,place e′)
+                                  (replace-regexp-in-string (format "\\b%s\\b" ,this)
+                                                            that (,place e′) t)))))
+
+          ;; Replacements in the equations as well.
+          (setq e′ (map-equations (λ eqs → (--map (replace-regexp-in-string (format "\\b%s\\b" this) that it t) eqs)) e′))
+   )
     ;; return value
     e′))
+
+;; Above test: (element-replace "y" "x" (car (parse-elements '("here : let R = {x = y} in R.x f"))))
 
 (defun parse-name (element)
   "Given an string representation of an ELEMENT, yield the ‘name’ component.
@@ -345,6 +375,8 @@ nil"
     (loop for e in es
           for τ    = (s-split " : " (car e))
           for nom  = (parse-name (car τ))
+          ;; In case there is no qualifier; regexp-quote to avoid regexp ops in a name.
+          for qual = (-let [pts (s-split (regexp-quote nom) (car τ))] (when (= 2 (length pts)) (car pts)))
           for qual = (car (s-split nom (car τ)))
           for _    = (pf--ensure (cdr τ)
                                  (format "Type not supplied for %s!" nom)
@@ -428,7 +460,7 @@ nil"
            :level                    level
            :waist                    0
            ;; TODO: Currently no parameter support for arbitrary PackageFormers.
-           :indentation              (pf--get-indentation (cadr lines))
+           :indentation              (max 4 (pf--get-indentation (cadr lines))) ;; 4 spaces is the minimum
            :elements  (parse-elements (--remove (s-starts-with? "-- " it)
                                                 (--map (s-trim it)
                                                        (cdr lines))))))
@@ -566,9 +598,9 @@ nil"
                                                   (car clause)
                                                   "is not defined.")
                                           context
-                                          (concat "Use the PackageFormer menu"
-                                                  "to see which variationals"
-                                                  "are defined."))
+                                          "Use the PackageFormer menu
+                                                 to see which variationals
+                                                 are defined.")
                               (eval `( ,(𝒱- (car clause)) ,@(cdr clause))))
                           ;; List of key-value pairs
                           `,(loop for key   in clause by #'cddr
@@ -725,10 +757,11 @@ nil"
                 line)
 
     ;; Let's not overwrite existing PackageFormers.
-    (pf--ensure (not (assoc $𝑛𝑎𝑚𝑒 pf--package-formers))
+    (pf--ensure (or (not (assoc $𝑛𝑎𝑚𝑒 pf--package-formers)) (equal $𝑛𝑎𝑚𝑒 "_"))
                 (format "PackageFormer “%s” is already defined; use a new name."
                         $𝑛𝑎𝑚𝑒)
                 line)
+                ;; "Also, “_” is the name of anonymous PackageFormers."
 
     ;; Ensure the PackageFormer to be instantiated is defined.
     (pf--ensure self
@@ -810,7 +843,7 @@ nil"
       ;; We've just formed a new PackageFormer, which can be modified,
       ;; specialised, later on.
       (add-to-list 'pf--package-formers (cons $𝑛𝑎𝑚𝑒 self))
-      (when show-it (pf--show-package-former self))))
+      (if show-it (pf--show-package-former self) $𝑛𝑎𝑚𝑒)))
 
 (defvar pf--annotations nil
   "The contents of the PackageFormer annotations.
@@ -903,7 +936,7 @@ nil"
   (save-excursion  ;; Return cursour to current-point afterwards.
     (goto-char 1)
     ;; The \b are for empty-string at the start or end of a word.
-    (while (search-forward-regexp (format "\\b%s\\b" phrase) (point-max) t)
+    (while (search-forward-regexp (format "\\b%s\\b" (regexp-quote phrase)) (point-max) t)
       (put-text-property (match-beginning 0)
                          (match-end 0)
                          'help-echo
@@ -965,13 +998,14 @@ ORIG-FUN is intended to be the Agda loading process with arguments ARGS."
 
      ;; Print the package-formers
       (setq printed-pfs
-            (--map
-             (if (equal 'porting (car it)) (format "%s" (cdr it))
-               (format
+            (--map (cond
+               ((equal 'porting (car it)) (format "%s" (cdr it)))
+               ((equal "_" (car it))      "") ;; Anonymous PackageFormers
+               (t (format
                 (if (equal "PackageFormer" (pf--package-former-kind (cdr it)))
                     (concat "{- Kind “PackageFormer” does not correspond "
-                            " to a concrete Agda type. \n%s -}")
-                       "%s") (pf--show-package-former (cdr it))))
+                            " to a concrete Agda type. \n%s\n -}")
+                       "%s") (pf--show-package-former (cdr it)))))
              (reverse pf--package-formers)))
       ;;
       (insert (s-join "\n\n\n" printed-pfs))
@@ -1006,6 +1040,8 @@ ORIG-FUN is intended to be the Agda loading process with arguments ARGS."
     (loop for (name . pf) in pf--package-formers
           do (unless (equal 'porting name)
                (pf--tooltipify name (pf--show-package-former pf))))
+    ;; Special anonymous names.
+    (pf--tooltipify "_" "“_” is the name of anonymous PackageFormers, which cannot be elaborated.")
 
     ;; Let's also add tooltips for the variationals & colour them.
     (loop for (v . docs) in pf--variationals
@@ -1160,90 +1196,9 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
 
 (eval-and-compile ;; begin eval-and-compile for standard library of 𝒱ariationals
 
-  (cl-defun element-retract (parent es &key (new es))
-    "Realise a list of elements as an Agda no-op record.
-  
-  E.g., list “Carrier : Set; e : Carrier”
-  maps to the following element value.
-  
-        toParent : parent
-        toParent = record {Carrier = Carrier; e = e}
-  
-  See also 𝒱-renaming, which may be useful to change ‘toParent’.
-  
-  NEW is a new updated version of ES, if any.
-  "
-  
-    (-let [toParent (format "to%s" parent)]
-      (car (parse-elements (list
-        (format "%s : let View X = X in View %s" toParent parent)
-        (format "%s = record {%s}" toParent
-  
-          (s-join ";"
-          (loop for e  in es
-                for e′ in new
-                unless (or (s-contains-p "let View X = X" (element-type e)) ;; Ignore source view morphisms
-                           (element-equations e))                           ;; Ignore “derivied” elements
-                collect (format "%s = %s" (element-name e) (element-name e′))))))))))
-  
-  (𝒱 extended-by ds
-     = "Extend a given presentation by a list of ;-separated declarations.
-  
-        The resuling presentation has a “toX” retract method,
-        where ‘X’ is the parent presentation.
-       "
-       :alter-elements (λ es → (-concat es (parse-elements (mapcar #'s-trim (s-split ";" ds))) (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es)))))
-  (𝒱 union pf
-   = "Union parent PackageFormer with given PF.
-  
-  Union the elements of the parent PackageFormer with those of
-  the provided PF, then adorn the result with two views:
-  One to the parent and one to the provided PF.
-  
-  If an identifer is shared but has different types, then crash.
-  "
-   :alter-elements (λ es →
-      (-concat
-         es
-         ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf)
-         (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es)
-               (element-retract pf ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf))))))
-  (defun flip-type (τ)
-    "Given a binary operation's type, as a string, flip the first two types.
-  
-  E.g., “A → B → C” becomes “B → A → C”.
-    "
-    (-let [ts (s-split "→" τ)]
-     (s-join " → " (list (nth 1 ts) (nth 0 ts) (nth 2 ts)))))
-  (defun flip (name op)
-   "If element OP is named NAME, then flip its type; else leave it alone-ish.
-  
-  If OP mentions NAME, then prefix its type with
-  “let NAME = λ x y → NAME y x in”, which results in valid Agda
-  due to its identifier scoping rules.
-  "
-   (cond ((equal name (element-name op))
-                 (map-type #'flip-type op))
-         ((element-contains (s-replace "_" "" name) op)
-                 (-let [letin (format "let %s = λ x y → %s y x in " name name)]
-                   (thread-last op
-                     (map-type (λ τ → (concat letin τ)))
-                     (map-equations (λ eqs → (--map (-let [ps (s-split "=" it)] (format "%s = %s %s" (car ps) letin (s-join "=" (cdr ps)))) eqs))))))
-         (t op)))
-  (𝒱 flipping name (renaming "")
-   = "Flip a single binary operation, or predicate, NAME.
-  
-      Dual constructs usual require some identifiers to be renamed,
-      and these may be supplied as a “;”-separated “to”-separated string list, RENAMING.
-  
-      There is no support for underscores; mixfix names must be given properly.
-    "
-      renaming 'renaming :adjoin-retract nil
-   ⟴ :alter-elements (λ es →
-                        (let ((es′ (--map (flip name it) es)))
-                          (-concat es′ (list (flip name (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 $𝑝𝑎𝑟𝑒𝑛𝑡) :new es′)))))))
   (defvar ♯standard-variationals 10
     "The number of variationals exported with the PackageFormer system.")
+  (𝒱 PackageFormer = "Mark a grouping mechanism as abstract, so that it is NOT elaborated into concrete Agda." :kind PackageFormer)
   ;; p ≈ symptom; f ≈ medicine; adj ≈ neighbouring dependency
   ;;
   (cl-defun graph-map (p f adj xs &optional keep-only-marked)
@@ -1327,7 +1282,7 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
          (--graph-map (progn (incf i) (<= i n))
                       (map-equations (-const nil) it)
                       es))))
-  (𝒱 map elements (support-mixfix-names t) (adjoin-retract nil)
+  (𝒱 map elements (support-mixfix-names nil) (adjoin-retract nil) (adjoin-coretract nil)
      = "Apply function ELEMENTS that acts on PackageFormer elements,
         then propogate all new name changes to subsequent elements.
   
@@ -1352,27 +1307,19 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
               for new in names′
               do (setq es′ (--map (element-replace old new it :support-mixfix-names support-mixfix-names) es′)))
   
-       ;; Account for “f = f” translations; c.f., element-retract.
-       (loop for old in names
-             for new in names′
-             for offend  = (format "%s = %s" new new)
-             for correct = (format "%s = %s" old new)
-             do  (setq es′ (loop for e′ in es′
-             collect (if (element-contains offend e′)
-                         (element-replace offend correct e′ :support-mixfix-names nil)
-                         e′))))
        ;; return value
-       (-concat es′ (when adjoin-retract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es′)))))))
-  (𝒱 rename f (support-mixfix-names t) (adjoin-retract t)
+       (-concat es′ (when adjoin-retract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es′ :name adjoin-retract)))
+                    (when adjoin-coretract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es′ :new es :name adjoin-coretract :contravariant t)))))))
+  (𝒱 rename f (support-mixfix-names nil) (adjoin-retract t)
     =  "Rename elements using a string-to-string function F acting on names.
   
-        There is minimal support for mixfix names, but it may be
-        ignored by setting SUPPORT-MIXFIX-NAMES to be nil.
+        There is minimal support for mixfix names, which may be tried
+        by setting SUPPORT-MIXFIX-NAMES to be t.
   
         When ADJOIN-RETRACT is non-nil, we adjoin a “record {oldᵢ = nameᵢ}”
         view morphism; i.e., record translation.
        "
-       map (λ e → (map-name (λ n → (rename-mixfix f n)) e))
+       map (λ e → (map-name (λ n → (rename-mixfix f n (not 'support-mixfix-names))) e))
            :support-mixfix-names 'support-mixfix-names
            :adjoin-retract 'adjoin-retract)
   (𝒱 decorated by
@@ -1388,7 +1335,8 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
       decorated "′")
   ;; Neato: (reify-to-list "x₀; ⋯; xₙ" nil) ⇒ (λ x ↦ If ∃ i • x ≈ xᵢ then "" else nil)
   ;; KEY is a function applied to the input argument /before/ casing on LHS ↦ RHS names.
-     (cl-defun reify-to-list (str &key (otherwise 'otherwise) (key #'identity))
+  ;; INVERSE means to interpret clauses “x to y” as mappings “y ↦ x”.
+     (cl-defun reify-to-list (str &key (otherwise 'otherwise) (key #'identity) inverse)
      "Transform “to list” STR with default OTHERWISE into a Lisp function.
   nil"
      (let (clauses)
@@ -1396,17 +1344,27 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
          (s-split ";")
          (--map (s-split " to " it))
          (--map (list (s-trim (car it)) (s-trim (or (cadr it) "")))) ;; accomodate empty str.
+         (funcall (λ cs → (if inverse (--map (-rotate 1 it) cs) cs)))
          (-cons* 'pcase `(,key arg))
          (setq clauses))
        `(lambda (arg) ,(append clauses `((otherwise ,otherwise))))))
   
-  (𝒱 renaming by (adjoin-retract t)
+  ;; (reify-to-list "a to b; c to d" :inverse t) ;; neato!
+  
+  (𝒱 renaming by (adjoin-retract t) (adjoin-coretract nil) (support-mixfix-names nil)
     = "Rename elements using BY, a “;”-separated string of “to”-separated pairs.
+  
+        There is minimal support for mixfix names, which may be tried
+        by setting SUPPORT-MIXFIX-NAMES to be t.
   
         When ADJOIN-RETRACT is non-nil, we adjoin a “record {oldᵢ = nameᵢ}”
         view morphism; i.e., record translation.
   "
-      rename '(reify-to-list by) :adjoin-retract 'adjoin-retract)
+    map (λ e → (map-name (λ n → (rename-mixfix (reify-to-list by) n (not 'support-mixfix-names))) e))
+           :support-mixfix-names 'support-mixfix-names
+           :adjoin-retract 'adjoin-retract
+           :adjoin-coretract 'adjoin-coretract
+           )
   (defun to-subscript (n)
     "Associate digit N with its subscript.
   
@@ -1468,6 +1426,11 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
   (𝒱 signature
     = "Keep only the elements that target a sort, drop all else."
       generated (λ e → (targets-a-sort e)))
+  (𝒱 keeping those
+    = "Keep THOSE elements, a “;”-separated string of proper names,
+      along with the elements that ensure THOSE is well-defined.
+   "
+      generated '(reify-to-list those :otherwise nil :key #'element-name))
   (𝒱 open with (avoid-mixfix-renaming nil)
     =
       "Reify a given PackageFormer as a *parameterised* Agda “module” declaration.
@@ -1500,7 +1463,7 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
   
       WITH is a string of “;”-separated items consisting of “to”-separated pairs.
       "
-      open (λ x → (funcall (reify-to-list with "_") x)) :avoid-mixfix-renaming t)
+      open (λ x → (funcall (reify-to-list with :otherwise "_") x)) :avoid-mixfix-renaming t)
   
       ;; Alternatively, we could have used ‘trash’ names,
       ;; something like (format "%s" (gensym)), instead of "_".
@@ -1588,6 +1551,203 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
                                    $𝑝𝑎𝑟𝑒𝑛𝑡 𝒮𝓇𝒸 $𝑝𝑎𝑟𝑒𝑛𝑡 𝒯ℊ𝓉 τ))
                     (map-qualifier (λ _ → "field") it))
           (reverse (-concat eqns maps)))))))
+  (cl-defun element-retract (parent es &key (new es) name contravariant)
+    "Realise a list of elements as an Agda no-op record.
+  
+  E.g., list “Carrier : Set; e : Carrier”
+  maps to the following element value.
+  
+        toParent : parent
+        toParent = record {Carrier = Carrier; e = e}
+  
+  See also 𝒱-renaming, which may be useful to change ‘toParent’.
+  
+  NEW is a new updated version of ES, if any.
+  
+  NAME is the name of the new retract element; by default it's “toParent” or “fromParent”
+  depending on whether CONTRAVARIANT is true or not.
+  "
+  
+    ;; the name of the newly defined PackageFormer ---which we may access using the special identifier ~$𝑛𝑎𝑚𝑒~.
+    (let* ((toParent (or (unless (equal t name) name) (format "%s%s" (if contravariant "from" "to") parent)))
+           ;; NAME may be "t", but not the symbol t. This is useful in any 𝒱artional that has an optional adjoin-retract
+           ;; argument, which the user may set to be nil, t, or a string to obtain nothing, default name, and given name for the morphism; respectively.
+          (τarg     (if contravariant (format "%s → " parent) ""))
+          (δvar     (gensym)) ;; unique argument name to avoid accidental shawdowing of any “e in es”.
+          (δarg     (if contravariant (format "λ %s → " δvar) ""))
+          )
+      (car (parse-elements (list
+        (format "%s : let View X = X in %sView %s" toParent τarg (if contravariant $𝑛𝑎𝑚𝑒 parent))
+        (format "%s = %srecord {%s}" toParent δarg
+  
+          (s-join ";"
+          (loop for e  in es
+                for e′ in new
+                unless (or (s-contains-p "let View X = X" (element-type e)) ;; Ignore source view morphisms
+                           (element-equations e))                           ;; Ignore “derivied” elements
+                collect (if (not contravariant)
+                            (format "%s = %s" (element-name e) (element-name e′))
+                          (format "%s = %s.%s %s" (element-name e) parent (element-name e′) δvar))))))))))
+  
+  (𝒱 extended-by ds (adjoin-retract t)
+     = "Extend a given presentation by a list of ;-separated declarations.
+  
+        The resuling presentation has a “toX” retract method,
+        where ‘X’ is the parent presentation. To avoid this,
+        set ADJOIN-RETRACT to be nil. To provide a preferred name for
+        the morphism, then set ADJOIN-RETRACT to the desired string.
+       "
+       :alter-elements (λ es → (-concat es (parse-elements (mapcar #'s-trim (s-split ";" ds))) (when adjoin-retract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :name adjoin-retract))))))
+  (𝒱 postulating bop prop (using bop) (adjoin-retract t)
+   = "Adjoin a property PROP for a given binary operation BOP.
+  
+     PROP may be a string: associative, commutative, idempotent, etc.
+  
+     Some properties require another operator or a relation; which may
+     be provided via USING.
+  
+     ADJOIN-RETRACT is the optional name of the resulting retract morphism.
+     Provide nil if you do not want the morphism adjoined.
+  
+     With this variational, a definition is only written once.
+     "
+     extended-by '(s-replace "op" bop (s-replace "rel" using (s-replace "op′" using
+      (pcase prop
+       ("associative"   "assoc : ∀ x y z → op (op x y) z ≡ op x (op y z)")
+       ("commutative"   "comm  : ∀ x y   → op x y ≡ op y x")
+       ("idempotent"    "idemp : ∀ x     → op x x ≡ x")
+       ("involutive"    "inv   : ∀ x     → op (op x) ≡ x") ;; assuming bop is unary
+       ("left-unit"     "unitˡ : ∀ x y z → op e x ≡ e")
+       ("right-unit"    "unitʳ : ∀ x y z → op x e ≡ e")
+       ("distributiveˡ" "distˡ : ∀ x y z → op x (op′ y z) ≡ op′ (op x y) (op x z)")
+       ("distributiveʳ" "distʳ : ∀ x y z → op (op′ y z) x ≡ op′ (op y x) (op z x)")
+       ("absorptive"    "absorp  : ∀ x y  → op x (op′ x y) ≡ x")
+       ("reflexive"     "refl    : ∀ x y  → rel x x")
+       ("transitive"    "trans   : ∀ x y z → rel x y → rel y z → rel x z")
+       ("antisymmetric" "antisym : ∀ x y → rel x y → rel y x → x ≡ z")
+       ("congruence"    "cong    : ∀ x x′ y y′ → rel x x′ → rel y y′ → rel (op x x′) (op y y′)")
+       (t (error "𝒱-postulating does not know the property “%s”" prop)))))) :adjoin-retract 'adjoin-retract)
+  (defun find-duplicates (list)
+  "Return a list that contains each element from LIST that occurs more than once.
+  
+  Source: https://emacs.stackexchange.com/a/31449/10352"
+    (--> list
+         (-group-by #'identity it)
+         (-filter (lambda (ele) (> (length ele) 2)) it)
+         (mapcar #'car it)))
+  (cl-defmacro alter-elements (elements variational &body rest)
+    "Alter ELEMENTS using a given VARIATIONAL along with its arguments, REST.
+  
+     The result is a list of elements.
+  
+     This is essentially “:alter-elements” but with the ability to work on the elements
+     of **any** PackageFormer by using “($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf)”.
+  
+     This method is only well-defined within the RHS of a variational, or instantiation, declaration.
+     E.g., use it to alter elements in an “:alter-elements” clause using a predefined variational;
+     see 𝒱-union and 𝒱-intersect for sample uses.
+    "
+    `(funcall (cdr (assoc :alter-elements (,(𝒱- variational) ,@rest))) ,elements))
+  (𝒱 union pf (renaming₁ "") (renaming₂ "") (adjoin-retract₁ t) (adjoin-retract₂ t)
+   = "Union parent PackageFormer with given PF.
+  
+      Union the elements of the parent PackageFormer with those of
+      the provided PF, then adorn the result with two views:
+      One to the parent and one to the provided PF.
+  
+      If an identifer is shared but has different types, then crash.
+  
+      ADJOIN-RETRACTᵢ, for i : 1..2, are the optional names of the resulting morphisms.
+      Provide nil if you do not want the morphisms adjoined.
+      "
+     :alter-elements (λ es →
+       (let* ((es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
+              (es₂ (alter-elements ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf) renaming renaming₂ :adjoin-retract nil))
+              (es′ (-concat es₁ es₂)))
+  
+        ;; Ensure no name clashes!
+        (loop for n in (find-duplicates (mapcar #'element-name es′))
+              for e = (--filter (equal n (element-name it)) es′)
+              unless (--all-p (equal (car e) it) e)
+              do (-let [debug-on-error nil]
+                (error "%s = %s union %s \n\n\t\t ➩ Error: Elements “%s” conflict!\n\n\t\t\t%s"
+                       $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 pf (element-name (car e)) (s-join "\n\t\t\t" (mapcar #'show-element e)))))
+  
+     ;; return value
+     (-concat
+         es′
+         (when adjoin-retract₁ (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es₁ :name adjoin-retract₁)))
+         (when adjoin-retract₂ (list (element-retract pf     ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf) :new es₂ :name adjoin-retract₂)))))))
+  (𝒱 intersect pf (adjoin-retract₁ t) (adjoin-retract₂ t) (renaming₁ "") (renaming₂ "")
+   = "Intersect parent PackageFormer with given PF.
+  
+    “pf₁ intersect pf₂ :renaming₁ f :renaming₂ g”  ≅  f(pf₁) ∩ g(pf₂)
+  
+    This is essentially the pullback:
+    { (x, y) ∈ pf₁ × pf₂ ❙ f x = g y }.
+  
+    Intersect the elements of the parent PackageFormer with those of
+    the provided PF, then adorn the result with two views
+    from the result PackageFormer to the input PackageFormers.
+  
+    ADJOIN-RETRACTᵢ, for i : 1..2, are the optional names of the resulting morphisms.
+    Provide nil if you do not want the morphisms adjoined.
+    "
+   :alter-elements (λ es →
+     (let* ((es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
+            (es₂ (alter-elements ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 pf) renaming renaming₂ :adjoin-retract nil))
+            (es′      (reverse (intersection
+                                 (--reject (element-contains "View" it) es₁) es₂
+                                 :key #'element-name :test #'string-equal)))
+            ;; names not mentioned in the intersection.
+            (dangling (set-difference (-concat es₁ es₂) es′
+                        :key #'element-name :test #'string-equal)))
+  
+    ;; drop the dangling names
+    (setq es′ (-reject (λ e → (-some (λ d → (element-contains (element-name d) e)) dangling)) es′))
+  
+    ;; Get old names so as to adjoin the co-retracts; i.e., the projections with renaming.
+    (setq es₁ (alter-elements es′ rename (reify-to-list renaming₁ :inverse t) :adjoin-retract nil))
+    (setq es₂ (alter-elements es′ rename (reify-to-list renaming₂ :inverse t) :adjoin-retract nil))
+  
+     (-concat
+         es′
+         (when adjoin-retract₁ (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es′ :new es₁ :name adjoin-retract₁ :contravariant t)))
+         (when adjoin-retract₂ (list (element-retract pf    es′ :new es₂ :name adjoin-retract₂ :contravariant t)))))))
+  (defun flip-type (τ)
+    "Given a binary operation's type, as a string, flip the first two types.
+  
+  E.g., “A → B → C” becomes “B → A → C”.
+    "
+    (-let [ts (s-split "→" τ)]
+     (s-join " → " (list (nth 1 ts) (nth 0 ts) (nth 2 ts)))))
+  (defun flip (name op)
+   "If element OP is named NAME, then flip its type; else leave it alone-ish.
+  
+  If OP mentions NAME, then prefix its type with
+  “let NAME = λ x y → NAME y x in”, which results in valid Agda
+  due to its identifier scoping rules.
+  "
+   (cond ((equal name (element-name op))
+                 (map-type #'flip-type op))
+         ((element-contains (s-replace "_" "" name) op)
+                 (-let [letin (format "let %s = λ x y → %s y x in " name name)]
+                   (thread-last op
+                     (map-type (λ τ → (concat letin τ)))
+                     (map-equations (λ eqs → (--map (-let [ps (s-split "=" it)] (format "%s = %s %s" (car ps) letin (s-join "=" (cdr ps)))) eqs))))))
+         (t op)))
+  (𝒱 flipping name (renaming "")
+   = "Flip a single binary operation, or predicate, NAME.
+  
+      Dual constructs usual require some identifiers to be renamed,
+      and these may be supplied as a “;”-separated “to”-separated string list, RENAMING.
+  
+      There is no support for underscores; mixfix names must be given properly.
+    "
+      renaming 'renaming :adjoin-retract nil
+   ⟴ :alter-elements (λ es →
+                        (let ((es′ (--map (flip name it) es)))
+                          (-concat es′ (list (flip name (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 $𝑝𝑎𝑟𝑒𝑛𝑡) :new es′)))))))
 
 ) ;; End eval-and-compile for standard library of 𝒱ariationals
 

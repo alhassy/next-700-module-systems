@@ -9,6 +9,10 @@ open import Data.Bool
 open import Data.List using (List; _∷_; []; foldr)
 import Relation.Binary.PropositionalEquality as ≡; open ≡ using (_≡_)
 
+{- Let's ensure content of User Manual part I actually type checkes -}
+{- Feel free to comment this line out. -}
+import package-former-user-manual-i
+
 {-
 0. There are a number of common use-cases.
 1. We can handle all of them & more, since we're extensible.
@@ -250,7 +254,7 @@ M-Set-R₁ = M-Set-R ⟴ open (λ x → (concat x "₁"))
 -}
 
 {-700
--- M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V"
+M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V"
 -}
 
 {-700
@@ -262,7 +266,20 @@ Hom² = Algebra hom ⟴ renaming "map₁ to scalar; pres-𝟙 to unity" :adjoin-
 
 _ : {Src Tgt : Algebra} → Hom² Src Tgt → Algebra.Scalar Src → Algebra.Scalar Tgt
 _ = Hom².scalar
---
+
+{-700
+-- regular expression test --
+
+crazy-name-[]-+-\-^-*-? = M-Set extended-by "_+_ : Scalar; _*_ : Vector; ^ : Set; [_] : Set" :adjoin-retract nil ⟴ record
+
+Pointed   = Magma extended-by "e : let Carrier = Carrier in Carrier" ⟴ record
+Additive+ = Pointed renaming "op to _+_; e to O; Carrier to C" ⟴ record
+Additive× = Additive+ renaming "_+_ to _×_"
+
+crazy-name-test  = Pointed map (λ e → (map-name (λ n → (concat n "/crazy-name-[]-+-\-^-*-?")) e)) ⟴ record
+crazy-name-test2 = crazy-name-test map (λ e → (map-name (λ n → (concat n "+2")) e)) ⟴ record
+-}
+
 {-700
 M-Set-R′ = M-Set-R open-with-decoration "′"
 -}
