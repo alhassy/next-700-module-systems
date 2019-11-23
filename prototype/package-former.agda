@@ -272,6 +272,12 @@ _ = Hom².scalar
 
 crazy-name-[]-+-\-^-*-? = M-Set extended-by "_+_ : Scalar; _*_ : Vector; ^ : Set; [_] : Set" :adjoin-retract nil ⟴ record
 
+PackageFormer MagmaP : Set₁ where
+  Carrier : Set
+  op      : Carrier → Carrier → Carrier
+
+Magma = MagmaP ⟴ record
+
 Pointed   = Magma extended-by "e : let Carrier = Carrier in Carrier" ⟴ record
 Additive+ = Pointed renaming "op to _+_; e to O; Carrier to C" ⟴ record
 Additive× = Additive+ renaming "_+_ to _×_"
