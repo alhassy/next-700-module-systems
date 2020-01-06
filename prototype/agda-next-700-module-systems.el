@@ -282,7 +282,7 @@ nil"
   equations ;; List of definitional clauses: “same-name-as-above args = term”
 )
 
-(loop for place in '(qualifier name type equations)
+(loop for place in '(qualifier type equations)
       do
       (-let [loc (intern (format "element-%s" place))]
         (eval `(defun ,(intern (format "map-%s" place)) (f e)
@@ -290,6 +290,19 @@ nil"
            (-let [e′ (copy-element e)]
              (setf (,loc e′) (funcall f (,loc e′)))
              e′)))))
+
+;; Improved definition; template above would not suffice.
+(cl-defun map-name (f e)
+"Alter the ‘name’ field of an ‘element’ value.
+
+Account for relationship between ‘name’ component
+and ‘equations’ component."
+
+  (let* ((e′ (copy-element e))
+         (n′ (funcall f (element-name e′))))
+    (setf (element-name e′) n′)
+    (setf (element-equations e′) (--map (s-join " " (cons n′ (cdr (s-split " " it)))) (element-equations e′)))
+    e′))
 
 (defun element-contains (needle e)
   "Check whether string NEEDLE occurs anywhere in element E."
@@ -300,61 +313,166 @@ nil"
                          collect (string-match-p (format "\\b%s\\b" (regexp-quote needle))
                                  (s-join "=" (cdr (s-split "=" eq)))))))) ;; Ensure we do not consider the LHS of an equation.
 
+(cl-defun map-element (f e &key excluding)
+  "Apply string function F to every non-nil component of an element E.
+
+Element name is untouched; as all all items mentioned in EXCLUDING
+---which may be a sublist of '(type qualifier equations)."
+  (-let [e′ (copy-element e)]
+
+    (and (element-qualifier e′) (not (member 'qualifier excluding))
+      (setf (element-qualifier e′) (funcall f (element-qualifier e′))))
+
+    (and (element-type e′) (not (member 'type excluding))
+      (setf (element-type e′) (funcall f (element-type e′))))
+
+    (and (not (member 'equations excluding))
+         (setf (element-equations e′) (mapcar f (element-equations e′))))
+
+    ;; return value
+    e′))
+
+(cl-defun replace-in-name (old new name &key (is-regexp))
+  "Given an identifier NAME, perform the rewrite OLD ↦ NEW.
+
+There is support for Agda positional markers: In a secondary phase,
+underscores are ignored, replaced with the empty string; since
+they are used to indicate argument positions in Agda syntax.
+
+E.g., (equal \"*-comm\" (replace-in-name \"_+_\"  \"_*_\" \"+-comm\"))
+
+Remove adjacent underscores -- which are ill-formed Agda syntax.
+
+By default, we regexp-quote the given ‘old’, enable IS-REGEXP to avoid this.
+"
+      (let ((old′ (funcall (if is-regexp #'identity #'regexp-quote) old))
+            (old_ (funcall (if is-regexp #'identity #'regexp-quote) (s-replace "_" "" old)))
+            (new_ (s-replace "_" "" new))
+            (nom  name))
+
+       (loop for (this . that) in (cons (cons old′ new) (if (s-contains? "_" old) (list (cons old_ new_))))
+       do (setq nom
+        (cond
+         ;; If nom ≈ old, then simply replace it with that.
+         ((string-equal old nom) that)
+
+         ;; Replace unicode symbol ‘this’ with the provided ‘that’.
+         ((not (string-match-p "[[:alnum:]]" this)) (replace-regexp-in-string this that nom t))
+
+         ;; Else we have ‘this’ is a letter[s] or number[s], so we make
+         ;; the replacements provided it's NOT next to an alphanumeric
+         ;; character, but instead near something like _,/,-,…  Two
+         ;; cases to consider: Either non-alphanumeric neighbour is
+         ;; after ‘this’ or before it, within ‘nom’.
+         ((string-match-p (format "%s\\([^[:alnum:]]\\)" this) nom)
+          (replace-regexp-in-string (format "%s\\([^[:alnum:]]\\)" this) (format  "%s\\1" that) nom t))
+         ((string-match-p (format "\\([^[:alnum:]]\\)%s" this) nom)
+          (replace-regexp-in-string (format "\\([^[:alnum:]]\\)%s" this) (format  "\\1%s" that) nom t))
+         ;; Else leave nom as is.
+         (t nom))))
+
+       ;; Remove adjacent underscores -- which are ill-formed Agda syntax.
+       (while (s-contains? "__" nom) (setq nom (s-replace "__" "_" nom)))
+
+      nom))
+
+;; Tests for replace-in-name
+;;
+(loop for (test old new expected) in (-partition 4 '(;; Wholeshalre rename
+                                                     "τ" "τ" "ν" "ν"
+
+                                                     ;; Renaming part of an identifier
+                                                     "+-comm" "_+_" "_*_" "*-comm"
+
+                                                     ;; Avoiding adjacent underscores -- which are ill-formed Agda
+                                                     "op_fix_point" "op" "◇_" "◇_fix_point"
+                                               ))
+      for actual = (replace-in-name old new test)
+      unless (equal expected actual)
+      do (message-box "\t%s\n≠\t%s\n\n%s" expected actual "replace-in-name"))
+
 (cl-defun element-replace (old new e &key (support-mixfix-names nil) (avoid-altering-names nil))
   "Replace every occurance of word OLD by string NEW in element E.
 
-By default, not AVOID-ALTERING-NAMES, we also make the “OLD ↦ NEW” rewrite if OLD occurs as a subexpression
-in the name of the given element E. Example use: We have a name “*-comm” and make the rewrite “_*_ ↦ _+_”,
-then we have the desirable name “+-comm”.
+By default, we do not AVOID-ALTERING-NAMES, thereby enhancing
+“OLD ↦ NEW” rewrite so that if OLD occurs as a subexpression in
+the name of the given element E. Example use: We have a name
+“*-comm” and make the rewrite “_*_ ↦ _+_”, then we have the
+desirable name “+-comm”.
 
-We account for “OLD = [qualifier.]OLD” translations, as in function ELEMENT-RETRACT,
-by transforming them into “OLD = [qualifier.]NEW”.
+We account for “OLD = [qualifier.]OLD” translations, as in
+function ELEMENT-RETRACT, by transforming them into “OLD =
+[qualifier.]NEW”.
 
-There is little support for mixfix names, where terms such as “x + y ↦ x * y”
-when the replacement of “_+_” by “_*_” is invoked."
+There is little support for mixfix names, where terms such as
+“x + y ↦ x * y” when the replacement of “_+_” by “_*_” is invoked."
+
   (let* ((e′    (copy-element e))
          (old′  (s-replace "_" " " old))
-         (old′=  (format "%s%s%s" (gensym) old "="))
-         (old′-=  (format "\\b%s =\\b" old′))
-         (word (if (or (= (length old′) 1) (string-match-p "[[:alnum:]].*[[:alnum]]" old′)) "\\b" "")) ;; regexp word marker ;; Do we have a word, or something strange like _+_ ?
+         ;; regexp word marker ;; Do we have a word, or something strange like _+_ ?
+         (word (if (or (= (length old′) 1) (and (string-match-p "[[:alnum:]]+" old′) (not (s-contains? "_" old)))) "\\b" ""))
          (temp  (format "%s%s" new (gensym)))
          (new′  (s-replace "_" " " new))
          (offend  (format "%s = \\(.+\\)?%s" (regexp-quote temp) (regexp-quote temp))) ;; “l = [qualifier.]l”
          (correct (format "%s = \\1%s" old new)))     ;; “\\1” refers to the matched qualifier.
 
+    ;; (setq e′ (map-equations (λ eqs → (--map (replace-in-name old new it :is-regexp nil) eqs)) e′))
+
     ;; Also account for “l = l” translations; c.f., element-retract.
-    ;; E.g., with “old, new ≔ y, x” we have
-    ;; “let x = y in f x  ⟿  let x = temp in f x  ⟿  let x = x in f x”
-    ;; Without the ‘temp’ switch, we would have had: “let x = y in f x  ⟿ let x = x in f x ⟿ let y = x in f x”,
-    ;; which may be fine in a let-clause, but ruins a record having “x” as a field.
+    ;; E.g., with “old, new ≔ y, x” we have “let x = y in f x ⟿ let x
+    ;; = temp in f x ⟿ let x = x in f x” Without the ‘temp’ switch, we
+    ;; would have had: “let x = y in f x ⟿ let x = x in f x ⟿ let y =
+    ;; x in f x”, which may be fine in a let-clause, but ruins a
+    ;; record declaration having “x” as a field.
     (loop for (this . that) in (-concat `((,(regexp-quote old)  . ,temp)  (,offend . ,correct) (,(regexp-quote temp) . ,new))
-                                         (when (s-contains-p "_" old) (list (cons (regexp-quote old′) new′))))
-          do
+                                        (when (s-contains-p "_" old) (list (cons (regexp-quote old′) new′))))
+        do
 
-          (loop for place in '(element-qualifier element-type)
-                do (eval `(when (,place e′)
-                            (setf (,place e′)
-                                  (replace-regexp-in-string (concat word ,this word)
-                                                            (concat that "") (,place e′) t)))))
+        ; (message-box "A :: %s" (show-element e′))
 
-          ;; Replacements in the equations as well; but not the LHS!
-          (setq e′ (map-equations (λ eqs → (--map (replace-regexp-in-string (concat word this word) that it t) eqs)) e′))
-   )
+          (setq e′ (map-element (λ plc → (replace-regexp-in-string (concat word this word) that plc (not (s-blank? word)))) e′
+                 ;; :excluding (and (= 1 (length (element-equations e′))) (s-contains? "record" (car (element-equations e′))) (list 'equations))
+      :excluding (and (element-equations e′) (s-contains? "record" (car (element-equations e′))) (list 'equations)))))
 
-    ;; Replacement in the name portion.
-    ;; (message-box (format "%s ↦ %s in %s" this that (element-name e′)))
+        ; (message-box "B :: %s" (show-element e′))
+
+    ;; Also account for when we want, say, “_+_ ↦ _*_” but an
+          ;; equation mentions “+-assoc”, which is NOT one of the
+          ;; element names and so wont be propogated here, whence we
+          ;; want to explicitly rewrite that to “*-assoc”.
+    (setq e′ (map-equations-rhs (λ r → (replace-in-name (concat word (regexp-quote old) word) new r :is-regexp t)) e′))
+
+        ; (message-box "C :: %s" (show-element e′))
+
     (unless avoid-altering-names
-      (setq old′ (regexp-quote (s-replace "_" "" old)))
-      (setq new′ (s-replace "_" "" new))
-      (setq e′ (cond
-                ((not (string-match-p "[[:alnum:]]" old′))
-                   (map-name (λ n → (replace-regexp-in-string old′ new′ n)) e′))
-                ;; Else we have old′ is a letter[s] or number[s], so we make the replacements provided it's NOT next to an alphanumeric character, such as _,/,-,⋯
-                ((string-match-p (format "%s\\([^[:alnum:]]\\)" old′) (element-name e′))
-                   (map-name (λ n → (replace-regexp-in-string (format "%s\\([^[:alnum:]]\\)" old′) (format  "%s\\1" new′) n)) e′))
-                ((string-match-p (format "\\([^[:alnum:]]\\)%s" old′) (element-name e′))
-                   (map-name (λ n → (replace-regexp-in-string (format "\\([^[:alnum:]]\\)%s" old′) (format  "\\1%s" new′) n)) e′))
-                (t e′))))
+      (setq e′ (map-name (λ n → (replace-in-name old new n)) e′)))
+
+        ; (message-box "D :: %s" (show-element e′))
+
+    ;; return value
+    e′))
+
+;; test
+;; (length (element-equations (car (parse-elements '("toMagma-via-AdditiveMagma       : let View X = X in View Magma" "toMagma-via-AdditiveMagma = record {U = U;_Src_ = _Tgt_}")))))
+
+(cl-defun map-equations-rhs (f e)
+  "“lhs = record {lᵢ = rᵢ}”   ↦  “lhs = record {lᵢ = f rᵢ}”
+
+If the element E's equations do not mention the word “record”, return them as is.
+"
+  (-let [e′ (copy-element e)]
+    (when (element-contains "record" e)
+      (setf (element-equations e′)
+            (loop for eq in (element-equations e′)
+                  ;; eq in '("l = record {}") ;in (element-equations e′)
+                  when (s-contains? "record" eq)
+                  for ≈≈ = (s-split "=" eq)
+                ;; first two items are “lhs record l₁”, so ignore them for
+                  ;; now since rewriting there would be erroneous.
+                  for ⨾⨾ = (mapcar (λ l-r → (s-split ";" l-r)) (cddr ≈≈))
+                  collect   (s-join "="
+                                    (-concat (-take 2 ≈≈)
+                                             (--map (s-join ";" (cons (funcall f (car it)) (cdr it))) ⨾⨾))))))
 
     ;; return value
     e′))
@@ -758,7 +876,7 @@ nil"
      (self (copy-pf--package-former (cdr (assoc $𝑝𝑎𝑟𝑒𝑛𝑡 pf--package-formers))))
      (⁉
       ;; If componenet ‘c’ is in the ‘alterations’ list of the
-      ;; instance declaration, then evalaute any given ‘more’ code,
+      ;; instance declaration, then evaluate any given ‘more’ code,
       ;; get the value for ‘c’ and turn it
       ;; into a string, if ‘str’ is true, then set the new PackageFormer's ‘c’
       ;; componenet to be this value.
@@ -1336,7 +1454,9 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
         ;; Replace all occurances of old names with corresponding new ones.
         (loop for old in names
               for new in names′
-              do (setq es′ (--map (element-replace old new it :support-mixfix-names support-mixfix-names) es′)))
+              do (setq es′ (--map (element-replace old new it :support-mixfix-names support-mixfix-names :avoid-altering-names (equal new (element-name it))) es′)))
+              ;; E.g., With “elements = λ x ↦ x′”, a name “op” goes to “op′”, such a name-change should propogate everywhere including in old names “op-some-property”,
+              ;; to obtain “op′-some-property”, but we should not propogate it to the newely named element “op′” thereby accidentally obtaining “op′′”.
   
        ;; return value
        (-concat es′ (when adjoin-retract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es′ :name adjoin-retract)))
@@ -1383,22 +1503,51 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
   
   ;; (reify-to-list "a to b; c to d" :inverse t) ;; neato!
   
+  (𝒱 renaming by  (adjoin-retract nil) (adjoin-coretract nil)
+  = "Rename elements using BY, a “;”-separated string of “to”-separated pairs.
   
-  (𝒱 renaming by (adjoin-retract t) (adjoin-coretract nil)
-    = "Rename elements using BY, a “;”-separated string of “to”-separated pairs.
-  
-        There is minimal support for mixfix names, which may be ignored
-        by setting SUPPORT-MIXFIX-NAMES to be nil.
+        Unlike ‘rename’, this variational permits simultaneous renaming.
+        Moreover, when the to-list is 1-to-1, we have a constructible bijection
+        via ADJOIN-CORETRACT.
   
         When ADJOIN-RETRACT is non-nil, we adjoin a “record {oldᵢ = nameᵢ}”
         view morphism; i.e., record translation.
         Likewise for ADJOIN-CORETRACT results in the inverse morphism,
         “record {nameᵢ = oldᵢ}”.
   "
-    map (λ e → (map-name (λ n → (funcall (reify-to-list by) n)) e))
-           :adjoin-retract adjoin-retract
-           :adjoin-coretract adjoin-coretract
-           )
+  
+     :alter-elements (λ es →
+  
+     ;; Function factorisation lol
+  (when nil
+  a → b′; b → a; c → c′
+  a → b′; b → NEW[a] → a; c → c′
+  )
+  
+     (let* ((tos   (s-split ";" by))
+            (to-s (--map (s-split "to" it) tos))
+            (trim (λ x → (if x (s-trim x) ""))) ;; Trim if non-nil, else empty string
+            (srcs (mapcar trim (mapcar #'car to-s)))
+            (tgts (mapcar trim (mapcar #'cadr to-s)))
+            (eek (intersection srcs tgts :test #'string-equal))
+            es′
+            freshies
+            (injective-naming (s-join " ; " (--map (s-join " to " it)
+  (loop for x in srcs
+        for y in tgts
+        for fresh = (if (member y eek) (caar (push (cons (rename-mixfix (-const (format "%s" (gensym))) y) y) freshies)) y)
+        collect (list x fresh)))))
+  
+            (collision-naming (s-join " ; " (--map (s-join " to " it)
+  (loop for (fresh . y) in freshies
+        collect (list fresh y))))))
+  
+    (setq es′ (alter-elements es  map (λ e → (map-name (-partial (reify-to-list injective-naming)) e))))
+    (setq es′ (alter-elements es′ map (λ e → (map-name (-partial (reify-to-list collision-naming)) e))))
+  
+    ;; return value
+    (-concat es′ (when adjoin-retract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es′ :name adjoin-retract)))
+                 (when adjoin-coretract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es′ :new es :name adjoin-coretract :contravariant t)))))))
   (defun to-subscript (n)
     "Associate digit N with its subscript.
   
@@ -1619,7 +1768,7 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
           (loop for e  in es
                 for e′ in new
                 unless (or (s-contains-p "let View X = X" (element-type e)) ;; Ignore source view morphisms
-                           (element-equations e))                           ;; Ignore “derivied” elements
+                           (element-equations e))                           ;; Ignore “derived” elements
                 collect (if (not contravariant)
                             (format "%s = %s" (element-name e) (element-name e′))
                           (format "%s = %s.%s %s" (element-name e) parent (element-name e′) δvar))))))))))
@@ -1685,7 +1834,9 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
      see 𝒱-union and 𝒱-intersect for sample uses.
     "
     `(funcall (cdr (assoc :alter-elements (,(𝒱- variational) ,@rest))) ,elements))
-  (𝒱 union pf (renaming₁ "") (renaming₂ "") (adjoin-retract₁ t) (adjoin-retract₂ t)
+  (𝒱 union pf (renaming₁ "") (renaming₂ "") (adjoin-retract₁ t) (adjoin-retract₂ t) (error-on-name-clashes t) (fix-conflict (λ left right name → (cons (format "%s-via-%s" name left)
+                                                                                                                                                      (format "%s-via-%s" name right))))
+  
    = "Union parent PackageFormer with given PF.
   
       Union the elements of the parent PackageFormer with those of
@@ -1696,26 +1847,54 @@ please contact Musa Al-hassy at alhassy@gmail.com; thank-you ♥‿♥"
   
       ADJOIN-RETRACTᵢ, for i : 1..2, are the optional names of the resulting morphisms.
       Provide nil if you do not want the morphisms adjoined.
+  
+      ERROR-ON-NAME-CLASHES toggles whether the program should crash if the PackageFormers
+      have items with the same name but different types or definitions,
+      or otherwise it should simply, and sliently, rename the conflicting names according to FIX-CONFLICT;
+      a function that takes 3 string arguments and yields two, the former being the names of the PackageFormer arguments
+      along with the conflicting name, and yiedling two new names.
+  
+      Also, ERROR-ON-NAME-CLASHES toggles whether the program should crash if retract
+      names already exist, or otherwise it should simply silently not include clashing retract names.
       "
      :alter-elements (λ es →
        (let* ((p (symbol-name 'pf))
               (es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
               (es₂ (alter-elements ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) renaming renaming₂ :adjoin-retract nil))
-              (es′ (-concat es₁ es₂)))
+              (es′ (-concat es₁ es₂))
+              (name-clashes (loop for n in (find-duplicates (mapcar #'element-name es′))
+                                  for e = (--filter (equal n (element-name it)) es′)
+                                  unless (--all-p (equal (car e) it) e)
+                                  collect e))
+              (er₁ (if (equal t adjoin-retract₁) (format "to%s" $𝑝𝑎𝑟𝑒𝑛𝑡) adjoin-retract₁))
+              (er₂ (if (equal t adjoin-retract₂) (format "to%s" p)    adjoin-retract₂))
+              )
   
         ;; Ensure no name clashes!
-        (loop for n in (find-duplicates (mapcar #'element-name es′))
-              for e = (--filter (equal n (element-name it)) es′)
-              unless (--all-p (equal (car e) it) e)
-              do (-let [debug-on-error nil]
+        (if error-on-name-clashes
+            (if name-clashes
+              (-let [debug-on-error nil]
                 (error "%s = %s union %s \n\n\t\t ➩ Error: Elements “%s” conflict!\n\n\t\t\t%s"
-                       $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 p (element-name (car e)) (s-join "\n\t\t\t" (mapcar #'show-element e)))))
+                       $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 p (element-name (caar name-clashes)) (s-join "\n\t\t\t" (mapcar #'show-element (car name-clashes))))))
+          ;; Else handle clashes
+          (loop for n in (mapcar #'element-name (apply #'-concat name-clashes))
+                do (setq es₁ (--map (map-name (λ m → (if (equal n m) (car (fix-conflict $𝑝𝑎𝑟𝑒𝑛𝑡 p n)) m)) it) es₁))
+                   (setq es₂ (--map (map-name (λ m → (if (equal n m) (cdr (fix-conflict $𝑝𝑎𝑟𝑒𝑛𝑡 p n)) m)) it) es₂)))
+          (setq es′ (-concat es₁ es₂)))
+  
+     ;; Are the retract names already present?
+     (setq er₁ (member er₁ (mapcar #'element-name es′)))
+     (setq er₂ (member er₂ (mapcar #'element-name es′)))
+     (and (or er₁ er₂) error-on-name-clashes
+          (error "%s = %s union %s \n\n\t\t ➩ Error: Element retract names “%s/%s” conflict!\n\n\t\t\t%s"
+                       $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 p (car er₁) (car er₂) "Use ‘:adjoin-retractᵢ’ for new names, or set ‘:error-on-retract-name-clashes’ to nil to silently avoid creating such retracts."))
   
      ;; return value
      (-concat
          es′
-         (when adjoin-retract₁ (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es₁ :name adjoin-retract₁)))
-         (when adjoin-retract₂ (list (element-retract p     ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) :new es₂ :name adjoin-retract₂)))))))
+         (and adjoin-retract₁ (not er₁) (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es₁ :name adjoin-retract₁)))
+         (and adjoin-retract₂ (not er₂) (list (element-retract p     ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) :new es₂ :name adjoin-retract₂)))))))
+  
   (𝒱 intersect pf (adjoin-retract₁ t) (adjoin-retract₂ t) (renaming₁ "") (renaming₂ "")
    = "Intersect parent PackageFormer with given PF.
   

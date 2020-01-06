@@ -1,3 +1,178 @@
+:Construction_site:
+#+BEGIN_SRC emacs-lisp :tangle no
+(origami-mode)
+
+
+;; Below “meta-variables” are quoted...?
+(𝒱 for x from xs let res become body where local is definition
+ = "noice
+
+XS must be a valid Lisp expression denoting a list; e.g.,
+(list 1 2 3) or '(1 2 3), but just (1 2 3) would be erroneous.
+Likewise, (number-sequence 1 3) is a valid expression denoting a list.
+
+As usual, if DEFINITION is a string, it cannot contain the ‘\’ character;
+which is sidestepped via the Unicode character ‘╲’.
+
+The arguments FROM, LET, BECOME, WHERE, IS are completely irrelevant.
+They only serve to allow users to have *readable* syntax ---and flexibly so.
+Here are examples of a valid invocations.
+
+Wordy as in Python:
+
+_ = declare for x in (𝟙 𝟚 𝟛) let (format \"CarrierU%s\" x) = (Carrier renaming \"U to 𝒰\") where 𝒰 = (format \"U%s\" x)
+
+Terse as in Haskell:
+_ = declare for x ∈ (𝟙 𝟚 𝟛) ∷ (format \"CarrierU%s\" x) = (Carrier renaming \"U to 𝒰\")  ⇐  𝒰 = (format \"U%s\" x)
+
+It is important to remember that “declare” is not a builtin keyword, it is the name of a PackageFormer
+---we have chosen to name the empty PackageFormer “declare” as it makes the resulting invocation readable.
+The LHS “_” means that this invocation is used for its side-effects, to produce new PackageFormers,
+rather than for producing a PackageFormer by altering the given one, “declare”.
+
+The LHS could be given any name which then serves to *document* the purpose of the loop;
+e.g., “CarrierU𝒾⟵𝒾∶1…3” for the above clauses. This is cool: WE HAVE NAMED DECLARATIONS.
+"
+   :alter-elements (λ _ →
+
+                      (loop for x in xs
+                            for local = (regexp-quote (format "%s" 'local)) ;; The quote is in-case the variable name is a regexp operator such as +,?,*, etc.
+                            for value = (s-replace "" (regexp-quote "") definition) ;; The quote is in-case the definition results in a regexp callback, such as \1, \\𝒾, etc.
+                            ;; A variable may, ‘?’, have a quote before or after it;
+                            ;; Which we reproduce in the resulting string via ‘\\𝒾’, for each match 𝒾.
+                            ;; Otherwise, it is a whole word; as delimited by ‘\\b’.
+                            do (pf--load-instance-declaration (format "%s = %s" res (replace-regexp-in-string (format "\\b\\(\"\\)?%s\\(\"\\)?\\b" local) (format "\\1%s\\2" value) (s-join " " (mapcar #'pp 'body))))))
+
+                      ;; return value; LHS has no constiuents.
+                      nil))
+
+
+;; -- defaults
+(setq gc-cons-percentage 0.1 gc-cons-threshold 800000 pf-waiting-for-agda-threshhold 14 pf-consider-newly-named-declarations-only nil no-typechecking-please nil pf-multiple-files nil)
+;; (setq pf-consider-newly-named-declarations-only t)
+
+;; (profiler-stop) ⇒ Only defined whence profiler start called.
+(profiler-start 'cpu) (profiler-stop)
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(defun pf--reify-package-formers (orig-fun &rest args)
+  "Parse package-former syntax and produce Agda when possible.
+
+ORIG-FUN is intended to be the Agda loading process with arguments ARGS."
+  (interactive)
+  (let* ((start-time (current-time))
+         printed-pfs
+        (parent-dir (s-join "/"
+                            (-drop-last 1 (s-split "/" buffer-file-truename))))
+        (generatedmodule  (pf--generated-file-name))
+        (newfile (concat parent-dir "/" generatedmodule ".agda"))
+        (parent-imports (pf--extract-imports)))
+
+    ;; ‼
+    (profiler-stop)
+    (profiler-start 'cpu)
+
+    ;; Load variationals, PackageFormers, instantiations, and porting list.
+    ;; Setting the following to nil each time is not ideal.
+    (setq	pf--variationals
+             (-take-last ♯standard-variationals pf--variationals)
+             ;; take last n items, those being exported into the .el.
+             pf--package-formers       (when (or pf-consider-newly-named-declarations-only pf-multiple-files) pf--package-formers)
+             pf--annotations           nil)
+
+    (pf--load-pf--annotations)
+
+    (with-temp-buffer
+      (goto-char (point-min))
+
+      ;; Copy/paste imports from parent file.
+      (insert (s-join "\n" `(
+         "{- This file is generated ;; do not alter. -}\n"
+         ,parent-imports
+         "open import Level as Level using (Level)"
+         ,(format "module %s where " generatedmodule))))
+
+     ;; Print the package-formers
+      (setq printed-pfs
+            (--map (cond
+               ((equal 'porting (car it)) (format "%s" (cdr it)))
+               ((equal "_" (car it))      "") ;; Anonymous PackageFormers
+               (t (format
+                (if (equal "PackageFormer" (pf--package-former-kind (cdr it)))
+                    (concat "{- Kind “PackageFormer” does not correspond "
+                            " to a concrete Agda type. \n%s\n -}")
+                       "%s") (pf--show-package-former (cdr it)))))
+             (reverse pf--package-formers)))
+      ;;
+      (insert (s-join "\n\n\n" printed-pfs))
+      ;; (setq package-formers nil) ;; So no accidental
+
+      ;; Replace tabs with spaces
+      (untabify (point-min) (point-max))
+
+      (write-region (goto-char (point-min)) (goto-char (point-max)) newfile))
+
+    (pf--insert-generated-import generatedmodule)
+
+    ;; Need to revert buffer to discard old colours.
+    ;; (save-buffer) (revert-buffer t t t)
+
+    ;; call agda2-load
+    (unless no-typechecking-please ;; ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦
+    (apply orig-fun args)
+
+  ;; Agda attaches “jump to definition” tooltips; we add to those.
+  ;; For some reason we need a slight delay between when Agda is done checking
+  ;; and when we can add on our tooltips.
+  ;; Attach tooltips only for existing occurrences; update happens with C-c C-l.
+  ;; Wait until Agda is finished highlighting, then do ours (งಠ_ಠ)ง
+  (-let [counter 0] ; agda2-in-progress
+    (while agda2-highlight-in-progress
+      (when (> counter pf-waiting-for-agda-threshhold)
+        (error (concat "PackageFormer ∷ "
+                       "Items generated, but not coloured; "
+                       "Agda seems busy...")))
+        (incf counter)
+        (sleep-for 0.5))) ;; In case Agda errors on a term, no more waiting.
+    (loop for (name . pf) in pf--package-formers
+          do (unless (equal 'porting name)
+               (pf--tooltipify name (pf--show-package-former pf))))
+    ;; Special anonymous names.
+    (pf--tooltipify "_" "“_” is the name of anonymous PackageFormers, which cannot be elaborated.")
+
+    ;; Let's also add tooltips for the variationals & colour them.
+    (loop for (v . docs) in pf--variationals
+          do (pf--tooltipify (format "%s" v) docs)
+          ;; For beauty, let's colour variational names green.
+          ;; Only colour occurances that have a space before or after.
+          (when pf-highlighting
+            (highlight-phrase (format "[- \\| ]%s " v) 'hi-green)))
+
+) ;; the nil
+    ;; (find-file "math-scheme-generated.agda")
+    ;; (end-of-buffer)
+
+    ;; ‼
+    (profiler-report)
+
+    ;; ⇦ ⇦ ⇦ ⇦ ⇦  ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦ ⇦
+    (message "PackageFormer (•̀ᴗ•́)و All the best coding! %.06f" (float-time (time-since start-time)))))
+#+END_SRC
+:End:
+
+:Issue:
+{-700
+PackageFormer RightMonoidAction : Set₁ where
+    e     : U
+    identity_⟫_e : U
+    toX : let View X = X in View toX ; toX = record {U = U;_*_ = _*_;e = e;S = S;_⟫_ = _⟫_;identity_⟫_e = identity_⟫_e}
+    toRightUnitalAction     : let View X = X in View RightUnitalAction ;    toRightUnitalAction = record {U = U;_*_ = _*_;e = e;S = S;_⟫_ = _⟫_;identity_⟫_e = identity_⟫_e}
+
+RightMonoid𝟙Action = RightMonoidAction renaming′ "e to 𝟙"
+-}
+:End:
+
 # paper idea: that manifest idea from the summer!
 #
 # ~# extended-by ds~
@@ -6,7 +181,7 @@
 #
 # ⟴ Look at the NEW tpc semantics.
 # ⟴ “Theory {x : ℕ} extended-by {x : ℝ}” ∷ fails, is undefined; new things must have new names.
-# ⟴ magmas to function-magmas via pointwise ∷ need map to do this? See Bill's papers re: IMP and instantation.
+# ⟴ magmas to function-magmas via pointwise ∷ need map to do this? See Bill's papers re: IMP and instantiation.
 #
 # Idea: An elemented may be qualified by private and by field, why not by “parameter” as well?
 # This would remove the need for :waist.
@@ -2084,7 +2259,8 @@ can be useful.
    Great difficulty lies in providing semantics for ~alter-elements~; if
    we demand a well-typedness judgement, “⊢”, from our underlying type theory
    then we could define ~(x₀ : τ₀, …, xₙ ∶ τₙ) = Γ :alter-elements f~ to be well-typed iff
-   ~f : List Elements → List Elements~ and ~Γ,x₀:τ₀,…,xₖ₋₁:τₖ₋₁ ⊢ τₖ Type~ for ~k : 0..n~.
+   ~f : List Elements → List Elements~ and ~x₀:τ₀,…,xₖ₋₁:τₖ₋₁ ⊢ τₖ Type~ for ~k : 0..n~;
+   likewise if we admit defined constants in our contexts.
 
    :functorial_semantics:
 Object-level Semantics -- “functorial semantics”
@@ -2398,7 +2574,7 @@ depending on whether CONTRAVARIANT is true or not.
         (loop for e  in es
               for e′ in new
               unless (or (s-contains-p "let View X = X" (element-type e)) ;; Ignore source view morphisms
-                         (element-equations e))                           ;; Ignore “derivied” elements
+                         (element-equations e))                           ;; Ignore “derived” elements
               collect (if (not contravariant)
                           (format "%s = %s" (element-name e) (element-name e′))
                         (format "%s = %s.%s %s" (element-name e) parent (element-name e′) δvar))))))))))
@@ -2687,12 +2863,16 @@ Source: https://emacs.stackexchange.com/a/31449/10352"
   `(funcall (cdr (assoc :alter-elements (,(𝒱- variational) ,@rest))) ,elements))
 #+END_SRC
 
+# Add to user manual, pt2
+#
 # Raw names as inputs: or just use (symbol-name 'it)
 # 𝒱-go it = :alter-elements (λ _ → (parse-elements (list (format "%s" 'it))))
 # M = Magma go noice
 
 #+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
-(𝒱 union pf (renaming₁ "") (renaming₂ "") (adjoin-retract₁ t) (adjoin-retract₂ t)
+(𝒱 union pf (renaming₁ "") (renaming₂ "") (adjoin-retract₁ t) (adjoin-retract₂ t) (error-on-name-clashes t) (fix-conflict (λ left right name → (cons (format "%s-via-%s" name left)
+                                                                                                                                                    (format "%s-via-%s" name right))))
+
  = "Union parent PackageFormer with given PF.
 
     Union the elements of the parent PackageFormer with those of
@@ -2703,27 +2883,58 @@ Source: https://emacs.stackexchange.com/a/31449/10352"
 
     ADJOIN-RETRACTᵢ, for i : 1..2, are the optional names of the resulting morphisms.
     Provide nil if you do not want the morphisms adjoined.
+
+    ERROR-ON-NAME-CLASHES toggles whether the program should crash if the PackageFormers
+    have items with the same name but different types or definitions,
+    or otherwise it should simply, and sliently, rename the conflicting names according to FIX-CONFLICT;
+    a function that takes 3 string arguments and yields two, the former being the names of the PackageFormer arguments
+    along with the conflicting name, and yiedling two new names.
+
+    Also, ERROR-ON-NAME-CLASHES toggles whether the program should crash if retract
+    names already exist, or otherwise it should simply silently not include clashing retract names.
     "
    :alter-elements (λ es →
      (let* ((p (symbol-name 'pf))
             (es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
             (es₂ (alter-elements ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) renaming renaming₂ :adjoin-retract nil))
-            (es′ (-concat es₁ es₂)))
+            (es′ (-concat es₁ es₂))
+            (name-clashes (loop for n in (find-duplicates (mapcar #'element-name es′))
+                                for e = (--filter (equal n (element-name it)) es′)
+                                unless (--all-p (equal (car e) it) e)
+                                collect e))
+            (er₁ (if (equal t adjoin-retract₁) (format "to%s" $𝑝𝑎𝑟𝑒𝑛𝑡) adjoin-retract₁))
+            (er₂ (if (equal t adjoin-retract₂) (format "to%s" p)    adjoin-retract₂))
+            )
 
       ;; Ensure no name clashes!
-      (loop for n in (find-duplicates (mapcar #'element-name es′))
-            for e = (--filter (equal n (element-name it)) es′)
-            unless (--all-p (equal (car e) it) e)
-            do (-let [debug-on-error nil]
+      (if error-on-name-clashes
+          (if name-clashes
+            (-let [debug-on-error nil]
               (error "%s = %s union %s \n\n\t\t ➩ Error: Elements “%s” conflict!\n\n\t\t\t%s"
-                     $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 p (element-name (car e)) (s-join "\n\t\t\t" (mapcar #'show-element e)))))
+                     $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 p (element-name (caar name-clashes)) (s-join "\n\t\t\t" (mapcar #'show-element (car name-clashes))))))
+        ;; Else handle clashes
+        (loop for n in (mapcar #'element-name (apply #'-concat name-clashes))
+              do (setq es₁ (--map (map-name (λ m → (if (equal n m) (car (fix-conflict $𝑝𝑎𝑟𝑒𝑛𝑡 p n)) m)) it) es₁))
+                 (setq es₂ (--map (map-name (λ m → (if (equal n m) (cdr (fix-conflict $𝑝𝑎𝑟𝑒𝑛𝑡 p n)) m)) it) es₂)))
+        (setq es′ (-concat es₁ es₂)))
+
+   ;; Are the retract names already present?
+   (setq er₁ (member er₁ (mapcar #'element-name es′)))
+   (setq er₂ (member er₂ (mapcar #'element-name es′)))
+   (and (or er₁ er₂) error-on-name-clashes
+        (error "%s = %s union %s \n\n\t\t ➩ Error: Element retract names “%s/%s” conflict!\n\n\t\t\t%s"
+                     $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 p (car er₁) (car er₂) "Use ‘:adjoin-retractᵢ’ for new names, or set ‘:error-on-retract-name-clashes’ to nil to silently avoid creating such retracts."))
 
    ;; return value
    (-concat
        es′
-       (when adjoin-retract₁ (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es₁ :name adjoin-retract₁)))
-       (when adjoin-retract₂ (list (element-retract p     ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) :new es₂ :name adjoin-retract₂)))))))
+       (and adjoin-retract₁ (not er₁) (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es₁ :name adjoin-retract₁)))
+       (and adjoin-retract₂ (not er₂) (list (element-retract p     ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) :new es₂ :name adjoin-retract₂)))))))
+
 #+END_SRC
+
+#+RESULTS:
+: map-name
 
 #+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
 (𝒱 intersect pf (adjoin-retract₁ t) (adjoin-retract₂ t) (renaming₁ "") (renaming₂ "")
@@ -4414,7 +4625,9 @@ record M-Set0-Typeclass₃ (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vect
       ;; Replace all occurances of old names with corresponding new ones.
       (loop for old in names
             for new in names′
-            do (setq es′ (--map (element-replace old new it :support-mixfix-names support-mixfix-names) es′)))
+            do (setq es′ (--map (element-replace old new it :support-mixfix-names support-mixfix-names :avoid-altering-names (equal new (element-name it))) es′)))
+            ;; E.g., With “elements = λ x ↦ x′”, a name “op” goes to “op′”, such a name-change should propogate everywhere including in old names “op-some-property”,
+            ;; to obtain “op′-some-property”, but we should not propogate it to the newely named element “op′” thereby accidentally obtaining “op′′”.
 
      ;; return value
      (-concat es′ (when adjoin-retract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es′ :name adjoin-retract)))
@@ -4422,7 +4635,8 @@ record M-Set0-Typeclass₃ (Scalar : Set) (Vector : Set) (_·_ : Scalar → Vect
 )
 #+END_SRC
 
-
+#+RESULTS:
+: 𝒱-map
 
   This is a prototype; ideally the variational definition would be rendered in
   Agda code. Rather than using functional combinators such as
@@ -4559,7 +4773,58 @@ For now, such lists are necessarily enclosed in double-quotes.
 
 ;; (reify-to-list "a to b; c to d" :inverse t) ;; neato!
 
+(𝒱 renaming by  (adjoin-retract nil) (adjoin-coretract nil)
+= "Rename elements using BY, a “;”-separated string of “to”-separated pairs.
 
+      Unlike ‘rename’, this variational permits simultaneous renaming.
+      Moreover, when the to-list is 1-to-1, we have a constructible bijection
+      via ADJOIN-CORETRACT.
+
+      When ADJOIN-RETRACT is non-nil, we adjoin a “record {oldᵢ = nameᵢ}”
+      view morphism; i.e., record translation.
+      Likewise for ADJOIN-CORETRACT results in the inverse morphism,
+      “record {nameᵢ = oldᵢ}”.
+"
+
+   :alter-elements (λ es →
+
+   ;; Function factorisation lol
+(when nil
+a → b′; b → a; c → c′
+a → b′; b → NEW[a] → a; c → c′
+)
+
+   (let* ((tos   (s-split ";" by))
+          (to-s (--map (s-split "to" it) tos))
+          (trim (λ x → (if x (s-trim x) ""))) ;; Trim if non-nil, else empty string
+          (srcs (mapcar trim (mapcar #'car to-s)))
+          (tgts (mapcar trim (mapcar #'cadr to-s)))
+          (eek (intersection srcs tgts :test #'string-equal))
+          es′
+          freshies
+          (injective-naming (s-join " ; " (--map (s-join " to " it)
+(loop for x in srcs
+      for y in tgts
+      for fresh = (if (member y eek) (caar (push (cons (rename-mixfix (-const (format "%s" (gensym))) y) y) freshies)) y)
+      collect (list x fresh)))))
+
+          (collision-naming (s-join " ; " (--map (s-join " to " it)
+(loop for (fresh . y) in freshies
+      collect (list fresh y))))))
+
+  (setq es′ (alter-elements es  map (λ e → (map-name (-partial (reify-to-list injective-naming)) e))))
+  (setq es′ (alter-elements es′ map (λ e → (map-name (-partial (reify-to-list collision-naming)) e))))
+
+  ;; return value
+  (-concat es′ (when adjoin-retract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es′ :name adjoin-retract)))
+               (when adjoin-coretract (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es′ :new es :name adjoin-coretract :contravariant t)))))))
+#+END_SRC
+
+#+RESULTS:
+: 𝒱-renaming
+
+:OLD_renaming:
+#+BEGIN_SRC emacs-lisp :tangle no
 (𝒱 renaming by (adjoin-retract t) (adjoin-coretract nil)
   = "Rename elements using BY, a “;”-separated string of “to”-separated pairs.
 
@@ -4576,7 +4841,7 @@ For now, such lists are necessarily enclosed in double-quotes.
          :adjoin-coretract adjoin-coretract
          )
 #+END_SRC
-
+:END:
 #+RESULTS:
 : 𝒱-renaming
 
@@ -6719,7 +6984,7 @@ A PackageFormer is a list of elements.
 
 Let's produce the associated useful map functions.
 #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el :results replace
-(loop for place in '(qualifier name type equations)
+(loop for place in '(qualifier type equations)
       do
       (-let [loc (intern (format "element-%s" place))]
         (eval `(defun ,(intern (format "map-%s" place)) (f e)
@@ -6727,6 +6992,19 @@ Let's produce the associated useful map functions.
            (-let [e′ (copy-element e)]
              (setf (,loc e′) (funcall f (,loc e′)))
              e′)))))
+
+;; Improved definition; template above would not suffice.
+(cl-defun map-name (f e)
+"Alter the ‘name’ field of an ‘element’ value.
+
+Account for relationship between ‘name’ component
+and ‘equations’ component."
+
+  (let* ((e′ (copy-element e))
+         (n′ (funcall f (element-name e′))))
+    (setf (element-name e′) n′)
+    (setf (element-equations e′) (--map (s-join " " (cons n′ (cdr (s-split " " it)))) (element-equations e′)))
+    e′))
 #+END_SRC
 
 Now a method for replacing textual strings within an element structure.
@@ -6747,67 +7025,261 @@ Now a method for replacing textual strings within an element structure.
 
 # MA: TODO: Clean this up.
 #+BEGIN_SRC emacs-lisp :tangle agda-next-700-module-systems.el
+(cl-defun map-element (f e &key excluding)
+  "Apply string function F to every non-nil component of an element E.
+
+Element name is untouched; as all all items mentioned in EXCLUDING
+---which may be a sublist of '(type qualifier equations)."
+  (-let [e′ (copy-element e)]
+
+    (and (element-qualifier e′) (not (member 'qualifier excluding))
+      (setf (element-qualifier e′) (funcall f (element-qualifier e′))))
+
+    (and (element-type e′) (not (member 'type excluding))
+      (setf (element-type e′) (funcall f (element-type e′))))
+
+    (and (not (member 'equations excluding))
+         (setf (element-equations e′) (mapcar f (element-equations e′))))
+
+    ;; return value
+    e′))
+
+(cl-defun replace-in-name (old new name &key (is-regexp))
+  "Given an identifier NAME, perform the rewrite OLD ↦ NEW.
+
+There is support for Agda positional markers: In a secondary phase,
+underscores are ignored, replaced with the empty string; since
+they are used to indicate argument positions in Agda syntax.
+
+E.g., (equal \"*-comm\" (replace-in-name \"_+_\"  \"_*_\" \"+-comm\"))
+
+Remove adjacent underscores -- which are ill-formed Agda syntax.
+
+By default, we regexp-quote the given ‘old’, enable IS-REGEXP to avoid this.
+"
+      (let ((old′ (funcall (if is-regexp #'identity #'regexp-quote) old))
+            (old_ (funcall (if is-regexp #'identity #'regexp-quote) (s-replace "_" "" old)))
+            (new_ (s-replace "_" "" new))
+            (nom  name))
+
+       (loop for (this . that) in (cons (cons old′ new) (if (s-contains? "_" old) (list (cons old_ new_))))
+       do (setq nom
+        (cond
+         ;; If nom ≈ old, then simply replace it with that.
+         ((string-equal old nom) that)
+
+         ;; Replace unicode symbol ‘this’ with the provided ‘that’.
+         ((not (string-match-p "[[:alnum:]]" this)) (replace-regexp-in-string this that nom t))
+
+         ;; Else we have ‘this’ is a letter[s] or number[s], so we make
+         ;; the replacements provided it's NOT next to an alphanumeric
+         ;; character, but instead near something like _,/,-,…  Two
+         ;; cases to consider: Either non-alphanumeric neighbour is
+         ;; after ‘this’ or before it, within ‘nom’.
+         ((string-match-p (format "%s\\([^[:alnum:]]\\)" this) nom)
+          (replace-regexp-in-string (format "%s\\([^[:alnum:]]\\)" this) (format  "%s\\1" that) nom t))
+         ((string-match-p (format "\\([^[:alnum:]]\\)%s" this) nom)
+          (replace-regexp-in-string (format "\\([^[:alnum:]]\\)%s" this) (format  "\\1%s" that) nom t))
+         ;; Else leave nom as is.
+         (t nom))))
+
+       ;; Remove adjacent underscores -- which are ill-formed Agda syntax.
+       (while (s-contains? "__" nom) (setq nom (s-replace "__" "_" nom)))
+
+      nom))
+
+;; Tests for replace-in-name
+;;
+(loop for (test old new expected) in (-partition 4 '(;; Wholeshalre rename
+                                                     "τ" "τ" "ν" "ν"
+
+                                                     ;; Renaming part of an identifier
+                                                     "+-comm" "_+_" "_*_" "*-comm"
+
+                                                     ;; Avoiding adjacent underscores -- which are ill-formed Agda
+                                                     "op_fix_point" "op" "◇_" "◇_fix_point"
+                                               ))
+      for actual = (replace-in-name old new test)
+      unless (equal expected actual)
+      do (message-box "\t%s\n≠\t%s\n\n%s" expected actual "replace-in-name"))
+
 (cl-defun element-replace (old new e &key (support-mixfix-names nil) (avoid-altering-names nil))
   "Replace every occurance of word OLD by string NEW in element E.
 
-By default, not AVOID-ALTERING-NAMES, we also make the “OLD ↦ NEW” rewrite if OLD occurs as a subexpression
-in the name of the given element E. Example use: We have a name “*-comm” and make the rewrite “_*_ ↦ _+_”,
-then we have the desirable name “+-comm”.
+By default, we do not AVOID-ALTERING-NAMES, thereby enhancing
+“OLD ↦ NEW” rewrite so that if OLD occurs as a subexpression in
+the name of the given element E. Example use: We have a name
+“*-comm” and make the rewrite “_*_ ↦ _+_”, then we have the
+desirable name “+-comm”.
 
-We account for “OLD = [qualifier.]OLD” translations, as in function ELEMENT-RETRACT,
-by transforming them into “OLD = [qualifier.]NEW”.
+We account for “OLD = [qualifier.]OLD” translations, as in
+function ELEMENT-RETRACT, by transforming them into “OLD =
+[qualifier.]NEW”.
 
-There is little support for mixfix names, where terms such as “x + y ↦ x * y”
-when the replacement of “_+_” by “_*_” is invoked."
+There is little support for mixfix names, where terms such as
+“x + y ↦ x * y” when the replacement of “_+_” by “_*_” is invoked."
+
   (let* ((e′    (copy-element e))
          (old′  (s-replace "_" " " old))
-         (old′=  (format "%s%s%s" (gensym) old "="))
-         (old′-=  (format "\\b%s =\\b" old′))
-         (word (if (or (= (length old′) 1) (string-match-p "[[:alnum:]].*[[:alnum]]" old′)) "\\b" "")) ;; regexp word marker ;; Do we have a word, or something strange like _+_ ?
+         ;; regexp word marker ;; Do we have a word, or something strange like _+_ ?
+         (word (if (or (= (length old′) 1) (and (string-match-p "[[:alnum:]]+" old′) (not (s-contains? "_" old)))) "\\b" ""))
          (temp  (format "%s%s" new (gensym)))
          (new′  (s-replace "_" " " new))
          (offend  (format "%s = \\(.+\\)?%s" (regexp-quote temp) (regexp-quote temp))) ;; “l = [qualifier.]l”
          (correct (format "%s = \\1%s" old new)))     ;; “\\1” refers to the matched qualifier.
 
+    ;; (setq e′ (map-equations (λ eqs → (--map (replace-in-name old new it :is-regexp nil) eqs)) e′))
+
     ;; Also account for “l = l” translations; c.f., element-retract.
-    ;; E.g., with “old, new ≔ y, x” we have
-    ;; “let x = y in f x  ⟿  let x = temp in f x  ⟿  let x = x in f x”
-    ;; Without the ‘temp’ switch, we would have had: “let x = y in f x  ⟿ let x = x in f x ⟿ let y = x in f x”,
-    ;; which may be fine in a let-clause, but ruins a record having “x” as a field.
+    ;; E.g., with “old, new ≔ y, x” we have “let x = y in f x ⟿ let x
+    ;; = temp in f x ⟿ let x = x in f x” Without the ‘temp’ switch, we
+    ;; would have had: “let x = y in f x ⟿ let x = x in f x ⟿ let y =
+    ;; x in f x”, which may be fine in a let-clause, but ruins a
+    ;; record declaration having “x” as a field.
     (loop for (this . that) in (-concat `((,(regexp-quote old)  . ,temp)  (,offend . ,correct) (,(regexp-quote temp) . ,new))
-                                         (when (s-contains-p "_" old) (list (cons (regexp-quote old′) new′))))
-          do
+                                        (when (s-contains-p "_" old) (list (cons (regexp-quote old′) new′))))
+        do
 
-          (loop for place in '(element-qualifier element-type)
-                do (eval `(when (,place e′)
-                            (setf (,place e′)
-                                  (replace-regexp-in-string (concat word ,this word)
-                                                            (concat that "") (,place e′) t)))))
+        ; (message-box "A :: %s" (show-element e′))
 
-          ;; Replacements in the equations as well; but not the LHS!
-          (setq e′ (map-equations (λ eqs → (--map (replace-regexp-in-string (concat word this word) that it t) eqs)) e′))
-   )
+          (setq e′ (map-element (λ plc → (replace-regexp-in-string (concat word this word) that plc (not (s-blank? word)))) e′
+                 ;; :excluding (and (= 1 (length (element-equations e′))) (s-contains? "record" (car (element-equations e′))) (list 'equations))
+      :excluding (and (element-equations e′) (s-contains? "record" (car (element-equations e′))) (list 'equations)))))
 
-    ;; Replacement in the name portion.
-    ;; (message-box (format "%s ↦ %s in %s" this that (element-name e′)))
+        ; (message-box "B :: %s" (show-element e′))
+
+    ;; Also account for when we want, say, “_+_ ↦ _*_” but an
+          ;; equation mentions “+-assoc”, which is NOT one of the
+          ;; element names and so wont be propogated here, whence we
+          ;; want to explicitly rewrite that to “*-assoc”.
+    (setq e′ (map-equations-rhs (λ r → (replace-in-name (concat word (regexp-quote old) word) new r :is-regexp t)) e′))
+
+        ; (message-box "C :: %s" (show-element e′))
+
     (unless avoid-altering-names
-      (setq old′ (regexp-quote (s-replace "_" "" old)))
-      (setq new′ (s-replace "_" "" new))
-      (setq e′ (cond
-                ((not (string-match-p "[[:alnum:]]" old′))
-                   (map-name (λ n → (replace-regexp-in-string old′ new′ n)) e′))
-                ;; Else we have old′ is a letter[s] or number[s], so we make the replacements provided it's NOT next to an alphanumeric character, such as _,/,-,⋯
-                ((string-match-p (format "%s\\([^[:alnum:]]\\)" old′) (element-name e′))
-                   (map-name (λ n → (replace-regexp-in-string (format "%s\\([^[:alnum:]]\\)" old′) (format  "%s\\1" new′) n)) e′))
-                ((string-match-p (format "\\([^[:alnum:]]\\)%s" old′) (element-name e′))
-                   (map-name (λ n → (replace-regexp-in-string (format "\\([^[:alnum:]]\\)%s" old′) (format  "\\1%s" new′) n)) e′))
-                (t e′))))
+      (setq e′ (map-name (λ n → (replace-in-name old new n)) e′)))
+
+        ; (message-box "D :: %s" (show-element e′))
+
+    ;; return value
+    e′))
+
+;; test
+;; (length (element-equations (car (parse-elements '("toMagma-via-AdditiveMagma       : let View X = X in View Magma" "toMagma-via-AdditiveMagma = record {U = U;_Src_ = _Tgt_}")))))
+
+(cl-defun map-equations-rhs (f e)
+  "“lhs = record {lᵢ = rᵢ}”   ↦  “lhs = record {lᵢ = f rᵢ}”
+
+If the element E's equations do not mention the word “record”, return them as is.
+"
+  (-let [e′ (copy-element e)]
+    (when (element-contains "record" e)
+      (setf (element-equations e′)
+            (loop for eq in (element-equations e′)
+                  ;; eq in '("l = record {}") ;in (element-equations e′)
+                  when (s-contains? "record" eq)
+                  for ≈≈ = (s-split "=" eq)
+                ;; first two items are “lhs record l₁”, so ignore them for
+                  ;; now since rewriting there would be erroneous.
+                  for ⨾⨾ = (mapcar (λ l-r → (s-split ";" l-r)) (cddr ≈≈))
+                  collect   (s-join "="
+                                    (-concat (-take 2 ≈≈)
+                                             (--map (s-join ";" (cons (funcall f (car it)) (cdr it))) ⨾⨾))))))
 
     ;; return value
     e′))
 #+END_SRC
+Tests:
+#+BEGIN_SRC emacs-lisp :tangle no
+;; (element-replace "R" "_≤_" (car (parse-elements '("R-reflexive : ∀ (x : U)  →  R x x" "R-reflexive = record {R = R}"))))
+;;
+;; (map-equations (λ eqs → (--map (replace-in-name (format "= %s.*" (regexp-quote "_^_")) "= ⊕\\1" it :is-regexp t) eqs))
+;;  (element-replace "_^_" "_⊕_" (car (parse-elements '("go : That" "go = { ^ ; ^-assoc = ^-assoc}")))))
+
+;; Tests for element-replace
+;;
+; Notice that the final braces are within F!
+(loop for (test old new expected) in (-drop 1 (-partition 4 '("τ : Set" "τ" "ν" "ν : Set"
+
+                                                     ;; Rewrites propogate into identifiers, when reasonable.
+                                                     "*-comm : x * y ≡ y * x"
+                                                     "_*_" "_+_"
+                                                     "+-comm : x + y ≡ y + x"
+
+                                                     "inv : InverseOp"
+                                                     "inv" "neg"
+                                                     "neg : InverseOp"
+
+                                                     "leftAbsorb-g1234567        : ∀ (x y : U) → x g1234567 (x + y) ≡ x"
+                                                     "_g1234567_" "_↓_"
+                                                     "leftAbsorb-↓ : ∀ (x y : U) → x ↓ (x + y) ≡ x"
+
+                                                     ;; No rewriting on the RHS of record value clauses
+                                                     "forget : Magma • forget = record {U = ℕ; op = _+_}"
+                                                     "op" "no!"
+                                                     "forget : Magma ; forget = record {U = ℕ; op = _+_}"
+
+                                                     ;; Maintaining operands.
+                                                     "forget : Magma • forget = record {U = ℕ; op = op}"
+                                                     "op" "_+_"
+                                                     "forget : Magma ; forget = record {U = ℕ; op = _+_}"
+
+                                                     ;; Only RHS affected in toX translations.
+                                                     "toX : let View X = X in View toX • toX = record {U = U;_*_ = _*_;e = e;S = S;_⟫_ = _⟫_;identity_⟫_e = identity_⟫_e}"
+                                                     "e" "𝟙"
+                                                     "toX : let View X = X in View toX ; toX = record {U = U;_*_ = _*_;e = 𝟙;S = S;_⟫_ = _⟫_;identity_⟫_e = identity_⟫_𝟙}"
+
+                                                     "id : X → X • id = λ x → x"
+                                                     "X" "U"
+                                                     "id : U → U ; id = λ U → U" ;; .... ekk!; also arguments must be on the RHS via λ.
+                                               )))
+      for actual = (s-collapse-whitespace (show-element (element-replace old new (car (parse-elements (mapcar #'s-trim (s-split "•" test)))))))
+      unless (equal expected actual)
+      do (message-box "\t%s\n≠\t%s\n\n%s" expected actual "element-replace"))
+
+;; Tests for map-equations-rhs
+;;
+; Notice that the final braces are within F!
+(loop for (test . expected) in (-partition 2 '("l = record {}" "l = record {}"                    ;; zero assignments
+                                               "l = record {a = a}" "l = record {a = F[ a}]"      ;; one assignment
+                                               "l = record {a = a; b = b; c = c; d = d}"          ;; four assignments
+                                               "l = record {a = F[ a]; b = F[ b]; c = F[ c]; d = F[ d}]"
+
+                                               "l x = x" "l x = x" ;; Not even a record assignment
+                                               ))
+      for actual = (element-equations (map-equations-rhs (λ x → (format " F[%s]" x)) (car (parse-elements (list "l : τ" test)))))
+      unless (equal expected actual)
+      do (message-box "map-equations-rhs ∷ %s ≠ %s" expected actual))
+#+END_SRC
 :Test:
 #+BEGIN_SRC emacs-lisp :tangle no
+(element-replace "e" "𝟘" (car (parse-elements '("go : These" "go = {e = e ; e2 = e2}"))))
+
+(equal "*-comm" (replace-in-name "_+_"  "_*_" "+-comm"))
+(replace-in-name "e"  "𝟘" "e2")
+
+;; Identity -- OH NO! “+” is also considered a qualifier! This is due to parse elements!
+(element-replace "_+_" "_+_" (car (parse-elements '("_+_ : U → U → U" "_+_ = let _^_ = ^-comm in ⋯ + ⋯ ^ ⋯"))))
+
+;; Another operation
+(element-replace "_+_" "_*_" (car (parse-elements '("_+_ : U → U → U" "_+_ = let _^_ = ^-comm in ⋯ + ⋯ ^ ⋯"))))
+
+;; Rewrite to self, but with decoration.
+(element-replace "_+_" "_+'_" (car (parse-elements '("_+_ : U → U → U" "_+_ = let _^_ = ^-comm in ⋯ + ⋯ ^ ⋯"))))
+
+;; Single letter
+(element-replace "R" "_≤_" (car (parse-elements '("r-R-reflexive : ∀ (x : U)  →  R x x" "r-R-reflexive = record{l = r}"))))
+
+;; In equations?
+(element-replace "_^_" "_⊕_" (car (parse-elements '("_+_ : U → U → U" "_+_ = let _^_ = ^-comm in ⋯ + ⋯ * ⋯"))))
+
+;; In a type?
+(element-replace "_*_" "_+_" (car (parse-elements '("*-comm : ∀ x y → x * y ≡ y * x"))))
+
+;; In a type? Not altering part of names.
+(element-replace "inv" "neg" (car (parse-elements '("inv : Id Involutionary"))))
+
+
 (replace-regexp-in-string (format "%s\\([^[:alnum:]]\\)" "R") (format  "%s\\1" "≤") "R-reflexive : ∀ (x : U)  →  R x x")
 
 (element-replace "_·_" "_+_" (car (parse-elements '("toMonoidR       : let View X = X in View MonoidR" "toMonoidR = record {Carrier = Carrier;_·_ = _·_;assoc = assoc;𝕀 = 𝕀;leftId = leftId;rightId = rightId}"))))
@@ -6816,17 +7288,22 @@ when the replacement of “_+_” by “_*_” is invoked."
 
 (element-replace "_·_" "new" (element-replace "_·_" "_+_" (car (parse-elements '("here : let R = { _·_ = _·_ } in R._·_ f")))))
 
-(element-replace "_*_" "_+_" (car (parse-elements '("*-comm : ∀ x y → x * y ≡ y * x"))))
 
-(element-replace "R" "_≤_" (car (parse-elements '("R-reflexive : ∀ (x : U)  →  R x x"))))
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
+
+
+
+
 (equal (element-replace "_G_" "H" (make-element :name "A" :type "G and Gish"))
   (make-element :name "A" :type "H and Gish"))
 
 (-let [e (car (parse-elements '("toMonoidR : let View X = X in View MonoidR"
                                 "toMonoidR = record {Carrier = Carrier;_+_ = _+_;assoc = assoc;𝕀 = 𝕀;leftId = leftId;rightId = rightId}")))]
   (element-contains "_+_ = _+_" e))
+
+
+(-let [e (car (parse-elements '("toMonoidR : let View X = X in View MonoidR"
+                                "toMonoidR = record {Carrier = Carrier;_+_ = _+_; +-assoc = +-assoc}")))]
+  (element-replace "_+_"  "_*_" e))
 
 (element-replace "_·_ = _·_" "_·_ = _+_"
 
@@ -7752,7 +8229,7 @@ Loading an instantiation into our list is now trivial.
      (self (copy-pf--package-former (cdr (assoc $𝑝𝑎𝑟𝑒𝑛𝑡 pf--package-formers))))
      (⁉
       ;; If componenet ‘c’ is in the ‘alterations’ list of the
-      ;; instance declaration, then evalaute any given ‘more’ code,
+      ;; instance declaration, then evaluate any given ‘more’ code,
       ;; get the value for ‘c’ and turn it
       ;; into a string, if ‘str’ is true, then set the new PackageFormer's ‘c’
       ;; componenet to be this value.
