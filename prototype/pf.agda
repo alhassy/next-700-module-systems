@@ -1,8 +1,182 @@
+#+title: Progressing on a type theory for =PackageFormer=
+#+author: Musa Al-hassy
+#+agda_version: 2.6.0.1
+
+MA: In the setup below, it seems using the context approach can sometimes be easier
+than using the λ approach, even though they are essentially the same.
+Intuitively:
+| What doing? | Easier to use |
+|-------------+---------------|
+| Reasoning   | Context       |
+| Programming | Functions     |
+
+* Imports
+#+BEGIN_SRC agda2
 module pf where
 
---------------------------------------------------------------------------------
--- Imports
+open import Level renaming (zero to ℓzero; suc to ℓsuc; _⊔_ to _⊍_)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Data.Nat
+open import Data.Unit
+open import Data.Empty
+open import Data.Bool
+open import Data.List
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Unary.Any using (here; there)
+open import Relation.Nullary using (yes; no)
+open import Data.Maybe using (Maybe; just; nothing)
+open import Data.String using (String) renaming (_==_ to _==ₛ_; _≟_ to _≟ₛ_; _++_ to _++ₛ_)
+open import Data.Product using (Σ ; proj₁ ; proj₂ ; _×_ ; _,_)
 
+#+END_SRC
+
+* Syntax Declarations
+#+BEGIN_SRC agda2
+
+Name = String
+
+Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
+Σ∶• = Σ
+
+infix -666 Σ∶•
+syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
+
+infixr 10 Π
+syntax Π A (λ x → B) = Π x ∶ A • B
+
+infix 9 _⊢Term_
+
+#+END_SRC
+* Contexts, types, and terms
+
+  Contexts are types, level-indexed types are functions, τ-terms are functions taking
+  the context and yielding a value.
+
+
+ #+BEGIN_SRC agda2
+PackageFormer : (i : Level) → Set (ℓsuc i)
+PackageFormer i = Set i
+#+END_SRC
+
+** types
+ Next, object-level universes are implemented using meta-level universes.
+ - Note: =Γ ⊢Type 𝒾  ≡  Γ ⊢Term (𝒰 𝒾)=.
+
+ #+BEGIN_SRC agda2
+_⊢Type_ :  ∀ {i} → PackageFormer i → (j : Level) → Set (i ⊍ ℓsuc j)
+Γ ⊢Type 𝒾 = Γ → Set 𝒾
+
+𝒰 : ∀ {i} {Γ : PackageFormer i} (j : Level) → Γ ⊢Type (ℓsuc j)
+𝒰 j = λ γ → Set j
+ #+END_SRC
+** terms
+ #+BEGIN_SRC agda2
+_⊢Term_ : ∀ {i j} → (Γ : PackageFormer i) → Γ ⊢Type j → Set (i ⊍ j)
+Γ ⊢Term τ = (γ : Γ) → τ γ
+ #+END_SRC
+
+ After all, a classical context ~x₁ : τ₁, …, xₙ : τₙ ⊢ e : τ~ only /asserts/ =e : τ=
+ /provided/ =xᵢ : τᵢ=, and so the latter is a function of the former! Indeed, as the
+ λ-introduction rule shows, *all contexts are the humble function*
+ ---e.g., with church encodings, we have that algebraic data-types are also
+ functions, the eliminators.
+ + MA: Perhaps with this neato observation, I should simply focus on functions?
+
+** context constructors
+
+ The empty context is the unit type and context extension is interpreted using Σ-types.
+ The identity of dependent products is the unit type, whence it denotes the empty PackageFormer.
+
+#+BEGIN_SRC agda2
+ε : PackageFormer ℓzero
+ε = ⊤
+
+_▷_ : ∀ {i j} (Γ : PackageFormer i) → Γ ⊢Type j → PackageFormer (i ⊍ j)
+Γ ▷ A = Σ γ ∶ Γ • A γ
+
+ #+END_SRC
+* Coercisions and Π
+
+#+BEGIN_SRC agda2
+weaken : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type k}
+       → Γ ⊢Type j → (Γ ▷ A) ⊢Type j
+weaken τ (γ , a) = τ γ
+
+pf-refl : ∀ {i j} {Γ : PackageFormer i} {A : Γ ⊢Type j}
+        → (Γ ▷ A) ⊢Term weaken A
+pf-refl = proj₂
+
+Π : ∀ {i j k} {Γ : PackageFormer i} (A : Γ ⊢Type j) (B : (Γ ▷ A) ⊢Type k)
+  → Γ ⊢Type (j ⊍ k)
+Π A B = λ γ → ∀ (a : A γ) → B (γ , a)
+
+_⇒_ : ∀ {i j k} {Γ : PackageFormer i} (A : Γ ⊢Type j) (B : Γ ⊢Type k)
+    → Γ ⊢Type (j ⊍ k)
+A ⇒ B = Π A (weaken B)
+
+#+END_SRC
+* =lam= and =app=
+Abstraction and application are just Currying & Uncurrying
+#+BEGIN_SRC agda2
+lam : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type j} {B : (Γ ▷ A) ⊢Type k}
+    → (Γ ▷ A) ⊢Term B  →  Γ ⊢Term (Π A B)
+lam g = λ γ → λ a → g (γ , a)
+
+app : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type j} {B : (Γ ▷ A) ⊢Type k}
+      →  Γ ⊢Term (Π A B)  → (Γ ▷ A) ⊢Term B
+app g = λ{(γ , a) → g γ a}
+#+END_SRC
+
+Here are other forms of function application.
+#+BEGIN_SRC agda2
+cut′ : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type j} {B : Γ ⊢Type k}
+      →  (Γ ▷ A) ⊢Term weaken B
+      →  Γ       ⊢Term A
+      →  Γ       ⊢Term B
+cut′ f a = λ γ → f (γ , a γ)
+
+_on_ : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type j}
+      → (Γ ▷ A) ⊢Type k
+      →  Γ ⊢Term A
+      →  Γ ⊢Type k
+f on a = λ γ → f (γ , a γ)
+
+cut : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type j} {B : (Γ ▷ A) ⊢Type k}
+      →  (Γ ▷ A) ⊢Term B
+      →  (a : Γ  ⊢Term A)
+      →  Γ       ⊢Term (B on a)
+cut f a = λ γ → f (γ , a γ)
+
+_$_ : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type j} {B : (Γ ▷ A) ⊢Type k}
+      → Γ ⊢Term (Π A B)
+      → (a : Γ ⊢Term A)
+      → Γ ⊢Term (B on a)
+_$_ g = λ a γ → g γ (a γ)
+#+END_SRC
+
+* Example terms!
+
+#+BEGIN_SRC agda2
+‵id : ε ⊢Term Π A ∶ 𝒰 ℓzero • let A′ = λ _ → proj₂ A -- weakening.
+                              in (A′ ⇒ A′) ε
+‵id = lam (lam proj₂)
+#+END_SRC
+
+Let's try to show that =pf-refl= really is the identity function, up to isomorphism.
+#+BEGIN_SRC agda2
+‵id₂ : ∀ {i j} {Γ : PackageFormer i} {A : Γ ⊢Type j}
+     → Γ ⊢Term A ⇒ A
+‵id₂ = lam pf-refl
+#+END_SRC
+
+Neato! Progress, finally (งಠ_ಠ)ง
+* Old Approach using Deep Embedding :incomplete:holes:
+
+  #+begin_example agda2
+module pf where
+#+end_example
+** Imports
+#+begin_example agda2
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Nat
 open import Data.Unit
@@ -16,10 +190,9 @@ open import Data.Maybe using (Maybe; just; nothing)
 open import Data.String using (String) renaming (_==_ to _==ₛ_; _≟_ to _≟ₛ_; _++_ to _++ₛ_)
 open import Data.Product using (Σ ; proj₁ ; proj₂ ; _×_ ; _,_)
 Name = String
-
---------------------------------------------------------------------------------
--- Fixity & syntax declarations
-
+#+end_example
+** Fixity & syntax declarations
+#+begin_example agda2
 infix 11 eq
 syntax eq τ l r  =  l ‵≡ r ∶ τ
 
@@ -36,33 +209,24 @@ infixl 5 _extended-by_
 
 infix -666 Σ∶•
 syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
-
---------------------------------------------------------------------------------
-
-type-names-of empty = []
-type-names-of (pf extended-by name₁ ∶ ‵Set) = name₁ ∷ type-names-of pf
-type-names-of (pf extended-by _) = type-names-of pf
-
---------------------------------------------------------------------------------
--- Declarations for mutually recursive DTL concepts
-
+#+end_example
+** Declarations for mutually recursive DTL concepts
+#+begin_example agda2
 data PF : Set                          -- Syntax of PackageFormers; i.e., contexts
 data _⊢Type (Γ : PF) : Set             -- Types in context
 type-names-of : PF → List Name
 -- types-of : (Γ : PF) → List (Γ ⊢Type)   -- The collection of types mentioned in a context
 record _⊢constituent (Γ : PF) : Set    -- The type of terms
 data _⊢Term:_ (Γ : PF) : Γ ⊢Type → Set -- Terms in context
-
---------------------------------------------------------------------------------
--- PackageFormer syntax
-
+#+end_example
+** PackageFormer syntax
+#+begin_example agda2
 data PF where
   empty : PF
   _extended-by_ : (Γ : PF) → Γ ⊢constituent → PF
-
---------------------------------------------------------------------------------
--- “declarations in context”
-
+#+end_example
+** “declarations in context”
+#+begin_example agda2
 record _⊢constituent Γ where
   -- constructor _∶_≔_
   constructor _∶_
@@ -79,8 +243,9 @@ open _⊢constituent
 _∶_ : ∀ {Γ} → Name → Γ ⊢Type → Γ ⊢constituent
 x ∶ τ = x ∶ τ ≔ nothing
 -}
-
---------------------------------------------------------------------------------
+#+end_example
+** Decision procedure for tedious proofs
+#+begin_example agda2
 -- Soundness: Let's construct a decision procedure that actually provides tedious proofs.
 -- This is used in the ADT “_⊢Type”.
 
@@ -106,10 +271,9 @@ improved-example = soundness tt
 -- Uncomment to see an error since c is not in the list.
 -- useful-error-msg : "c" ∈ ("A" ∷ "B" ∷ "C" ∷ "D" ∷ [])
 -- useful-error-msg = soundness tt
-
---------------------------------------------------------------------------------
--- “types in context”
-
+#+end_example
+** “types in context”
+#+begin_example agda2
 {-
   τ ∷= Set       “universe of types”
      | τ → τ     “function types”
@@ -136,10 +300,16 @@ data _⊢Type Γ where
 _‵→_ : {Γ : PF} → Γ ⊢Type → Γ ⊢Type → Γ ⊢Type -- function type
 τ ‵→ γ = Π _ ∶ τ • weaken γ
 -}
-
---------------------------------------------------------------------------------
-{- A hierarchy of dependent weakening rules.
-
+#+end_example
+** =type-names-of=
+#+begin_example agda2
+type-names-of empty = []
+type-names-of (pf extended-by name₁ ∶ ‵Set) = name₁ ∷ type-names-of pf
+type-names-of (pf extended-by _) = type-names-of pf
+#+end_example
+** A hierarchy of dependent weakening rules
+#+begin_example agda2
+{-
 weaken1 : ∀ {Γ e} → Γ ⊢Type → (Γ extended-by e) ⊢Type
 
 insert-before-last : ∀ {Γ η e τ} → (Γ extended-by η ∶ τ) ⊢Type
@@ -169,9 +339,10 @@ weaken-cons : ∀ {Γ e} → Γ ⊢constituent → (Γ extended-by e) ⊢constit
 weaken-mid : ∀ {Γ pre post new} → (Γ extended-by pre extended-by post) ⊢Type
                                 → (Γ extended-by pre extended-by new extended-by weaken-cons post) ⊢Type
 -}
-
---------------------------------------------------------------------------------
-{-- How many ‘arguments’ does a type have?
+#+end_example
+** How many ‘arguments’ does a type have?
+#+begin_example agda2
+{-
 
 arity : ∀ {Γ} → Γ ⊢Type → ℕ
 arity ‵Set        = 0
@@ -180,9 +351,10 @@ arity (τ ‵→ τ₁)   = 1 + arity γ  -- E.g., α ‵→ (β ‵→ γ) has 
 arity (‵ η)       = {!!} -- Need to consider its type in Γ
 arity (eq τ l r)  = 0
 -}
-
---------------------------------------------------------------------------------
-{-- The subparts of a type expression
+#+end_example
+** The subparts of a type expression
+#+begin_example agda2
+{--
 
 -- An alias for _≡_; a singleton type
 data JustThis {A : Set} : A → Set where
@@ -198,10 +370,9 @@ type-head _  = ⊤
 type-tail : ∀ {Γ} → Γ ⊢Type → Γ ⊢Type
 type-tail τ = {!!}
 -}
-
---------------------------------------------------------------------------------
--- “terms in context”
-
+#+end_example
+** “terms in context”
+#+begin_example agda2
 data _⊢Term:_ Γ where
 
   -- TODO: “x must be fresh for Γ”; variable case
@@ -209,10 +380,9 @@ data _⊢Term:_ Γ where
 
   -- curried function application
   -- _$_ : (f : Γ ⊢constituent) → type-head (type f) → Γ ⊢Term: type-tail (type f) -- Omitted for brevity
-
------------------------------------------------------------------------------------------
--- Examples
-
+#+end_example
+** Examples
+#+begin_example agda2
 Type : PF
 Type = empty extended-by "Carrier" ∶ ‵Set
 
@@ -228,10 +398,9 @@ Pointed = Type extended-by "𝟙" ∶ ‵ "Carrier"
 
 Magma : PF
 Magma = Type extended-by "_·_" ∶ ‵ "Carrier" ‵→ ‵ "Carrier" ‵→ ‵ "Carrier"
-
---------------------------------------------------------------------------------
--- Semantics
-
+#+end_example
+** Semantics
+#+begin_example agda2
 terms : PF → List (Σ Γ ∶ PF • Γ ⊢constituent)
 terms empty = []
 terms (p extended-by x) = terms p ++ [ p , x ]
@@ -294,9 +463,9 @@ sem p σ α with terms p
         α′ n = if n ==ₛ η then (σ {!!}) , {!!} else α n
 -}
 
---------------------------------------------------------------------------------
--- Further experiments
-
+#+end_example
+** Further experiments
+#+begin_example agda2
 {-
 -- TODO: Add support for catenating PFs.
 --
@@ -311,3 +480,4 @@ monoid = empty extended-by "Carrier" ∶ ‵Set
                extended-by "𝟙" ∶ ‵ "Carrier"
                extended-by "assoc" ∶ {!!}
 -}
+  #+end_example
