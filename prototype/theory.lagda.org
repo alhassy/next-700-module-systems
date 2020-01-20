@@ -2,7 +2,179 @@
 #+author: Musa Al-hassy
 #+agda_version: 2.6.0.1
 
-MA: In the setup below, it seems using the context approach can sometimes be easier
+* Table of Contents                                    :Github:TOC_4:
+- [[#semantics-via-ma-sets][Semantics via “MA-Sets”]]
+  - [[#normal-forms][Normal Forms]]
+  - [[#meta-primitives-as-functions][Meta-Primitives as Functions]]
+  - [[#algebraic-structure----ma-sets][Algebraic Structure ---“<<<MA-Sets>>>”]]
+- [[#shallow-embedding-approach][Shallow Embedding Approach]]
+  - [[#imports][Imports]]
+  - [[#syntax-declarations][Syntax Declarations]]
+  - [[#contexts-types-and-terms][Contexts, types, and terms]]
+    - [[#types][types]]
+    - [[#terms][terms]]
+    - [[#context-constructors][context constructors]]
+  - [[#coercisions-and-π][Coercisions and Π]]
+  - [[#lam-and-app][=lam= and =app=]]
+  - [[#example-terms][Example terms!]]
+- [[#old-approach-using-deep-embedding][Old Approach using Deep Embedding]]
+  - [[#imports-1][Imports]]
+  - [[#fixity--syntax-declarations][Fixity & syntax declarations]]
+  - [[#declarations-for-mutually-recursive-dtl-concepts][Declarations for mutually recursive DTL concepts]]
+  - [[#packageformer-syntax][PackageFormer syntax]]
+  - [[#declarations-in-context][“declarations in context”]]
+  - [[#decision-procedure-for-tedious-proofs][Decision procedure for tedious proofs]]
+  - [[#types-in-context][“types in context”]]
+  - [[#type-names-of][=type-names-of=]]
+  - [[#a-hierarchy-of-dependent-weakening-rules][A hierarchy of dependent weakening rules]]
+  - [[#how-many-arguments-does-a-type-have][How many ‘arguments’ does a type have?]]
+  - [[#the-subparts-of-a-type-expression][The subparts of a type expression]]
+  - [[#terms-in-context][“terms in context”]]
+  - [[#examples][Examples]]
+  - [[#semantics][Semantics]]
+  - [[#further-experiments][Further experiments]]
+
+* Semantics via “MA-Sets”
+
+  Given an ambient type theory 𝑻, we define the type =Declaration= to be the
+  triples ~n ∶ τ ≔ δ~ where =n= is a ‘name’, =τ= is a type of the given type theory, and
+  =δ= is a term over that type theory, possibly adjoined with other declarations
+  =nᵢ : τᵢ ≔ δᵢ=; i.e., the context ~𝑻, n₀ : τ₀ ≔ δ₀, …, nₘ : τₘ ≔ δₘ~ ensures ~τ~ is
+  a type and ~δ~ is of that type, and ~n~ must be a fresh name.
+
+** Normal Forms
+  Ignoring the concrete syntax, every PackageFormer has a canonical flattened form:
+#+begin_example haskell
+LHS = ∅ ⨾ n₀ ∶ τ₀ ≔ d₀ ⨾ ⋯ ⨾ nₘ ∶ τₘ ≔ dₘ ⟴ :waist 𝓌 ⟴ :kind 𝓀
+#+end_example
+
+The “⨾” is read “extended-by” and the definitional clauses $dₖ$ may involve any
+of the names $nᵢ$ for $i < k$.  It is an a *right* action:
+#+begin_example haskell
+_⨾_ : PackageFormer → Declaration → PackageFormer
+#+end_example
+
+# Where the semigroup structure on declarations is determined
+# by sequential composition: If ~eᵢ~ are declarations, then ~e₀⨾⋯⨾eₙ~
+# is a ‘single’ declaration.
+
+The canonical form suggests that /PackageFormers are triples/
+consisting of a context, a number, and a tag.
+
+Instead of $∅ ⨾ n₀ ∶ τ₀ ≔ d₀ ⨾ ⋯ ⨾ nₘ ∶ τₘ ≔ dₘ ⟴ :waist 𝓌 ⟴ :kind 𝓀$ let us
+write $e₀ ⨾ … ⨾ e_𝓌 ❙_{𝓀} e_{𝓌+1}⨾ … eₘ$.
+- When the kind 𝓀 is uninteresting, or may be arbitrary, we shall omit it from
+  the notation altogether. Likewise for the separator ‘❙’.
+
+We may now define a composition operation on PackageFormers, via
+pushout or disjoint union; e.g., $(Γ₁ ❙ Γ₂) ⊎ (Γ₁′ ❙ Γ₂′) = Γ₁″ ❙ Γ₂″$ where Γᵢ″
+is catenation of Γᵢ and Γᵢ′, in some fixed chosen order.
+
+We may also define a dual form of extension, known as “snoc” when ⨾ is read
+“cons”.
+#+begin_src haskell
+_⸵_ : Declaration → PackageFormer → PackageFormer
+e ⸵ (Γ₁ ❙ Γ₂) = ((∅ ⨾ e) ⊎ Γ₁) ❙ Γ₂
+#+end_src
+
+In the informal notation of contexts of type theory, the three operations ⸵, ⨾,
+⊎ are denoted “,”.
+
+** Meta-Primitives as Functions
+
+With a notation and understanding of what a PackageFormer
+consists of, we are in a position to provide a semantics
+for the meta-primitives.
+
+# :waist, :kind, ▷, and ⟴ are syntactic constructors.
+
+First, ~waist~ is lifted from a syntactic construct to a function operation on
+PackageFormers as follows.
+#+begin_src haskell
+_waist_ : PackageFormer → ℕ → PackageFormer
+(Γ₁ ❙ Γ₂) waist 0       = ∅ ❙ (Γ₁ ⊎ Γ₂)
+(Γ₁ ❙ Γ₂) waist (n + 1) = (head Γ₁) ◁ (tail Γ₁ ❙ Γ₂) waist n
+
+where head : PackageFormer → Maybe Declaration
+      head ∅ = Nothing
+      head (e₁, …, eₙ ❙ Γ₂) = Just e₁
+
+      tail : PackageFormer → PackageFormer
+      tail ∅ = ∅
+      tail (e₁ ◁ Γ) = Γ
+#+end_src
+
+That is, if $Γ = e₀⨾ ⋯⨾ eₘ$, ignoring the separator, then
+$Γ waist n ≈ e₀⨾ ⋯⨾ eₙ ❙ eₙ₊₁⨾ ⋯⨾ eₘ$. That is, =waist= introduces
+a partition in a context. Operationally, only the associated number
+component of a PackageFormer has been altered.
+
+** Algebraic Structure ---“<<<MA-Sets>>>”
+
+Contexts have a monoidal structure determined by pushouts; i.e., disjoint unions
+⊎ and the empty PackageFormer ∅.  Indeed, we have a mutual-associativity law
+$(Γ₁ ⊎ Γ₂) ⨾ e = Γ₁ ⊎ (Γ₂ ⨾ e)$ ---which may serve to define ⊎.
+
+# ---in the concrete syntax this becomes:
+# =Γ extended-by "e₁" ⟴ extended-by "e₂" ≈ Γ extended-by "e₁; e₂".=
+# With this approach, the structure of declarations mimics the notion of a context from type theory.
+# Indeed, we also have the ‘empty’ declaration, denoted =""=
+# in concrete syntax and as ε abstractly.
+
+Note that we do not have a monoidal action since ⨾ and ⊎ do not satisfiy the
+necessary coherence laws ---even worse, the right law $(Γ ⨾ e₁) ⨾ e₂ = Γ ⨾ (e₁ ⊎
+e₂)$ and the left law $Γ₁ ⨾ (Γ₂ ⨾ e) = (Γ₁ ⊎ Γ₂) ⨾ e$ are both ill-typed. Hence,
+we have no hope of using ⊎/⨾ to trivially obtain a left/right monoidal action.
+
+In order to define a semantics, we need a notion of models in which to interpret
+the syntactic PackageFormer entities.  Since left and right monoid-sets have
+been ruled out, we shall formulate another species to fit the structure embedded
+in PackageFormer.
+
+Define a “MA-Set”, or a ‘M’utually ‘A’ssocitive structure to be a triple (ℳ, 𝒮,
+·) where ℳ is a monoid, 𝒮 is a set, and $_·_ : ℳ → 𝒮 → ℳ$ is an action that is
+mutually associative with the monoidal operation, $(m₁ ⊕ m₂) · y = m₁ ⊕ (m₂ ·
+y)$.
+
+- This is nearly an M-Set, but the functoriality law has been replaced by the
+   an associtivity law.
+
+- Unlike M-Sets in which a monoids “acts” on a set, in a MA-Set we have the set
+  acting on the monoid.
+
+As discussed earlier, PackageFormers form a MA-Set ---and are the motivation of
+introducing MA-Sets.
+
+Given two MA-Sets (ℳ, 𝒜, ·) and (ℳ′, 𝒜′, ·′), define a /MA-Set homomorphism/ to be
+a pair of functions /h₁ : ℳ → ℳ′, h₂ : 𝒜 → 𝒜′/ that preserve the structure on each
+set and respect the action; i.e.,
+1. $h₁$ is a monoid homomorphism
+2. $h₂$ is a semigroup homomorphism
+3. $h₁ (m · a) ≈ h₁ m ·′ h₂ a$, a reasonable coherence condition.
+
+Theorems:
+1. (Id, Id) is a MA-Set homomorphism for any (ℳ, 𝒜)-set.
+   - Sketch: Id is a monoid and semigroup homomorphism, and the coherence
+     condition is true by ≈-reflexivity.
+2. MA-Set homomorphisms are closed under composition.
+   - Sketch: The composition of monoid/semigroup homomorphisms is again
+     a homomorphism; it remains to check coherence:
+    #+BEGIN_SRC haskell
+     (f₁ ∘ g₁) (m · a)
+    = f₁ (g₁ (m · a))
+    = f₁ (g₁ m · g₂ a)
+    = f₁ (g₁ m) · f₂ (g₂ a)
+    = (f₁ ∘ g₁) m · (f₂ ∘ g₂) a
+#+END_SRC
+    Whence, the coherence condition is true.
+3. MA-Sets form a category.
+
+The goal is then to show that MA-Sets have PackageFormer as an initial object!
+---Initial semantics!
+
+* Shallow Embedding Approach :typechecks:
+
+In the setup below, it seems using the context approach can sometimes be easier
 than using the λ approach, even though they are essentially the same.
 Intuitively:
 | What doing? | Easier to use |
@@ -10,8 +182,8 @@ Intuitively:
 | Reasoning   | Context       |
 | Programming | Functions     |
 
-* Imports
-#+BEGIN_SRC agda2
+** Imports
+ #+BEGIN_SRC agda2
 module pf where
 
 open import Level renaming (zero to ℓzero; suc to ℓsuc; _⊔_ to _⊍_)
@@ -28,10 +200,10 @@ open import Data.Maybe using (Maybe; just; nothing)
 open import Data.String using (String) renaming (_==_ to _==ₛ_; _≟_ to _≟ₛ_; _++_ to _++ₛ_)
 open import Data.Product using (Σ ; proj₁ ; proj₂ ; _×_ ; _,_)
 
-#+END_SRC
+ #+END_SRC
 
-* Syntax Declarations
-#+BEGIN_SRC agda2
+** Syntax Declarations
+ #+BEGIN_SRC agda2
 
 Name = String
 
@@ -46,58 +218,58 @@ syntax Π A (λ x → B) = Π x ∶ A • B
 
 infix 9 _⊢Term_
 
-#+END_SRC
-* Contexts, types, and terms
+ #+END_SRC
+** Contexts, types, and terms
 
-  Contexts are types, level-indexed types are functions, τ-terms are functions taking
-  the context and yielding a value.
+   Contexts are types, level-indexed types are functions, τ-terms are functions taking
+   the context and yielding a value.
 
 
- #+BEGIN_SRC agda2
+  #+BEGIN_SRC agda2
 PackageFormer : (i : Level) → Set (ℓsuc i)
 PackageFormer i = Set i
-#+END_SRC
+ #+END_SRC
 
-** types
- Next, object-level universes are implemented using meta-level universes.
- - Note: =Γ ⊢Type 𝒾  ≡  Γ ⊢Term (𝒰 𝒾)=.
+*** types
+  Next, object-level universes are implemented using meta-level universes.
+  - Note: =Γ ⊢Type 𝒾  ≡  Γ ⊢Term (𝒰 𝒾)=.
 
- #+BEGIN_SRC agda2
+  #+BEGIN_SRC agda2
 _⊢Type_ :  ∀ {i} → PackageFormer i → (j : Level) → Set (i ⊍ ℓsuc j)
 Γ ⊢Type 𝒾 = Γ → Set 𝒾
 
 𝒰 : ∀ {i} {Γ : PackageFormer i} (j : Level) → Γ ⊢Type (ℓsuc j)
 𝒰 j = λ γ → Set j
- #+END_SRC
-** terms
- #+BEGIN_SRC agda2
+  #+END_SRC
+*** terms
+  #+BEGIN_SRC agda2
 _⊢Term_ : ∀ {i j} → (Γ : PackageFormer i) → Γ ⊢Type j → Set (i ⊍ j)
 Γ ⊢Term τ = (γ : Γ) → τ γ
- #+END_SRC
+  #+END_SRC
 
- After all, a classical context ~x₁ : τ₁, …, xₙ : τₙ ⊢ e : τ~ only /asserts/ =e : τ=
- /provided/ =xᵢ : τᵢ=, and so the latter is a function of the former! Indeed, as the
- λ-introduction rule shows, *all contexts are the humble function*
- ---e.g., with church encodings, we have that algebraic data-types are also
- functions, the eliminators.
- + MA: Perhaps with this neato observation, I should simply focus on functions?
+  After all, a classical context ~x₁ : τ₁, …, xₙ : τₙ ⊢ e : τ~ only /asserts/ =e : τ=
+  /provided/ =xᵢ : τᵢ=, and so the latter is a function of the former! Indeed, as the
+  λ-introduction rule shows, *all contexts are the humble function*
+  ---e.g., with church encodings, we have that algebraic data-types are also
+  functions, the eliminators.
+  + MA: Perhaps with this neato observation, I should simply focus on functions?
 
-** context constructors
+*** context constructors
 
- The empty context is the unit type and context extension is interpreted using Σ-types.
- The identity of dependent products is the unit type, whence it denotes the empty PackageFormer.
+  The empty context is the unit type and context extension is interpreted using Σ-types.
+  The identity of dependent products is the unit type, whence it denotes the empty PackageFormer.
 
-#+BEGIN_SRC agda2
+ #+BEGIN_SRC agda2
 ε : PackageFormer ℓzero
 ε = ⊤
 
 _▷_ : ∀ {i j} (Γ : PackageFormer i) → Γ ⊢Type j → PackageFormer (i ⊍ j)
 Γ ▷ A = Σ γ ∶ Γ • A γ
 
- #+END_SRC
-* Coercisions and Π
+  #+END_SRC
+** Coercisions and Π
 
-#+BEGIN_SRC agda2
+ #+BEGIN_SRC agda2
 weaken : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type k}
        → Γ ⊢Type j → (Γ ▷ A) ⊢Type j
 weaken τ (γ , a) = τ γ
@@ -114,10 +286,10 @@ _⇒_ : ∀ {i j k} {Γ : PackageFormer i} (A : Γ ⊢Type j) (B : Γ ⊢Type k)
     → Γ ⊢Type (j ⊍ k)
 A ⇒ B = Π A (weaken B)
 
-#+END_SRC
-* =lam= and =app=
-Abstraction and application are just Currying & Uncurrying
-#+BEGIN_SRC agda2
+ #+END_SRC
+** =lam= and =app=
+ Abstraction and application are just Currying & Uncurrying
+ #+BEGIN_SRC agda2
 lam : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type j} {B : (Γ ▷ A) ⊢Type k}
     → (Γ ▷ A) ⊢Term B  →  Γ ⊢Term (Π A B)
 lam g = λ γ → λ a → g (γ , a)
@@ -125,10 +297,10 @@ lam g = λ γ → λ a → g (γ , a)
 app : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type j} {B : (Γ ▷ A) ⊢Type k}
       →  Γ ⊢Term (Π A B)  → (Γ ▷ A) ⊢Term B
 app g = λ{(γ , a) → g γ a}
-#+END_SRC
+ #+END_SRC
 
-Here are other forms of function application.
-#+BEGIN_SRC agda2
+ Here are other forms of function application.
+ #+BEGIN_SRC agda2
 cut′ : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type j} {B : Γ ⊢Type k}
       →  (Γ ▷ A) ⊢Term weaken B
       →  Γ       ⊢Term A
@@ -152,24 +324,24 @@ _$_ : ∀ {i j k} {Γ : PackageFormer i} {A : Γ ⊢Type j} {B : (Γ ▷ A) ⊢T
       → (a : Γ ⊢Term A)
       → Γ ⊢Term (B on a)
 _$_ g = λ a γ → g γ (a γ)
-#+END_SRC
+ #+END_SRC
 
-* Example terms!
+** Example terms!
 
-#+BEGIN_SRC agda2
+ #+BEGIN_SRC agda2
 ‵id : ε ⊢Term Π A ∶ 𝒰 ℓzero • let A′ = λ _ → proj₂ A -- weakening.
                               in (A′ ⇒ A′) ε
 ‵id = lam (lam proj₂)
-#+END_SRC
+ #+END_SRC
 
-Let's try to show that =pf-refl= really is the identity function, up to isomorphism.
-#+BEGIN_SRC agda2
+ Let's try to show that =pf-refl= really is the identity function, up to isomorphism.
+ #+BEGIN_SRC agda2
 ‵id₂ : ∀ {i j} {Γ : PackageFormer i} {A : Γ ⊢Type j}
      → Γ ⊢Term A ⇒ A
 ‵id₂ = lam pf-refl
-#+END_SRC
+ #+END_SRC
 
-Neato! Progress, finally (งಠ_ಠ)ง
+ Neato! Progress, finally (งಠ_ಠ)ง
 * Old Approach using Deep Embedding :incomplete:holes:
 
   #+begin_example agda2
