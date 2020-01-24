@@ -6,17 +6,29 @@
 # interpreted as agda blocks. They're informal and do not typecheck.
 
 * Table of Contents                                    :Github:TOC_4:
-- [[#semantics-via-ma-sets][Semantics via “MA-Sets”]]
-  - [[#syntactic-sugar--imports][Syntactic Sugar & imports]]
-  - [[#type-of-declarations][Type of Declarations]]
-  - [[#contexts-are-sets-contexts-over-contexts-are-indexed-contexts][Contexts are sets; “contexts over contexts” are indexed-contexts]]
-  - [[#normal-forms][Normal Forms]]
-    - [[#packageformers-and-derived-__][PackageFormers and derived =_⊎_=]]
-  - [[#meta-primitives-as-functions][Meta-Primitives as Functions]]
-  - [[#algebraic-structure----ma-sets][Algebraic Structure ---“<<<MA-Sets>>>”]]
-- [[#shallow-embedding-approach][Shallow Embedding Approach]]
+- [[#introduction][Introduction]]
+- [[#preamble][Preamble]]
+  - [[#module-header][Module header]]
   - [[#imports][Imports]]
   - [[#syntax-declarations][Syntax Declarations]]
+  - [[#helper-utilities][Helper Utilities]]
+    - [[#level-polymorphic-unit-type][Level-Polymorphic Unit Type]]
+    - [[#singleton-types][Singleton Types]]
+- [[#what-is-a-type-theory][What is “a type theory”?]]
+- [[#our-ambient-type-theory][Our Ambient Type Theory]]
+- [[#contexts-over-contexts][“Contexts over Contexts”]]
+- [[#packageformers-as-pairs-of-contexts-demarcated-by-a-waist][PackageFormers as Pairs of Contexts Demarcated by a Waist]]
+- [[#mutally-associative-sets][‘M’utally ‘A’ssociative Sets]]
+  - [[#two-sanity-checks][Two Sanity Checks]]
+    - [[#actually-write-a-grouping-mechanism][Actually write a grouping mechanism]]
+    - [[#packageformers-are-ma-sets][PackageFormers are MA-Sets]]
+  - [[#ma-sets-form-a-category][MA-Sets form a Category]]
+- [[#started-comment-normal-forms-][STARTED COMMENT Normal Forms 🚧]]
+    - [[#packageformers-and-derived-__][PackageFormers and derived =_⊎_=]]
+- [[#started-comment-meta-primitives-as-functions-][STARTED COMMENT Meta-Primitives as Functions 🚧]]
+- [[#shallow-embedding-approach][Shallow Embedding Approach]]
+  - [[#imports-1][Imports]]
+  - [[#syntax-declarations-1][Syntax Declarations]]
   - [[#contexts-types-and-terms][Contexts, types, and terms]]
     - [[#types][types]]
     - [[#terms][terms]]
@@ -25,7 +37,7 @@
   - [[#lam-and-app][=lam= and =app=]]
   - [[#example-terms][Example terms!]]
 - [[#old-approach-using-deep-embedding][Old Approach using Deep Embedding]]
-  - [[#imports-1][Imports]]
+  - [[#imports-2][Imports]]
   - [[#fixity--syntax-declarations][Fixity & syntax declarations]]
   - [[#declarations-for-mutually-recursive-dtl-concepts][Declarations for mutually recursive DTL concepts]]
   - [[#packageformer-syntax][PackageFormer syntax]]
@@ -41,84 +53,416 @@
   - [[#semantics][Semantics]]
   - [[#further-experiments][Further experiments]]
 
-* Semantics via “MA-Sets”
+* Introduction
 
+  For brevity, every PackageFormer declaration can essentially be seen as a
+  sequence of declarations, some of which are considered /parameters/ and the rest
+  are the /body/. Whence, a PackageFormer is a pair of contexts.
+
+  Let's try to explain that idea.
+
+  Perhaps with canonical forms for PackageFormers we can furnish them with
+  initial semantics.
+
+* Preamble
+** Module header
 #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
 -- The .agda file is trangled from an org file.
-module semantics-via-MA-Sets
-
-  -- We need an ambient type theory:
-  --
-  -- An infinite set of variable names
-  (𝕍 : Set)
-  -- A typing judgement for terms e of
-  -- type τ in a context Γ,
-  -- which we write Γ ⊢ e : τ
-  (let Context = Set)
-  (Expr    : Set)
-  (_⊢_∶_ : Context → Expr → Expr → Set)
-  (_⊢_type : Context → Expr → Set)
-
-  where
-  -- TODO: Ignoring optional definitions for now.
+module semantics-via-MA-Sets where
 #+END_SRC
-
-** Syntactic Sugar & imports
-#+BEGIN_SRC agda2  :tangle semantics-via-MA-Sets.agda
-open import Data.Unit
-open import Data.Product hiding (_,_)
+** Imports
+#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+open import Data.Product
 open import Data.Nat
 open import Data.Sum
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
-
+open import Level renaming (zero to ℓ₀; suc to ℓsuc; _⊔_ to _⊍_)
+#+END_SRC
+** Syntax Declarations
+#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
 Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
 Σ∶• = Σ
 
 infix -666 Σ∶•
 syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
-       #+END_SRC
+#+END_SRC
 
-** Type of Declarations
+** Helper Utilities
+*** Level-Polymorphic Unit Type
+#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+record ⊤ {ℓ} : Set ℓ where
+  constructor tt
+#+END_SRC
+*** Singleton Types
+We'll be treating contexts as sets and so will require a singleton types for
+adjoining declarations.
+#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+data Just {ℓ} {A : Set ℓ} : A → Set where
+  just : (a : A) → Just a
+#+END_SRC
+* What is “a type theory”?
+  To get anything done, we'll need an ambient type theory that provides us with
+  a set of variable names 𝕍 and typing judgements. The comments below are what
+  a classical type theory would have.
+#+BEGIN_SRC agda2
+record TypeTheory : Set₁ where
+  field
+    -- An infinite set of variable names
+    𝕍       : Set
+    -- A collection of name-type pairs
+    Context : Set
+    -- Possible expressions in a given context
+    Expr    : Context → Set
+    -- When is an expression considered a ‘type’
+    _⊢_type : (Γ : Context) → Expr Γ → Set
+    -- When is a term considered to be “of a type”
+    _⊢_∶_   : (Γ : Context) → Expr Γ → Expr Γ → Set
+#+END_SRC
+When Γ is fixed and if we denote ~Γ ⊢ e ∶ τ~ by ~e ⟶ τ~ then we obtained a directed
+graph where an edge may be construed as ‘abstract interpreter’ relationship
+---the ‘value’ of an expression is its type.
+
+It seems that with the typing judgement, we can regain the kinding judgement:
+~Γ ⊢ τ type ⇔ ∀ (v : 𝕍) → Γ ⊢ v ∶ τ~.
+
+Within a type theory, we can define a notion of declarations.
+#+BEGIN_SRC agda2
+  data Declaration (Γ : Context) : Set where
+    _∶_≔_ : (n : 𝕍) {τ δ : Expr Γ} → Γ ⊢ τ type → Γ ⊢ δ ∶ τ → Declaration Γ
+#+END_SRC
+
+  :Informal_Type_of_Declarations:
   Given an ambient type theory 𝑻, we define the type =Declaration= to be the
   triples ~n ∶ τ ≔ δ~ where =n= is a ‘name’, =τ= is a type of the given type theory, and
   =δ= is a term over that type theory, possibly adjoined with other declarations
   =nᵢ : τᵢ ≔ δᵢ=; i.e., the context ~𝑻, n₀ : τ₀ ≔ δ₀, …, nₘ : τₘ ≔ δₘ~ ensures ~τ~ is
   a type and ~δ~ is of that type, and ~n~ must be a fresh name.
+  :End:
+
+* Our Ambient Type Theory
+Rather than working with an opaque, and generic, instance of a type theory, we
+will work with a particular instance.
+
+| We ignore syntax and jump straight to semantics ---whence no expression type! |
+
+0. At the level of semantics, we may use Agda's variables instead of a
+   dedicated variable type.
+1. A <<context>> is nothing more than a set.
+   - With the ‘smart constructors’ below, a context is a dependent product of
+     types wherein later type-declarations may depend on earlier ones.
+2. A <<type>> determined by a context is a set than can be obtained
+   using the context.
 
 #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
-data Declaration (Γ : Context) : Set where
-  _∶_≔_ : (n : 𝕍) {τ δ : Expr} → Γ ⊢ τ type → Γ ⊢ δ ∶ τ → Declaration Γ
-    #+END_SRC
+Context = λ ℓ → Set ℓ
 
-** Contexts are sets; “contexts over contexts” are indexed-contexts
-
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
-∅ : Context
-∅ = ⊤
-
-type : Context → Set₁
-type Γ = Γ → Set
-
-_⨾_ : (Γ : Context) (τ : type Γ) → Context
-Γ ⨾ τ = Σ γ ∶ Γ • τ γ
-
--- We need to be able to speak about “contexts over contexts”
-
-Context′ : Context → Set₁
-Context′ Ξ = Ξ → Set
-
-∅′ : ∀ {Ξ} → Context′ Ξ
-∅′ = λ _ → ⊤
-
-type′ : ∀ {Ξ} → Context′ Ξ → Set₁
-type′ Γ = ∀ {ξ} → Γ ξ → Set
-
-_⨾′_ : ∀ {Ξ} → (Γ : Context′ Ξ) (τ : type′ Γ) → Context′ Ξ
-Γ ⨾′ τ = λ ξ → Σ γ ∶ Γ ξ • τ γ
+type : ∀ {ℓ} → Context ℓ → Set (ℓsuc ℓ)
+type {ℓ} Γ = Γ → Set ℓ
 #+END_SRC
 
-** Normal Forms
+With this elementary setup, we can, for example, denote context extension with
+dependent products ---whose unit, a singleton type, acts as the “empty context”:
+#+BEGIN_SRC agda2
+∅ : Context ℓ₀
+∅ = ⊤
+
+_⨾_ : ∀ {ℓ} (Γ : Context ℓ) (τ : type Γ) → Context ℓ
+Γ ⨾ τ = Σ γ ∶ Γ • τ γ
+#+END_SRC
+These names are not exported to the resulting Agda file, since they are
+not needed. In particular, we will ‘reuse’ these names until we have
+‘satisfactory’ definitions.
+
+* “Contexts over Contexts”
+
+Informally =x₀ : τ₀, … ❙ y₀ : τ₀; …=  denotes two contexts, ~Γ₁ ❙ Γ₂~, where the
+first is an elementary context and the latter is a context whose declarations
+not only may use earlier ~yᵢ~ declarations but /additionally/ may use the entirety
+of the context ~Γ₁~. We say =Γ₂= is a /context over context/ =Γ₁=.
+
+1. A <<context over a context>>> is a dependent-type, from contexts to contexts.
+2. A <<type over a dependent-context>> is an context-indexed family of sets.
+
+#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+Context′ : ∀ {ℓ} → Context ℓ → Set (ℓsuc ℓ)
+Context′ {ℓ} Ξ  =  Ξ → Set ℓ
+
+type′ : ∀ {ℓ} {Ξ : Context ℓ} → Context′ Ξ → Set (ℓsuc ℓ)
+type′ {ℓ} Γ = ∀ {ξ} → Γ ξ → Set ℓ
+#+END_SRC
+
+We may index the previous ‘smart constructors’ for contexts over contexts:
+#+BEGIN_SRC agda2
+∅ : ∀ {ℓ} {Ξ : Context ℓ} → Context′ Ξ
+∅ = λ _ → ⊤
+
+_⨾_ : ∀ {ℓ} {Ξ : Context ℓ} → (Γ : Context′ Ξ) (τ : type′ Γ) → Context′ Ξ
+Γ ⨾ τ = λ ξ → Σ γ ∶ Γ ξ • τ γ
+#+END_SRC
+Note: These names are not exported to the resulting Agda file, since they are
+not needed.
+
+* PackageFormers as Pairs of Contexts Demarcated by a Waist
+
+As already mentioned, a PackageFormer is a pair of contexts where the latter
+depends on the former.
+#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+record PackageFormer (ℓ : Level) : Set (ℓsuc ℓ) where
+  constructor _❙_
+  field
+    parameters : Context ℓ
+    body       : Context′ parameters
+    #+END_SRC
+
+Unsurprisingly every PackageFormer can be coerced into a context:
+#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+  toContext : Context ℓ
+  toContext = Σ γ ∶ parameters • body γ
+#+END_SRC
+
+Note that the level-polymorphism is not to be facetious;
+a PackageFormer is a grouping mechanism containing ‘smaller’
+entities, the smallness of which is captured with the level.
+- E.g., the grouping consisting of a single set is a PackageFormer at level 1.
+
+The smart constructors from before can be lifted to this notion
+---we suffix PackageFormer entities uniformly for clarity.
+
+#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+∅ₚ : ∀ {ℓ} → PackageFormer ℓ
+∅ₚ = ⊤ ❙ (λ _ → ⊤)
+
+typeₚ : ∀ {ℓ} → PackageFormer ℓ → Set (ℓsuc ℓ)
+typeₚ {ℓ} (parameters ❙ body) = (Σ ξ ∶ parameters • body ξ) → Set ℓ
+#+END_SRC
+
+* ‘M’utally ‘A’ssociative Sets
+
+  The simplest thing we can do with contexts is ‘stick them together’,
+  but a more natural operation is to extend a context with a new declaration.
+
+  #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+_⊎ₚ_ : ∀ {ℓ} → PackageFormer ℓ → PackageFormer ℓ → PackageFormer ℓ
+(Γ₁ ❙ Γ₂) ⊎ₚ (Γ₁′ ❙ Γ₂′) = (Γ₁ ⊎ Γ₁′) ❙ [ Γ₂ , Γ₂′ ]
+
+_⨾ₚ_ :  ∀ {ℓ} (p : PackageFormer ℓ) → typeₚ p → PackageFormer ℓ
+(parameters ❙ body) ⨾ₚ d = parameters ❙ λ ξ → Σ β ∶ body ξ • d (ξ , β)
+#+END_SRC
+
+
+*Remark:* Contexts have a monoidal structure determined by pushouts; i.e.,
+disjoint unions ⊎ and the empty PackageFormer ∅.  Indeed, we have a
+mutual-associativity law ~(Γ₁ ⊎ Γ₂) ⨾ e ≈ Γ₁ ⊎ (Γ₂ ⨾ e)~ ---up to some /equivalence
+relation/.
+
+*Remark:* We do not have a monoidal action since ⨾ and ⊎ do not satisfiy the
+necessary coherence laws ---even worse, the right law ~(Γ ⨾ e₁) ⨾ e₂ = Γ ⨾ (e₁ ⊎
+e₂)~ and the left law ~Γ₁ ⨾ (Γ₂ ⨾ e) = (Γ₁ ⊎ Γ₂) ⨾ e~ are both ill-typed. Hence, we
+have no hope of using ⊎/⨾ to trivially obtain a left/right monoidal action.
+
+We can abstract out this structure in the hopes that a semantics for
+PackageFormers can be determined via these new algebras.
+:More:
+In order to define a semantics, we need a notion of models in which to interpret
+the syntactic PackageFormer entities.  Since left and right monoid-sets have
+been ruled out, we shall formulate another species to fit the structure embedded
+in PackageFormer.
+:End:
+
+Define a “<<MA-Set>>”, or a ‘M’utually ‘A’ssocitive structure to be a triple (ℳ,
+𝒜, ·) where ℳ is a monoid, 𝒜 is a dependent family indexed by ℳ, and ~_·_ : (m :
+ℳ) → 𝒜 m → ℳ~ is a ‘dependent action’ that is mutually associative with the
+monoidal operation, ~(m₁ ⊕ m₂) · y ≈ m₁ ⊕ (m₂ · π y)~ where ~π : 𝒜 (m₁ ⊕ m₂) → 𝒜 m₂~
+is a ‘weakening’ rule.
+
++ For now, we only implement the substructure that is necessary.
++ Perhaps additional structure needs to be added, or other to be removed.
+
+#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+record MA-Set (ℓ₁ ℓ₂ : Level) : Set (ℓsuc (ℓ₁ ⊍ ℓ₂)) where
+  field
+    ℳ  : Set ℓ₁
+    _⊕_ : ℳ → ℳ → ℳ
+    Id  : ℳ
+    𝒜 :  ℳ → Set ℓ₂
+    _·_ : (m : ℳ) → 𝒜 m → ℳ  -- Note the dependency
+    -- TODO: Ommiting axioms for now; likely want a setoid structure.
+
+open MA-Set
+#+END_SRC
+
+# - This is nearly an M-Set, but the functoriality law has been replaced by the
+#   an associtivity law.
+
+- Unlike M-Sets in which a monoids “acts” on a set, in a MA-Set we have the
+  dependent set acting on the monoid /such that/ the ‘type of possible actions’
+  is determined by monoid elements.
+
+** Two Sanity Checks
+*** Actually write a grouping mechanism
+#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+MonoidPF : PackageFormer (ℓsuc ℓ₀)
+MonoidPF = (((∅ₚ
+           ⨾ₚ λ{ (tt , _) → Set})
+           ⨾ₚ λ{ (tt , (tt , Carrier)) → Lift (ℓsuc ℓ₀) Carrier})
+           ⨾ₚ λ{ (tt , ((tt , Carrier), lift point))
+                 → Lift (ℓsuc ℓ₀) (Carrier → Carrier → Carrier)})
+           ⨾ₚ λ{ (tt , (((tt , Carrier) , lift point) , lift _⊕_))
+                 → Lift (ℓsuc ℓ₀) (∀ {x} → x ⊕ point ≡ x × point ⊕ x ≡ x)}
+#+END_SRC
+TODO: Obtain working monad syntax.
+*** PackageFormers are MA-Sets
+#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+PFs-are-MA-Sets : ∀ {ℓ} → MA-Set (ℓsuc ℓ) (ℓsuc ℓ)
+PFs-are-MA-Sets {ℓ} = record
+  { ℳ   = PackageFormer ℓ
+  ; _⊕_ = _⊎ₚ_
+  ; Id  = ∅ₚ
+  ; 𝒜   = typeₚ
+  ; _·_ = _⨾ₚ_
+  }
+#+END_SRC
+
+** MA-Sets form a Category
+
+Given two MA-Sets (ℳ, 𝒜, ·) and (ℳ′, 𝒜′, ·′), define a /MA-Set homomorphism/ to be
+a pair of functions /h₁ : ℳ → ℳ′, h₂ : 𝒜 → 𝒜′/ that preserve the structure on each
+set and respect the action; i.e.,
+1. =h₁= is a monoid homomorphism
+2. =h₁ (m · a) ≈ h₁ m ·′ h₂ a=, a reasonable coherence condition.
+
+   Notice that when ~a : 𝒜 m~ then necessarily ~h₂ a : 𝒜′ (h₁ m)~.
+
+ #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+record Hom {ℓ₁ ℓ₂} (Src Tgt : MA-Set ℓ₁ ℓ₂) : Set (ℓsuc (ℓ₁ ⊍ ℓ₂)) where
+  field
+    mor₁ : ℳ Src → ℳ Tgt
+    mor₂ : ∀ {m} → 𝒜 Src m → 𝒜 Tgt (mor₁ m)
+    pres-Id : mor₁ (Id Src) ≡ Id Tgt
+    pres-⊕  : ∀ {x y} → mor₁ (_⊕_ Src x y) ≡ _⊕_ Tgt (mor₁ x) (mor₁ y)
+    coherence : ∀ {m a} → mor₁ (_·_ Src m a) ≡ _·_ Tgt (mor₁ m) (mor₂ a)
+
+open Hom
+ #+END_SRC
+
+Conjectures:
+1. (Id, Id) is a MA-Set homomorphism for any (ℳ, 𝒜)-set.
+   - Sketch: Id is a monoid homomorphism, and the coherence
+     condition is true by ≈-reflexivity.
+
+   - Formally:
+      #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+
+id : ∀ {ℓ₁ ℓ₂} {MA : MA-Set ℓ₁ ℓ₂} → Hom MA MA
+id = record
+  { mor₁      = λ x → x
+  ; mor₂      = λ x → x
+  ; pres-Id   = refl
+  ; pres-⊕    = refl
+  ; coherence = refl
+  }
+ #+END_SRC
+
+2. MA-Set homomorphisms are closed under composition.
+   - Sketch: The composition of monoid homomorphisms is again
+     a homomorphism; it remains to check coherence:
+    #+BEGIN_SRC haskell
+     (f₁ ∘ g₁) (m · a)
+    = f₁ (g₁ (m · a))
+    = f₁ (g₁ m · g₂ a)
+    = f₁ (g₁ m) · f₂ (g₂ a)
+    = (f₁ ∘ g₁) m · (f₂ ∘ g₂) a
+#+END_SRC
+    Whence, the coherence condition is true.
+
+   - Formally:
+    #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+_∘_ : ∀ {ℓ₁ ℓ₂} {MA MB MC : MA-Set ℓ₁ ℓ₂} → Hom MB MC → Hom MA MB → Hom MA MC
+_∘_ {MA = MA} {MB} {MC} F G = record
+  { mor₁ = λ x → mor₁ F (mor₁ G x)
+  ; mor₂ = λ x → mor₂ F (mor₂ G x)
+  ; pres-Id = trans (cong (mor₁ F) (pres-Id G)) (pres-Id F)
+  ; pres-⊕ = λ {x y} → begin
+      mor₁ F (mor₁ G (_⊕_ MA x y))          ≡⟨ cong (mor₁ F) (pres-⊕ G) ⟩
+      mor₁ F (_⊕_ MB (mor₁ G x) (mor₁ G y)) ≡⟨ pres-⊕ F ⟩
+      _⊕_ MC (mor₁ F (mor₁ G x)) (mor₁ F (mor₁ G y)) ∎
+  ; coherence = λ {m a} → begin
+      mor₁ F (mor₁ G (_·_ MA m a)) ≡⟨ cong (mor₁ F) (coherence G) ⟩
+      mor₁ F (_·_ MB (mor₁ G m) (mor₂ G a)) ≡⟨ coherence F ⟩
+      _·_ MC (mor₁ F (mor₁ G m)) (mor₂ F (mor₂ G a)) ∎ }
+ #+END_SRC
+
+3. MA-Sets form a category.
+
+The goal is then to show that MA-Sets have PackageFormer as an initial object!
+---Initial semantics!
+
+* COMMENT Monad Syntax 🚧                              :construction_site:
+
+-- _▷_ : ∀ {ℓ} → (P : PackageFormer ℓ) → Declaration (toContext P) → PackageFormer ℓ
+-- (parameters ❙ body) ▷ d@(n ∶ τ ≔ δ) = parameters ❙ λ p → body p ⊎ Just d
+
+--------------------------------------------------------------------------------
+
+-- TODO: Monad notation for PackageFormer
+-- The type mismatch in >>= gives a quick, but unsound, implementation.
+
+MA: Use Context′ instead! Neato ^_^
+Then maybe “waist n” beforehand to run it into a PackageFormer.
+
+infixr 1 _>>=_ _>>_
+
+open PackageFormer
+
+_>>=_ : ∀ {ℓ}
+      → (P : PackageFormer ℓ)
+      → ((Σ ξ ∶ parameters P • body P ξ) → Set ℓ) → PackageFormer ℓ
+p >>= τ = p ⨾ₚ τ
+
+_>>_ : ∀ {ℓ} → PackageFormer ℓ → PackageFormer ℓ → PackageFormer ℓ
+p >> q = p ⊎ₚ q
+
+‵_ : ∀ {ℓ} → Set ℓ → PackageFormer ℓ
+‵ typ = Empty ⨾ₚ λ _ → typ
+
+MonoidPF′ : PackageFormer {!!}
+MonoidPF′ = do carrier ← ‵ Set
+               point  ← ‵ Set
+               ⊤
+
+{-
+typeP : ∀ {ℓ} → PackageFormer ℓ → Set (ℓsuc ℓ)
+typeP {ℓ} (parameters ❙ body) = (Σ ξ ∶ parameters • body ξ) → Set ℓ
+
+_⨾ₚ_ :  ∀ {ℓ} (p : PackageFormer ℓ)
+       → typeP p
+       → PackageFormer ℓ
+(parameters ❙ body) ⨾ₚ d = parameters ❙ λ ξ → Σ β ∶ body ξ • d (ξ , β)
+-}
+
+* COMMENT Here are some laws that allow one to reach the claimed canonical form:
+  1. `:waist w ⟴ :kind k ≈ :kind k ⟴ :waist w`
+
+     Hence, we can always ensure `waist` appears before `kind`.
+
+  2. More generally, `f ⟴ g ≈ g ⟴ f` whenever `f` and `g` are ‘disjoint’; whence
+     ⨾-extensions also share this property with `:waist` and `:kind`.
+
+     Thus we can always ensure ⨾-extensions appear before `:waist` and `:kind` clauses.
+
+  3. `f₁ ⟴ f₂ ≈ f₂` for `fᵢ` both being either `:waist` clauses or `:kind` clauses.
+
+     Hence, there will always be only one `:waist` and one `:kind` clause.
+
+  Of-course these rules only permit the constructions `⟴, :waist, :kind` and
+  ⨾-extensions. E.g., if the hammer `:alter-elements` is admitted, then little
+  can be said since, say, one may re-arrange ⨾-extension elements according to
+  their waist and kind, as is the case of Agda modules, wherein items above
+  the waist *cannot* have definitional clauses.
+
+* STARTED COMMENT Normal Forms 🚧                            :construction_site:
+
   Ignoring the concrete syntax, every PackageFormer has a canonical flattened form:
 #+begin_example haskell
 LHS = ∅ ⨾ n₀ ∶ τ₀ ≔ d₀ ⨾ ⋯ ⨾ nₘ ∶ τₘ ≔ dₘ ⟴ :waist 𝓌 ⟴ :kind 𝓀
@@ -168,7 +512,7 @@ _⊎ₚ_ : PackageFormer → PackageFormer → PackageFormer
 (Γ₁ ❙ Γ₂) ⊎ₚ (Γ₁′ ❙ Γ₂′) = (Γ₁ ⊎ Γ₁′) ❙ [ Γ₂ , Γ₂′ ]
  #+END_SRC
 
-** Meta-Primitives as Functions
+* STARTED COMMENT Meta-Primitives as Functions 🚧                 :construction_site:
 
 With a notation and understanding of what a PackageFormer
 consists of, we are in a position to provide a semantics
@@ -196,127 +540,6 @@ That is, if $Γ = e₀⨾ ⋯⨾ eₘ$, ignoring the separator, then
 $Γ waist n ≈ e₀⨾ ⋯⨾ eₙ ❙ eₙ₊₁⨾ ⋯⨾ eₘ$. That is, =waist= introduces
 a partition in a context. Operationally, only the associated number
 component of a PackageFormer has been altered.
-
-** Algebraic Structure ---“<<<MA-Sets>>>”
-
-Contexts have a monoidal structure determined by pushouts; i.e., disjoint unions
-⊎ and the empty PackageFormer ∅.  Indeed, we have a mutual-associativity law
-$(Γ₁ ⊎ Γ₂) ⨾ e = Γ₁ ⊎ (Γ₂ ⨾ e)$ ---which may serve to define ⊎.
-
-# ---in the concrete syntax this becomes:
-# =Γ extended-by "e₁" ⟴ extended-by "e₂" ≈ Γ extended-by "e₁; e₂".=
-# With this approach, the structure of declarations mimics the notion of a context from type theory.
-# Indeed, we also have the ‘empty’ declaration, denoted =""=
-# in concrete syntax and as ε abstractly.
-
-Note that we do not have a monoidal action since ⨾ and ⊎ do not satisfiy the
-necessary coherence laws ---even worse, the right law $(Γ ⨾ e₁) ⨾ e₂ = Γ ⨾ (e₁ ⊎
-e₂)$ and the left law $Γ₁ ⨾ (Γ₂ ⨾ e) = (Γ₁ ⊎ Γ₂) ⨾ e$ are both ill-typed. Hence,
-we have no hope of using ⊎/⨾ to trivially obtain a left/right monoidal action.
-
-In order to define a semantics, we need a notion of models in which to interpret
-the syntactic PackageFormer entities.  Since left and right monoid-sets have
-been ruled out, we shall formulate another species to fit the structure embedded
-in PackageFormer.
-
-Define a “MA-Set”, or a ‘M’utually ‘A’ssocitive structure to be a triple (ℳ, 𝒮,
-·) where ℳ is a monoid, 𝒮 is a set, and $_·_ : ℳ → 𝒮 → ℳ$ is an action that is
-mutually associative with the monoidal operation, $(m₁ ⊕ m₂) · y = m₁ ⊕ (m₂ ·
-y)$.
-
- #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
-record MA-Set : Set₁ where
-  field
-    ℳ  : Set
-    _⊕_ : ℳ → ℳ → ℳ
-    Id  : ℳ
-    𝒜 :  Set
-    _·_ : ℳ → 𝒜 → ℳ
-    -- TODO: Ommiting axioms for now.
-
-open MA-Set
- #+END_SRC
-
-- This is nearly an M-Set, but the functoriality law has been replaced by the
-   an associtivity law.
-
-- Unlike M-Sets in which a monoids “acts” on a set, in a MA-Set we have the set
-  acting on the monoid.
-
-As discussed earlier, PackageFormers form a MA-Set ---and are the motivation of
-introducing MA-Sets.
-
-Given two MA-Sets (ℳ, 𝒜, ·) and (ℳ′, 𝒜′, ·′), define a /MA-Set homomorphism/ to be
-a pair of functions /h₁ : ℳ → ℳ′, h₂ : 𝒜 → 𝒜′/ that preserve the structure on each
-set and respect the action; i.e.,
-1. $h₁$ is a monoid homomorphism
-2. $h₁ (m · a) ≈ h₁ m ·′ h₂ a$, a reasonable coherence condition.
-
- #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
-record Hom (Src Tgt : MA-Set) : Set₁ where
-  field
-    mor₁ : ℳ Src → ℳ Tgt
-    mor₂ : 𝒜 Src → 𝒜 Tgt
-    pres-Id : mor₁ (Id Src) ≡ Id Tgt
-    pres-⊕  : ∀ {x y} → mor₁ (_⊕_ Src x y) ≡ _⊕_ Tgt (mor₁ x) (mor₁ y)
-    coherence : ∀ {m a} → mor₁ (_·_ Src m a) ≡ _·_ Tgt (mor₁ m) (mor₂ a)
-
-open Hom
- #+END_SRC
-
-Theorems:
-1. (Id, Id) is a MA-Set homomorphism for any (ℳ, 𝒜)-set.
-   - Sketch: Id is a monoid homomorphism, and the coherence
-     condition is true by ≈-reflexivity.
-
-   - Formally:
-      #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
-id : ∀ {MA : MA-Set} → Hom MA MA
-id = record
-  { mor₁      = λ x → x
-  ; mor₂      = λ x → x
-  ; pres-Id   = refl
-  ; pres-⊕    = refl
-  ; coherence = refl
-  }
- #+END_SRC
-
-2. MA-Set homomorphisms are closed under composition.
-   - Sketch: The composition of monoid homomorphisms is again
-     a homomorphism; it remains to check coherence:
-    #+BEGIN_SRC haskell
-     (f₁ ∘ g₁) (m · a)
-    = f₁ (g₁ (m · a))
-    = f₁ (g₁ m · g₂ a)
-    = f₁ (g₁ m) · f₂ (g₂ a)
-    = (f₁ ∘ g₁) m · (f₂ ∘ g₂) a
-#+END_SRC
-    Whence, the coherence condition is true.
-
-   - Formally:
-    #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
-_∘_ : ∀ {MA MB MC : MA-Set}
-    → Hom MB MC
-    → Hom MA MB
-    → Hom MA MC
-_∘_ {MA} {MB} {MC} F G = record
-  { mor₁ = λ x → mor₁ F (mor₁ G x)
-  ; mor₂ = λ x → mor₂ F (mor₂ G x)
-  ; pres-Id = trans (cong (mor₁ F) (pres-Id G)) (pres-Id F)
-  ; pres-⊕ = λ {x y} → begin
-      mor₁ F (mor₁ G (_⊕_ MA x y))          ≡⟨ cong (mor₁ F) (pres-⊕ G) ⟩
-      mor₁ F (_⊕_ MB (mor₁ G x) (mor₁ G y)) ≡⟨ pres-⊕ F ⟩
-      _⊕_ MC (mor₁ F (mor₁ G x)) (mor₁ F (mor₁ G y)) ∎
-  ; coherence = λ {m a} → begin
-      mor₁ F (mor₁ G (_·_ MA m a)) ≡⟨ cong (mor₁ F) (coherence G) ⟩
-      mor₁ F (_·_ MB (mor₁ G m) (mor₂ G a)) ≡⟨ coherence F ⟩
-      _·_ MC (mor₁ F (mor₁ G m)) (mor₂ F (mor₂ G a)) ∎ }
- #+END_SRC
-
-3. MA-Sets form a category.
-
-The goal is then to show that MA-Sets have PackageFormer as an initial object!
----Initial semantics!
 
 * Shallow Embedding Approach :typechecks:
 

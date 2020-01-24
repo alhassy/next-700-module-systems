@@ -1,27 +1,12 @@
 -- The .agda file is trangled from an org file.
-module semantics-via-MA-Sets
+module semantics-via-MA-Sets where
 
-  -- We need an ambient type theory:
-  --
-  -- An infinite set of variable names
-  (𝕍 : Set)
-  -- A typing judgement for terms e of
-  -- type τ in a context Γ,
-  -- which we write Γ ⊢ e : τ
-  (let Context = Set)
-  (Expr    : Set)
-  (_⊢_∶_ : Context → Expr → Expr → Set)
-  (_⊢_type : Context → Expr → Set)
-
-  where
-  -- TODO: Ignoring optional definitions for now.
-
-open import Data.Unit
-open import Data.Product hiding (_,_)
+open import Data.Product
 open import Data.Nat
 open import Data.Sum
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
+open import Level renaming (zero to ℓ₀; suc to ℓsuc; _⊔_ to _⊍_)
 
 Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
 Σ∶• = Σ
@@ -29,67 +14,84 @@ open ≡-Reasoning
 infix -666 Σ∶•
 syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
 
-data Declaration (Γ : Context) : Set where
-  _∶_≔_ : (n : 𝕍) {τ δ : Expr} → Γ ⊢ τ type → Γ ⊢ δ ∶ τ → Declaration Γ
+record ⊤ {ℓ} : Set ℓ where
+  constructor tt
 
-∅ : Context
-∅ = ⊤
+data Just {ℓ} {A : Set ℓ} : A → Set where
+  just : (a : A) → Just a
 
-type : Context → Set₁
-type Γ = Γ → Set
+Context = λ ℓ → Set ℓ
 
-_⨾_ : (Γ : Context) (τ : type Γ) → Context
-Γ ⨾ τ = Σ γ ∶ Γ • τ γ
+type : ∀ {ℓ} → Context ℓ → Set (ℓsuc ℓ)
+type {ℓ} Γ = Γ → Set ℓ
 
--- We need to be able to speak about “contexts over contexts”
+Context′ : ∀ {ℓ} → Context ℓ → Set (ℓsuc ℓ)
+Context′ {ℓ} Ξ  =  Ξ → Set ℓ
 
-Context′ : Context → Set₁
-Context′ Ξ = Ξ → Set
+type′ : ∀ {ℓ} {Ξ : Context ℓ} → Context′ Ξ → Set (ℓsuc ℓ)
+type′ {ℓ} Γ = ∀ {ξ} → Γ ξ → Set ℓ
 
-∅′ : ∀ {Ξ} → Context′ Ξ
-∅′ = λ _ → ⊤
-
-type′ : ∀ {Ξ} → Context′ Ξ → Set₁
-type′ Γ = ∀ {ξ} → Γ ξ → Set
-
-_⨾′_ : ∀ {Ξ} → (Γ : Context′ Ξ) (τ : type′ Γ) → Context′ Ξ
-Γ ⨾′ τ = λ ξ → Σ γ ∶ Γ ξ • τ γ
-
-record PackageFormer : Set₁ where
+record PackageFormer (ℓ : Level) : Set (ℓsuc ℓ) where
   constructor _❙_
   field
-    parameters : Context
+    parameters : Context ℓ
     body       : Context′ parameters
 
-_⊎ₚ_ : PackageFormer → PackageFormer → PackageFormer
+  toContext : Context ℓ
+  toContext = Σ γ ∶ parameters • body γ
+
+∅ₚ : ∀ {ℓ} → PackageFormer ℓ
+∅ₚ = ⊤ ❙ (λ _ → ⊤)
+
+typeₚ : ∀ {ℓ} → PackageFormer ℓ → Set (ℓsuc ℓ)
+typeₚ {ℓ} (parameters ❙ body) = (Σ ξ ∶ parameters • body ξ) → Set ℓ
+
+_⊎ₚ_ : ∀ {ℓ} → PackageFormer ℓ → PackageFormer ℓ → PackageFormer ℓ
 (Γ₁ ❙ Γ₂) ⊎ₚ (Γ₁′ ❙ Γ₂′) = (Γ₁ ⊎ Γ₁′) ❙ [ Γ₂ , Γ₂′ ]
 
+_⨾ₚ_ :  ∀ {ℓ} (p : PackageFormer ℓ) → typeₚ p → PackageFormer ℓ
+(parameters ❙ body) ⨾ₚ d = parameters ❙ λ ξ → Σ β ∶ body ξ • d (ξ , β)
 
-
-
-
-record MA-Set : Set₁ where
+record MA-Set (ℓ₁ ℓ₂ : Level) : Set (ℓsuc (ℓ₁ ⊍ ℓ₂)) where
   field
-    ℳ  : Set
+    ℳ  : Set ℓ₁
     _⊕_ : ℳ → ℳ → ℳ
     Id  : ℳ
-    𝒜 :  Set
-    _·_ : ℳ → 𝒜 → ℳ
-    -- TODO: Ommiting axioms for now.
+    𝒜 :  ℳ → Set ℓ₂
+    _·_ : (m : ℳ) → 𝒜 m → ℳ  -- Note the dependency
+    -- TODO: Ommiting axioms for now; likely want a setoid structure.
 
 open MA-Set
 
-record Hom (Src Tgt : MA-Set) : Set₁ where
+MonoidPF : PackageFormer (ℓsuc ℓ₀)
+MonoidPF = (((∅ₚ
+           ⨾ₚ λ{ (tt , _) → Set})
+           ⨾ₚ λ{ (tt , (tt , Carrier)) → Lift (ℓsuc ℓ₀) Carrier})
+           ⨾ₚ λ{ (tt , ((tt , Carrier), lift point))
+                 → Lift (ℓsuc ℓ₀) (Carrier → Carrier → Carrier)})
+           ⨾ₚ λ{ (tt , (((tt , Carrier) , lift point) , lift _⊕_))
+                 → Lift (ℓsuc ℓ₀) (∀ {x} → x ⊕ point ≡ x × point ⊕ x ≡ x)}
+
+PFs-are-MA-Sets : ∀ {ℓ} → MA-Set (ℓsuc ℓ) (ℓsuc ℓ)
+PFs-are-MA-Sets {ℓ} = record
+  { ℳ   = PackageFormer ℓ
+  ; _⊕_ = _⊎ₚ_
+  ; Id  = ∅ₚ
+  ; 𝒜   = typeₚ
+  ; _·_ = _⨾ₚ_
+  }
+
+record Hom {ℓ₁ ℓ₂} (Src Tgt : MA-Set ℓ₁ ℓ₂) : Set (ℓsuc (ℓ₁ ⊍ ℓ₂)) where
   field
     mor₁ : ℳ Src → ℳ Tgt
-    mor₂ : 𝒜 Src → 𝒜 Tgt
+    mor₂ : ∀ {m} → 𝒜 Src m → 𝒜 Tgt (mor₁ m)
     pres-Id : mor₁ (Id Src) ≡ Id Tgt
     pres-⊕  : ∀ {x y} → mor₁ (_⊕_ Src x y) ≡ _⊕_ Tgt (mor₁ x) (mor₁ y)
     coherence : ∀ {m a} → mor₁ (_·_ Src m a) ≡ _·_ Tgt (mor₁ m) (mor₂ a)
 
 open Hom
 
-id : ∀ {MA : MA-Set} → Hom MA MA
+id : ∀ {ℓ₁ ℓ₂} {MA : MA-Set ℓ₁ ℓ₂} → Hom MA MA
 id = record
   { mor₁      = λ x → x
   ; mor₂      = λ x → x
@@ -98,11 +100,11 @@ id = record
   ; coherence = refl
   }
 
-_∘_ : ∀ {MA MB MC : MA-Set}
+_∘_ : ∀ {ℓ₁ ℓ₂} {MA MB MC : MA-Set ℓ₁ ℓ₂}
     → Hom MB MC
     → Hom MA MB
     → Hom MA MC
-_∘_ {MA} {MB} {MC} F G = record
+_∘_ {MA = MA} {MB} {MC} F G = record
   { mor₁ = λ x → mor₁ F (mor₁ G x)
   ; mor₂ = λ x → mor₂ F (mor₂ G x)
   ; pres-Id = trans (cong (mor₁ F) (pres-Id G)) (pres-Id F)
