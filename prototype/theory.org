@@ -4,6 +4,8 @@
 
 # Some blocks are marked “haskell” so that they are coloured and #not#
 # interpreted as agda blocks. They're informal and do not typecheck.
+#
+# Could have used agda2-example blocks, but wanted the colouring.
 
 * Table of Contents                                    :Github:TOC_4:
 - [[#introduction][Introduction]]
@@ -13,16 +15,15 @@
   - [[#syntax-declarations][Syntax Declarations]]
   - [[#helper-utilities][Helper Utilities]]
     - [[#level-polymorphic-unit-type][Level-Polymorphic Unit Type]]
-    - [[#singleton-types][Singleton Types]]
 - [[#what-is-a-type-theory][What is “a type theory”?]]
 - [[#our-ambient-type-theory][Our Ambient Type Theory]]
-- [[#contexts-over-contexts][“Contexts over Contexts”]]
-- [[#packageformers-as-pairs-of-contexts-demarcated-by-a-waist][PackageFormers as Pairs of Contexts Demarcated by a Waist]]
-- [[#mutally-associative-sets][‘M’utally ‘A’ssociative Sets]]
-  - [[#two-sanity-checks][Two Sanity Checks]]
-    - [[#actually-write-a-grouping-mechanism][Actually write a grouping mechanism]]
-    - [[#packageformers-are-ma-sets][PackageFormers are MA-Sets]]
-  - [[#ma-sets-form-a-category][MA-Sets form a Category]]
+- [[#user-interface-for-context-declaration][User Interface for Context Declaration]]
+  - [[#do-notation][Do Notation]]
+  - [[#example-records-of-𝓃-many-pointed-sets][Example: Records of 𝓃-many Pointed Sets]]
+    - [[#types][Types]]
+    - [[#instances][Instances]]
+  - [[#doubly-pointed-example----on-the-nature-of-parameters-ξ][Doubly-Pointed Example -- On the nature of parameters Ξ]]
+  - [[#magma-example----a-record-with-simulated-definitions][Magma Example -- A record with (simulated) definitions]]
 
 * Introduction
 
@@ -32,26 +33,31 @@
 
   Let's try to explain that idea.
 
-  Perhaps with canonical forms for PackageFormers we can furnish them with
-  initial semantics.
+  + We shall embed the syntax of PackageFormers using semantics functions.
+  + For now, we only focus on the record semantics of a PackageFormer. ---i.e.,
+    ~:kind record~.
 
 * Preamble
 ** Module header
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 -- The .agda file is trangled from an org file.
-module semantics-via-MA-Sets where
+module semantics where
 #+END_SRC
 ** Imports
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 open import Data.Product
 open import Data.Nat
 open import Data.Sum
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
 open import Level renaming (zero to ℓ₀; suc to ℓsuc; _⊔_ to _⊍_)
+
+import Data.Nat  as ℕ
+open import Data.Fin  as Fin using (Fin)
+open import Data.Bool renaming (Bool to 𝔹)
 #+END_SRC
 ** Syntax Declarations
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
 Σ∶• = Σ
 
@@ -61,21 +67,21 @@ syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
 
 ** Helper Utilities
 *** Level-Polymorphic Unit Type
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 record ⊤ {ℓ} : Set ℓ where
   constructor tt
 #+END_SRC
-*** Singleton Types
+*** COMMENT Singleton Types
 We'll be treating contexts as sets and so will require a singleton types for
 adjoining declarations.
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 data Just {ℓ} {A : Set ℓ} : A → Set where
   just : (a : A) → Just a
 #+END_SRC
 * What is “a type theory”?
   To get anything done, we'll need an ambient type theory that provides us with
-  a set of variable names 𝕍 and typing judgements. The comments below are what
-  a classical type theory would have.
+  a set of variable names 𝕍 and typing judgements. The comments below are what a
+  classical type theory would have.
 #+BEGIN_SRC agda2
 record TypeTheory : Set₁ where
   field
@@ -100,7 +106,7 @@ It seems that with the typing judgement, we can regain the kinding judgement:
 Within a type theory, we can define a notion of declarations.
 #+BEGIN_SRC agda2
   data Declaration (Γ : Context) : Set where
-    _∶_≔_ : (n : 𝕍) {τ δ : Expr Γ} → Γ ⊢ τ type → Γ ⊢ δ ∶ τ → Declaration Γ
+    _∶_≔_by_and_ : (n : 𝕍) (τ δ : Expr Γ) → Γ ⊢ τ type → Γ ⊢ δ ∶ τ → Declaration Γ
 #+END_SRC
 
   :Informal_Type_of_Declarations:
@@ -113,27 +119,29 @@ Within a type theory, we can define a notion of declarations.
 
 * Our Ambient Type Theory
 Rather than working with an opaque, and generic, instance of a type theory, we
-will work with a particular instance.
+will work with a particular instance: Agda's type theory.
 
 | We ignore syntax and jump straight to semantics ---whence no expression type! |
 
 0. At the level of semantics, we may use Agda's variables instead of a
    dedicated variable type.
-1. A <<context>> is nothing more than a set.
-   - With the ‘smart constructors’ below, a context is a dependent product of
-     types wherein later type-declarations may depend on earlier ones.
-2. A <<type>> determined by a context is a set than can be obtained
+1. A context is nothing more than a set.
+   - With the ‘smart constructors’ below, a context is a dependent sum of types
+     wherein later type-declarations may depend on earlier ones.
+2. A type /determined by/ a context is a set than can be obtained
    using the context.
 
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 Context = λ ℓ → Set ℓ
-
+#+END_SRC
+#+BEGIN_SRC agda2
 type : ∀ {ℓ} → Context ℓ → Set (ℓsuc ℓ)
 type {ℓ} Γ = Γ → Set ℓ
 #+END_SRC
 
 With this elementary setup, we can, for example, denote context extension with
-dependent products ---whose unit, a singleton type, acts as the “empty context”:
+existentials, also known as dependent products ---whose unit, a singleton type,
+acts as the “empty context”:
 #+BEGIN_SRC agda2
 ∅ : Context ℓ₀
 ∅ = ⊤
@@ -141,11 +149,126 @@ dependent products ---whose unit, a singleton type, acts as the “empty context
 _⨾_ : ∀ {ℓ} (Γ : Context ℓ) (τ : type Γ) → Context ℓ
 Γ ⨾ τ = Σ γ ∶ Γ • τ γ
 #+END_SRC
-These names are not exported to the resulting Agda file, since they are
-not needed. In particular, we will ‘reuse’ these names until we have
-‘satisfactory’ definitions.
+These names are not exported to the resulting Agda file, since they are not
+needed. In particular, we will ‘reuse’ these names until we have ‘satisfactory’
+definitions.
 
-* “Contexts over Contexts”
+* User Interface for Context Declaration
+
+** Do Notation
+  Agda allows one to use an imperative style of programming ---using
+  ~do~-notation--- provided there are two mixfix functions ~_>>=_~ and ~_>>_~ in
+  scope.
+  + Importantly, only their existence is required; nothing else is assumed.
+  + In particular, no monadic type constructor need be implicitly available.
+    - This is the feature we exploit.
+
+#+BEGIN_SRC agda2 :tangle semantics.agda
+infixr 1 _>>=_ _>>_
+
+_>>_ : ∀ {ℓ} → Context ℓ → Context ℓ → Context ℓ
+p >> q = p ⊎ q
+
+_>>=_ : ∀ {a ℓ}
+      → (Γ : Context a)
+      → (Γ → Context ℓ)
+      → Context (a ⊍ ℓ)
+Γ >>= f = (Σ γ ∶ Γ • f γ)
+-- The new piece, f γ, is kept along with the old existing context via “γ ∶ Γ”.
+#+END_SRC
+
+The notation may be ~do…End~ using the following combinator.
+However, in general, it may be ~do…𝒮~ for any set expression 𝒮.
+#+BEGIN_SRC agda2 :tangle semantics.agda
+End : ∀ {ℓ} → Context ℓ
+End {ℓ} = ⊤ {ℓ}
+#+END_SRC
+
+** Example: Records of 𝓃-many Pointed Sets
+
+   What do PackageFormers look like using the ~do~-notation and what do their
+   instances look like? Surprisingly close to existing Agda record syntax for
+   declarations and Agda tuples for instances.
+
+*** Types
+Let's form a grouping consisting of a single type and a value of that type,
+along with an instance of the parameter type Ξ.
+#+BEGIN_SRC agda2 :tangle semantics.agda
+PointedPF : (Ξ : Context (ℓsuc ℓ₀)) → Context (ℓsuc ℓ₀)
+PointedPF Ξ = do Carrier ← Set
+                 point   ← Carrier
+                 Ξ
+#+END_SRC
+
+Let's consider concrete instances of the parameter Ξ.
+#+BEGIN_SRC agda2 :tangle semantics.agda
+-- A record type --- Σ Set ∶ Carrier • Σ point ∶ Carrier • ⊤
+PointedSet = PointedPF ⊤
+
+-- An extended record type
+-- Σ Set ∶ Carrier₁ • Σ point₁ ∶ Carrier₁ • (Σ Carrier₂ ∶ Set • Σ point₂ ∶ Carrier₁ • ⊤)
+TwoPointedSets = PointedPF PointedSet
+#+END_SRC
+More generally:
+#+BEGIN_SRC agda2 :tangle semantics.agda
+_PointedSets : ℕ → Set₁
+zero  PointedSets = ⊤
+suc n PointedSets = PointedPF (n PointedSets)
+
+-- C-c C-n 4 PointedSets ⇒ Somewhat readable definition of the record!
+#+END_SRC
+
+Here we already have power: It's difficult to create the family of types =n
+PointedSets= using existing Agda record syntax since the number of fields, /2 × n/,
+depends on =n=.
+
+| Record /structure/ can be dependent on values! |
+
+*** Instances
+#+BEGIN_SRC agda2 :tangle semantics.agda
+example₁ : PointedSet
+example₁ = ℕ , 0 , tt
+
+example₂ : PointedSet
+example₂ = Fin.Fin 3 , Fin.suc Fin.zero , tt
+
+example₃ : TwoPointedSets
+example₃ = 𝔹 , true , example₁
+-- A pointed nat extended by a pointed bool, with particular choices for both.
+#+END_SRC
+
+** Doubly-Pointed Example -- On the nature of parameters Ξ
+What is a parameter exactly?
+
+#+BEGIN_SRC agda2 :tangle semantics.agda
+TwoParameterPoints : ∀ {ℓ} (Ξ : Context ℓ) → Context ℓ
+TwoParameterPoints {ℓ} Ξ = do one   ← Ξ
+                              two   ← Ξ
+                              End {ℓ}
+
+-- C-c C-n TwoParameterPoints   ⇒   λ Ξ → Σ one ∶ Ξ • Σ two ∶ Ξ • ⊤
+
+example₄ : TwoParameterPoints 𝔹
+example₄ = false , false , tt  -- Obtained with C-c C-a
+
+example₅ : TwoParameterPoints PointedSet
+example₅ = example₁ , example₂ , tt
+#+END_SRC
+
+** Magma Example -- A record with (simulated) definitions
+#+BEGIN_SRC agda2 :tangle semantics.agda
+Magma : ∀ {ℓ} → Context ℓ → Context (ℓsuc ℓ)
+Magma {ℓ} Ξ = do Carrier ← Set ℓ
+                 _⊕_     ← (Carrier → Carrier → Carrier)
+                 one     ← Carrier
+                 two     ← Carrier
+                 two ≡ one ⊕ one  -- ‘Defn’ of two
+
+example₆ : Magma ⊤
+example₆ = ℕ , ℕ._+_ , 4 , 8 , refl
+#+END_SRC
+
+* COMMENT “Contexts over Contexts”
 
 Informally =x₀ : τ₀, … ❙ y₀ : τ₀; …=  denotes two contexts, ~Γ₁ ❙ Γ₂~, where the
 first is an elementary context and the latter is a context whose declarations
@@ -155,7 +278,7 @@ of the context ~Γ₁~. We say =Γ₂= is a /context over context/ =Γ₁=.
 1. A <<context over a context>>> is a dependent-type, from contexts to contexts.
 2. A <<type over a dependent-context>> is an context-indexed family of sets.
 
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 Context′ : ∀ {ℓ} → Context ℓ → Set (ℓsuc ℓ)
 Context′ {ℓ} Ξ  =  Ξ → Set ℓ
 
@@ -174,11 +297,11 @@ _⨾_ : ∀ {ℓ} {Ξ : Context ℓ} → (Γ : Context′ Ξ) (τ : type′ Γ) 
 Note: These names are not exported to the resulting Agda file, since they are
 not needed.
 
-* PackageFormers as Pairs of Contexts Demarcated by a Waist
+* COMMENT PackageFormers as Pairs of Contexts Demarcated by a Waist
 
 As already mentioned, a PackageFormer is a pair of contexts where the latter
 depends on the former.
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 record PackageFormer (ℓ : Level) : Set (ℓsuc ℓ) where
   constructor _❙_
   field
@@ -187,7 +310,7 @@ record PackageFormer (ℓ : Level) : Set (ℓsuc ℓ) where
     #+END_SRC
 
 Unsurprisingly every PackageFormer can be coerced into a context:
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
   toContext : Context ℓ
   toContext = Σ γ ∶ parameters • body γ
 #+END_SRC
@@ -200,7 +323,7 @@ entities, the smallness of which is captured with the level.
 The smart constructors from before can be lifted to this notion
 ---we suffix PackageFormer entities uniformly for clarity.
 
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 ∅ₚ : ∀ {ℓ} → PackageFormer ℓ
 ∅ₚ = ⊤ ❙ (λ _ → ⊤)
 
@@ -208,12 +331,12 @@ typeₚ : ∀ {ℓ} → PackageFormer ℓ → Set (ℓsuc ℓ)
 typeₚ {ℓ} (parameters ❙ body) = (Σ ξ ∶ parameters • body ξ) → Set ℓ
 #+END_SRC
 
-* ‘M’utally ‘A’ssociative Sets
+* COMMENT ‘M’utally ‘A’ssociative Sets
 
   The simplest thing we can do with contexts is ‘stick them together’,
   but a more natural operation is to extend a context with a new declaration.
 
-  #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+  #+BEGIN_SRC agda2 :tangle semantics.agda
 _⊎ₚ_ : ∀ {ℓ} → PackageFormer ℓ → PackageFormer ℓ → PackageFormer ℓ
 (Γ₁ ❙ Γ₂) ⊎ₚ (Γ₁′ ❙ Γ₂′) = (Γ₁ ⊎ Γ₁′) ❙ [ Γ₂ , Γ₂′ ]
 
@@ -250,7 +373,7 @@ is a ‘weakening’ rule.
 + For now, we only implement the substructure that is necessary.
 + Perhaps additional structure needs to be added, or other to be removed.
 
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 record MA-Set (ℓ₁ ℓ₂ : Level) : Set (ℓsuc (ℓ₁ ⊍ ℓ₂)) where
   field
     ℳ  : Set ℓ₁
@@ -272,7 +395,7 @@ open MA-Set
 
 ** Two Sanity Checks
 *** Actually write a grouping mechanism
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 MonoidPF : PackageFormer (ℓsuc ℓ₀)
 MonoidPF = (((∅ₚ
            ⨾ₚ λ{ (tt , _) → Set})
@@ -284,7 +407,7 @@ MonoidPF = (((∅ₚ
 #+END_SRC
 TODO: Obtain working monad syntax.
 *** PackageFormers are MA-Sets
-#+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+#+BEGIN_SRC agda2 :tangle semantics.agda
 PFs-are-MA-Sets : ∀ {ℓ} → MA-Set (ℓsuc ℓ) (ℓsuc ℓ)
 PFs-are-MA-Sets {ℓ} = record
   { ℳ   = PackageFormer ℓ
@@ -305,7 +428,7 @@ set and respect the action; i.e.,
 
    Notice that when ~a : 𝒜 m~ then necessarily ~h₂ a : 𝒜′ (h₁ m)~.
 
- #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 record Hom {ℓ₁ ℓ₂} (Src Tgt : MA-Set ℓ₁ ℓ₂) : Set (ℓsuc (ℓ₁ ⊍ ℓ₂)) where
   field
     mor₁ : ℳ Src → ℳ Tgt
@@ -323,7 +446,7 @@ Conjectures:
      condition is true by ≈-reflexivity.
 
    - Formally:
-      #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+      #+BEGIN_SRC agda2 :tangle semantics.agda
 
 id : ∀ {ℓ₁ ℓ₂} {MA : MA-Set ℓ₁ ℓ₂} → Hom MA MA
 id = record
@@ -348,7 +471,7 @@ id = record
     Whence, the coherence condition is true.
 
    - Formally:
-    #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+    #+BEGIN_SRC agda2 :tangle semantics.agda
 _∘_ : ∀ {ℓ₁ ℓ₂} {MA MB MC : MA-Set ℓ₁ ℓ₂} → Hom MB MC → Hom MA MB → Hom MA MC
 _∘_ {MA = MA} {MB} {MC} F G = record
   { mor₁ = λ x → mor₁ F (mor₁ G x)
@@ -369,49 +492,76 @@ _∘_ {MA = MA} {MB} {MC} F G = record
 The goal is then to show that MA-Sets have PackageFormer as an initial object!
 ---Initial semantics!
 
-* COMMENT Monad Syntax 🚧                              :construction_site:
+* COMMENT 🚧  Other Rndm Ideas
+#+BEGIN_SRC agda2 :tangle semantics.agda
 
--- _▷_ : ∀ {ℓ} → (P : PackageFormer ℓ) → Declaration (toContext P) → PackageFormer ℓ
--- (parameters ❙ body) ▷ d@(n ∶ τ ≔ δ) = parameters ❙ λ p → body p ⊎ Just d
+-- one-fun : ∀ {b ℓ} {𝑩 : Set ℓ → Set b} → Σ A ∶ Set ℓ • 𝑩 A  -- “Shape of given context”
+--                                       → (A : Set ℓ) → 𝑩 A
+-- one-fun = {!!}
+--
+{-
+Σ (Set _ℓ_511)
+(λ Carrier →
+   Σ (Carrier → Carrier → Carrier)
+   (λ _⊕₁_ →
+      Σ Carrier (λ one → Σ Carrier (λ two → two ≡ (one ⊕₁ one)))))
+-}
 
 --------------------------------------------------------------------------------
 
--- TODO: Monad notation for PackageFormer
--- The type mismatch in >>= gives a quick, but unsound, implementation.
+{-
+-- “A -⟨ n ⟩→ B” ≈ A → ⋯ → A → B with n+1 many A’s.
+_-⟨_⟩→_ : ∀ {a b} (A : Set a) (n : ℕ) (B : Set b) → Set (a ⊍ b)
+A -⟨ 0 ⟩→ B     = A → B
+A -⟨ suc n ⟩→ B = A → A -⟨ n ⟩→ B
 
-MA: Use Context′ instead! Neato ^_^
-Then maybe “waist n” beforehand to run it into a PackageFormer.
+Prod : ∀ ℓ → ℕ → ℕ → Set (ℓsuc ℓ)
+Prod ℓ m ℕ.zero    = ⊤
+Prod ℓ m (ℕ.suc n) = Σ A ∶ Set ℓ • Prod ℓ m n
+-}
+-- waist3 : ∀ {ℓ n} → Prod (3 + n) → Prod n
 
-infixr 1 _>>=_ _>>_
-
-open PackageFormer
-
-_>>=_ : ∀ {ℓ}
-      → (P : PackageFormer ℓ)
-      → ((Σ ξ ∶ parameters P • body P ξ) → Set ℓ) → PackageFormer ℓ
-p >>= τ = p ⨾ₚ τ
-
-_>>_ : ∀ {ℓ} → PackageFormer ℓ → PackageFormer ℓ → PackageFormer ℓ
-p >> q = p ⊎ₚ q
-
+{-
 ‵_ : ∀ {ℓ} → Set ℓ → PackageFormer ℓ
-‵ typ = Empty ⨾ₚ λ _ → typ
+‵ typ = ∅ₚ ⨾ₚ λ _ → typ
 
 MonoidPF′ : PackageFormer {!!}
 MonoidPF′ = do carrier ← ‵ Set
                point  ← ‵ Set
                ⊤
-
-{-
-typeP : ∀ {ℓ} → PackageFormer ℓ → Set (ℓsuc ℓ)
-typeP {ℓ} (parameters ❙ body) = (Σ ξ ∶ parameters • body ξ) → Set ℓ
-
-_⨾ₚ_ :  ∀ {ℓ} (p : PackageFormer ℓ)
-       → typeP p
-       → PackageFormer ℓ
-(parameters ❙ body) ⨾ₚ d = parameters ❙ λ ξ → Σ β ∶ body ξ • d (ξ , β)
 -}
 
+#+END_SRC
+
+#+BEGIN_SRC agda2
+infixr 4 _⸴_ -- \,
+_⸴_ : ∀ {ℓ a b} {A : Set a} {B : A → Set b}
+    → (x : A)
+    → B x
+    → Lift ℓ (Σ x ∶ A • B x)
+a ⸴ b = lift (a , b)
+#+END_SRC
+
+** COMMENT Explorations with =Context′=
+#+BEGIN_SRC agda2 :tangle semantics.agda
+_>>=_ : ∀ {ℓ} {α β : Context ℓ}
+      → Context′ α
+      → (α → Context′ β)
+      → Context′ β
+_>>=_ {α = Ξ} Γ f = λ ν → Σ ξ ∶ Ξ • f ξ ν
+
+‵_ : ∀ {ℓ} (C : Set ℓ) → Context′ C
+‵ typ = λ _ → typ
+
+-- Not everything lives at the same level, so a helpfer to lift things.
+‵‵_ : ∀ {a ℓ} (C : Set ℓ) → Context′ {ℓ ⊍ a} (Lift a C)
+‵‵_ {a} typ = λ _ → Lift a typ
+#+END_SRC
+
+** COMMENT Monad Syntax 🚧                                :construction_site:
+
+ -- _▷_ : ∀ {ℓ} → (P : PackageFormer ℓ) → Declaration (toContext P) → PackageFormer ℓ
+ -- (parameters ❙ body) ▷ d@(n ∶ τ ≔ δ) = parameters ❙ λ p → body p ⊎ Just d
 * COMMENT Here are some laws that allow one to reach the claimed canonical form:
   1. `:waist w ⟴ :kind k ≈ :kind k ⟴ :waist w`
 
@@ -472,7 +622,7 @@ In the informal notation of contexts of type theory, the three operations ⸵, �
 ⊎ are denoted “,”.
 
 *** PackageFormers and derived =_⊎_=
- #+BEGIN_SRC agda2 :tangle semantics-via-MA-Sets.agda
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 record PackageFormer : Set₁ where
   constructor _❙_
   field
