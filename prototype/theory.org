@@ -18,12 +18,12 @@
 - [[#what-is-a-type-theory][What is “a type theory”?]]
 - [[#our-ambient-type-theory][Our Ambient Type Theory]]
 - [[#user-interface-for-context-declaration][User Interface for Context Declaration]]
-  - [[#do-notation][Do Notation]]
+  - [[#smart-constructors-as-do-notation][Smart Constructors as Do Notation]]
   - [[#example-records-of-𝓃-many-pointed-sets][Example: Records of 𝓃-many Pointed Sets]]
     - [[#types][Types]]
     - [[#instances][Instances]]
   - [[#doubly-pointed-example----on-the-nature-of-parameters-ξ][Doubly-Pointed Example -- On the nature of parameters Ξ]]
-  - [[#magma-example----a-record-with-simulated-definitions][Magma Example -- A record with (simulated) definitions]]
+  - [[#example--a-record-type-with-invariants][Example – A record type with invariants]]
 
 * Introduction
 
@@ -117,6 +117,10 @@ Within a type theory, we can define a notion of declarations.
   a type and ~δ~ is of that type, and ~n~ must be a fresh name.
   :End:
 
+The purpose of this section is merely to make it clear what a type theory
+consists of ---we will not make any instances of the ~TypeTheory~ record type.
++ It is a learning moment, for me.
+
 * Our Ambient Type Theory
 Rather than working with an opaque, and generic, instance of a type theory, we
 will work with a particular instance: Agda's type theory.
@@ -155,19 +159,15 @@ definitions.
 
 * User Interface for Context Declaration
 
-** Do Notation
+** Smart Constructors as Do Notation
   Agda allows one to use an imperative style of programming ---using
-  ~do~-notation--- provided there are two mixfix functions ~_>>=_~ and ~_>>_~ in
-  scope.
+  ~do~-notation--- provided there are mixfix functions ~_>>=_~ and ~_>>_~ in scope.
   + Importantly, only their existence is required; nothing else is assumed.
   + In particular, no monadic type constructor need be implicitly available.
     - This is the feature we exploit.
 
 #+BEGIN_SRC agda2 :tangle semantics.agda
-infixr 1 _>>=_ _>>_
-
-_>>_ : ∀ {ℓ} → Context ℓ → Context ℓ → Context ℓ
-p >> q = p ⊎ q
+infixr 1 _>>=_
 
 _>>=_ : ∀ {a ℓ}
       → (Γ : Context a)
@@ -175,6 +175,11 @@ _>>=_ : ∀ {a ℓ}
       → Context (a ⊍ ℓ)
 Γ >>= f = (Σ γ ∶ Γ • f γ)
 -- The new piece, f γ, is kept along with the old existing context via “γ ∶ Γ”.
+
+-- Using the default definition of _>>_
+infixr 1 _>>_
+_>>_ : ∀ {a b} → Context a → Context b → Context (a ⊍ b)
+p >> q = p >>= (λ _ → q)
 #+END_SRC
 
 The notation may be ~do…End~ using the following combinator.
@@ -183,6 +188,13 @@ However, in general, it may be ~do…𝒮~ for any set expression 𝒮.
 End : ∀ {ℓ} → Context ℓ
 End {ℓ} = ⊤ {ℓ}
 #+END_SRC
+
+These two pieces together are the aforementioned ‘smart constructors’:
++ ~Γ ⨾ τ~ is given the new syntax as ~Γ >>= τ~.
++ ~∅~ is given the syntax ~End~.
+
+/It is important to remember that these smart constructors form grouping
+mechanisms, not instances of them/; which is accomplished using tuples.
 
 ** Example: Records of 𝓃-many Pointed Sets
 
@@ -255,17 +267,26 @@ example₅ : TwoParameterPoints PointedSet
 example₅ = example₁ , example₂ , tt
 #+END_SRC
 
-** Magma Example -- A record with (simulated) definitions
-#+BEGIN_SRC agda2 :tangle semantics.agda
-Magma : ∀ {ℓ} → Context ℓ → Context (ℓsuc ℓ)
-Magma {ℓ} Ξ = do Carrier ← Set ℓ
-                 _⊕_     ← (Carrier → Carrier → Carrier)
-                 one     ← Carrier
-                 two     ← Carrier
-                 two ≡ one ⊕ one  -- ‘Defn’ of two
+** Example – A record type with invariants
 
-example₆ : Magma ⊤
-example₆ = ℕ , ℕ._+_ , 4 , 8 , refl
+We can simulate definitions in a record via type invariants.
+
+#+BEGIN_SRC agda2 :tangle semantics.agda
+PointedMagma : ∀ {ℓ} → Context ℓ → Context (ℓsuc ℓ)
+PointedMagma {ℓ} Ξ = do Carrier ← Set ℓ
+                        _⊕_     ← (Carrier → Carrier → Carrier)
+                        one     ← Carrier
+                        two     ← Carrier
+                        three   ← Carrier
+                        -- ‘Definitions’
+                        two   ≡ one ⊕ one
+                        three ≡ one ⊕ two
+#+END_SRC
+The multiple laws, along with the following instance, increase confidence
+in our definitions of ~_>>=_~ and ~_>>_~.
+#+BEGIN_SRC agda2 :tangle semantics.agda
+example₆ : PointedMagma ⊤
+example₆ = ℕ , ℕ._+_ , 4 , 8 , 12 , refl {x = 8} , refl {x = 12}
 #+END_SRC
 
 * COMMENT “Contexts over Contexts”

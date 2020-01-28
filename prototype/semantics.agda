@@ -23,10 +23,7 @@ record ⊤ {ℓ} : Set ℓ where
 
 Context = λ ℓ → Set ℓ
 
-infixr 1 _>>=_ _>>_
-
-_>>_ : ∀ {ℓ} → Context ℓ → Context ℓ → Context ℓ
-p >> q = p ⊎ q
+infixr 1 _>>=_
 
 _>>=_ : ∀ {a ℓ}
       → (Γ : Context a)
@@ -34,6 +31,11 @@ _>>=_ : ∀ {a ℓ}
       → Context (a ⊍ ℓ)
 Γ >>= f = (Σ γ ∶ Γ • f γ)
 -- The new piece, f γ, is kept along with the old existing context via “γ ∶ Γ”.
+
+-- Using the default definition of _>>_
+infixr 1 _>>_
+_>>_ : ∀ {a b} → Context a → Context b → Context (a ⊍ b)
+p >> q = p >>= (λ _ → q)
 
 End : ∀ {ℓ} → Context ℓ
 End {ℓ} = ⊤ {ℓ}
@@ -79,12 +81,15 @@ example₄ = false , false , tt  -- Obtained with C-c C-a
 example₅ : TwoParameterPoints PointedSet
 example₅ = example₁ , example₂ , tt
 
-Magma : ∀ {ℓ} → Context ℓ → Context (ℓsuc ℓ)
-Magma {ℓ} Ξ = do Carrier ← Set ℓ
-                 _⊕_     ← (Carrier → Carrier → Carrier)
-                 one     ← Carrier
-                 two     ← Carrier
-                 two ≡ one ⊕ one  -- ‘Defn’ of two
+PointedMagma : ∀ {ℓ} → Context ℓ → Context (ℓsuc ℓ)
+PointedMagma {ℓ} Ξ = do Carrier ← Set ℓ
+                        _⊕_     ← (Carrier → Carrier → Carrier)
+                        one     ← Carrier
+                        two     ← Carrier
+                        three   ← Carrier
+                        -- ‘Definitions’
+                        two   ≡ one ⊕ one
+                        three ≡ one ⊕ two
 
-example₆ : Magma ⊤
-example₆ = ℕ , ℕ._+_ , 4 , 8 , refl
+example₆ : PointedMagma ⊤
+example₆ = ℕ , ℕ._+_ , 4 , 8 , 12 , refl {x = 8} , refl {x = 12}
