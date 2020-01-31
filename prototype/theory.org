@@ -7,6 +7,95 @@
 #
 # Could have used agda2-example blocks, but wanted the colouring.
 
+*Current Status*
+
+I've been working on taking something as follows,
+#+begin_src agda2
+do X ← Set
+   e ← X
+   e ≡ e
+#+end_src
+That is ~Set >>= λ X → X >>= λ e → e ≡ e~, but I want to seed it with an initial
+number 𝓃 which is reduced with each line. Instead of ~>>=~, let me write ~⊕ₙ~:
+~(m >>= λ x → e) = ((x ∶ m) ⊕ₙ e)~.
+
+Then, I'd like to have the above example desugar to ~(X : Set) ⊕₁ (e : X) ⊕₀ (e ≡
+e)~ ---where the family ~⊕ₙ~ is right associative and we are using seed ~𝓃 = 1~.
+
+- ➩ The family ~⊕ₙ~ serves to demarcate parameters from the remainder of a context.
+- ➩ ~m ⊕ₙ f = (Σ m f)~ if /n = 0/ and ~m ⊕ₙ f = (x : m) → f x~ if /n ≠ 0/.
+
+The past week I've been trying multiple approaches to define ~Context~ and to
+defined ~⊕~. Here are some I've tried.
+
+:Hide:
+#+begin_src agda2 :tangle semantics-with-waist.agda
+module semantics-with-waist.agda where
+
+open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc)
+open import Data.Nat
+open import Data.Product
+Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
+Σ∶• = Σ
+infix -666 Σ∶•
+syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
+#+end_src
+:End:
+#+begin_src agda2 :tangle semantics-with-waist.agda
+Context¹ = λ ℓ → Set ℓ
+_⊕¹_ : ∀ {i j} → (A : Context¹ i)
+               → (f : A → Context¹ j)
+               → ℕ → Context¹ (i ⊍ j)
+(Γ ⊕¹ f) ℕ.zero    = Σ x ∶ Γ • f x
+(Γ ⊕¹ f) (ℕ.suc n) = (x : Γ) → f x
+#+end_src
+The problem here is that the number 𝓃 is encountered, a decision of type former
+is selected, and 𝓃 is discarded. It should instead be “passed on” to other
+declarations.
+
++ State monad suggests itself.
+
+#+begin_src agda2 :tangle semantics-with-waist.agda
+Context² = λ ℓ → ℕ → ℕ × Set ℓ
+set = λ {ℓ} (A : Context² ℓ) → proj₂ (A 0)
+_⊕²_ : ∀ {i j} → (A : Context² i)
+               → (f : set A → Context² j)
+               → Context² (i ⊍ j)
+(Γ ⊕² f) ℕ.zero    = 0 , Σ x ∶ (set Γ) • set (f x)
+(Γ ⊕² f) (ℕ.suc n) = n , ((x : set Γ) → set (f x))
+#+end_src
+The problem here is the arbitrary definition of ~set~, and the fact that we cannot
+make use of ~f~'s alteration of ~𝓃~:
+| The 𝓃 lives outside, but it can only be altered as in ~f x 𝓃~, which requires an ~x~! |
+
++ Lenses suggest themselves.
+
+#+begin_src agda2 :tangle semantics-with-waist.agda
+record Context³ ℓ : Set (ℓsuc ℓ) where
+  constructor MkCtx³
+  field
+    set³ : Set ℓ
+    put  : ℕ → set³
+    get  : ℕ
+#+end_src
+
+The same problem arises: We need to alter 𝓃, but cannot do so without calling ~f~
+which cannot be invoked without having an ~x~.
+
+Here are other routes I've tried and failed for similar reasons:
++ ~Context ℓ = ℕ × Set ℓ~
++ ~Context ℓ = (ℕ → ℕ) × Set ℓ~
++ ~_⊕_ : ⋯ → (f : ⊤ ⊎ A → Context ℓ)~
+  - In an effort to call ~f~ so as to alter 𝓃 /without/ providing an ~x~.
+  - Failed horribly in actually use: ~(x : X) ⊕ₙ f x~ is means ~x~ it /not/ a value of
+    ~X~ but rather a value of ~⊤ ⊎ X~ and so we always need to account for both
+    cases.
++ I've tried other formulations of ⊕ and ~Context~, but unfortunately I kept no
+  record of them. I honestly thought that their definitions were easy and that I
+  was just a bit off the mark ---a week later I'm no longer certain.
+
+/Any guidance would be appreciated!/
+
 * Table of Contents                                    :Github:TOC_4:
 - [[#introduction][Introduction]]
 - [[#preamble][Preamble]]
