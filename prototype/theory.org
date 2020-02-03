@@ -7,94 +7,8 @@
 #
 # Could have used agda2-example blocks, but wanted the colouring.
 
-*Current Status*
-
-I've been working on taking something as follows,
-#+begin_src agda2
-do X ← Set
-   e ← X
-   e ≡ e
-#+end_src
-That is ~Set >>= λ X → X >>= λ e → e ≡ e~, but I want to seed it with an initial
-number 𝓃 which is reduced with each line. Instead of ~>>=~, let me write ~⊕ₙ~:
-~(m >>= λ x → e) = ((x ∶ m) ⊕ₙ e)~.
-
-Then, I'd like to have the above example desugar to ~(X : Set) ⊕₁ (e : X) ⊕₀ (e ≡
-e)~ ---where the family ~⊕ₙ~ is right associative and we are using seed ~𝓃 = 1~.
-
-- ➩ The family ~⊕ₙ~ serves to demarcate parameters from the remainder of a context.
-- ➩ ~m ⊕ₙ f = (Σ m f)~ if /n = 0/ and ~m ⊕ₙ f = (x : m) → f x~ if /n ≠ 0/.
-
-The past week I've been trying multiple approaches to define ~Context~ and to
-defined ~⊕~. Here are some I've tried.
-
-:Hide:
-#+begin_src agda2 :tangle semantics-with-waist.agda
-module semantics-with-waist.agda where
-
-open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc)
-open import Data.Nat
-open import Data.Product
-Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
-Σ∶• = Σ
-infix -666 Σ∶•
-syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
-#+end_src
-:End:
-#+begin_src agda2 :tangle semantics-with-waist.agda
-Context¹ = λ ℓ → Set ℓ
-_⊕¹_ : ∀ {i j} → (A : Context¹ i)
-               → (f : A → Context¹ j)
-               → ℕ → Context¹ (i ⊍ j)
-(Γ ⊕¹ f) ℕ.zero    = Σ x ∶ Γ • f x
-(Γ ⊕¹ f) (ℕ.suc n) = (x : Γ) → f x
-#+end_src
-The problem here is that the number 𝓃 is encountered, a decision of type former
-is selected, and 𝓃 is discarded. It should instead be “passed on” to other
-declarations.
-
-+ State monad suggests itself.
-
-#+begin_src agda2 :tangle semantics-with-waist.agda
-Context² = λ ℓ → ℕ → ℕ × Set ℓ
-set = λ {ℓ} (A : Context² ℓ) → proj₂ (A 0)
-_⊕²_ : ∀ {i j} → (A : Context² i)
-               → (f : set A → Context² j)
-               → Context² (i ⊍ j)
-(Γ ⊕² f) ℕ.zero    = 0 , Σ x ∶ (set Γ) • set (f x)
-(Γ ⊕² f) (ℕ.suc n) = n , ((x : set Γ) → set (f x))
-#+end_src
-The problem here is the arbitrary definition of ~set~, and the fact that we cannot
-make use of ~f~'s alteration of ~𝓃~:
-| The 𝓃 lives outside, but it can only be altered as in ~f x 𝓃~, which requires an ~x~! |
-
-+ Lenses suggest themselves.
-
-#+begin_src agda2 :tangle semantics-with-waist.agda
-record Context³ ℓ : Set (ℓsuc ℓ) where
-  constructor MkCtx³
-  field
-    set³ : Set ℓ
-    put  : ℕ → set³
-    get  : ℕ
-#+end_src
-
-The same problem arises: We need to alter 𝓃, but cannot do so without calling ~f~
-which cannot be invoked without having an ~x~.
-
-Here are other routes I've tried and failed for similar reasons:
-+ ~Context ℓ = ℕ × Set ℓ~
-+ ~Context ℓ = (ℕ → ℕ) × Set ℓ~
-+ ~_⊕_ : ⋯ → (f : ⊤ ⊎ A → Context ℓ)~
-  - In an effort to call ~f~ so as to alter 𝓃 /without/ providing an ~x~.
-  - Failed horribly in actually use: ~(x : X) ⊕ₙ f x~ is means ~x~ it /not/ a value of
-    ~X~ but rather a value of ~⊤ ⊎ X~ and so we always need to account for both
-    cases.
-+ I've tried other formulations of ⊕ and ~Context~, but unfortunately I kept no
-  record of them. I honestly thought that their definitions were easy and that I
-  was just a bit off the mark ---a week later I'm no longer certain.
-
-/Any guidance would be appreciated!/
+| Status | Instantiation for latest notion of =Context=-s not working |
+↪ See the very bottom of this article.
 
 * Table of Contents                                    :Github:TOC_4:
 - [[#introduction][Introduction]]
@@ -113,6 +27,15 @@ Here are other routes I've tried and failed for similar reasons:
     - [[#instances][Instances]]
   - [[#doubly-pointed-example----on-the-nature-of-parameters-ξ][Doubly-Pointed Example -- On the nature of parameters Ξ]]
   - [[#example--a-record-type-with-invariants][Example – A record type with invariants]]
+- [[#parameterised-records][Parameterised Records]]
+  - [[#header][Header]]
+  - [[#introduction-1][Introduction]]
+  - [[#context-_-end][~Context, ‵_, End~]]
+  - [[#__][~_>>_~]]
+  - [[#dynamical-systems][Dynamical Systems]]
+  - [[#stablity][~stablity~]]
+  - [[#natural-number-instance][Natural Number Instance]]
+  - [[#modus-ponens--][Modus Ponens … ⁉]]
 
 * Introduction
 
@@ -282,6 +205,8 @@ These two pieces together are the aforementioned ‘smart constructors’:
 + ~Γ ⨾ τ~ is given the new syntax as ~Γ >>= τ~.
 + ~∅~ is given the syntax ~End~.
 
+# You could define _>>=_ and End as aliases for _⨾_ and ∅.
+
 /It is important to remember that these smart constructors form grouping
 mechanisms, not instances of them/; which is accomplished using tuples.
 
@@ -349,7 +274,11 @@ TwoParameterPoints {ℓ} Ξ = do one   ← Ξ
 
 -- C-c C-n TwoParameterPoints   ⇒   λ Ξ → Σ one ∶ Ξ • Σ two ∶ Ξ • ⊤
 
-example₄ : TwoParameterPoints 𝔹
+-- Emphasise when sets are to be thought of as contexts
+LitCtx : ∀ {ℓ} → Set ℓ → Context ℓ
+LitCtx = λ c → c
+
+example₄ : TwoParameterPoints (LitCtx 𝔹)
 example₄ = false , false , tt  -- Obtained with C-c C-a
 
 example₅ : TwoParameterPoints PointedSet
@@ -361,15 +290,18 @@ example₅ = example₁ , example₂ , tt
 We can simulate definitions in a record via type invariants.
 
 #+BEGIN_SRC agda2 :tangle semantics.agda
+infix -1000 Property_
+Property_ : ∀ {ℓ} → Set ℓ → Context ℓ -- Intended as invariants.
+Property_ = λ c → c                   -- In some contexts, the values could be irrelevant.
+
 PointedMagma : ∀ {ℓ} → Context ℓ → Context (ℓsuc ℓ)
 PointedMagma {ℓ} Ξ = do Carrier ← Set ℓ
                         _⊕_     ← (Carrier → Carrier → Carrier)
                         one     ← Carrier
                         two     ← Carrier
                         three   ← Carrier
-                        -- ‘Definitions’
-                        two   ≡ one ⊕ one
-                        three ≡ one ⊕ two
+                        Property two   ≡ one ⊕ one
+                        Property three ≡ one ⊕ two
 #+END_SRC
 The multiple laws, along with the following instance, increase confidence
 in our definitions of ~_>>=_~ and ~_>>_~.
@@ -406,6 +338,257 @@ _⨾_ : ∀ {ℓ} {Ξ : Context ℓ} → (Γ : Context′ Ξ) (τ : type′ Γ) 
 #+END_SRC
 Note: These names are not exported to the resulting Agda file, since they are
 not needed.
+
+* Parameterised Records
+
+** Header
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+module semantics-with-waist where
+
+open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc; zero to ℓ₀)
+open import Data.Nat
+open import Data.Product
+open import Relation.Binary.PropositionalEquality
+
+Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
+Σ∶• = Σ
+
+infix -666 Σ∶•
+syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
+
+record ⊤ {ℓ} : Set ℓ where
+  constructor tt
+
+-- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
+
+⟨ : ∀ {ℓ} {S : Set ℓ} → S → S
+⟨ s = s
+
+_⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × ⊤ {ℓ}
+s ⟩ = s , tt
+  #+end_src
+** Introduction
+  We want to write
+  #+begin_example agda2
+do X ← Set
+   z ← X
+   s ← (X → X)
+
+:  ℕ → Set
+  #+end_example
+  Which desugars into:
+  #+begin_example agda2
+‵ Set >>= λ X → ‵ X >>= λ z → ‵ (X → X)  where ‵_ : Set → (ℕ → Set)
+  #+end_example
+
+  The definition of the quote is forced due to the necessary typing of ~>>=~.
+** ~Context, ‵_, End~                                           :Definition:
+  Hence, the definition of a context suggests itself:
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+Context = λ ℓ → ℕ → Set ℓ
+
+infix -1000 ‵_
+‵_ : ∀ {ℓ} → Set ℓ → Context ℓ
+‵ S = λ _ → S
+
+End : ∀ {ℓ} → Context ℓ
+End = ‵ ⊤
+  #+end_src
+
+** ~_>>_~                                                        :Definition:
+Next we define the bind operator to account for the current waist: If zero, we
+have records, otherwise functions.
+#+begin_example agda2
+_>>=_ : ∀ {a b}
+      → (Γ : Context a)
+      → (∀ {n} → Γ n → Context b)
+      → Context (a ⊍ b)
+(Γ >>= f) ℕ.zero  = Σ γ ∶ Γ 0 • f γ 0
+(Γ >>= f) (suc n) = (γ : Γ n) → f γ n
+#+end_example
+
+Unfortunately, this would require too many calls to quote; e.g.,
+#+begin_example agda2
+do X ← ‵ Set
+   z ← ‵ X
+   s ← ‵ (X → X)
+   End
+#+end_example
+
+So let's “build it into the definition of >>=”:
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+_>>=_ : ∀ {a b}
+      → (Γ : Set a)  -- Main diference
+      → (Γ → Context b)
+      → Context (a ⊍ b)
+(Γ >>= f) ℕ.zero  = Σ γ ∶ Γ • f γ 0
+(Γ >>= f) (suc n) = (γ : Γ) → f γ n
+  #+end_src
+
+Let's see this in action:
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+Monoid : ∀ ℓ → Context (ℓsuc ℓ)
+Monoid ℓ = do Carrier ← Set ℓ
+              Id      ← Carrier
+              _⊕_     ← (Carrier → Carrier → Carrier)
+              leftId  ← ∀ {x : Carrier} → x ⊕ Id ≡ x
+              rightId ← ∀ {x : Carrier} → Id ⊕ x ≡ x
+              assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
+              End {ℓ}
+  #+end_src
+
+But what does all of this /mean/? Let's return to the dynamic system at the start
+of this discussion.
+
+** Dynamical Systems                                                :Example:
+
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+DynamicSystem : Context (ℓsuc Level.zero)
+DynamicSystem = do X ← Set
+                   z ← X
+                   s ← (X → X)
+                   End {Level.zero}
+#+end_src
+
+We can now “see” ---with ~C-c C-n~--- what a dynamical system looks like /at/ a
+particular waist.
+#+begin_src agda2 :tangle semantics-with-waist.agda
+-- Records with 𝓃-Parameters, 𝓃 : 0..3
+A B C D : Set₁
+A = DynamicSystem 0 -- Σ X ∶ Set  • Σ z ∶ X  • Σ s ∶ X → X  • ⊤
+B = DynamicSystem 1 --  (X ∶ Set) → Σ z ∶ X  • Σ s ∶ X → X  • ⊤
+C = DynamicSystem 2 --  (X ∶ Set)    (z ∶ X) → Σ s ∶ X → X  • ⊤
+D = DynamicSystem 3 --  (X ∶ Set)    (z ∶ X) →  (s ∶ X → X) → ⊤
+#+end_src
+
+** ~stablity~                                                       :Theorem:
+
+Observe that there are no more ‘interesting’ ways to form a dynamical system.
+#+begin_src agda2 :tangle semantics-with-waist.agda
+stablity : ∀ {n} →   DynamicSystem (3 + n)
+                   ≡ DynamicSystem  3
+stablity = refl
+  #+end_src
+
+** Natural Number Instance
+Let's form an instances at height 0; i.e., a record.
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+𝒩₀ : DynamicSystem 0
+𝒩₀ = ℕ , 0 , suc , tt
+  #+end_src
+
+With the expected sugar, we gain an extra grain of readability.
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+𝒩 : DynamicSystem 0
+𝒩 = ⟨ ℕ , 0 , suc ⟩
+  #+end_src
+
+Neato: One declares a PackageFormer with ~do…End~ then forms a 0-waist value
+using ~⟨⋯⟩~.
+
+** TODO Modus Ponens … ⁉                                               :Help:
+Unfortunately, since ~B, C, D~ are all of type ~Set₁~ and so are not functions,
+there is no trivial way to “instantiate” any of ~B, C, D~ to obtain versions of ~A~
+wherein certain fields are already “fixed”.
+
+I'd like to write =B on ℕ=, for example. However, the definition of ~_on_~ seems to
+want me to pattern match on sorts.
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+B-on-ℕ : Set
+B-on-ℕ = let X = ℕ in Σ z ∶ X  • Σ s ∶ (X → X)  • ⊤
+
+ex : B-on-ℕ
+ex = ⟨ 0 , suc ⟩
+  #+end_src
+
+** COMMENT *Current Status*
+
+ I've been working on taking something as follows,
+ #+begin_src agda2
+do X ← Set
+   e ← X
+   e ≡ e
+ #+end_src
+ That is ~Set >>= λ X → X >>= λ e → e ≡ e~, but I want to seed it with an initial
+ number 𝓃 which is reduced with each line. Instead of ~>>=~, let me write ~⊕ₙ~:
+ ~(m >>= λ x → e) = ((x ∶ m) ⊕ₙ e)~.
+
+ Then, I'd like to have the above example desugar to ~(X : Set) ⊕₁ (e : X) ⊕₀ (e ≡
+ e)~ ---where the family ~⊕ₙ~ is right associative and we are using seed ~𝓃 = 1~.
+
+ - ➩ The family ~⊕ₙ~ serves to demarcate parameters from the remainder of a context.
+ - ➩ ~m ⊕ₙ f = (Σ m f)~ if /n = 0/ and ~m ⊕ₙ f = (x : m) → f x~ if /n ≠ 0/.
+
+ The past week I've been trying multiple approaches to define ~Context~ and to
+ defined ~⊕~. Here are some I've tried.
+
+ :Hide:
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+module semantics-with-waist.agda where
+
+open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc)
+open import Data.Nat
+open import Data.Product
+Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
+Σ∶• = Σ
+infix -666 Σ∶•
+syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
+ #+end_src
+ :End:
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+Context¹ = λ ℓ → Set ℓ
+_⊕¹_ : ∀ {i j} → (A : Context¹ i)
+               → (f : A → Context¹ j)
+               → ℕ → Context¹ (i ⊍ j)
+(Γ ⊕¹ f) ℕ.zero    = Σ x ∶ Γ • f x
+(Γ ⊕¹ f) (ℕ.suc n) = (x : Γ) → f x
+ #+end_src
+ The problem here is that the number 𝓃 is encountered, a decision of type former
+ is selected, and 𝓃 is discarded. It should instead be “passed on” to other
+ declarations.
+
+ + State monad suggests itself.
+
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+Context² = λ ℓ → ℕ → ℕ × Set ℓ
+set = λ {ℓ} (A : Context² ℓ) → proj₂ (A 0)
+_⊕²_ : ∀ {i j} → (A : Context² i)
+               → (f : set A → Context² j)
+               → Context² (i ⊍ j)
+(Γ ⊕² f) ℕ.zero    = 0 , Σ x ∶ (set Γ) • set (f x)
+(Γ ⊕² f) (ℕ.suc n) = n , ((x : set Γ) → set (f x))
+ #+end_src
+ The problem here is the arbitrary definition of ~set~, and the fact that we cannot
+ make use of ~f~'s alteration of ~𝓃~:
+ | The 𝓃 lives outside, but it can only be altered as in ~f x 𝓃~, which requires an ~x~! |
+
+ + Lenses suggest themselves.
+
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+record Context³ ℓ : Set (ℓsuc ℓ) where
+  constructor MkCtx³
+  field
+    set³ : Set ℓ
+    put  : ℕ → set³
+    get  : ℕ
+ #+end_src
+
+ The same problem arises: We need to alter 𝓃, but cannot do so without calling ~f~
+ which cannot be invoked without having an ~x~.
+
+ Here are other routes I've tried and failed for similar reasons:
+ + ~Context ℓ = ℕ × Set ℓ~
+ + ~Context ℓ = (ℕ → ℕ) × Set ℓ~
+ + ~_⊕_ : ⋯ → (f : ⊤ ⊎ A → Context ℓ)~
+   - In an effort to call ~f~ so as to alter 𝓃 /without/ providing an ~x~.
+   - Failed horribly in actually use: ~(x : X) ⊕ₙ f x~ is means ~x~ it /not/ a value of
+     ~X~ but rather a value of ~⊤ ⊎ X~ and so we always need to account for both
+     cases.
+ + I've tried other formulations of ⊕ and ~Context~, but unfortunately I kept no
+   record of them. I honestly thought that their definitions were easy and that I
+   was just a bit off the mark ---a week later I'm no longer certain.
+
+ /Any guidance would be appreciated!/
 
 * COMMENT PackageFormers as Pairs of Contexts Demarcated by a Waist
 

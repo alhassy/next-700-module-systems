@@ -75,11 +75,19 @@ TwoParameterPoints {ℓ} Ξ = do one   ← Ξ
 
 -- C-c C-n TwoParameterPoints   ⇒   λ Ξ → Σ one ∶ Ξ • Σ two ∶ Ξ • ⊤
 
-example₄ : TwoParameterPoints 𝔹
+-- Emphasise when sets are to be thought of as contexts
+LitCtx : ∀ {ℓ} → Set ℓ → Context ℓ
+LitCtx = λ c → c
+
+example₄ : TwoParameterPoints (LitCtx 𝔹)
 example₄ = false , false , tt  -- Obtained with C-c C-a
 
 example₅ : TwoParameterPoints PointedSet
 example₅ = example₁ , example₂ , tt
+
+infix -1000 Property_
+Property_ : ∀ {ℓ} → Set ℓ → Context ℓ -- Intended as invariants.
+Property_ = λ c → c                   -- In some contexts, the values could be irrelevant.
 
 PointedMagma : ∀ {ℓ} → Context ℓ → Context (ℓsuc ℓ)
 PointedMagma {ℓ} Ξ = do Carrier ← Set ℓ
@@ -87,9 +95,8 @@ PointedMagma {ℓ} Ξ = do Carrier ← Set ℓ
                         one     ← Carrier
                         two     ← Carrier
                         three   ← Carrier
-                        -- ‘Definitions’
-                        two   ≡ one ⊕ one
-                        three ≡ one ⊕ two
+                        Property two   ≡ one ⊕ one
+                        Property three ≡ one ⊕ two
 
 example₆ : PointedMagma ⊤
 example₆ = ℕ , ℕ._+_ , 4 , 8 , 12 , refl {x = 8} , refl {x = 12}
