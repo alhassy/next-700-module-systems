@@ -7,8 +7,9 @@
 #
 # Could have used agda2-example blocks, but wanted the colouring.
 
-| Status | Instantiation for latest notion of =Context=-s not working |
-↪ See the very bottom of this article.
+*Status:* I cannot seem to phrase, let alone prove, the =stablity′= claim for
+ dynamic systems.
++ See the very bottom of this article.
 
 # (shell-command "ln -s theory.org readme.org")
 
@@ -31,13 +32,18 @@
   - [[#example--a-record-type-with-invariants][Example – A record type with invariants]]
 - [[#parameterised-records][Parameterised Records]]
   - [[#header][Header]]
+    - [[#reflection-helpers][Reflection Helpers]]
+    - [[#products-and-tuple-notation][Products and ⟨Tuple⟩ Notation]]
   - [[#introduction-1][Introduction]]
-  - [[#context-_-end][~Context, ‵_, End~]]
-  - [[#__][~_>>_~]]
-  - [[#dynamical-systems][Dynamical Systems]]
-  - [[#stablity][~stablity~]]
+  - [[#definitions-context-_-end][Definitions: ~Context, ‵_, End~]]
+  - [[#definitions-__][Definitions: ~_>>_~]]
+  - [[#example-dynamical-systems][Example: Dynamical Systems]]
+  - [[#theorems-stablity][Theorems: ~stablity~]]
   - [[#natural-number-instance][Natural Number Instance]]
-  - [[#modus-ponens--][Modus Ponens … ⁉]]
+  - [[#πλ-and-modus-ponens][Π→λ and Modus Ponens]]
+  - [[#defining-_waist_][Defining =_:waist_=]]
+  - [[#further-natural-number-instances-and-fixing-parameters][Further Natural Number Instances and Fixing Parameters]]
+  - [[#example----collections][Example ---Collections]]
 
 * Introduction
 
@@ -312,35 +318,6 @@ example₆ : PointedMagma ⊤
 example₆ = ℕ , ℕ._+_ , 4 , 8 , 12 , refl {x = 8} , refl {x = 12}
 #+END_SRC
 
-* COMMENT “Contexts over Contexts”
-
-Informally =x₀ : τ₀, … ❙ y₀ : τ₀; …=  denotes two contexts, ~Γ₁ ❙ Γ₂~, where the
-first is an elementary context and the latter is a context whose declarations
-not only may use earlier ~yᵢ~ declarations but /additionally/ may use the entirety
-of the context ~Γ₁~. We say =Γ₂= is a /context over context/ =Γ₁=.
-
-1. A <<context over a context>>> is a dependent-type, from contexts to contexts.
-2. A <<type over a dependent-context>> is an context-indexed family of sets.
-
-#+BEGIN_SRC agda2 :tangle semantics.agda
-Context′ : ∀ {ℓ} → Context ℓ → Set (ℓsuc ℓ)
-Context′ {ℓ} Ξ  =  Ξ → Set ℓ
-
-type′ : ∀ {ℓ} {Ξ : Context ℓ} → Context′ Ξ → Set (ℓsuc ℓ)
-type′ {ℓ} Γ = ∀ {ξ} → Γ ξ → Set ℓ
-#+END_SRC
-
-We may index the previous ‘smart constructors’ for contexts over contexts:
-#+BEGIN_SRC agda2
-∅ : ∀ {ℓ} {Ξ : Context ℓ} → Context′ Ξ
-∅ = λ _ → ⊤
-
-_⨾_ : ∀ {ℓ} {Ξ : Context ℓ} → (Γ : Context′ Ξ) (τ : type′ Γ) → Context′ Ξ
-Γ ⨾ τ = λ ξ → Σ γ ∶ Γ ξ • τ γ
-#+END_SRC
-Note: These names are not exported to the resulting Agda file, since they are
-not needed.
-
 * Parameterised Records
 
 ** Header
@@ -349,8 +326,56 @@ module semantics-with-waist where
 
 open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc; zero to ℓ₀)
 open import Data.Nat
-open import Data.Product
 open import Relation.Binary.PropositionalEquality
+open import Relation.Nullary
+open import Data.Empty
+open import Data.Bool using (Bool ; true ; false)
+open import Data.List using (List ; [] ; _∷_)
+
+-- “s ≔ v” is just a way to document v with string s.
+open import Data.String using (String)
+_≔_ : ∀ {ℓ} {A : Set ℓ} → String → A → A
+s ≔ v = v
+infix 9 _≔_
+
+-- Used in an example later on; too boring to be placed there.
+data Digit : Set where
+  #0 #1 #2 #3 #4 #5 #6 #7 #8 #9 : Digit
+
+#→ℕ : Digit → ℕ
+#→ℕ #0 = 0
+#→ℕ #1 = 1
+#→ℕ #2 = 2
+#→ℕ #3 = 3
+#→ℕ #4 = 4
+#→ℕ #5 = 5
+#→ℕ #6 = 6
+#→ℕ #7 = 7
+#→ℕ #8 = 8
+#→ℕ #9 = 9
+     #+end_src
+
+*** Reflection Helpers
+     #+begin_src agda2 :tangle semantics-with-waist.agda
+import Data.Unit as Unit
+open import Reflection hiding (name; Type) renaming (_>>=_ to _>>=ₘ_)
+
+-- Single argument application
+_app_ : Term → Term → Term
+(def f args) app args′ = def f (arg (arg-info visible relevant) args′ ∷ [])
+{-# CATCHALL #-}
+tm app args = tm
+
+-- Reify ℕ term encodings as ℕ values
+toℕ : Term → ℕ
+toℕ (lit (nat n)) = n
+{-# CATCHALL #-}
+toℕ _ = 0
+#+end_src
+
+*** Products and ⟨Tuple⟩ Notation
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+open import Data.Product
 
 Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
 Σ∶• = Σ
@@ -362,13 +387,16 @@ record ⊤ {ℓ} : Set ℓ where
   constructor tt
 
 -- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
+infixr 5 ⟨ _⟩
+⟨⟩ : ∀ {ℓ} → ⊤ {ℓ}
+⟨⟩ = tt
 
 ⟨ : ∀ {ℓ} {S : Set ℓ} → S → S
 ⟨ s = s
 
 _⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × ⊤ {ℓ}
 s ⟩ = s , tt
-  #+end_src
+   #+end_src
 ** Introduction
   We want to write
   #+begin_example agda2
@@ -384,7 +412,7 @@ do X ← Set
   #+end_example
 
   The definition of the quote is forced due to the necessary typing of ~>>=~.
-** ~Context, ‵_, End~                                           :Definition:
+** Definitions: ~Context, ‵_, End~
   Hence, the definition of a context suggests itself:
   #+begin_src agda2 :tangle semantics-with-waist.agda
 Context = λ ℓ → ℕ → Set ℓ
@@ -397,7 +425,7 @@ End : ∀ {ℓ} → Context ℓ
 End = ‵ ⊤
   #+end_src
 
-** ~_>>_~                                                        :Definition:
+** Definitions: ~_>>_~
 Next we define the bind operator to account for the current waist: If zero, we
 have records, otherwise functions.
 #+begin_example agda2
@@ -442,7 +470,7 @@ Monoid ℓ = do Carrier ← Set ℓ
 But what does all of this /mean/? Let's return to the dynamic system at the start
 of this discussion.
 
-** Dynamical Systems                                                :Example:
+** Example: Dynamical Systems
 
   #+begin_src agda2 :tangle semantics-with-waist.agda
 DynamicSystem : Context (ℓsuc Level.zero)
@@ -463,7 +491,10 @@ C = DynamicSystem 2 --  (X ∶ Set)    (z ∶ X) → Σ s ∶ X → X  • ⊤
 D = DynamicSystem 3 --  (X ∶ Set)    (z ∶ X) →  (s ∶ X → X) → ⊤
 #+end_src
 
-** ~stablity~                                                       :Theorem:
+It is important to note that these are /not/ functions, but instead
+are /function types/!
+
+** Theorems: ~stablity~
 
 Observe that there are no more ‘interesting’ ways to form a dynamical system.
 #+begin_src agda2 :tangle semantics-with-waist.agda
@@ -471,6 +502,13 @@ stablity : ∀ {n} →   DynamicSystem (3 + n)
                    ≡ DynamicSystem  3
 stablity = refl
   #+end_src
+
+  Moreover, by the nature of a dynamical system, there cannot ever be such a
+  system with an empty state space, and so ~B~.
+#+begin_src agda2 :tangle semantics-with-waist.agda
+B-is-empty : ¬ B
+B-is-empty b = proj₁( b ⊥)
+#+end_src
 
 ** Natural Number Instance
 Let's form an instances at height 0; i.e., a record.
@@ -488,13 +526,13 @@ With the expected sugar, we gain an extra grain of readability.
 Neato: One declares a PackageFormer with ~do…End~ then forms a 0-waist value
 using ~⟨⋯⟩~.
 
-** TODO Modus Ponens … ⁉                                               :Help:
+** Π→λ and Modus Ponens
 Unfortunately, since ~B, C, D~ are all of type ~Set₁~ and so are not functions,
-there is no trivial way to “instantiate” any of ~B, C, D~ to obtain versions of ~A~
-wherein certain fields are already “fixed”.
+there is no trivial way to “instantiate” any of ~B, C, D~'s arguments to obtain
+versions of ~A~ wherein certain fields are already “fixed”.
 
-I'd like to write =B on ℕ=, for example. However, the definition of ~_on_~ seems to
-want me to pattern match on sorts.
+I'd like to write =B on ℕ=, for example. However, a definition of ~_on_~ seems to
+want to pattern match on sorts.
   #+begin_src agda2 :tangle semantics-with-waist.agda
 B-on-ℕ : Set
 B-on-ℕ = let X = ℕ in Σ z ∶ X  • Σ s ∶ (X → X)  • ⊤
@@ -503,7 +541,309 @@ ex : B-on-ℕ
 ex = ⟨ 0 , suc ⟩
   #+end_src
 
-** COMMENT *Current Status*
+Let's oblige, and pattern match on sorts ---by using reflection.
+
+The /values/ ~B,C,D~ are all of the form ~∀ X → ⋯~, in-order to /apply/ them
+we need to transform them into values of the form ~λ X → ⋯~, for which application
+is actually sensible. As far as I know, there is no natural operation
+transforming a function-type into a function-value, so we make the necessary
+transformation /syntactically/.
+
+Here's an instance of moving from the Π-type-level to the λ-value-level.
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+idτ : Set₁
+idτ = ∀ (X : Set) (e : X) → X
+
+id₁ : ∀ (X : Set) → Set
+id₁ = λ (X : Set) → ((e : X) → X)
+
+id₂ : ∀ (X : Set) (e : X) → Set
+id₂ = λ (X : Set) (e : X) → X
+   #+end_src
+Let's code to make the transformation ~idτ ↦ id₂~ feasible.
+
+We start with Agda terms.
+   #+begin_src agda2 :tangle semantics-with-waist.agda
+Π→λ-helper : Term → Term
+Π→λ-helper (pi  a b)         = lam visible b
+Π→λ-helper (lam a (abs x y)) = lam a (abs x (Π→λ-helper y))
+{-# CATCHALL #-}
+Π→λ-helper x = x
+#+end_src
+
++ We case on type formation, then rewrite the first encountered Π-type into a λ-value.
++ If a λ is encountered, we go inside to make the rewrite.
+  - The intention is that sequential rewrite invocations are easily expressed.
++ We could have added the following case before the catchall, however it is
+  undesirable since in general we do not want to unwind as much as possible,
+  but only as much waist as provided.
+  #+begin_example agda2
+Π→λ-helper (pi a (abs x y)) = lam visible (abs x (Π→λ-helper y))
+  #+end_example
+
+Here are two sample uses.
+#+begin_example agda2
+-- Error: Failed to resolve sort constraints
+_ : unquote (unify (Π→λ-helper (quoteTerm (∀ (X : Set) (x : X) → X)))) ≡ λ X → X → X
+_ = refl
+
+-- Ekk! No normalisation!
+_ : Π→λ-helper (quoteTerm idτ) ≡ quoteTerm idτ
+_ = refl
+#+end_example
+
+As it stands, this syntactic rewrite is pathetic from a usage point of view: We
+need to quote arguments provided to it, then unquote them back into working
+code. Moreover, due to Agda's weak reflection mechanism, such a bungled mess
+usually results in errors failing to solve sort constraints.  /Even worse/, it
+does not account for normal forms; e.g., a constant name is just that, a name,
+rather than what it expands to.
+Let's remedy these two issues.
+#+begin_src agda2 :tangle semantics-with-waist.agda
+macro
+  Π→λ : Term → Term → TC Unit.⊤
+  Π→λ tm goal = normalise tm >>=ₘ λ tm′ → unify (Π→λ-helper tm′) goal
+  #+end_src
+
++ We normalise a given term /then/ invoke the previously formed helper.
++ Due to the currently poor state of reflection in Agda, we are /forced/ to
+  construct the auxiliary function since macros cannot be recursive.
+    #+begin_example agda2
+-- Error: Cannot unquote non-canonical type checking computation
+macro
+  lame : ℕ → Term → Term → TC Unit.⊤
+  lame zero t g    = unify t g
+  lame (suc n) t g = lame n t g
+  #+end_example
+
+At this point, our goals are reasonably achieved:
+#+begin_src agda2 :tangle semantics-with-waist.agda
+_ : Π→λ idτ ≡ id₁
+_ = refl
+
+-- Too much yellow, sort constraints cannot be solved. It's okay.
+-- _ : Π→λ (Π→λ idτ) ≡ id₂
+-- _ = refl
+  #+end_src
+
+Reflection was not the first route attempted.  A more natural approach would be
+to form a ‘universe’ type ~𝕌~ which has a constructor ~‵Π~ for encoding dependent
+function types, one then defines ~Π→λ~ by requesting a ≡-proof that the given type
+is indeed a function-type, i.e., is equivalent to the semantics of an encoding
+~‵Π~.  However, such encodings always led to some technical issue.  Most notable
+being that we cannot view ~Set₁~ via our encoding ~𝕌~ since such a function ~Set₁ → 𝕌~
+would fail to encode types without having a pre-existing way to pattern match
+against the inhabitants of ~Set₁~.  As such, we have solved the problem in the
+meta-theory.
+
+It is curious that this problem is reminiscent of currying.
+#+begin_src agda2
+-- Given:
+τ : Set₁
+τ = ∀ (X : Set) → ⋯
+
+-- Obtain:
+τf : ∀ (X : Set) → Set₁
+τf = λ (X : Set) → ⋯
+#+end_src
+| The type of ~τ~ merely states it to be a grouping mechanism!        |
+| The type of ~τf~ /exposes/ that ~τ~ is a parmeterised grouping mechanism! |
+
+Perhaps this is related to indexing vs parameters.
+** Defining =_:waist_=
+   Multiple invocations of ~Π→λ~ along with a raw waist exposes the structure of
+   a parameterised record, as in the following examples.
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+_ : Π→λ (DynamicSystem 1) ≡ λ γ → Σ γ (λ _ → Σ ((x : γ) → γ) (λ _ → ⊤))
+_ = refl
+
+CC : ∀ (X : Set) (x : X) → Set
+CC = Π→λ (Π→λ (DynamicSystem 2))   -- c.f., C above and C′ below.
+   #+end_src
+   Let's abstract away the raw waist, 2 above, and the 2-many invocations of
+   ~Π→λ~.
+
+   As mentioned earlier, we must perform recursion outside of ~macro~ clauses, so
+   we must have an auxiliary function.
+   #+begin_src agda2 :tangle semantics-with-waist.agda
+waist-helper : ℕ → Term → Term
+waist-helper zero t    = t
+-- waist-helper (suc n) t = waist-helper n (Π→λ t)
+waist-helper (suc n) t = waist-helper n (Π→λ-helper t)
+  #+end_src
+
+  It is important to note that the commented out line could /not/ have been used
+  and instead the ~Π→λ~ macro's underlying helper must be invoked instead.  Why?
+  This subtlety is due to the implicit-quotation invocation style of macros: If
+  ~f : Term → Name → Bool → Term → TC ⊤~ is declared a macro, then an application
+  ~f u v w~ desugars into ~unquote (f (quoteTerm u) (quote v) w)~.
+
+We now use the helper to form the necessary combinator.
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+macro
+  _:waist_ : Term → Term → Term → TC Unit.⊤
+  _:waist_ t 𝓃 goal =      normalise (t app 𝓃)
+                      >>=ₘ λ t′ → unify (waist-helper (toℕ 𝓃) t′) goal
+#+end_src
+
+Note that it's important we /apply/ the given context to a raw waist,
+then /normalise/ that before moving on. Indeed, ~waist-helper~ invokes ~Π→λ→helper~,
+which performs no normalisation.
+
++ ~:waist~ could not have been defined as a top level function operating on ~Set ℓ~
+  since it cannot be typed! It needs to operate on syntax and so is a macro.
+  - Indeed, ~Γ :waist n~ may sometimes return a function of types, values of ~Set₁~,
+    or a function of other types, such as ~ℕ~. We shall show this below when
+    forming ~A′, B′, C′, D′~.
+
+** Further Natural Number Instances and Fixing Parameters
+
+Let's now demonstrate how convenient it is to use ~_:waist_~.
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+A′ : Set₁
+B′ : ∀ (X : Set) → Set
+C′ : ∀ (X : Set) (x : X) → Set
+D′ : ∀ (X : Set) (x : X) (s : X → X) → Set
+#+end_src
+Each type /exposes/ more and more information about what kind of grouping
+structure we have at hand. The definitions are super simple sweetness.
+#+begin_src agda2 :tangle semantics-with-waist.agda
+A′ = DynamicSystem :waist 0
+B′ = DynamicSystem :waist 1
+C′ = DynamicSystem :waist 2
+D′ = DynamicSystem :waist 3
+  #+end_src
+
+~B,C,D~ are parameterised records: Given values of the parameters, record values
+are created. What if, we want to simply supply parameters and obtain new
+parameterised records; i.e., do not go all the way down to the creation level.
+These ‘partial applied’ types are ~B′, C′, D′~. That is, ~:waist~ essentially
+allows us to unbundle, or uncurry, records! So cool (•̀ᴗ•́)و
+
+  The following /instances/ of these grouping /types/ demonstrate how /information
+moves from the body level to the parameter level/!
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+𝒩⁰ : A′
+𝒩⁰ = ⟨ ℕ , 0 , suc ⟩
+
+𝒩¹ : B′ ℕ
+𝒩¹ = ⟨ 0 , suc ⟩
+
+𝒩² : C′ ℕ 0
+𝒩² = ⟨ suc ⟩
+
+𝒩³ : D′ ℕ 0 suc
+𝒩³ = ⟨⟩
+#+end_src
+
+Notice that with ~A′, B′, C′, D′~ we may fix certain parameters ahead of time.
+Above the type ~B′ ℕ~ is the type of “dynamic systems over carrier ℕ” whereas ~C′ ℕ
+0~ is the type of “dynamic systems over carrier ℕ and start state 0”.  Neato!
+
+One would expect the stablity result from earlier to continue to hold, but
+there is a type error in even phrasing it naively.
+#+begin_example agda2
+-- Type error: LHS and RHS of ‘≡’ do not agree.
+stablity′ : ∀ {n : ℕ} →
+            DynamicSystem :waist (3 + n)
+          ≡ DynamicSystem :waist 3
+stablity′ = refl
+#+end_example
+
+** Example ---Collections
+
+   Here's a specification of a collection, which includes an element type;
+   along with an instance-former; i.e., a value at a non-zero waist. ---Thanks Wolfram!
+#+begin_src agda2 :tangle semantics-with-waist.agda
+Collection : ∀ ℓ → Context (ℓsuc ℓ)
+Collection ℓ = do
+  Elem    ← Set ℓ
+  Carrier ← Set ℓ
+  ∅       ← Carrier
+  insert  ← (Elem → Carrier → Carrier)
+  isEmpty ← (Carrier → Bool)
+  insert-nonEmpty ← ∀ {e : Elem} {x : Carrier} → isEmpty (insert e x) ≡ false
+  End {ℓ}
+
+ListColl : {ℓ : Level} → Collection ℓ 1
+ListColl E = ⟨ List E
+             , []
+             , _∷_ , (λ { [] → true; _ → false})
+             , (λ {x} {x = x₁} → refl)
+             ⟩
+  #+end_src
+
+The neat thing here is that a value of ~Collection ℓ~ is an element type
+along with collection type over said elements; whereas a value of ~Collection ℓ 1~
+is a way to form collections for given element types.
+
+Here's another example.
+
+Enumerated types can always be encoded as values of ℕ and so ℕ can be thought
+of as a way to collect values of the enumeration.
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+Collection₀ = Collection ℓ₀
+
+ℕCollection = (Collection₀ :waist 2)
+                ("Elem"    ≔ Digit)
+                ("Carrier" ≔ ℕ)
+--
+-- i.e., (Collection₀ :waist 2) Digit ℕ
+#+end_src
+
+  + Note that the ~"key" ≔ value~ pairs are just syntactic sugar for ~value~,
+    that document it via ~"key"~.
+  + ~Digit~ is the enumerated type of values ~#𝒾~ for ~𝒾 : 0..9~.
+
+More concretely, if the enumerated has 𝓃-many values, we can form a stack by
+starting with 0 and pushing elements ~d~ “to then end of our running total $s$” to
+obtain =s * 10ⁿ + d=, for example.  Then we pop elements off via division. Here's
+an instance for the digit enumeration type.
+
+#+begin_src agda2 :tangle semantics-with-waist.agda
+stack : ℕCollection
+stack = ⟨ "empty stack" ≔ 0
+        , "insert"      ≔ (λ d s → suc (10 * s + #→ℕ d))
+        , "is-empty"    ≔ (λ { 0 → true; _ → false})
+        -- Properties --
+        , (λ {d : Digit} {s : ℕ} → refl {x = false})
+        ⟩
+  #+end_src
+
++ The ~suc~, in ~"insert"~, is to make the coherence property easily proven.
+
+Super neat stuff (─‿‿─)
+
+* COMMENT “Contexts over Contexts”
+
+Informally =x₀ : τ₀, … ❙ y₀ : τ₀; …=  denotes two contexts, ~Γ₁ ❙ Γ₂~, where the
+first is an elementary context and the latter is a context whose declarations
+not only may use earlier ~yᵢ~ declarations but /additionally/ may use the entirety
+of the context ~Γ₁~. We say =Γ₂= is a /context over context/ =Γ₁=.
+
+1. A <<context over a context>>> is a dependent-type, from contexts to contexts.
+2. A <<type over a dependent-context>> is an context-indexed family of sets.
+
+#+BEGIN_SRC agda2 :tangle semantics.agda
+Context′ : ∀ {ℓ} → Context ℓ → Set (ℓsuc ℓ)
+Context′ {ℓ} Ξ  =  Ξ → Set ℓ
+
+type′ : ∀ {ℓ} {Ξ : Context ℓ} → Context′ Ξ → Set (ℓsuc ℓ)
+type′ {ℓ} Γ = ∀ {ξ} → Γ ξ → Set ℓ
+#+END_SRC
+
+We may index the previous ‘smart constructors’ for contexts over contexts:
+#+BEGIN_SRC agda2
+∅ : ∀ {ℓ} {Ξ : Context ℓ} → Context′ Ξ
+∅ = λ _ → ⊤
+
+_⨾_ : ∀ {ℓ} {Ξ : Context ℓ} → (Γ : Context′ Ξ) (τ : type′ Γ) → Context′ Ξ
+Γ ⨾ τ = λ ξ → Σ γ ∶ Γ ξ • τ γ
+#+END_SRC
+Note: These names are not exported to the resulting Agda file, since they are
+not needed.
+
+* COMMENT *Current Status*
 
  I've been working on taking something as follows,
  #+begin_src agda2
@@ -591,6 +931,11 @@ record Context³ ℓ : Set (ℓsuc ℓ) where
    was just a bit off the mark ---a week later I'm no longer certain.
 
  /Any guidance would be appreciated!/
+
+* COMMENT type-annotation syntax
+  type-annotation : ∀ {ℓ} (A : Set ℓ) → A → A
+type-annotation A a = a
+syntax type-annotation A a = a ∶ A -- “ghost colon” \:
 
 * COMMENT PackageFormers as Pairs of Contexts Demarcated by a Waist
 
