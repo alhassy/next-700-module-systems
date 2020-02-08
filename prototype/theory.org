@@ -44,6 +44,7 @@
   - [[#defining-_waist_][Defining =_:waist_=]]
   - [[#further-natural-number-instances-and-fixing-parameters][Further Natural Number Instances and Fixing Parameters]]
   - [[#example----collections][Example ---Collections]]
+  - [[#projections][Projections]]
 
 * Introduction
 
@@ -330,7 +331,7 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 open import Data.Empty
 open import Data.Bool using (Bool ; true ; false)
-open import Data.List using (List ; [] ; _∷_)
+open import Data.List using (List ; [] ; _∷_ ; _∷ʳ_)
 
 -- “s ≔ v” is just a way to document v with string s.
 open import Data.String using (String)
@@ -362,9 +363,9 @@ open import Reflection hiding (name; Type) renaming (_>>=_ to _>>=ₘ_)
 
 -- Single argument application
 _app_ : Term → Term → Term
-(def f args) app args′ = def f (arg (arg-info visible relevant) args′ ∷ [])
+(def f args) app arg′ = def f (args ∷ʳ arg (arg-info visible relevant) arg′) -- keep existing arguments!
 {-# CATCHALL #-}
-tm app args = tm
+tm app arg′ = tm
 
 -- Reify ℕ term encodings as ℕ values
 toℕ : Term → ℕ
@@ -650,6 +651,10 @@ It is curious that this problem is reminiscent of currying.
 | The type of ~τf~ /exposes/ that ~τ~ is a parmeterised grouping mechanism! |
 
 Perhaps this is related to indexing vs parameters.
+
++ We can apply =τf= and so it's more concrete than =τ=.
++ Hence, we may call =Π→λ= a “type constructor reification”.
+
 ** Defining =_:waist_=
    Multiple invocations of ~Π→λ~ along with a raw waist exposes the structure of
    a parameterised record, as in the following examples.
@@ -695,6 +700,10 @@ which performs no normalisation.
   - Indeed, ~Γ :waist n~ may sometimes return a function of types, values of ~Set₁~,
     or a function of other types, such as ~ℕ~. We shall show this below when
     forming ~A′, B′, C′, D′~.
+
+ How are these two indexing mechanisms related?
+ 0. =C :waist n= is an n-ary type constructor; given n inputs, a record type is returned.
+ 1. =C n= is a “factory”: Given n inputs 𝓍, it will produce a value of =(C :waist n) 𝓍=.
 
 ** Further Natural Number Instances and Fixing Parameters
 
@@ -759,19 +768,20 @@ Collection : ∀ ℓ → Context (ℓsuc ℓ)
 Collection ℓ = do
   Elem    ← Set ℓ
   Carrier ← Set ℓ
-  ∅       ← Carrier
   insert  ← (Elem → Carrier → Carrier)
+  ∅       ← Carrier
   isEmpty ← (Carrier → Bool)
   insert-nonEmpty ← ∀ {e : Elem} {x : Carrier} → isEmpty (insert e x) ≡ false
   End {ℓ}
 
 ListColl : {ℓ : Level} → Collection ℓ 1
 ListColl E = ⟨ List E
+             , _∷_
              , []
-             , _∷_ , (λ { [] → true; _ → false})
+             , (λ { [] → true; _ → false})
              , (λ {x} {x = x₁} → refl)
              ⟩
-  #+end_src
+           #+end_src
 
 The neat thing here is that a value of ~Collection ℓ~ is an element type
 along with collection type over said elements; whereas a value of ~Collection ℓ 1~
@@ -782,13 +792,11 @@ Here's another example.
 Enumerated types can always be encoded as values of ℕ and so ℕ can be thought
 of as a way to collect values of the enumeration.
   #+begin_src agda2 :tangle semantics-with-waist.agda
-Collection₀ = Collection ℓ₀
-
-ℕCollection = (Collection₀ :waist 2)
+ℕCollection = (Collection ℓ₀ :waist 2)
                 ("Elem"    ≔ Digit)
                 ("Carrier" ≔ ℕ)
 --
--- i.e., (Collection₀ :waist 2) Digit ℕ
+-- i.e., (Collection ℓ₀ :waist 2) Digit ℕ
 #+end_src
 
   + Note that the ~"key" ≔ value~ pairs are just syntactic sugar for ~value~,
@@ -802,8 +810,8 @@ an instance for the digit enumeration type.
 
 #+begin_src agda2 :tangle semantics-with-waist.agda
 stack : ℕCollection
-stack = ⟨ "empty stack" ≔ 0
-        , "insert"      ≔ (λ d s → suc (10 * s + #→ℕ d))
+stack = ⟨ "insert"      ≔ (λ d s → suc (10 * s + #→ℕ d))
+        , "empty stack" ≔ 0
         , "is-empty"    ≔ (λ { 0 → true; _ → false})
         -- Properties --
         , (λ {d : Digit} {s : ℕ} → refl {x = false})
@@ -814,6 +822,85 @@ stack = ⟨ "empty stack" ≔ 0
 
 Super neat stuff (─‿‿─)
 
+** Projections
+
+   Since records are just products, we may project to obtain their fields.
+   - The following meta-program yields a type error when trying to project
+     fields that do not exist.
+#+begin_src agda2 :tangle semantics-with-waist.agda
+Field₀ : ℕ → Term → Term
+Field₀ zero c    = def (quote proj₁) (arg (arg-info visible relevant) c ∷ [])
+Field₀ (suc n) c = Field₀ n (def (quote proj₂) (arg (arg-info visible relevant) c ∷ []))
+
+macro
+  Field : ℕ → Term → Term → TC Unit.⊤
+  Field n t goal = unify goal (Field₀ n t)
+#+end_src
+
+Agda macros do not support η-equivalence and so definitions
+of particular projections are necessarily of the form ~λ C → Field 𝒾 C~.
+
+#+begin_src agda2 :tangle semantics-with-waist.agda
+Elem      : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
+Elem      = λ C   → Field 0 C
+          #+end_src
+
+Nullary types like ~Collection ℓ 0~ all have a similar projection form.
+There is a neat interesting shift when we move positive-argument types.
+          #+begin_src agda2 :tangle semantics-with-waist.agda
+Carrier   : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
+Carrier₁  : ∀ {ℓ} → Collection ℓ 1 → (γ : Set ℓ) → Set ℓ
+Carrier₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → Set ℓ
+
+Carrier   = λ C   → Field 1 C
+Carrier₁  = λ C γ → Field 0 (C γ)
+Carrier₁′ = λ C   → Field 0 C
+          #+end_src
+
+The differences are subtle, so let's try exposing more arguments.
+
+          #+begin_src agda2 :tangle semantics-with-waist.agda
+insert   : ∀ {ℓ} (C : Collection ℓ 0) → (Elem C → Carrier C → Carrier C)
+insert₁  : ∀ {ℓ} (C : Collection ℓ 1) (γ : Set ℓ) →  γ → Carrier₁ C γ → Carrier₁ C γ
+insert₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → γ → Carrier₁′ C → Carrier₁′ C
+
+insert    = λ C   → Field 2 C
+insert₁   = λ C γ → Field 1 (C γ)
+insert₁′  = λ C   → Field 1 C
+#+end_src
+
+Notice that ~insert₁~'s ~C~ must be passed inputs each time it is used ---since ~C~ is
+a “factory”, as mentioned earlier. In contrast, ~insert₁′~'s ~C~ has no arguments
+as they are fixed ahead of time.
+
+The need to invoke a factory with its inputs seems to have a slightly greater
+impact at the definition level, as seen below.
+#+begin_src agda2 :tangle semantics-with-waist.agda
+insert₂  : ∀ {ℓ} (C : Collection ℓ 2) (El Cr : Set ℓ) → El → Cr → Cr
+insert₂′ : ∀ {ℓ} {El Cr : Set ℓ} (C : (Collection ℓ :waist 2) El Cr) → El → Cr → Cr
+
+insert₂ = λ C El Cr → Field 0 (C El Cr)
+insert₂′ = λ C → Field 0 C
+  #+end_src
+
+Neato petito!
+
+** COMMENT ~:exposing~ --no
+
+     Set₁
+⇒ ∀ X₁ → ⋯ → ∀ Xₙ → Set
+≅ ∀ Xₙ → ∀ X₁ → ⋯ → ∀ Xₙ₋₁ → Set
+⇒ ∀ Xₙ → Set
+
+Given a function /type/ such as ~∀ (A B : Set) → B~, we cannot write a
+function to swap the order of the input types, ~A~ and ~B~, since that would
+require we pattern match on the function /type/ to expose its structure. As
+such, we must use reflection. However, a mere switch of Π-constructors also does
+not work since the underlying debrujin reference of the final ~B~ is ~var 0~, in
+reference to the 0-th away bound variable ~B~, and so a simple Π-variable swap
+would leave the reference as ~var 0~ which then refers to ~A~. Hence, in
+general, we need to update all debrujin indices, increasing some and decreasing
+others.
 * COMMENT “Contexts over Contexts”
 
 Informally =x₀ : τ₀, … ❙ y₀ : τ₀; …=  denotes two contexts, ~Γ₁ ❙ Γ₂~, where the

@@ -6,7 +6,7 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 open import Data.Empty
 open import Data.Bool using (Bool ; true ; false)
-open import Data.List using (List ; [] ; _∷_)
+open import Data.List using (List ; [] ; _∷_ ; _∷ʳ_)
 
 -- “s ≔ v” is just a way to document v with string s.
 open import Data.String using (String)
@@ -35,9 +35,9 @@ open import Reflection hiding (name; Type) renaming (_>>=_ to _>>=ₘ_)
 
 -- Single argument application
 _app_ : Term → Term → Term
-(def f args) app args′ = def f (arg (arg-info visible relevant) args′ ∷ [])
+(def f args) app arg′ = def f (args ∷ʳ arg (arg-info visible relevant) arg′) -- keep existing arguments!
 {-# CATCHALL #-}
-tm app args = tm
+tm app arg′ = tm
 
 -- Reify ℕ term encodings as ℕ values
 toℕ : Term → ℕ
@@ -192,31 +192,63 @@ Collection : ∀ ℓ → Context (ℓsuc ℓ)
 Collection ℓ = do
   Elem    ← Set ℓ
   Carrier ← Set ℓ
-  ∅       ← Carrier
   insert  ← (Elem → Carrier → Carrier)
+  ∅       ← Carrier
   isEmpty ← (Carrier → Bool)
   insert-nonEmpty ← ∀ {e : Elem} {x : Carrier} → isEmpty (insert e x) ≡ false
   End {ℓ}
 
 ListColl : {ℓ : Level} → Collection ℓ 1
 ListColl E = ⟨ List E
+             , _∷_
              , []
-             , _∷_ , (λ { [] → true; _ → false})
+             , (λ { [] → true; _ → false})
              , (λ {x} {x = x₁} → refl)
              ⟩
 
-Collection₀ = Collection ℓ₀
-
-ℕCollection = (Collection₀ :waist 2)
+ℕCollection = (Collection ℓ₀ :waist 2)
                 ("Elem"    ≔ Digit)
                 ("Carrier" ≔ ℕ)
 --
--- i.e., (Collection₀ :waist 2) Digit ℕ
+-- i.e., (Collection ℓ₀ :waist 2) Digit ℕ
 
 stack : ℕCollection
-stack = ⟨ "empty stack" ≔ 0
-        , "insert"      ≔ (λ d s → suc (10 * s + #→ℕ d))
+stack = ⟨ "insert"      ≔ (λ d s → suc (10 * s + #→ℕ d))
+        , "empty stack" ≔ 0
         , "is-empty"    ≔ (λ { 0 → true; _ → false})
         -- Properties --
         , (λ {d : Digit} {s : ℕ} → refl {x = false})
         ⟩
+
+Field₀ : ℕ → Term → Term
+Field₀ zero c    = def (quote proj₁) (arg (arg-info visible relevant) c ∷ [])
+Field₀ (suc n) c = Field₀ n (def (quote proj₂) (arg (arg-info visible relevant) c ∷ []))
+
+macro
+  Field : ℕ → Term → Term → TC Unit.⊤
+  Field n t goal = unify goal (Field₀ n t)
+
+Elem      : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
+Elem      = λ C   → Field 0 C
+
+Carrier   : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
+Carrier₁  : ∀ {ℓ} → Collection ℓ 1 → (γ : Set ℓ) → Set ℓ
+Carrier₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → Set ℓ
+
+Carrier   = λ C   → Field 1 C
+Carrier₁  = λ C γ → Field 0 (C γ)
+Carrier₁′ = λ C   → Field 0 C
+
+insert   : ∀ {ℓ} (C : Collection ℓ 0) → (Elem C → Carrier C → Carrier C)
+insert₁  : ∀ {ℓ} (C : Collection ℓ 1) (γ : Set ℓ) →  γ → Carrier₁ C γ → Carrier₁ C γ
+insert₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → γ → Carrier₁′ C → Carrier₁′ C
+
+insert    = λ C   → Field 2 C
+insert₁   = λ C γ → Field 1 (C γ)
+insert₁′  = λ C   → Field 1 C
+
+insert₂  : ∀ {ℓ} (C : Collection ℓ 2) (El Cr : Set ℓ) → El → Cr → Cr
+insert₂′ : ∀ {ℓ} {El Cr : Set ℓ} (C : (Collection ℓ :waist 2) El Cr) → El → Cr → Cr
+
+insert₂ = λ C El Cr → Field 0 (C El Cr)
+insert₂′ = λ C → Field 0 C
