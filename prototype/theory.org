@@ -901,6 +901,343 @@ reference to the 0-th away bound variable ~B~, and so a simple Π-variable swap
 would leave the reference as ~var 0~ which then refers to ~A~. Hence, in
 general, we need to update all debrujin indices, increasing some and decreasing
 others.
+* Algebraic Datatypes
+
+  In addition to possibly parameterised record types, we would like to extend
+  the existing computational notation for grouping mechanisms to obtain
+  algebraic datatypes.
+
+  The aim is to start with a context, such as:
+#+BEGIN_SRC agda2
+DynamicSystem : Context (ℓsuc Level.zero)
+DynamicSystem = do X ← Set
+                   z ← X
+                   s ← (X → X)
+                   End {Level.zero}
+#+END_SRC
+
+Then obtain a type that is isomorphic to the algebraic datatype:
+#+BEGIN_SRC agda2
+data 𝔻 : Set where
+     zeroD : 𝔻
+     sucD  : 𝔻 → 𝔻
+#+END_SRC
+
+| Goal: Obtain 𝔻 from ~DynamicSystem~ /with/ user-defined constructors ~zeroD~ and ~sucD~! |
+
+** Goal-Driven Development ---a 5-step plan
+
+ # Plan: Do-notation ⇒ records ⇒ functions ⇒ drop targets ⇒ rewrite Σ to ⊎ ⇒
+ # fixpoints
+
+    A declaration ~data DT = ⋯DT⋯~ is a convenient notation for the least fixpoint
+    of the type constructor ~λ DT → ⋯DT⋯~. Hence, with that understanding, we shall
+    form fixpoints from ~Context~ declarations. Since ~data~ is a builtin language
+    construct, we can only provide a seemingly improper formulation: ~Fix~
+    ---amusingly, we mimic the ~data~ construct using a ~data~ declaration.
+
+ #+BEGIN_SRC agda2  :tangle semantics-with-waist.agda
+{-# NO_POSITIVITY_CHECK #-}
+data Fix {ℓ} (F : Set ℓ → Set ℓ) : Set ℓ where
+  μ : F (Fix F) → Fix F
+ #+END_SRC
+
+ + Since ~Fix F ≅ F 𝟙 ⊎ F² 𝟙 ⊎ F³ 𝟙 ⊎ ⋯~, I've attempted to work with a ~Fix n F~
+   which yields terms of “depth” ~n~, up to ~Fⁿ 𝟙~. The result is tremendously
+   awkward to use at the relatively insignificant benefit of ensuring positivity.
+ + The approach above instead even permits /friendly user-defined constructor
+   pattern names!/
+
+ Having an understanding of ~data~ constructions, which are just ~μ F~ for type
+ constructors ~F~, we obtain such a ~data~ construction from a context by first
+ deriving an appropriate type constructor ~F~, which we can already do using the
+ existing framework.
+
+ Here's our plan of attack!
+ #+BEGIN_SRC agda2
+  do X ← Set; z ← X; s ← (X → X); End
+↝⟨ Records! Use existing interpretation to obtain a record. ⟩
+  Σ X : Set • Σ z : X • Σ s : (X → X) • ⊤
+↝⟨ Waist & Π→λ! Pull out the ‘carrier’ to obtain a type constructor. ⟩
+  λ X : Set • Σ z : X • Σ s : (X → X) • ⊤
+↝⟨ Sources: ADT constructors target the declared type, so only their sources matter.
+   E.g., ‘z : X’ is a nullary constructor targeting the carrier ‘X’.
+   This introduces 𝟙 types, so any existing occurances are dropped via 𝟘.
+   ⟩
+  λ X : Set • Σ z : 𝟙 • Σ s : X • 𝟘
+↝⟨ Unions: ADTs are sums of products. ⟩
+  λ X : Set •       𝟙   ⊎     X  ⊎ 𝟘
+↝⟨ Fixpoints: ADTs are fixpoints of type constructors. ⟩
+  μ (λ X • 𝟙 ⊎ X)  -- i.e., 𝔻, i.e., ℕ ^_^
+ #+END_SRC
+
+ Neato!
+
+ | Notice: Useful programming datatypes arise from termtypes of theories (contexts)! |
+
+ If =𝒞 : Set → Context ℓ₀= and =ℂ = λ X → termtype (𝒞 X :waist 1)= then =ℂ= can be used
+ to form ‘free, lawless, 𝒞-instances’.
+
+ For example,
+ | Theory             | Termtype     |
+ |--------------------+--------------|
+ | Dynamical Systems  | ℕ            |
+ | Pointed Structures | Maybe        |
+ | Monoids            | Binary Trees |
+
+ We shall follow the above outlined 5-point plan, then realise the
+ correspondences mentioned in the above table.
+
+ + The final item in the table is a claim mentioned briefly in a GPCE’19 paper.
+   - Here we can not only formally express the problem but also prove it true
+     ♥‿♥
+
+** Steps 1 & 2: Records and Type Constructors
+
+   The first step, realising the notation as record types has already been setup,
+   so we may just use it.
+   #+begin_src agda2 :tangle semantics-with-waist.agda
+D₁ = DynamicSystem 0
+
+1-records : D₁ ≡ (Σ X ∶ Set • Σ z ∶ X • Σ s ∶ (X → X) • ⊤)
+1-records = refl
+ #+end_src
+
+ Progress ^_^ Yay!
+
+ Likewise, we can use the Π→λ setup to accomplish step 2.
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+D₂ = DynamicSystem :waist 1
+
+2-funcs : D₂ ≡ (λ (X : Set) → Σ z ∶ X • Σ s ∶ (X → X) • ⊤)
+2-funcs = refl
+ #+end_src
+
+** Step 3: Sources
+
+   Everywhere we see a /bound variable/ ~x ∶ A → B~, we rewrite it as
+   ~x ∶ A~.
+   - If there is no ~A~, we take it to be ~𝟙~.
+     + Since we're adding 𝟙's, any existing 𝟙's are replaced by 𝟘.
+       * We do this in-preparation for step 4, unions, and step 5, fixpoints.
+       * Contexts are terminated by ~End~, which is an alias for 𝟙; which
+         contributes inhabitants to fixpoints. As such, we rewrite any 𝟙s with 𝟘
+         to avoid unintentional inhabitants.
+   - If ~A~ is implicit, then we consider ~x~ to be a “property” rather than a
+     “functional symbol” and so drop it à la ~x ∶ 𝟘~.
+
+ ⇒ I feel that one of the two ~sourcesᵢ~ functions is spurious! ⇐
+
+     #+begin_src agda2 :tangle semantics-with-waist.agda
+-- useful to motivate defn of sources₀
+_ :   quoteTerm (∀ {x : ℕ} → ℕ)
+    ≡ pi (arg (arg-info hidden relevant) (quoteTerm ℕ)) (abs "x" (quoteTerm ℕ))
+_ = refl
+
+sources₀ : Term → Term
+-- Otherwise:
+sources₀ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) = def (quote _×_) (vArg A ∷
+  vArg (def (quote _×_) (vArg (var-dec Ba) ∷ vArg (var-dec (var-dec (sources₀ Cab))) ∷ [])) ∷ [])
+  -- sources₀ (Π[ a ∶ arg i A ] (Π[ b ∶ Ba ] Cab)) = Π[ a ∶ arg i A ] Π[ b ∶ Ba ] sources₀ Cab
+-- Design descision: Types starting with implicit arguments are ‘invariants’, not ‘constructors’ ⇐ Couldn't do this.
+sources₀ (Π[ a ∶ arg (arg-info hidden _) A ] Ba) = quoteTerm 𝟘
+-- Another attempt: If it has a “≡” then an invariant.
+-- sources₀ (Π[ a ∶ arg i A ] (def (quote _≡_) args)) = quoteTerm 𝟘
+sources₀ (Π[ x ∶ arg i A ] Bx) = A
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+sources₀ t = quoteTerm 𝟙
+
+{-# TERMINATING #-}
+sources₁ : Term → Term
+sources₁ (Π[ a ∶ arg (arg-info hidden _) A ] Ba) = quoteTerm 𝟘
+sources₁ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) = def (quote _×_) (vArg A ∷
+  vArg (def (quote _×_) (vArg (var-dec Ba) ∷ vArg (var-dec (var-dec (sources₀ Cab))) ∷ [])) ∷ [])
+-- sources₁ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) = def (quote _×_) (vArg A ∷ vArg Ba ∷ [])
+sources₁ (Π[ x ∶ arg i A ] Bx) = A
+sources₁ (def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ τ ∷ body)) = def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ map-Arg sources₀ τ ∷ List.map (map-Arg sources₁) body)
+sources₁ (def (quote ⊤) _) = def (quote 𝟘) [] -- This function introduces 𝟙s, so let's drop any old occurances a la 𝟘.
+sources₁ (lam v (abs s x))     = lam v (abs s (sources₁ x))
+sources₁ (var x args) = var x (List.map (map-Arg sources₁) args)
+sources₁ (con c args) = con c (List.map (map-Arg sources₁) args)
+sources₁ (def f args) = def f (List.map (map-Arg sources₁) args)
+sources₁ (pat-lam cs args) = pat-lam cs (List.map (map-Arg sources₁) args)
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+sources₁ t = t
+ #+end_src
+
+ The use of ~map~ makes it unclear whether the recursive calls are structurally
+ smaller or not, hence the need for the ~TERMINATING~ clauses.
+
+ Here is the primary utility function along with unit tests.
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+macro
+  sources : Term → Term → TC Unit.⊤
+  sources tm goal = normalise tm >>=ₘ λ tm′ → unify (sources₁ tm′) goal
+
+_ : sources (ℕ → Set) ≡ ℕ ; _ = refl
+-- _ : sources (λ (x : (ℕ → Fin 3)) → ℕ) ≡ λ (x : ℕ) → ℕ ; _ = refl
+_ : sources (Σ x ∶ (ℕ → Fin 3) • ℕ) ≡ (Σ x ∶ ℕ • ℕ) ; _ = refl
+_ : ∀ {ℓ : Level} {A B C : Set} → sources (Σ x ∶ (A → B) • C) ≡ (Σ x ∶ A • C) ; _ = refl
+-- MA: Heterogenous levels wont work; e.g., A ≔ ℕ crashes.
+_ : sources (Fin 1 → Fin 2 → Fin 3) ≡ (Σ _ ∶ Fin 1 • Fin 2 × 𝟙) ; _ = refl
+_ : sources (Σ f ∶ (Fin 1 → Fin 2 → Fin 3 → Fin 4) • Fin 5) ≡ (Σ f ∶ (Fin 1 × Fin 2 × Fin 3) • Fin 5) ; _ = refl
+_ : ∀ {A B C : Set} → sources (A → B → C) ≡ (A × B × 𝟙) ; _ = refl
+_ : ∀ {A B C D E : Set} → sources (A → B → C → D → E) ≡ Σ A (λ _ → Σ B (λ _ → Σ C (λ _ → Σ D (λ _ → ⊤)))) ; _ = refl
+-- Not desirable:
+-- _ : sources (∀ {x : ℕ} → x ≡ x) ≡ ℕ ; _ = refl
+-- Design descision: Types starting with implicit arguments are ‘invariants’, not ‘constructors’
+_ : sources (∀ {x : ℕ} → x ≡ x) ≡ 𝟘 ; _ = refl -- one implicit
+_ : sources (∀ {x y z : ℕ} → x ≡ y) ≡ 𝟘 ; _ = refl   -- multiple implicits
+ #+end_src
+
+ We can finally express the third phase.
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+D₃ = sources D₂
+
+3-sources : D₃ ≡ λ (X : Set) → Σ z ∶ 𝟙 • Σ s ∶ X • 𝟘
+3-sources = refl
+ #+end_src
+
+** Step 4: Unions with ~Σ→⊎~
+
+   Syntactically transform Σ-types into ⊎-clauses, dropping dependent items via
+   ~var-dec~ ---whose use makes it unclear whether recursive calls are structurally
+   smaller thereby necessitating the ~TERMINATING~ hint.
+     #+begin_src agda2 :tangle semantics-with-waist.agda
+{-# TERMINATING #-}
+Σ→⊎₀ : Term → Term
+Σ→⊎₀ (def (quote Σ) (𝒽₁ ∷ 𝒽₀ ∷ arg i A ∷ arg i₁ (lam v (abs s x)) ∷ []))
+  =  def (quote _⊎_) (𝒽₁ ∷ 𝒽₀ ∷ arg i A ∷ vArg (Σ→⊎₀ (var-dec x)) ∷ [])
+  -- def (quote _⊎_) (𝒽₁ ∷ 𝒽₀ ∷ arg i (var-dec A) ∷ vArg (Σ→⊎₀ (var-dec x)) ∷ [])
+Σ→⊎₀ (def (quote ⊤) _) = def (quote ⊥) [] -- Interpret “End” in do-notation to be an empty, impossible, constructor.
+ -- Walk under λ's and Π's.
+Σ→⊎₀ (lam v (abs s x)) = lam v (abs s (Σ→⊎₀ x))
+Σ→⊎₀ (Π[ x ∶ A ] Bx) = Π[ x ∶ A ] Σ→⊎₀ Bx
+{-# CATCHALL #-}
+Σ→⊎₀ t = t
+
+macro
+  Σ→⊎ : Term → Term → TC Unit.⊤
+  Σ→⊎ tm goal = normalise tm >>=ₘ λ tm′ → unify (Σ→⊎₀ tm′) goal
+
+-- _ :   Σ→⊎ (Σ x ∶ ℕ • ⊤ {ℓ₀})
+--     ≡ (ℕ ⊎ ⊥)
+-- _ = refl
+
+-- Fails due to the ⊥-choice above.
+-- _ :   ∀ {C : Set} → Σ→⊎ (Σ x ∶ C • Σ y ∶ C • ⊤ {ℓ₀})
+--                   ≡ (C ⊎ C ⊎ ⊤)
+-- _ = refl
+
+-- Unit tests
+_ : Σ→⊎ (Π X ∶ Set • (X → X))     ≡ (Π X ∶ Set • (X → X)); _ = refl
+_ : Σ→⊎ (Π X ∶ Set • Σ s ∶ X • X) ≡ (Π X ∶ Set • X ⊎ X)  ; _ = refl
+_ : Σ→⊎ (Π X ∶ Set • Σ s ∶ (X → X) • X) ≡ (Π X ∶ Set • (X → X) ⊎ X)  ; _ = refl
+_ : Σ→⊎ (Π X ∶ Set • Σ z ∶ X • Σ s ∶ (X → X) • ⊤ {ℓ₀}) ≡ (Π X ∶ Set • X ⊎ (X → X) ⊎ ⊥)  ; _ = refl
+ #+end_src
+
+ We can now derive the require ADT's underlying sum-of-products type constructor.
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+D₄ = Σ→⊎ D₃
+
+4-unions : D₄ ≡ λ X → 𝟙 ⊎ X ⊎ 𝟘
+4-unions = refl
+ #+end_src
+
+ Neato 😄
+
+** Step 5: =𝔻 ≅ ℕ=
+
+   Using the ~Fix~ constructor, we may obtain the fixpoint, then using Agda's
+   ~pattern~ mechanism, users may declare meaningful constructor aliases!
+   - The use of ~pattern~ sidesteps a weakness in Agda's current implementation
+     for reflection ---the inability to /actually/ make use of fresh names.
+
+     #+begin_src agda2 :tangle semantics-with-waist.agda
+𝔻 = Fix D₄
+
+-- Pattern synonyms for more compact presentation
+pattern zeroD  = μ (inj₁ tt)       -- : 𝔻
+pattern sucD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
+ #+end_src
+
+ With neato constructors declared, let's show that our ADT ~𝔻~ is essentially
+ just the natural numbers, thereby showing our transformation to achieve its
+ purpose and, less importantly, demonstrate that the naturals are a “termtype”
+ for dynamical systems.
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+oh : 𝔻 → ℕ
+oh zeroD    = 0
+oh (sucD x) = suc (oh x)
+
+ho : ℕ → 𝔻
+ho zero    = zeroD
+ho (suc n) = sucD (ho n)
+
+oh∘ho : ∀ n → oh (ho n) ≡ n
+oh∘ho zero    = refl
+oh∘ho (suc n) = cong suc (oh∘ho n)
+
+ho∘oh : ∀ d → ho (oh d) ≡ d
+ho∘oh zeroD    = refl
+ho∘oh (sucD x) = cong sucD (ho∘oh x)
+ #+end_src
+
+ So cool! 😎
+
+ An alternative to user-defined constructors would be injections.
+     #+begin_src agda2 :tangle semantics-with-waist.agda
+Inj₀ : ℕ → Term → Term
+Inj₀ zero c    = con (quote inj₁) (arg (arg-info visible relevant) c ∷ [])
+Inj₀ (suc n) c = con (quote inj₂) (vArg (Inj₀ n c) ∷ [])
+
+-- Duality!
+-- 𝒾-th projection: proj₁ ∘ (proj₂ ∘ ⋯ ∘ proj₂)
+-- 𝒾-th injection:  (inj₂ ∘ ⋯ ∘ inj₂) ∘ inj₁
+
+macro
+  Inj : ℕ → Term → Term → TC Unit.⊤
+  Inj n t goal = unify goal (Inj₀ n t)
+ #+end_src
+
+ However, the benefit of the ~pattern~ declarations is that as users perform
+ interactive casing with ~C-c C-c~, the ~agda2-make-case~ Emacs function, whenever a
+ pattern matches the right-side of one of the declared ~pattern~-s, then it is
+ automatically replaced by the user's meaningful left-side name. This useful
+ feature was used above to make it clear that =𝔻= essentially has only two
+ constructors.
+
+** ~termtype~: The term language of a theory
+
+ The 5 steps for moving from a context to an algebraic data type can be bundled
+ up into one macro.
+      #+begin_src agda2 :tangle semantics-with-waist.agda
+macro
+  termtype : Term → Term → TC Unit.⊤
+  termtype tm goal =
+                normalise tm
+           >>=ₘ λ tm′ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ tm′))) ∷ []))
+ #+end_src
+
+ There are pragmatic and vital reasons for using a macro.
+ 1. An easier interface; users needn't both with quoting and unquoting terms.
+ 2. Metavariable issues are resolved in the typechecking, ~TC~, monad.
+
+ Let's expound on the second point.
+
+ If we have a nullary context ~𝒞~, we should simply obtain its termtype via ~Fix
+ (Σ→⊎ (sources (𝒞 :waist 1)))~. However, sometimes ---as in the case of pointed
+ theories, below--- this expression becomes ~Fix (λ _ → ⋯)~ where the λ-variable is
+ unused and its type cannot be inferred from the λ-body.  The current
+ implementation of Agda's reflection mechanism will not infer the type even
+ though ~Fix~ explicitly specifies it to be of type ~Set~!  Even explicit type
+ annotations do not suffice. Hence, we are left with unresolved meta-variable
+ issues ---and disturbing yellow-marked code.  Besides unifying two terms, the
+ typechecking operation ~unify~ also solves metavariables in the process and so
+ does exactly what we need ---no more yellow-code.
+
 * COMMENT “Contexts over Contexts”
 
 Informally =x₀ : τ₀, … ❙ y₀ : τ₀; …=  denotes two contexts, ~Γ₁ ❙ Γ₂~, where the
