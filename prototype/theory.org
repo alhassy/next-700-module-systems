@@ -7,9 +7,15 @@
 #
 # Could have used agda2-example blocks, but wanted the colouring.
 
-*Status:* I cannot seem to phrase, let alone prove, the =stablity′= claim for
- dynamic systems.
-+ See the very bottom of this article.
+*Status:*
+Algebraic data-types and (parameterised) records are obtained from the same interface.
+
+ 1. I cannot seem to phrase, let alone prove, the =stability′= claim for
+    dynamic systems.
+ 2. Likewise for =∀ {ℓ} {Γ : Context (ℓsuc ℓ)} → Γ 0 ≡ Γ :waist 0=.
+ 3. The use of ~map~ makes it unclear whether the recursive calls are structurally
+    smaller or not, hence the need for the ~TERMINATING~ clauses.
+ 4. I feel that one of the two ~sourcesᵢ~ functions is spurious!
 
 # (shell-command "ln -s theory.org readme.org")
 
@@ -32,19 +38,29 @@
   - [[#example--a-record-type-with-invariants][Example – A record type with invariants]]
 - [[#parameterised-records][Parameterised Records]]
   - [[#header][Header]]
+    - [[#dependent-πσ-and-tuple-notation][Dependent Π∶•/Σ∶• and ⟨Tuple⟩ Notation]]
     - [[#reflection-helpers][Reflection Helpers]]
-    - [[#products-and-tuple-notation][Products and ⟨Tuple⟩ Notation]]
+    - [[#var-dec-decreasing-de-bruijn-indices][=var-dec=: Decreasing De Bruijn Indices]]
   - [[#introduction-1][Introduction]]
   - [[#definitions-context-_-end][Definitions: ~Context, ‵_, End~]]
   - [[#definitions-__][Definitions: ~_>>_~]]
   - [[#example-dynamical-systems][Example: Dynamical Systems]]
-  - [[#theorems-stablity][Theorems: ~stablity~]]
+  - [[#theorems-stability][Theorems: ~stability~]]
   - [[#natural-number-instance][Natural Number Instance]]
   - [[#πλ-and-modus-ponens][Π→λ and Modus Ponens]]
   - [[#defining-_waist_][Defining =_:waist_=]]
   - [[#further-natural-number-instances-and-fixing-parameters][Further Natural Number Instances and Fixing Parameters]]
   - [[#example----collections][Example ---Collections]]
   - [[#projections][Projections]]
+- [[#algebraic-datatypes][Algebraic Datatypes]]
+  - [[#goal-driven-development----a-5-step-plan][Goal-Driven Development ---a 5-step plan]]
+  - [[#steps-1--2-records-and-type-constructors][Steps 1 & 2: Records and Type Constructors]]
+  - [[#step-3-sources][Step 3: Sources]]
+  - [[#step-4-unions-with-σ][Step 4: Unions with ~Σ→⊎~]]
+  - [[#step-5-𝔻--ℕ][Step 5: =𝔻 ≅ ℕ=]]
+  - [[#termtype-the-term-language-of-a-theory][~termtype~: The term language of a theory]]
+  - [[#example-the-termtype-of-monoids-is-tree-skeletons][Example: The termtype of monoids is tree skeletons]]
+  - [[#example-maybe-from-pointed-structures][Example: =Maybe= from pointed structures]]
 
 * Introduction
 
@@ -322,7 +338,8 @@ example₆ = ℕ , ℕ._+_ , 4 , 8 , 12 , refl {x = 8} , refl {x = 12}
 * Parameterised Records
 
 ** Header
-  #+begin_src agda2 :tangle semantics-with-waist.agda
+
+#+begin_src agda2 :tangle semantics-with-waist.agda
 module semantics-with-waist where
 
 open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc; zero to ℓ₀)
@@ -331,7 +348,11 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 open import Data.Empty
 open import Data.Bool using (Bool ; true ; false)
-open import Data.List using (List ; [] ; _∷_ ; _∷ʳ_)
+open import Data.List as List using (List ; [] ; _∷_ ; _∷ʳ_; sum)
+open import Function using (_∘_)
+open import Data.Sum
+open import Data.Fin  as Fin using (Fin)
+open import Data.Maybe  hiding (_>>=_)
 
 -- “s ≔ v” is just a way to document v with string s.
 open import Data.String using (String)
@@ -356,6 +377,41 @@ data Digit : Set where
 #→ℕ #9 = 9
      #+end_src
 
+*** Dependent Π∶•/Σ∶• and ⟨Tuple⟩ Notation
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+open import Data.Product
+
+Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
+Σ∶• = Σ
+
+infix -666 Σ∶•
+syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
+
+Π∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
+Π∶• A B = (x : A) → B x
+
+infix -666 Π∶•
+syntax Π∶• A (λ x → B) = Π x ∶ A • B
+
+record ⊤ {ℓ} : Set ℓ where
+  constructor tt
+
+open import Data.Empty using (⊥)
+
+𝟙 = ⊤ {ℓ₀}
+𝟘 = ⊥
+
+-- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
+infixr 5 ⟨ _⟩
+⟨⟩ : ∀ {ℓ} → ⊤ {ℓ}
+⟨⟩ = tt
+
+⟨ : ∀ {ℓ} {S : Set ℓ} → S → S
+⟨ s = s
+
+_⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × ⊤ {ℓ}
+s ⟩ = s , tt
+   #+end_src
 *** Reflection Helpers
      #+begin_src agda2 :tangle semantics-with-waist.agda
 import Data.Unit as Unit
@@ -372,32 +428,62 @@ toℕ : Term → ℕ
 toℕ (lit (nat n)) = n
 {-# CATCHALL #-}
 toℕ _ = 0
+
+    #+end_src
+
+*** =var-dec=: Decreasing De Bruijn Indices
+#+begin_src agda2 :tangle semantics-with-waist.agda
+arg-term : ∀ {ℓ} {A : Set ℓ} → (Term → A) → Arg Term → A
+arg-term f (arg i x) = f x
+
+var-dec₀ : (fuel : ℕ) → Term → Term
+var-dec₀ Fin.0F t  = t
+-- var-dec₀ (suc n) (var Fin.0F args) = var Fin.0F args
+-- Let's use an “impossible” term.
+var-dec₀ (suc n) (var Fin.0F args)    = def (quote ⊥) []
+var-dec₀ (suc n) (var (suc x) args)   = var x args
+var-dec₀ (suc n) (con c args)         = con c (map-Args (var-dec₀ n) args)
+var-dec₀ (suc n) (def f args)         = def f (map-Args (var-dec₀ n) args)
+var-dec₀ (suc n) (lam v (abs s x))    = lam v (abs s (var-dec₀ n x))
+var-dec₀ (suc n) (pat-lam cs args)    = pat-lam cs (map-Args (var-dec₀ n) args)
+var-dec₀ (suc n) (Π[ s ∶ arg i A ] B) = Π[ s ∶ arg i (var-dec₀ n A) ] var-dec₀ n B
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+var-dec₀ n t = t
+
+{-# TERMINATING #-}
+lengthₜ : Term → ℕ
+lengthₜ (var x args)      = 1 + sum (List.map (arg-term lengthₜ ) args)
+lengthₜ (con c args)      = 1 + sum (List.map (arg-term lengthₜ ) args)
+lengthₜ (def f args)      = 1 + sum (List.map (arg-term lengthₜ ) args)
+lengthₜ (lam v (abs s x)) = 1 + lengthₜ x
+lengthₜ (pat-lam cs args) = 1 + sum (List.map (arg-term lengthₜ ) args)
+lengthₜ (Π[ x ∶ A ] Bx)   = 1 + lengthₜ Bx
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+lengthₜ t = 0
+
+_ : lengthₜ (quoteTerm (Σ x ∶ ℕ • x ≡ x)) ≡ 10
+_ = refl
 #+end_src
 
-*** Products and ⟨Tuple⟩ Notation
- #+begin_src agda2 :tangle semantics-with-waist.agda
-open import Data.Product
+The use of ~map~ makes it unclear whether the recursive calls are structurally
+smaller or not, hence the need for the ~TERMINATING~ clauses.
 
-Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
-Σ∶• = Σ
+Here's the prime function:
+#+begin_src agda2 :tangle semantics-with-waist.agda
+var-dec : Term → Term
+var-dec t = var-dec₀ (lengthₜ t) t
+#+end_src
 
-infix -666 Σ∶•
-syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
+This, below, is not ideal at all: =(Π X : Set • X) ↦ (Π X : Set • ⊥)= !  But this
+is: =(Σ X : Set • X) ↦ (Set ⊎ ⊥)= !  /The crutch is when to do what!/
+#+begin_src agda2 :tangle semantics-with-waist.agda
+_ :   var-dec (quoteTerm ((X : Set) → X))
+    ≡ pi (vArg (sort (lit 0))) (abs "X" (def (quote ⊥) []))
+_ = refl
+#+end_src
 
-record ⊤ {ℓ} : Set ℓ where
-  constructor tt
-
--- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
-infixr 5 ⟨ _⟩
-⟨⟩ : ∀ {ℓ} → ⊤ {ℓ}
-⟨⟩ = tt
-
-⟨ : ∀ {ℓ} {S : Set ℓ} → S → S
-⟨ s = s
-
-_⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × ⊤ {ℓ}
-s ⟩ = s , tt
-   #+end_src
 ** Introduction
   We want to write
   #+begin_example agda2
@@ -490,18 +576,28 @@ A = DynamicSystem 0 -- Σ X ∶ Set  • Σ z ∶ X  • Σ s ∶ X → X  • �
 B = DynamicSystem 1 --  (X ∶ Set) → Σ z ∶ X  • Σ s ∶ X → X  • ⊤
 C = DynamicSystem 2 --  (X ∶ Set)    (z ∶ X) → Σ s ∶ X → X  • ⊤
 D = DynamicSystem 3 --  (X ∶ Set)    (z ∶ X) →  (s ∶ X → X) → ⊤
-#+end_src
+    #+end_src
 
 It is important to note that these are /not/ functions, but instead
 are /function types/!
 
-** Theorems: ~stablity~
+Let's transform the above comments to machine checked unit tests ^_^
+    #+begin_src agda2 :tangle semantics-with-waist.agda
+_ : A ≡ (Σ X ∶ Set  • Σ z ∶ X  • Σ s ∶ (X → X)  • ⊤) ; _ = refl
+_ : B ≡ (Π X ∶ Set  • Σ z ∶ X  • Σ s ∶ (X → X)  • ⊤) ; _ = refl
+_ : C ≡ (Π X ∶ Set  • Π z ∶ X  • Σ s ∶ (X → X)  • ⊤) ; _ = refl
+_ : D ≡ (Π X ∶ Set  • Π z ∶ X  • Π s ∶ (X → X)  • ⊤) ; _ = refl
+#+end_src
+
+
+
+** Theorems: ~stability~
 
 Observe that there are no more ‘interesting’ ways to form a dynamical system.
 #+begin_src agda2 :tangle semantics-with-waist.agda
-stablity : ∀ {n} →   DynamicSystem (3 + n)
+stability : ∀ {n} →   DynamicSystem (3 + n)
                    ≡ DynamicSystem  3
-stablity = refl
+stability = refl
   #+end_src
 
   Moreover, by the nature of a dynamical system, there cannot ever be such a
@@ -729,9 +825,18 @@ parameterised records; i.e., do not go all the way down to the creation level.
 These ‘partial applied’ types are ~B′, C′, D′~. That is, ~:waist~ essentially
 allows us to unbundle, or uncurry, records! So cool (•̀ᴗ•́)و
 
+The two notions coincide at the bottom-most waist.
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+_ : DynamicSystem 0 ≡ DynamicSystem :waist 0
+_ = refl
+
+-- _ : ∀ {ℓ} {Γ : Context (ℓsuc ℓ)} → Γ 0 ≡ {! Γ :waist 0 !}
+-- _ = refl
+#+end_src
+
   The following /instances/ of these grouping /types/ demonstrate how /information
 moves from the body level to the parameter level/!
-  #+begin_src agda2 :tangle semantics-with-waist.agda
+#+begin_src agda2 :tangle semantics-with-waist.agda
 𝒩⁰ : A′
 𝒩⁰ = ⟨ ℕ , 0 , suc ⟩
 
@@ -749,14 +854,14 @@ Notice that with ~A′, B′, C′, D′~ we may fix certain parameters ahead of
 Above the type ~B′ ℕ~ is the type of “dynamic systems over carrier ℕ” whereas ~C′ ℕ
 0~ is the type of “dynamic systems over carrier ℕ and start state 0”.  Neato!
 
-One would expect the stablity result from earlier to continue to hold, but
+One would expect the stability result from earlier to continue to hold, but
 there is a type error in even phrasing it naively.
 #+begin_example agda2
 -- Type error: LHS and RHS of ‘≡’ do not agree.
-stablity′ : ∀ {n : ℕ} →
+stability′ : ∀ {n : ℕ} →
             DynamicSystem :waist (3 + n)
           ≡ DynamicSystem :waist 3
-stablity′ = refl
+stability′ = refl
 #+end_example
 
 ** Example ---Collections
