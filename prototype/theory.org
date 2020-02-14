@@ -1314,6 +1314,71 @@ data TreeSkeleton : Set where
  We demonstrate this process with pointed types to obtain the ~Maybe~ type
  constructor!
 
+** Example: =Maybe= from pointed structures
+
+   A /pointed set/ is a set =Carrier= with an elected =point : Carrier=; e.g., C# uses
+   a category of pointed sets for its types where each type ~τ~ is furnished with a
+   point =default τ=. More commonly, in object-oriented programming, object types
+   have ~NULL~ as a dangerous sentinel ---for this reason, the ~Maybe τ~ is sometimes
+   referred to as the type of “pointers to τ values”.
+
+   A pointed set /over/ a given set Ξ is merely a pointed set that also contains (a
+   copy of) the given set Ξ. The embedding function is usually required to be injective.
+   #+begin_src agda2 :tangle semantics-with-waist.agda
+-- “a pointed set that contains Ξ” ─c.f., “a group over Ξ”
+PointedOver  : Set → Context (ℓsuc ℓ₀)
+PointedOver Ξ    = do Carrier ← Set ℓ₀
+                      point   ← Carrier
+                      embed   ← (Ξ → Carrier)
+                      End {ℓ₀}
+ #+end_src
+
+  What is the /smallest/ pointed set over a given type?
+
+  We claim it can be found as the termtype of ~PointedOver~.
+
+   #+begin_src agda2 :tangle semantics-with-waist.agda
+ℙ : Set → Set
+ℙ X = termtype (PointedOver X :waist 1)
+
+-- Pattern synonyms for more compact presentation
+pattern nothingP = μ (inj₁ tt)       -- : ℙ
+pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
+ #+end_src
+
+ We can obtain ~PointedOver~ values using ~ℙ~:
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+-- Observe that ℙ makes instances of PointdOver!
+ℙ-rec : (X : Set) → PointedOver X 0
+ℙ-rec X = ⟨ ℙ X , nothingP , justP ⟩
+ #+end_src
+
+ It is ‘obvious’ that =ℙ= is the =Maybe= type constructor.
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+ℙ→Maybe : ∀ {X} → ℙ X → Maybe X
+ℙ→Maybe nothingP  = nothing
+ℙ→Maybe (justP x) = just x
+
+ℙ←Maybe : ∀ {X} → Maybe X → ℙ X
+ℙ←Maybe (just x) = justP x
+ℙ←Maybe nothing  = nothingP
+
+ℙ→Maybe∘ℙ←Maybe : ∀ {X} (m : Maybe X) → ℙ→Maybe (ℙ←Maybe m) ≡ m
+ℙ→Maybe∘ℙ←Maybe (just x) = refl
+ℙ→Maybe∘ℙ←Maybe nothing  = refl
+
+ℙ←Maybe∘ℙ→Maybe : ∀ {X} (p : ℙ X) → ℙ←Maybe (ℙ→Maybe p) ≡ p
+ℙ←Maybe∘ℙ→Maybe nothingP  = refl
+ℙ←Maybe∘ℙ→Maybe (justP x) = refl
+ #+end_src
+
+ ‘Obvious’ indeed, with that syntactic sugar 🍭 😋
+
+* COMMENT ?
+
+  #+begin_src agda2 :tangle semantics-with-waist.agda
+#+end_src
+
 * COMMENT “Contexts over Contexts”
 
 Informally =x₀ : τ₀, … ❙ y₀ : τ₀; …=  denotes two contexts, ~Γ₁ ❙ Γ₂~, where the
