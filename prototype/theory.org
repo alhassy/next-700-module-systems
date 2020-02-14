@@ -1238,6 +1238,82 @@ macro
  typechecking operation ~unify~ also solves metavariables in the process and so
  does exactly what we need ---no more yellow-code.
 
+** Example: The termtype of monoids is tree skeletons
+
+ Recall the theory of monoids.
+ #+BEGIN_SRC agda2
+Monoid   : ∀ ℓ → Context (ℓsuc ℓ)
+Monoid ℓ = do Carrier ← Set ℓ
+              Id      ← Carrier
+              _⊕_     ← (Carrier → Carrier → Carrier)
+              leftId  ← ∀ {x : Carrier} → x ⊕ Id ≡ x
+              rightId ← ∀ {x : Carrier} → Id ⊕ x ≡ x
+              assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
+              End {ℓ}
+ #+END_SRC
+
+ We can now mechanically derive its term language.
+     #+begin_src agda2 :tangle semantics-with-waist.agda
+𝕄 : Set
+𝕄 = termtype (Monoid ℓ₀ :waist 1)
+{- ie Fix (λ X → 𝟙         -- Id, nil leaf
+               ⊎ X × X × 𝟙 -- _⊕_, branch
+               ⊎ 𝟘         -- src of leftId
+               ⊎ 𝟘         -- src of rightId
+               ⊎ X × X × 𝟘 -- src of assoc
+               ⊎ 𝟘)        -- the “End {ℓ}”
+-}
+ #+end_src
+
+ As suggested, we declare constructor patterns to interface with the above definition.
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+-- Pattern synonyms for more compact presentation
+pattern emptyM      = μ (inj₁ tt)                      -- : 𝕄
+pattern branchM l r = μ (inj₂ (inj₁ (l , r , tt)))     -- : 𝕄 → 𝕄 → 𝕄
+pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a))))  -- absurd values of 𝟘
+ #+end_src
+
+ We conjecture that the termtype is really the free data type for monoids, ~TreeSkeleton~.
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+data TreeSkeleton : Set where
+  empty  : TreeSkeleton
+  branch : TreeSkeleton → TreeSkeleton → TreeSkeleton
+ #+end_src
+
+ With the ~pattern~ declarations, the proof appears trivial.  ---without them, the
+ proof would remain true, but be far less convincing to a human reader!
+ #+begin_src agda2 :tangle semantics-with-waist.agda
+𝕄→Tree : 𝕄 → TreeSkeleton
+𝕄→Tree emptyM = empty
+𝕄→Tree (branchM l r) = branch (𝕄→Tree l) (𝕄→Tree r)
+𝕄→Tree (absurdM (inj₁ ()))
+𝕄→Tree (absurdM (inj₂ ()))
+
+𝕄←Tree : TreeSkeleton → 𝕄
+𝕄←Tree empty = emptyM
+𝕄←Tree (branch l r) = branchM (𝕄←Tree l) (𝕄←Tree r)
+
+𝕄←Tree∘𝕄→Tree : ∀ m → 𝕄←Tree (𝕄→Tree m) ≡ m
+𝕄←Tree∘𝕄→Tree emptyM = refl
+𝕄←Tree∘𝕄→Tree (branchM l r) = cong₂ branchM (𝕄←Tree∘𝕄→Tree l) (𝕄←Tree∘𝕄→Tree r)
+𝕄←Tree∘𝕄→Tree (absurdM (inj₁ ()))
+𝕄←Tree∘𝕄→Tree (absurdM (inj₂ ()))
+
+𝕄→Tree∘𝕄←Tree : ∀ t → 𝕄→Tree (𝕄←Tree t) ≡ t
+𝕄→Tree∘𝕄←Tree empty = refl
+𝕄→Tree∘𝕄←Tree (branch l r) = cong₂ branch (𝕄→Tree∘𝕄←Tree l) (𝕄→Tree∘𝕄←Tree r)
+ #+end_src
+
+ 📗 A GPCE’19 paper mentioned in passing that the termtype of monoids is trees.
+ We are in a position to not only express such a statement but have also proven
+ it. 🤓
+
+ /Claim:/ To obtain trees over some ‘value type’ Ξ, one must use
+ ~Monoid′ Ξ = ⋯~, the notion of “monoids containing a given set Ξ”.
+
+ We demonstrate this process with pointed types to obtain the ~Maybe~ type
+ constructor!
+
 * COMMENT “Contexts over Contexts”
 
 Informally =x₀ : τ₀, … ❙ y₀ : τ₀; …=  denotes two contexts, ~Γ₁ ❙ Γ₂~, where the
