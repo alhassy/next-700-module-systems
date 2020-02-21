@@ -2,11 +2,6 @@
 #+author: Musa Al-hassy
 #+agda_version: 2.6.0.1
 
-# Some blocks are marked “haskell” so that they are coloured and #not#
-# interpreted as agda blocks. They're informal and do not typecheck.
-#
-# Could have used agda2-example blocks, but wanted the colouring.
-
 *Status:*
 Algebraic data-types and (parameterised) records are obtained from the same interface.
 
@@ -61,6 +56,7 @@ Algebraic data-types and (parameterised) records are obtained from the same inte
   - [[#termtype-the-term-language-of-a-theory][~termtype~: The term language of a theory]]
   - [[#example-the-termtype-of-monoids-is-tree-skeletons][Example: The termtype of monoids is tree skeletons]]
   - [[#example-maybe-from-pointed-structures][Example: =Maybe= from pointed structures]]
+- [[#kind][=:kind=]]
 
 * Introduction
 
@@ -1260,7 +1256,7 @@ D₄ = Σ→⊎ D₃
    - The use of ~pattern~ sidesteps a weakness in Agda's current implementation
      for reflection ---the inability to /actually/ make use of fresh names.
 
-     #+begin_src agda2 :tangle semantics-with-waist.agda
+#+begin_src agda2 :tangle semantics-with-waist.agda
 𝔻 = Fix D₄
 
 -- Pattern synonyms for more compact presentation
@@ -1327,7 +1323,7 @@ macro
  #+end_src
 
  There are pragmatic and vital reasons for using a macro.
- 1. An easier interface; users needn't both with quoting and unquoting terms.
+ 1. An easier interface; users needn't bother with quoting and unquoting terms.
  2. Metavariable issues are resolved in the typechecking, ~TC~, monad.
 
  Let's expound on the second point.
@@ -1479,9 +1475,33 @@ pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
 
  ‘Obvious’ indeed, with that syntactic sugar 🍭 😋
 
-* COMMENT ?
+* =:kind=
 
   #+begin_src agda2 :tangle semantics-with-waist.agda
+data Kind : Set where
+  ‵record    : Kind
+  ‵typeclass : Kind
+  ‵data      : Kind
+
+{- Nope: Since :waist may return type constructors, not sets!
+_:kind_ : ∀ {ℓ} → Context ℓ → Kind → Set ℓ
+𝒞 :kind ‵record    = 𝒞 :waist 0
+𝒞 :kind ‵typeclass = 𝒞 :waist 1
+𝒞 :kind ‵data      = termtype (𝒞 :waist 1)
+-}
+macro
+  _:kind_ : Term → Term → Term → TC Unit.⊤
+  _:kind_ t (con (quote ‵record) _)    goal = normalise (t app (quoteTerm 0))
+                      >>=ₘ λ t′ → unify (waist-helper 0 t′) goal
+  _:kind_ t (con (quote ‵typeclass) _) goal = normalise (t app (quoteTerm 1))
+                      >>=ₘ λ t′ → unify (waist-helper 1 t′) goal
+  _:kind_ t (con (quote ‵data) _) goal = normalise (t app (quoteTerm 1))
+                      >>=ₘ λ t′ → normalise (waist-helper 1 t′)
+                      >>=ₘ λ t″ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ t″))) ∷ []))
+  _:kind_ t _ goal = unify t goal
+
+-- _⟴_ : ∀ {a b} {A : Set a} {B : Set b} → A → (A → B) → B
+-- x ⟴ f = f x
 #+end_src
 
 * COMMENT “Contexts over Contexts”

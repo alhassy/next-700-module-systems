@@ -1,3 +1,11 @@
+-- MA: We cannot form a termtype of PointedPF, since
+-- the current impelemntation presupposes only one carrier
+-- which is necessarilry the first item in the context.
+-- The following crashes.
+--
+-- Actually, it's because of 𝟘!
+-- -- 𝟘 = λ {ℓ} → Lift ℓ ⊥  -- ???
+
 module semantics-with-waist where
 
 open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc; zero to ℓ₀)
@@ -54,6 +62,7 @@ record ⊤ {ℓ} : Set ℓ where
 open import Data.Empty using (⊥)
 
 𝟙 = ⊤ {ℓ₀}
+-- 𝟘 = λ {ℓ} → Lift ℓ ⊥  -- ???
 𝟘 = ⊥
 
 -- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
@@ -542,3 +551,28 @@ pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
 ℙ←Maybe∘ℙ→Maybe : ∀ {X} (p : ℙ X) → ℙ←Maybe (ℙ→Maybe p) ≡ p
 ℙ←Maybe∘ℙ→Maybe nothingP  = refl
 ℙ←Maybe∘ℙ→Maybe (justP x) = refl
+
+data Kind : Set where
+  ‵record    : Kind
+  ‵typeclass : Kind
+  ‵data      : Kind
+
+{- Nope: Since :waist may return type constructors, not sets!
+_:kind_ : ∀ {ℓ} → Context ℓ → Kind → Set ℓ
+𝒞 :kind ‵record    = 𝒞 :waist 0
+𝒞 :kind ‵typeclass = 𝒞 :waist 1
+𝒞 :kind ‵data      = termtype (𝒞 :waist 1)
+-}
+macro
+  _:kind_ : Term → Term → Term → TC Unit.⊤
+  _:kind_ t (con (quote ‵record) _)    goal = normalise (t app (quoteTerm 0))
+                      >>=ₘ λ t′ → unify (waist-helper 0 t′) goal
+  _:kind_ t (con (quote ‵typeclass) _) goal = normalise (t app (quoteTerm 1))
+                      >>=ₘ λ t′ → unify (waist-helper 1 t′) goal
+  _:kind_ t (con (quote ‵data) _) goal = normalise (t app (quoteTerm 1))
+                      >>=ₘ λ t′ → normalise (waist-helper 1 t′)
+                      >>=ₘ λ t″ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ t″))) ∷ []))
+  _:kind_ t _ goal = unify t goal
+
+-- _⟴_ : ∀ {a b} {A : Set a} {B : Set b} → A → (A → B) → B
+-- x ⟴ f = f x
