@@ -4,7 +4,7 @@ module paper2 where
 --------------------------------------------------------------------------------
 -- (shell-command "ln -s /Users/musa/thesis-proposal/prototype/semantics-with-waist.agda semantics-with-waist.agda")
 
-open import semantics-with-waist
+open import semantics-with-waist as W hiding (⟨ ; _⟩; End)
 open import Data.Product
 open import Level renaming (zero to ℓ₀) hiding (suc)
 open import Relation.Binary.PropositionalEquality hiding ([_])

@@ -2,6 +2,7 @@
 #+author: Musa Al-hassy
 #+agda_version: 2.6.0.1
 
+:Hide:
 *Status:*
 Algebraic data-types and (parameterised) records are obtained from the same interface.
 
@@ -13,27 +14,30 @@ Algebraic data-types and (parameterised) records are obtained from the same inte
  4. I feel that one of the two ~sourcesᵢ~ functions is spurious!
 
 # (shell-command "ln -s theory.org readme.org")
+:End:
 
 * Table of Contents                                    :Github:TOC_4:
 - [[#introduction][Introduction]]
-- [[#preamble][Preamble]]
-  - [[#module-header][Module header]]
-  - [[#imports][Imports]]
-  - [[#syntax-declarations][Syntax Declarations]]
-  - [[#helper-utilities][Helper Utilities]]
-    - [[#level-polymorphic-unit-type][Level-Polymorphic Unit Type]]
-- [[#what-is-a-type-theory][What is “a type theory”?]]
-- [[#our-ambient-type-theory][Our Ambient Type Theory]]
-- [[#user-interface-for-context-declaration][User Interface for Context Declaration]]
-  - [[#smart-constructors-as-do-notation][Smart Constructors as Do Notation]]
-  - [[#example-records-of-𝓃-many-pointed-sets][Example: Records of 𝓃-many Pointed Sets]]
-    - [[#types][Types]]
-    - [[#instances][Instances]]
-  - [[#doubly-pointed-example----on-the-nature-of-parameters-ξ][Doubly-Pointed Example -- On the nature of parameters Ξ]]
-  - [[#example--a-record-type-with-invariants][Example – A record type with invariants]]
+- [[#do-notation-for-records][Do-notation for records]]
+  - [[#preamble][Preamble]]
+    - [[#module-header][Module header]]
+    - [[#imports][Imports]]
+    - [[#syntax-declarations][Syntax Declarations]]
+    - [[#helper-utilities][Helper Utilities]]
+      - [[#level-polymorphic-unit-type][Level-Polymorphic Unit Type]]
+  - [[#what-is-a-type-theory][What is “a type theory”?]]
+  - [[#our-ambient-type-theory][Our Ambient Type Theory]]
+  - [[#user-interface-for-context-declaration][User Interface for Context Declaration]]
+    - [[#smart-constructors-as-do-notation][Smart Constructors as Do Notation]]
+    - [[#example-records-of-𝓃-many-pointed-sets][Example: Records of 𝓃-many Pointed Sets]]
+      - [[#types][Types]]
+      - [[#instances][Instances]]
+    - [[#doubly-pointed-example----on-the-nature-of-parameters-ξ][Doubly-Pointed Example -- On the nature of parameters Ξ]]
+    - [[#example--a-record-type-with-invariants][Example – A record type with invariants]]
 - [[#parameterised-records][Parameterised Records]]
   - [[#header][Header]]
     - [[#dependent-πσ-and-tuple-notation][Dependent Π∶•/Σ∶• and ⟨Tuple⟩ Notation]]
+    - [[#generalised-bot-and-top][Generalised Bot and Top]]
     - [[#reflection-helpers][Reflection Helpers]]
     - [[#var-dec-decreasing-de-bruijn-indices][=var-dec=: Decreasing De Bruijn Indices]]
   - [[#introduction-1][Introduction]]
@@ -67,17 +71,22 @@ Algebraic data-types and (parameterised) records are obtained from the same inte
   Let's try to explain that idea.
 
   + We shall embed the syntax of PackageFormers using semantics functions.
-  + For now, we only focus on the record semantics of a PackageFormer. ---i.e.,
-    ~:kind record~.
+  # + For now, we only focus on the record semantics of a PackageFormer. ---i.e.,
+  #  ~:kind record~.
 
-* Preamble
-** Module header
-#+BEGIN_SRC agda2 :tangle semantics.agda
+* Do-notation for records
+  Here we handle how to obtain do-notation for records /only/.
+
+  It is simpler ^_^
+
+** Preamble
+*** Module header
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 -- The .agda file is trangled from an org file.
 module semantics where
-#+END_SRC
-** Imports
-#+BEGIN_SRC agda2 :tangle semantics.agda
+ #+END_SRC
+*** Imports
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 open import Data.Product
 open import Data.Nat
 open import Data.Sum
@@ -88,34 +97,34 @@ open import Level renaming (zero to ℓ₀; suc to ℓsuc; _⊔_ to _⊍_)
 import Data.Nat  as ℕ
 open import Data.Fin  as Fin using (Fin)
 open import Data.Bool renaming (Bool to 𝔹)
-#+END_SRC
-** Syntax Declarations
-#+BEGIN_SRC agda2 :tangle semantics.agda
+ #+END_SRC
+*** Syntax Declarations
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
 Σ∶• = Σ
 
 infix -666 Σ∶•
 syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
-#+END_SRC
+ #+END_SRC
 
-** Helper Utilities
-*** Level-Polymorphic Unit Type
-#+BEGIN_SRC agda2 :tangle semantics.agda
+*** Helper Utilities
+**** Level-Polymorphic Unit Type
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 record ⊤ {ℓ} : Set ℓ where
   constructor tt
-#+END_SRC
-*** COMMENT Singleton Types
-We'll be treating contexts as sets and so will require a singleton types for
-adjoining declarations.
-#+BEGIN_SRC agda2 :tangle semantics.agda
+ #+END_SRC
+**** COMMENT Singleton Types
+ We'll be treating contexts as sets and so will require a singleton types for
+ adjoining declarations.
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 data Just {ℓ} {A : Set ℓ} : A → Set where
   just : (a : A) → Just a
-#+END_SRC
-* What is “a type theory”?
-  To get anything done, we'll need an ambient type theory that provides us with
-  a set of variable names 𝕍 and typing judgements. The comments below are what a
-  classical type theory would have.
-#+BEGIN_SRC agda2
+ #+END_SRC
+** What is “a type theory”?
+   To get anything done, we'll need an ambient type theory that provides us with
+   a set of variable names 𝕍 and typing judgements. The comments below are what a
+   classical type theory would have.
+ #+BEGIN_SRC agda2
 record TypeTheory : Set₁ where
   field
     -- An infinite set of variable names
@@ -128,78 +137,78 @@ record TypeTheory : Set₁ where
     _⊢_type : (Γ : Context) → Expr Γ → Set
     -- When is a term considered to be “of a type”
     _⊢_∶_   : (Γ : Context) → Expr Γ → Expr Γ → Set
-#+END_SRC
-When Γ is fixed and if we denote ~Γ ⊢ e ∶ τ~ by ~e ⟶ τ~ then we obtained a directed
-graph where an edge may be construed as ‘abstract interpreter’ relationship
----the ‘value’ of an expression is its type.
+ #+END_SRC
+ When Γ is fixed and if we denote ~Γ ⊢ e ∶ τ~ by ~e ⟶ τ~ then we obtained a directed
+ graph where an edge may be construed as ‘abstract interpreter’ relationship
+ ---the ‘value’ of an expression is its type.
 
-It seems that with the typing judgement, we can regain the kinding judgement:
-~Γ ⊢ τ type ⇔ ∀ (v : 𝕍) → Γ ⊢ v ∶ τ~.
+ It seems that with the typing judgement, we can regain the kinding judgement:
+ ~Γ ⊢ τ type ⇔ ∀ (v : 𝕍) → Γ ⊢ v ∶ τ~.
 
-Within a type theory, we can define a notion of declarations.
-#+BEGIN_SRC agda2
+ Within a type theory, we can define a notion of declarations.
+ #+BEGIN_SRC agda2
   data Declaration (Γ : Context) : Set where
     _∶_≔_by_and_ : (n : 𝕍) (τ δ : Expr Γ) → Γ ⊢ τ type → Γ ⊢ δ ∶ τ → Declaration Γ
-#+END_SRC
+ #+END_SRC
 
-  :Informal_Type_of_Declarations:
-  Given an ambient type theory 𝑻, we define the type =Declaration= to be the
-  triples ~n ∶ τ ≔ δ~ where =n= is a ‘name’, =τ= is a type of the given type theory, and
-  =δ= is a term over that type theory, possibly adjoined with other declarations
-  =nᵢ : τᵢ ≔ δᵢ=; i.e., the context ~𝑻, n₀ : τ₀ ≔ δ₀, …, nₘ : τₘ ≔ δₘ~ ensures ~τ~ is
-  a type and ~δ~ is of that type, and ~n~ must be a fresh name.
-  :End:
+   :Informal_Type_of_Declarations:
+   Given an ambient type theory 𝑻, we define the type =Declaration= to be the
+   triples ~n ∶ τ ≔ δ~ where =n= is a ‘name’, =τ= is a type of the given type theory, and
+   =δ= is a term over that type theory, possibly adjoined with other declarations
+   =nᵢ : τᵢ ≔ δᵢ=; i.e., the context ~𝑻, n₀ : τ₀ ≔ δ₀, …, nₘ : τₘ ≔ δₘ~ ensures ~τ~ is
+   a type and ~δ~ is of that type, and ~n~ must be a fresh name.
+   :End:
 
-The purpose of this section is merely to make it clear what a type theory
-consists of ---we will not make any instances of the ~TypeTheory~ record type.
-+ It is a learning moment, for me.
+ The purpose of this section is merely to make it clear what a type theory
+ consists of ---we will not make any instances of the ~TypeTheory~ record type.
+ + It is a learning moment, for me.
 
-* Our Ambient Type Theory
-Rather than working with an opaque, and generic, instance of a type theory, we
-will work with a particular instance: Agda's type theory.
+** Our Ambient Type Theory
+ Rather than working with an opaque, and generic, instance of a type theory, we
+ will work with a particular instance: Agda's type theory.
 
-| We ignore syntax and jump straight to semantics ---whence no expression type! |
+ | We ignore syntax and jump straight to semantics ---whence no expression type! |
 
-0. At the level of semantics, we may use Agda's variables instead of a
-   dedicated variable type.
-1. A context is nothing more than a set.
-   - With the ‘smart constructors’ below, a context is a dependent sum of types
-     wherein later type-declarations may depend on earlier ones.
-2. A type /determined by/ a context is a set than can be obtained
-   using the context.
+ 0. At the level of semantics, we may use Agda's variables instead of a
+    dedicated variable type.
+ 1. A context is nothing more than a set.
+    - With the ‘smart constructors’ below, a context is a dependent sum of types
+      wherein later type-declarations may depend on earlier ones.
+ 2. A type /determined by/ a context is a set than can be obtained
+    using the context.
 
-#+BEGIN_SRC agda2 :tangle semantics.agda
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 Context = λ ℓ → Set ℓ
-#+END_SRC
-#+BEGIN_SRC agda2
+ #+END_SRC
+ #+BEGIN_SRC agda2
 type : ∀ {ℓ} → Context ℓ → Set (ℓsuc ℓ)
 type {ℓ} Γ = Γ → Set ℓ
-#+END_SRC
+ #+END_SRC
 
-With this elementary setup, we can, for example, denote context extension with
-existentials, also known as dependent products ---whose unit, a singleton type,
-acts as the “empty context”:
-#+BEGIN_SRC agda2
+ With this elementary setup, we can, for example, denote context extension with
+ existentials, also known as dependent products ---whose unit, a singleton type,
+ acts as the “empty context”:
+ #+BEGIN_SRC agda2
 ∅ : Context ℓ₀
 ∅ = ⊤
 
 _⨾_ : ∀ {ℓ} (Γ : Context ℓ) (τ : type Γ) → Context ℓ
 Γ ⨾ τ = Σ γ ∶ Γ • τ γ
-#+END_SRC
-These names are not exported to the resulting Agda file, since they are not
-needed. In particular, we will ‘reuse’ these names until we have ‘satisfactory’
-definitions.
+ #+END_SRC
+ These names are not exported to the resulting Agda file, since they are not
+ needed. In particular, we will ‘reuse’ these names until we have ‘satisfactory’
+ definitions.
 
-* User Interface for Context Declaration
+** User Interface for Context Declaration
 
-** Smart Constructors as Do Notation
-  Agda allows one to use an imperative style of programming ---using
-  ~do~-notation--- provided there are mixfix functions ~_>>=_~ and ~_>>_~ in scope.
-  + Importantly, only their existence is required; nothing else is assumed.
-  + In particular, no monadic type constructor need be implicitly available.
-    - This is the feature we exploit.
+*** Smart Constructors as Do Notation
+   Agda allows one to use an imperative style of programming ---using
+   ~do~-notation--- provided there are mixfix functions ~_>>=_~ and ~_>>_~ in scope.
+   + Importantly, only their existence is required; nothing else is assumed.
+   + In particular, no monadic type constructor need be implicitly available.
+     - This is the feature we exploit.
 
-#+BEGIN_SRC agda2 :tangle semantics.agda
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 infixr 1 _>>=_
 
 _>>=_ : ∀ {a ℓ}
@@ -213,66 +222,66 @@ _>>=_ : ∀ {a ℓ}
 infixr 1 _>>_
 _>>_ : ∀ {a b} → Context a → Context b → Context (a ⊍ b)
 p >> q = p >>= (λ _ → q)
-#+END_SRC
+ #+END_SRC
 
-The notation may be ~do…End~ using the following combinator.
-However, in general, it may be ~do…𝒮~ for any set expression 𝒮.
-#+BEGIN_SRC agda2 :tangle semantics.agda
+ The notation may be ~do…End~ using the following combinator.
+ However, in general, it may be ~do…𝒮~ for any set expression 𝒮.
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 End : ∀ {ℓ} → Context ℓ
 End {ℓ} = ⊤ {ℓ}
-#+END_SRC
+ #+END_SRC
 
-These two pieces together are the aforementioned ‘smart constructors’:
-+ ~Γ ⨾ τ~ is given the new syntax as ~Γ >>= τ~.
-+ ~∅~ is given the syntax ~End~.
+ These two pieces together are the aforementioned ‘smart constructors’:
+ + ~Γ ⨾ τ~ is given the new syntax as ~Γ >>= τ~.
+ + ~∅~ is given the syntax ~End~.
 
-# You could define _>>=_ and End as aliases for _⨾_ and ∅.
+ # You could define _>>=_ and End as aliases for _⨾_ and ∅.
 
-/It is important to remember that these smart constructors form grouping
-mechanisms, not instances of them/; which is accomplished using tuples.
+ /It is important to remember that these smart constructors form grouping
+ mechanisms, not instances of them/; which is accomplished using tuples.
 
-** Example: Records of 𝓃-many Pointed Sets
+*** Example: Records of 𝓃-many Pointed Sets
 
-   What do PackageFormers look like using the ~do~-notation and what do their
-   instances look like? Surprisingly close to existing Agda record syntax for
-   declarations and Agda tuples for instances.
+    What do PackageFormers look like using the ~do~-notation and what do their
+    instances look like? Surprisingly close to existing Agda record syntax for
+    declarations and Agda tuples for instances.
 
-*** Types
-Let's form a grouping consisting of a single type and a value of that type,
-along with an instance of the parameter type Ξ.
-#+BEGIN_SRC agda2 :tangle semantics.agda
+**** Types
+ Let's form a grouping consisting of a single type and a value of that type,
+ along with an instance of the parameter type Ξ.
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 PointedPF : (Ξ : Context (ℓsuc ℓ₀)) → Context (ℓsuc ℓ₀)
 PointedPF Ξ = do Carrier ← Set
                  point   ← Carrier
                  Ξ
-#+END_SRC
+ #+END_SRC
 
-Let's consider concrete instances of the parameter Ξ.
-#+BEGIN_SRC agda2 :tangle semantics.agda
+ Let's consider concrete instances of the parameter Ξ.
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 -- A record type --- Σ Set ∶ Carrier • Σ point ∶ Carrier • ⊤
 PointedSet = PointedPF ⊤
 
 -- An extended record type
 -- Σ Set ∶ Carrier₁ • Σ point₁ ∶ Carrier₁ • (Σ Carrier₂ ∶ Set • Σ point₂ ∶ Carrier₁ • ⊤)
 TwoPointedSets = PointedPF PointedSet
-#+END_SRC
-More generally:
-#+BEGIN_SRC agda2 :tangle semantics.agda
+ #+END_SRC
+ More generally:
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 _PointedSets : ℕ → Set₁
 zero  PointedSets = ⊤
 suc n PointedSets = PointedPF (n PointedSets)
 
 -- C-c C-n 4 PointedSets ⇒ Somewhat readable definition of the record!
-#+END_SRC
+ #+END_SRC
 
-Here we already have power: It's difficult to create the family of types =n
-PointedSets= using existing Agda record syntax since the number of fields, /2 × n/,
-depends on =n=.
+ Here we already have power: It's difficult to create the family of types =n
+ PointedSets= using existing Agda record syntax since the number of fields, /2 × n/,
+ depends on =n=.
 
-| Record /structure/ can be dependent on values! |
+ | Record /structure/ can be dependent on values! |
 
-*** Instances
-#+BEGIN_SRC agda2 :tangle semantics.agda
+**** Instances
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 example₁ : PointedSet
 example₁ = ℕ , 0 , tt
 
@@ -282,12 +291,12 @@ example₂ = Fin.Fin 3 , Fin.suc Fin.zero , tt
 example₃ : TwoPointedSets
 example₃ = 𝔹 , true , example₁
 -- A pointed nat extended by a pointed bool, with particular choices for both.
-#+END_SRC
+ #+END_SRC
 
-** Doubly-Pointed Example -- On the nature of parameters Ξ
-What is a parameter exactly?
+*** Doubly-Pointed Example -- On the nature of parameters Ξ
+ What is a parameter exactly?
 
-#+BEGIN_SRC agda2 :tangle semantics.agda
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 TwoParameterPoints : ∀ {ℓ} (Ξ : Context ℓ) → Context ℓ
 TwoParameterPoints {ℓ} Ξ = do one   ← Ξ
                               two   ← Ξ
@@ -304,13 +313,13 @@ example₄ = false , false , tt  -- Obtained with C-c C-a
 
 example₅ : TwoParameterPoints PointedSet
 example₅ = example₁ , example₂ , tt
-#+END_SRC
+ #+END_SRC
 
-** Example – A record type with invariants
+*** Example – A record type with invariants
 
-We can simulate definitions in a record via type invariants.
+ We can simulate definitions in a record via type invariants.
 
-#+BEGIN_SRC agda2 :tangle semantics.agda
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 infix -1000 Property_
 Property_ : ∀ {ℓ} → Set ℓ → Context ℓ -- Intended as invariants.
 Property_ = λ c → c                   -- In some contexts, the values could be irrelevant.
@@ -323,15 +332,17 @@ PointedMagma {ℓ} Ξ = do Carrier ← Set ℓ
                         three   ← Carrier
                         Property two   ≡ one ⊕ one
                         Property three ≡ one ⊕ two
-#+END_SRC
-The multiple laws, along with the following instance, increase confidence
-in our definitions of ~_>>=_~ and ~_>>_~.
-#+BEGIN_SRC agda2 :tangle semantics.agda
+ #+END_SRC
+ The multiple laws, along with the following instance, increase confidence
+ in our definitions of ~_>>=_~ and ~_>>_~.
+ #+BEGIN_SRC agda2 :tangle semantics.agda
 example₆ : PointedMagma ⊤
 example₆ = ℕ , ℕ._+_ , 4 , 8 , 12 , refl {x = 8} , refl {x = 12}
-#+END_SRC
+ #+END_SRC
 
 * Parameterised Records
+
+  Now we add on support for parmeterised records, or ‘typeclasses’.
 
 ** Header
 
@@ -349,6 +360,8 @@ open import Function using (_∘_)
 open import Data.Sum
 open import Data.Fin  as Fin using (Fin)
 open import Data.Maybe  hiding (_>>=_)
+
+ℓ₁   = Level.suc ℓ₀
 
 -- “s ≔ v” is just a way to document v with string s.
 open import Data.String using (String)
@@ -394,9 +407,6 @@ record ⊤ {ℓ} : Set ℓ where
 
 open import Data.Empty using (⊥)
 
-𝟙 = ⊤ {ℓ₀}
-𝟘 = ⊥
-
 -- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
 infixr 5 ⟨ _⟩
 ⟨⟩ : ∀ {ℓ} → ⊤ {ℓ}
@@ -408,6 +418,21 @@ infixr 5 ⟨ _⟩
 _⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × ⊤ {ℓ}
 s ⟩ = s , tt
    #+end_src
+*** Generalised Bot and Top
+    To avoid a flurry of lifts, and for the sake of clarity, we define
+    level-polymorphic empty and unit types.
+
+ #+begin_src agda2
+open import Level
+
+data 𝟘 {ℓ ∶ Level} ∶ Set ℓ where
+
+record 𝟙 {ℓ ∶ Level} ∶ Set ℓ where
+  constructor tt
+
+-- 𝟙 = ⊤ {ℓ₀}
+-- 𝟘 = ⊥
+ #+end_src
 *** Reflection Helpers
      #+begin_src agda2 :tangle semantics-with-waist.agda
 import Data.Unit as Unit
@@ -506,6 +531,8 @@ infix -1000 ‵_
 
 End : ∀ {ℓ} → Context ℓ
 End = ‵ ⊤
+
+End₀ = End {ℓ₀}
   #+end_src
 
 ** Definitions: ~_>>_~
@@ -584,8 +611,6 @@ _ : B ≡ (Π X ∶ Set  • Σ z ∶ X  • Σ s ∶ (X → X)  • ⊤) ; _ = 
 _ : C ≡ (Π X ∶ Set  • Π z ∶ X  • Σ s ∶ (X → X)  • ⊤) ; _ = refl
 _ : D ≡ (Π X ∶ Set  • Π z ∶ X  • Π s ∶ (X → X)  • ⊤) ; _ = refl
 #+end_src
-
-
 
 ** Theorems: ~stability~
 
@@ -1502,6 +1527,213 @@ macro
 
 -- _⟴_ : ∀ {a b} {A : Set a} {B : Set b} → A → (A → B) → B
 -- x ⟴ f = f x
+#+end_src
+
+Now some experiments:
+
+#+begin_src agda2  :tangle semantics-with-waist.agda
+
+{-
+PointedOver  : Set → Context (ℓsuc ℓ₀)
+PointedOver Ξ    = do Carrier ← Set ℓ₀
+                      point   ← Carrier
+                      embed   ← (Ξ → Carrier)
+                      End {ℓ₀}
+
+ℙ : Set → Set
+ℙ X = termtype (PointedOver X :waist 1)
+-}
+
+--------------------------------------------------------------------------------
+
+-- termtype (PointedSet) ≅ ⊤ !
+One  : Context (ℓsuc ℓ₀)
+One      = do Carrier ← Set ℓ₀
+              point  ← Carrier
+              End {ℓ₀}
+
+𝕆𝕟𝕖 : Set
+𝕆𝕟𝕖 = termtype (One :waist 1)
+
+case₁ : 𝕆𝕟𝕖 → Set
+case₁ emptyM = 𝟙
+
+-- Note: “termtype : UnaryFunctor → Type”
+
+--------------------------------------------------------------------------------
+
+-- From simple graphs (relations) to a syntax about them:
+-- One describes a simple graph by presenting edges as pairs of vertices!
+
+PointedOver₂  : Set → Context (ℓsuc ℓ₀)
+PointedOver₂ Ξ    = do Carrier ← Set ℓ₀
+                       relation ← (Ξ → Ξ → Carrier)
+                       End {ℓ₀}
+
+ℙ₂ : Set → Set
+ℙ₂ X = termtype (PointedOver₂ X :waist 1)
+
+
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+case₂ : ∀ {X} → ℙ₂ X → Set₁
+case₂ (x ⇌ y) = Set
+
+--------------------------------------------------------------------------------
+
+-- No ‘constants’, whence a type of inifinitely branching terms.
+PointedOver₃  : Set → Context (ℓ₀)
+PointedOver₃ Ξ    = do relation ← (Ξ → Ξ → Ξ)
+                       End {ℓ₀}
+
+ℙ₃ : Set
+ℙ₃ = termtype (λ X → PointedOver₃ X 0)
+
+-- case₃ : ℙ₃ → Set₁
+-- case₃ (px ⇌ py) = {!!}
+
+--------------------------------------------------------------------------------
+
+PointedOver₄  : Context (ℓsuc ℓ₀)
+PointedOver₄       = do Ξ ← Set
+                        Carrier ← Set ℓ₀
+                        relation ← (Ξ → Ξ → Carrier)
+                        End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₄ : Set → Set
+ℙ₄ X = termtype ((PointedOver₄ :waist 2) X)
+
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+case₄ : ∀ {X} → ℙ₄ X → Set₁
+case₄ (x ⇌ y) = Set
+
+-- Claim: Mention in paper.
+--
+--    P₁ : Set → Context = λ Ξ → do ⋯ End
+-- ≅  P₂ :waist 1
+-- where P₂ : Context = do Ξ ← Set; ⋯ End
+
+--------------------------------------------------------------------------------
+
+{- Yellow:
+
+PointedOver₅  : Context (ℓsuc ℓ₀)
+PointedOver₅   = do One ← Set
+                    Two ← Set
+                    Three ← (One → Two → Set)
+                    End {ℓ₀}
+
+ℙ₅ : Set → Set₁
+ℙ₅ X = termtype ((PointedOver₅ :waist 2) X)
+-- Fix (λ Two → One × Two)
+
+pattern _∷₅_ x y = μ (inj₁ (x , y , tt))
+
+case₅ : ∀ {X} → ℙ₅ X → Set₁
+case₅ (x ∷₅ xs) = Set
+
+-}
+
+--------------------------------------------------------------------------------
+
+{-- Dependent sums
+
+PointedOver₆  : Context ℓ₁
+PointedOver₆ = do Sort ← Set
+                  Carrier ← (Sort → Set)
+                  End {ℓ₀}
+
+ℙ₆ : Set₁
+ℙ₆ = termtype ((PointedOver₆ :waist 1) )
+-- Fix (λ X → X)
+
+-}
+
+--------------------------------------------------------------------------------
+
+-- Distinuighed subset algebra
+
+open import Data.Bool renaming (Bool to 𝔹)
+
+{-
+PointedOver₇  : Context (ℓsuc ℓ₀)
+PointedOver₇       = do Index ← Set
+                        Is    ← (Index → 𝔹)
+                        End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₇ : Set → Set
+ℙ₇ X = termtype (λ (_ : Set) → (PointedOver₇ :waist 1) X)
+-- ℙ₁ X ≅ X
+
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+case₇ : ∀ {X} → ℙ₇ X → Set
+case₇ {X} (μ (inj₁ x)) = X
+
+-}
+
+--------------------------------------------------------------------------------
+
+-- Add to paper: Another PF primitive is :level, which we have via type inference xD
+
+--------------------------------------------------------------------------------
+
+-- indexed unary algebras; i.e., “actions”
+
+PointedOver₈  : Context (ℓsuc ℓ₀)
+PointedOver₈       = do Index     ← Set
+                        Carrier   ← Set
+                        Operation ← (Index → Carrier → Carrier)
+                        End {ℓ₀}
+
+ℙ₈ : Set → Set
+ℙ₈ X = termtype ((PointedOver₈ :waist 2) X)
+
+pattern _·_ x y = μ (inj₁ (x , y , tt))
+
+case₈ : ∀ {I} → ℙ₈ I → Set₁
+case₈ (i · e) = Set
+
+-- This is just ℙ₄ again lol!
+
+--------------------------------------------------------------------------------
+
+{-
+PointedOver₉  : Context ℓ₁
+PointedOver₉       = do Carrier ← Set
+                        End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₉ : Set
+ℙ₉ = termtype (λ (X : Set) → (PointedOver₉ :waist 1) X)
+-- ≅ 𝟘 ≅ Fix (λ X → 𝟘)
+-}
+
+--------------------------------------------------------------------------------
+
+PointedOver₁₀  : Context ℓ₁
+PointedOver₁₀       = do Carrier ← Set
+                         next    ← (Carrier → Carrier)
+                         End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₁₀ : Set
+ℙ₁₀ = termtype (λ (X : Set) → (PointedOver₁₀ :waist 1) X)
+-- Fix (λ X → X), which does not exist.
+
+--------------------------------------------------------------------------------
+
 #+end_src
 
 * COMMENT “Contexts over Contexts”

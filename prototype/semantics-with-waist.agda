@@ -1,11 +1,3 @@
--- MA: We cannot form a termtype of PointedPF, since
--- the current impelemntation presupposes only one carrier
--- which is necessarilry the first item in the context.
--- The following crashes.
---
--- Actually, it's because of 𝟘!
--- -- 𝟘 = λ {ℓ} → Lift ℓ ⊥  -- ???
-
 module semantics-with-waist where
 
 open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc; zero to ℓ₀)
@@ -19,6 +11,10 @@ open import Function using (_∘_)
 open import Data.Sum
 open import Data.Fin  as Fin using (Fin)
 open import Data.Maybe  hiding (_>>=_)
+
+ℓ₁   = Level.suc ℓ₀
+
+
 
 -- “s ≔ v” is just a way to document v with string s.
 open import Data.String using (String)
@@ -139,6 +135,8 @@ infix -1000 ‵_
 
 End : ∀ {ℓ} → Context ℓ
 End = ‵ ⊤
+
+End₀ = End {ℓ₀}
 
 _>>=_ : ∀ {a b}
       → (Γ : Set a)  -- Main diference
@@ -519,38 +517,6 @@ data TreeSkeleton : Set where
 𝕄→Tree∘𝕄←Tree (branch l r) = cong₂ branch (𝕄→Tree∘𝕄←Tree l) (𝕄→Tree∘𝕄←Tree r)
 
 -- “a pointed set that contains Ξ” ─c.f., “a group over Ξ”
-PointedOver  : Set → Context (ℓsuc ℓ₀)
-PointedOver Ξ    = do Carrier ← Set ℓ₀
-                      point   ← Carrier
-                      embed   ← (Ξ → Carrier)
-                      End {ℓ₀}
-
-ℙ : Set → Set
-ℙ X = termtype (PointedOver X :waist 1)
-
--- Pattern synonyms for more compact presentation
-pattern nothingP = μ (inj₁ tt)       -- : ℙ
-pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
-
--- Observe that ℙ makes instances of PointdOver!
-ℙ-rec : (X : Set) → PointedOver X 0
-ℙ-rec X = ⟨ ℙ X , nothingP , justP ⟩
-
-ℙ→Maybe : ∀ {X} → ℙ X → Maybe X
-ℙ→Maybe nothingP  = nothing
-ℙ→Maybe (justP x) = just x
-
-ℙ←Maybe : ∀ {X} → Maybe X → ℙ X
-ℙ←Maybe (just x) = justP x
-ℙ←Maybe nothing  = nothingP
-
-ℙ→Maybe∘ℙ←Maybe : ∀ {X} (m : Maybe X) → ℙ→Maybe (ℙ←Maybe m) ≡ m
-ℙ→Maybe∘ℙ←Maybe (just x) = refl
-ℙ→Maybe∘ℙ←Maybe nothing  = refl
-
-ℙ←Maybe∘ℙ→Maybe : ∀ {X} (p : ℙ X) → ℙ←Maybe (ℙ→Maybe p) ≡ p
-ℙ←Maybe∘ℙ→Maybe nothingP  = refl
-ℙ←Maybe∘ℙ→Maybe (justP x) = refl
 
 data Kind : Set where
   ‵record    : Kind
@@ -576,3 +542,207 @@ macro
 
 -- _⟴_ : ∀ {a b} {A : Set a} {B : Set b} → A → (A → B) → B
 -- x ⟴ f = f x
+
+--------------------------------------------------------------------------------
+
+
+{-
+PointedOver  : Set → Context (ℓsuc ℓ₀)
+PointedOver Ξ    = do Carrier ← Set ℓ₀
+                      point   ← Carrier
+                      embed   ← (Ξ → Carrier)
+                      End {ℓ₀}
+
+ℙ : Set → Set
+ℙ X = termtype (PointedOver X :waist 1)
+-}
+
+--------------------------------------------------------------------------------
+
+-- termtype (PointedSet) ≅ ⊤ !
+One  : Context (ℓsuc ℓ₀)
+One      = do Carrier ← Set ℓ₀
+              point  ← Carrier
+              End {ℓ₀}
+
+𝕆𝕟𝕖 : Set
+𝕆𝕟𝕖 = termtype (One :waist 1)
+
+case₁ : 𝕆𝕟𝕖 → Set
+case₁ emptyM = 𝟙
+
+-- Note: “termtype : UnaryFunctor → Type”
+
+--------------------------------------------------------------------------------
+
+-- From simple graphs (relations) to a syntax about them:
+-- One describes a simple graph by presenting edges as pairs of vertices!
+
+PointedOver₂  : Set → Context (ℓsuc ℓ₀)
+PointedOver₂ Ξ    = do Carrier ← Set ℓ₀
+                       relation ← (Ξ → Ξ → Carrier)
+                       End {ℓ₀}
+
+ℙ₂ : Set → Set
+ℙ₂ X = termtype (PointedOver₂ X :waist 1)
+
+
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+case₂ : ∀ {X} → ℙ₂ X → Set₁
+case₂ (x ⇌ y) = Set
+
+--------------------------------------------------------------------------------
+
+-- No ‘constants’, whence a type of inifinitely branching terms.
+PointedOver₃  : Set → Context (ℓ₀)
+PointedOver₃ Ξ    = do relation ← (Ξ → Ξ → Ξ)
+                       End {ℓ₀}
+
+ℙ₃ : Set
+ℙ₃ = termtype (λ X → PointedOver₃ X 0)
+
+-- case₃ : ℙ₃ → Set₁
+-- case₃ (px ⇌ py) = {!!}
+
+--------------------------------------------------------------------------------
+
+PointedOver₄  : Context (ℓsuc ℓ₀)
+PointedOver₄       = do Ξ ← Set
+                        Carrier ← Set ℓ₀
+                        relation ← (Ξ → Ξ → Carrier)
+                        End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₄ : Set → Set
+ℙ₄ X = termtype ((PointedOver₄ :waist 2) X)
+
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+case₄ : ∀ {X} → ℙ₄ X → Set₁
+case₄ (x ⇌ y) = Set
+
+-- Claim: Mention in paper.
+--
+--    P₁ : Set → Context = λ Ξ → do ⋯ End
+-- ≅  P₂ :waist 1
+-- where P₂ : Context = do Ξ ← Set; ⋯ End
+
+--------------------------------------------------------------------------------
+
+{- Yellow:
+
+PointedOver₅  : Context (ℓsuc ℓ₀)
+PointedOver₅   = do One ← Set
+                    Two ← Set
+                    Three ← (One → Two → Set)
+                    End {ℓ₀}
+
+ℙ₅ : Set → Set₁
+ℙ₅ X = termtype ((PointedOver₅ :waist 2) X)
+-- Fix (λ Two → One × Two)
+
+pattern _∷₅_ x y = μ (inj₁ (x , y , tt))
+
+case₅ : ∀ {X} → ℙ₅ X → Set₁
+case₅ (x ∷₅ xs) = Set
+
+-}
+
+--------------------------------------------------------------------------------
+
+{-- Dependent sums
+
+PointedOver₆  : Context ℓ₁
+PointedOver₆ = do Sort ← Set
+                  Carrier ← (Sort → Set)
+                  End {ℓ₀}
+
+ℙ₆ : Set₁
+ℙ₆ = termtype ((PointedOver₆ :waist 1) )
+-- Fix (λ X → X)
+
+-}
+
+--------------------------------------------------------------------------------
+
+-- Distinuighed subset algebra
+
+open import Data.Bool renaming (Bool to 𝔹)
+
+{-
+PointedOver₇  : Context (ℓsuc ℓ₀)
+PointedOver₇       = do Index ← Set
+                        Is    ← (Index → 𝔹)
+                        End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₇ : Set → Set
+ℙ₇ X = termtype (λ (_ : Set) → (PointedOver₇ :waist 1) X)
+-- ℙ₁ X ≅ X
+
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+case₇ : ∀ {X} → ℙ₇ X → Set
+case₇ {X} (μ (inj₁ x)) = X
+
+-}
+
+--------------------------------------------------------------------------------
+
+-- Add to paper: Another PF primitive is :level, which we have via type inference xD
+
+--------------------------------------------------------------------------------
+
+-- indexed unary algebras; i.e., “actions”
+
+PointedOver₈  : Context (ℓsuc ℓ₀)
+PointedOver₈       = do Index     ← Set
+                        Carrier   ← Set
+                        Operation ← (Index → Carrier → Carrier)
+                        End {ℓ₀}
+
+ℙ₈ : Set → Set
+ℙ₈ X = termtype ((PointedOver₈ :waist 2) X)
+
+pattern _·_ x y = μ (inj₁ (x , y , tt))
+
+case₈ : ∀ {I} → ℙ₈ I → Set₁
+case₈ (i · e) = Set
+
+-- This is just ℙ₄ again lol!
+
+--------------------------------------------------------------------------------
+
+{-
+PointedOver₉  : Context ℓ₁
+PointedOver₉       = do Carrier ← Set
+                        End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₉ : Set
+ℙ₉ = termtype (λ (X : Set) → (PointedOver₉ :waist 1) X)
+-- ≅ 𝟘 ≅ Fix (λ X → 𝟘)
+-}
+
+--------------------------------------------------------------------------------
+
+PointedOver₁₀  : Context ℓ₁
+PointedOver₁₀       = do Carrier ← Set
+                         next    ← (Carrier → Carrier)
+                         End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₁₀ : Set
+ℙ₁₀ = termtype (λ (X : Set) → (PointedOver₁₀ :waist 1) X)
+-- Fix (λ X → X), which does not exist.
+
+--------------------------------------------------------------------------------
