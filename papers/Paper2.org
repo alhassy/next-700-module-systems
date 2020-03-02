@@ -1,4 +1,5 @@
-#+TITLE: 3-for-1 Monadic Notation: Do-it-yourself module types
+#+TITLE: Monadically Making Modules
+# +TITLE: 3-for-1 Monadic Notation: Do-it-yourself module types
 #+Subtitle: ---ICFP Deadline: March 3, 2020---
 #+DESCRIPTION: Paper for ICFP 2020.
 #+AUTHOR: Musa Al-hassy, Jacques Carette, Wolfram Kahl
@@ -13,22 +14,20 @@
 For some reason “src agda2” crashes minted, but “src agda” works fine.
 
      #+BEGIN_SRC emacs-lisp  :tangle no
-(setq
-           org-latex-pdf-process
-           '("pdflatex -shell-escape -output-directory %o %f"
-             ;; "biber %b"
-             "bibtex %b"
-             "pdflatex -shell-escape -output-directory %o %f"
-             "pdflatex -shell-escape -output-directory %o %f")
-     )
+(setq org-latex-pdf-process
+      '("pdflatex -shell-escape -output-directory %o %f"
+        ;; "biber %b"
+        "bibtex %b"
+        "pdflatex -shell-escape -output-directory %o %f"
+        "pdflatex -shell-escape -output-directory %o %f"))
 
 (add-to-list 'org-src-lang-modes '("agda" . haskell))
-(add-to-list 'org-src-lang-modes '("agda" . haskell))
+
 (setq color t)
 (when color     (setq org-latex-listings 'minted
                       org-latex-packages-alist '(("" "minted"))))
 (unless color      (setq org-latex-listings nil
-           org-latex-packages-alist nil))
+                         org-latex-packages-alist nil))
      #+END_SRC
 
      #+RESULTS:
@@ -111,6 +110,9 @@ consider adding them to your Emacs [[https://alhassy.github.io/init/][configurat
              "pdflatex -shell-escape -output-directory %o %f")
      )
      #+END_SRC
+
+     #+RESULTS:
+     | pdflatex -shell-escape -output-directory %o %f | bibtex %b | pdflatex -shell-escape -output-directory %o %f | pdflatex -shell-escape -output-directory %o %f |
 
 You can then refer to Table (tab-boring). The ref links are also clickable, and
 they take you to the spot where the label is defined. You can enter ref links
@@ -256,6 +258,15 @@ See here for more: http://kitchingroup.cheme.cmu.edu/blog/2014/05/13/Using-org-r
   #+LATEX_HEADER: \newunicodechar{Ξ}{\ensuremath{\Xi}}
   #+LATEX_HEADER: \newunicodechar{ξ}{\ensuremath{\xi}}
 
+  #+LATEX_HEADER: \newunicodechar{𝔾}{\ensuremath{\textbb{G}}}
+  #+LATEX_HEADER: \newunicodechar{𝕣}{\ensuremath{\textbb{r}}}
+  #+LATEX_HEADER: \newunicodechar{𝕒}{\ensuremath{\textbb{a}}}
+  #+LATEX_HEADER: \newunicodechar{𝕡}{\ensuremath{\textbb{p}}}
+  #+LATEX_HEADER: \newunicodechar{𝕙}{\ensuremath{\textbb{h}}}
+
+  #+LATEX_HEADER: \newunicodechar{❌}{\ding{55}}
+  #+LATEX_HEADER: \newunicodechar{✓}{\ding{51}}
+
   #+LATEX_HEADER: \newunicodechar{𝔻}{\ensuremath{\textbb{D}}}
   #+LATEX_HEADER: \newunicodechar{ℂ}{\ensuremath{\textbb{C}}}
   #+LATEX_HEADER: \newunicodechar{𝕄}{\ensuremath{\textbb{M}}}
@@ -390,29 +401,19 @@ See here for more: http://kitchingroup.cheme.cmu.edu/blog/2014/05/13/Using-org-r
  #+latex_header: \acmBooktitle{Proceedings of the 18th ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences (GPCE '19), October 21--22, 2019, Athens, Greece}
  #+latex_header:
 
-* Abstract                                                           :ignore:
+* Abstract :ignore:
 
   #+begin_abstract org
-  Folklore has held that any ‘semantic unit’ is essentially a type-theoretic
-  context ---this includes, for example, records and algebraic datatypes.  We
-  provide foundation for such an observation.
+  Can parameterised records and algebraic datatypes be derived from one
+  pragmatic declaration?
 
-  We show that languages with a sufficiently powerful type system and reflection
-  mechanism permit a /single declaration interface/ for functions, records, type
-  classes, type constructors, and algebraic data types. Moreover, the interface
-  is monadic and thus actually practical to use.
+  Record types give a universe of discourse, parameterised record types fix
+  parts of that universe ahead of time, and algebraic datatypes give us
+  first-class syntax, whence evaluators and optimisers.
 
-  Along the way, we solve the bundling problem: Record fields can be lifted to
-  parameters as needed. Traditionally, unbundling a record requires the use of
-  transport along propositional equalities, with trivial ~refl~-exivity proofs.
-  The ~:waist~ approach presented here removes the boilerplate necessary at the
-  type specialisation location as well as at the instance declaration location.
-
-  An application of our setup will be to provide a semantics for the
-  PackageFormer editor extension, which realises the aforementioned folklore
-  observation by providing users with meta-primitives for making modules to
-  allow arbitrary grouping mechanisms to be derived, such as obtaining the
-  homomorphism type of a given record.
+  The answer is in the affirmative! Besides a practical interface
+  for a shared declaration interface, which is extensible in the language,
+  we also find that common data structures correspond to simple theories.
 #+end_abstract
 
  \maketitle
@@ -447,140 +448,92 @@ pattern ⟨_,_⟩ x y = x , y , tt
 
 * Introduction
 
-In dependently-typed programming languages, such as Agda
-cite:Norell-2007,agda_overview, there is a tendency to define concepts
-repeatedly along syntactic constructs provided by the language.  In particular,
-one bundles up related data into a record structure, then considers the need to
-expose some of the fields as parameters and so provides a parameterised record
-construction, then for the need to have a description language for terms of
-these record types, one forms an associated algebraic datatype.  For example, we
-may form a type ~Monoid₀~ of monoids, which consists of a type along with an
-operation and some laws, but may want ~Monoid₁ M ⊕~ to speak of monoids over
-/particular/ types ~M~ and particular operations ~⊕~ ---the latter is handled, say in
-the Haskell standard library, by having isomorphic copies of types for each
-binary operation, such as ~Sum ≅ Prod ≅ Int~ for the classical additive and
-multiplicative monoidal structures on integers.  This is the problem we are
-solving: /How can parameterised records and their associated algebraic datatypes
-be obtained from a core declaration?/
+  We routinely write algebraic datatypes to provide a first-class syntax for
+  record values. We work with semantic values, but need syntax to provide
+  serialisation and introspection capabilities.  A concept is thus rendered
+  twice, one at the semantic level using records and again at the syntactic
+  level using algebraic datatypes. Even worse, there is usually a need to expose
+  fields of a record at the type level and so yet another variation of the same
+  concept needs to be written.  Our idea is to unify the two type declarations
+  into one ---using monadic do-notation and in-language meta-programming
+  combinators to then extract possibly parameterised records and algebraic data
+  types.
 
-The humblest notion of a grouping mechanism is described by a pair type ~A × B ×
-C~, usually later values depend on earlier values and so we have the
-dependent-pair type src_agda[:exports code]{Σ a ∶ A • Σ b ∶ B a • Σ C a b}. The kind of these types is
-~Set₁~, the type of small types. If we wish to speak of groupings where ~a ∶ A~ is
-/fixed/, then we must lift it from being a /field/ component to being a /parameter/,
-thereby arriving at the /function/ ~λ a ∶ A • Σ b ∶ B a • Σ C a b~ which has /type/ ~Π a ∶
-A • Set~. Similarly, we may expose ~b~ as a parameter to further indicate the
-possible grouping structure.
+  For example, there are two ways to implement the type of graphs in the
+  dependently-typed language Agda: Having the vertices be a parameter or having
+  them be a field of the record. Then there is also the syntax for graph vertex
+  relationships.
 
-| Grouping Description          |   | Kind                      |
-|-------------------------------+---+---------------------------|
-| =Σ a ∶ A • Σ b ∶ B a • Σ C a b= |   | ~Set~                       |
-| =λ a ∶ A • Σ b ∶ B a • Σ C a b= |   | ~Π a ∶ A • Set~             |
-| =λ a ∶ A • λ b ∶ B a • Σ C a b= |   | ~Π a ∶ A • Π b ∶ B a • Set~ |
+#+begin_src agda
+record Graph₀ : Set₁ where
+  constructor ⟨_,_⟩₀
+  field
+    Vertex : Set
+    Edges : Vertex → Vertex → Set
 
-At each step, we “pull out” more information at the kind level; at first we have
-a ~Set~, an opaque grouping mechanism, then we obtain a ~Π a ∶ A • Set~ which is a
-grouping mechanism that somehow makes use of an ~A~-value.
+record Graph₁ (Vertex : Set) : Set₁ where
+  constructor ⟨_⟩₁
+  field
+    Edges : Vertex → Vertex → Set
 
-1. *Type constructor reification Π→λ:* Function /types/ like ~Π a ∶ A • Set~ cannot be
-   applied since they are not functions, so how do we get to ~λ a : A • Set~?
-
-   + λ-terms are values of Π-types, but in general there is no natural
-     construction to transform a type into one of its values.
-
-   + Given ~τ = Π (X : Set) • ⋯ : Set₁~, we want ~Π→λ τ = λ (X : Set) • ⋯ : Π (X :
-     Set) • Set~; the former's type states it to be a =Set₁=, a grouping mechanism of
-     which we know nothing, whereas the latter's type indicates it to be a
-     parameterised grouping mechanism. Since ~Π→λ τ~ can be applied and is thus more
-     concrete, we call ~Π→λ~ a reification combinator.
-
-2. *Unbundling* cite:packaging_mathematical_structures:
-   How do we go from ~Set~ to ~Π a ∶ A • Set~?
-
-   A function from function-types to functions-on-types necessarily requires a
-   way to pattern match on the possible type constructions in a language.
-
-   Perhaps an example will clarify the issue. The ubiquitous graph structure
-   is contravariant in its collection of vertices. Recall that a multi-graph, or
-   quiver, is a collection of vertices along with a collection of edges between
-   any two vertices; here's the traditional record form:
-   #+begin_src agda
-Graph  : Context ℓ₁
-Graph  = do Vertex ← Set
-            Edges  ← (Vertex → Vertex → Set)
-            End {ℓ₀}
+data 𝔾𝕣𝕒𝕡𝕙 (Vertex : Set) : Set where
+  ⟨_,_⟩ₛ : Vertex → Vertex → 𝔾𝕣𝕒𝕡𝕙 Vertex
 #+end_src
 
-   Using the record form, it is akward to phrase contravariance, which simply
-   “relabels the vertices”. Even worse, the awkward phrasing only serves to
-   ensure certain constraints hold ---which are reified at the value level via
-   the uninsightful ~refl~-exivity proof.
-   #+begin_src agda
-comap₀ : ∀ {A B : Set}
-      → (f : A → B)
-      → Σ G ∶ Graph :kind ‵record • Field 0 G ≡ B
-      → Σ G ∶ Graph :kind ‵record • Field 0 G ≡ A
-comap₀ {A} {B} f (⟨ .B , edgs ⟩ , refl) = (A , (λ a₁ a₂ → edgs (f a₁) (f a₂)) , tt) , refl
-       #+end_src
-   /Without redefining graphs/, we can phrase the definition at the typeclass
-   level ---i.e., records parameterised by the vertices. This form is not only
-   clearer and easier to implement at the value-level, it also makes it clear
-   that we are “pulling back” the vertex type and so have also shown graphs are
-   closed under reducts.
-       #+begin_src agda
--- Way better and less awkward!
-comap : ∀ {A B : Set}
-     → (f : A → B)
-     → (Graph :kind ‵typeclass) B
-     → (Graph :kind ‵typeclass) A
-comap f ⟨ edgs ⟩₁ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩₁
-   #+end_src
+  To illustrate the difference of the first two, consider the function ~comap~, which
+  relabels the vertices of a graph, using a function ~f~ to transform vertices:
+  :Hide:
+  #+begin_src agda
+open Graph₀
+#+end_src
+  :End:
+#+begin_src agda
+comap₀ : {A B : Set}
+       → (f : A → B)
+       → (Σ G ∶ Graph₀ • Vertex G ≡ B)
+       → (Σ H ∶ Graph₀ • Vertex H ≡ A)
+comap₀ {A} f (G , refl) = ⟨ A , (λ x y → Edges G (f x) (f y)) ⟩₀ , refl
 
-   Later we show how to form ~Context~, its do-notation, and the ~:kind~ mechanism
-   which shifts between records, typeclasses, and algebraic datatypes.
+comap₁ : {A B : Set}
+       → (f : A → B)
+       → Graph₁ B
+       → Graph₁ A
+comap₁ f ⟨ edges ⟩₁ = ⟨ (λ x y → edges (f x) (f y)) ⟩₁
+  #+end_src
+  In ~comap₀~, the input graph ~G~ and the output graph ~H~ have their vertex sets
+  constrained to match the type of the relabelling function ~f~.  Without the
+  constraints, we could not even right the function for ~Graph₀~.
+  With such an importance, it is surprising to see that the occurrences
+  of the constraint proofs are uninsightful ~refl~-exivity proofs.
+  In contrast, ~comap₁~ does not carry any excesses baggage at the type level
+  nor at the implementation level.
 
-   It is important to note that we are using the word ‘typeclass’ as an
-   abbreviation for “parameterised record”. In particular, we have no support
-   for the traditional unification algorithm that makes typeclasses and
-   canonical structures cite:coq_canonical_tutorial useful for ad-hoc
-   polymorphism.
-# eval  : A × (A → B) → B
-# curry : (A × B → C) → (A → (B → C))
-# #
-# Π a ∶ A • (Π f ∶ (Π x ∶ A • B x)) • B a
-# Π f ∶ (Π p ∶ (Π x ∶ A • B x) • C p) • Π a ∶ A • Π b ∶ B a • C (a, b)
-# Π f ∶ Set • (Π x ∶ A • Set)
+  We will show an automatic technique for obtaining the above three definitions
+  of graphs from a single declaration using similar notation.  Our contributions
+  are to show:
+  1. Languages with sufficiently powerful type systems and meta-programming can
+     conflate record and termtype declarations into one practical interface.  We
+     identify the problem and the subtleties in shifting between representations
+     in Section [[sec:problems]].
+  2. Parameterised records can be obtained on-demand from non-parameterised
+     records (Section [[sec:monadic-notation]]).
+  3. Programming with fixed-points of unary type constructors can be made
+     as simple as programming with termtypes (Section [[sec:termtypes-as-fixedpoints]]).
+     - Astonishingly, we mechanically regain ubiquitous data structures such as ~ℕ, Maybe,
+       List~ as the termtypes of simple pointed and monoidal theories.
 
-We shall outline how this can be achieved in dependently-typed languages which
-have support for reflection. Our target language will be Agda, but the ideas
-easily transfer to other languages. In particular, the resulting in-language
-syntax we obtain is rather close to the existing Agda record syntax for
-declarations and Agda constructor tuples for instances.  In the next section, we
-begin by way of a more concrete example of a grouping mechanism, then we take a
-goal-driven approach to building the necessarily apparatus for a clean
-imperative-like declaration notation, then we conclude with a brief discussion
-on how the resulting framework can act as a simple theory for the Agda
-PackageFormer editor extension cite:DBLP:conf/gpce/Al-hassyCK19 ---which solves
-the =Monoidᵢ= problem mentioned earlier.
+  As an application, in Section [[sec:related-works]] we show that the resulting
+  setup applies as a semantics of pre-processing tool that accomplishes the
+  above tasks.
 
-In order to be language-agnostic and underscore the ideas, we shall present the
-core definitions along with Agda-checked examples. Details can be read at the
-following URL in a literate and reproducible fashion
-cite:DBLP:conf/europar/StanisicL14.
-# Details are left to an
-# appendix(?) or can be read below (MA: Haven't decided yet):
-| =https://github.com/alhassy/next-700-module-systems/tree/master/prototype= |
+* The Problems
+  <<sec:problems>>
 
-* A Grouping Mechanism: Automata
-
-We begin by way of example.
-
-The humblest of automata is a dynamical system ---a collection of states, a
-designated start state, and a transition function. For example, a machine with
-an initial display and only one button that changes the display.  In
-dependently-typed languages, there are at least three ways to encode such a
-structure ---via records possibly with parameters, which are sometimes called
-typeclasses.
+There are a number of problems, with the number of parameters being exposed
+being the pivotal concern. To exemplify the distinctions at the type level as
+more parameters are exposed, consider the following approaches to formalising a
+dynamical system ---a collection of states, a designated start state, and a
+transition function.
 
 #+begin_src agda :tangle paper2.agda
 record DynamicSystem₀ : Set₁ where
@@ -597,9 +550,11 @@ record DynamicSystem₁ (States : Set) : Set where
 record DynamicSystem₂ (States : Set) (start : States) : Set where
   field
     next : States → States
-    #+end_src
+#+end_src
 
-The kinds of these types provide insight into the sort of data they contain:
+Each =DynamicSystemᵢ= is a type constructor of =i=-many arguments;
+but it is the types of these constructors that provide insight
+into the sort of data they contain:
 | Type           | Kind                      |
 |----------------+---------------------------|
 | =DynamicSystem₀= | =Set₁=                      |
@@ -618,11 +573,16 @@ _ = DynamicSystem₂
 #+end_src
 :End:
 
-Observe that =DynamicSystemᵢ= is a type constructor of =i=-many arguments.
+We shall refer to the concern of moving from a record to a parameterised record
+as *the unbundling problem*. For example, moving from the /type/ ~Set₁~ to the
+/function type/ ~Π X ∶ Set • Set~ gets us from ~DynamicSystem₀~ to something
+resembling ~DynamicSystem₁~, which we arrive at if we can obtain the /type
+constructor/ ~λ X ∶ Set • Set~. We shall refer to the latter change as /reification/
+since the result is more concrete, it can be applied; it will be denoted by ~Π→λ~.
 
-Yet another way to encode dynamical systems would be by their syntax, as it
-would be desirable when serialising them ---i.e., to obtain first-class
-descriptions of dynamical system values.
+Of-course, there is also the need for descriptions of values, which leads to the
+following termtypes. We shall refer to the shift from record types to algebraic
+data types as *the termtype problem*.
 #+begin_src agda :tangle paper2.agda
 data DSTerms₀ : Set where
   start : DSTerms₀
@@ -635,13 +595,19 @@ data DSTerms₁ (States : Set) : Set where
 data DSTerms₂ (States : Set) (start : States) : Set where
   next : DSTerms₂ States start → DSTerms₂ States start
 #+end_src
+:Ignore:
+Yet another way to encode dynamical systems would be by their syntax, as it
+would be desirable when serialising them ---i.e., to obtain first-class
+descriptions of dynamical system values.
+
 
 Notice that the first algebraic data type is isomorphic to ~ℕ~, whereas the
 remaining two are isomorphic to ~States × ℕ~ which keeps track of how many =next=
 steps are necessary until a =State= value is reached ---this may be called
 =Eventually States=.
 The ~DSTermsᵢ~ share the same pattern of kind exposure as the ~DynamicSystemᵢ~ types.
-:AgdaCheckedEvidence:
+
+AgdaCheckedEvidence
 #+begin_src agda :tangle paper2.agda
 _ : Set
 _ = DSTerms₀
@@ -654,60 +620,67 @@ _ = DSTerms₂
 #+end_src
 :End:
 
-# #
-Using monadic notation, we can obtain all of these notions from a single user-friendly
-context declaration.
 #+name: contexts-table
 #+caption: Contexts embody all kinds of grouping mechanisms
 | Concept            | Concrete Syntax                       | Description            |
 |--------------------+---------------------------------------+------------------------|
-| Context            | =do S ← Set; s ← X; n ← (X → X); End=   | “name-type pairs”      |
+| Context            | =do S ← Set; s ← S; n ← (S → S); End=   | “name-type pairs”      |
 |--------------------+---------------------------------------+------------------------|
-| Record Type        | =Σ S ∶ Set • Σ s ∶ S • Σ n ∶ S → S • ⊤= | “bundled-up data”      |
-| Function Type      | =Π S • Σ s ∶ S • Σ n ∶ S → S • ⊤=       | “a type of functions”  |
-| Type constructor   | =λ S • Σ s ∶ S • Σ n ∶ S → S • ⊤=       | “a function on types”  |
+| Record Type        | =Σ S ∶ Set • Σ s ∶ S • Σ n ∶ S → S • 𝟙= | “bundled-up data”      |
+| Function Type      | =Π S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a type of functions”  |
+| Type constructor   | =λ S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a function on types”  |
 | Algebraic datatype | ~data 𝔻 : Set where s : 𝔻; n : 𝔻 → 𝔻~   | “a descriptive syntax” |
 
-* From Do-notation to (Parameterised) Record Types
+Our aim is to obtain all of these notions ---of ways to group data together---
+from a single user-friendly context declaration, using monadic notation.
 
-Traditionally a context is a list of name-type pairs, for us it will be a set
----namely the product of the types, since the names “do not matter”.  Moreover,
-contexts will be have a numeric ‘waist’ argument that indicates which of the
-first entries are ‘parameters’, leaving the remaining elements as ‘fields’.
-The subtlety of what is a ‘parameter’ ---exposed at the type level--- and what is a
-‘field’ ---a component value--- has led to awkward formulations and
-the duplication of existing types for the sole purpose of different uses.
-We shall aim toward a monadic cite:DBLP:journals/iandc/Moggi91 interface
-to declare such grouping mechanisms.
+* Monadic Notation
+  <<sec:monadic-notation>>
 
+  There is little use in an idea that is difficult to use in practice.  As such,
+  we conflate records and termtypes by starting with an ideal syntax they would
+  share, then derive the necessary artefacts that permit it. Our choice of
+  syntax is monadic do-notation:
 #+begin_src agda :tangle no
--- Contexts are waist-indexed types
+  DynamicSystem : Context ℓ₁
+  DynamicSystem = do X ← Set
+                     z ← X
+                     s ← (X → X)
+                     End
+#+end_src
+ Here ~Context, End~, and the underlying monadic bind operator are unknown.  Since
+ we want to be able to /expose/ a number of fields at will, we may take ~Context~ to
+ be types indexed by a number denoting exposure.  Moreover, since records are a
+ product type, we expect there to be a recursive definition whose base case will
+ be the essential identity of products, the unit type ~𝟙~.
+
+| Exposure |   | Elaboration                                |
+|----------+---+--------------------------------------------|
+|        0 |   | =Σ X ∶ Set  • Σ z ∶ X  • Σ s ∶ (X → X)  • 𝟙= |
+|        1 |   | =Π X ∶ Set  • Σ z ∶ X  • Σ s ∶ (X → X)  • 𝟙= |
+|        2 |   | =Π X ∶ Set  • Π z ∶ X  • Σ s ∶ (X → X)  • 𝟙= |
+|        3 |   | =Π X ∶ Set  • Π z ∶ X  • Π s ∶ (X → X)  • 𝟙= |
+
+With these elaborations of ~DynamicSystem~ to guide the way, we resolve
+two of our unknowns.
+#+begin_src agda :tangle no
+{- “Contexts” are exposure-indexed types -}
 Context = λ ℓ → ℕ → Set ℓ
 
--- The “empty context” is the unit type
-End : ∀ {ℓ} → Context ℓ
-End = ‵ ⊤
-
--- Every type is a context
+{- Every type is a context -}
 ‵_ : ∀ {ℓ} → Set ℓ → Context ℓ
 ‵ S = λ _ → S
+
+{- The “empty context” is the unit type -}
+End : ∀ {ℓ} → Context ℓ
+End = ‵ 𝟙
 #+end_src
 
-In order to use do-notation we must provide a definition of a bind operator
-~_>>=_~.
-#+begin_src agda :tangle no
-  do X ← Set
-     z ← X
-     s ← (X → X)
-     End
-
-↝⟨ Removing syntactic sugar ⟩
-
-  ‵ Set >>= λ X → ‵ X >>= λ z → ‵ (X → X) >>= End
-#+end_src
-Notice the quote method is forced due to the typing of bind: ~_>>= : ∀ {X Y} → m
-X → (X → m Y) → m Y~.  The definition of the bind operator accounts for the
-current waist: If zero, we have records, otherwise functions.
+It remains to identify the definition of the underlying bind operation ~>>=~.
+Classically, for a type constructor ~m~, bind is typed ~∀ {X Y : Set} → m X → (X →
+m Y) → m Y~. It allows one to “extract an ~X~-value for later use” in the ~m Y~
+context. Since our ~m = Context~ is from levels to types, we need to slightly
+alter bind's typing.
 #+begin_src agda :tangle no
 _>>=_ : ∀ {a b}
       → (Γ : Context a)
@@ -716,14 +689,19 @@ _>>=_ : ∀ {a b}
 (Γ >>= f) ℕ.zero  = Σ γ ∶ Γ 0 • f γ 0
 (Γ >>= f) (suc n) = (γ : Γ n) → f γ n
 #+end_src
-Unfortunately, this would require too many calls to quote; e.g.,
+The definition here accounts for the current exposure index: If zero, we have
+/record types/, otherwise /function types/. Using this definition, the above
+dynamical system context would need to be expressed using the lifting quote operation.
 #+begin_src agda :tangle no
+‵ Set >>= λ X → ‵ X >>= λ z → ‵ (X → X) >>= End
+{- or -}
 do X ← ‵ Set
    z ← ‵ X
    s ← ‵ (X → X)
    End
 #+end_src
-So let’s “build it into the definition” of ~_>>=_~:
+With our goal of practicality in mind, we shall “build the lifting quote into
+the definition” of ~_>>=_~:
 #+begin_src agda :tangle no
 _>>=_ : ∀ {a b}
       → (Γ : Set a)  -- Main difference
@@ -731,9 +709,99 @@ _>>=_ : ∀ {a b}
       → Context (a ⊍ b)
 (Γ >>= f) ℕ.zero  = Σ γ ∶ Γ • f γ 0
 (Γ >>= f) (suc n) = (γ : Γ) → f γ n
+                    #+end_src
+
+With this definition, the above declaration ~DynamicSystem~ typechecks.
+However, ~DynamicSystem 𝒾~ are “factories”: Given ~𝒾~-many arguments, a
+product value is formed. What if we want to /instantiate/ some of the factory
+arguments ahead of time?
+#+begin_src agda :tangle no
+𝒩₀ : DynamicSystem 0  {- ≈ Σ X ∶ Set  • Σ z ∶ X  • Σ s ∶ (X → X)  • 𝟙 -}
+𝒩₀ = ℕ , 0 , suc , tt
+
+𝒩₁ : DynamicSystem 1 {- ≈ Π X ∶ Set  • Σ z ∶ X  • Σ s ∶ (X → X)  • 𝟙 -}
+𝒩₁ = λ X → ??? {- Impossible is X is empty! -}
+
+{- “Instantiaing” X to be ℕ in “DynamicSystem 1” -}
+𝒩₁′ : let X = ℕ in Σ z ∶ X  • Σ s ∶ (X → X)  • 𝟙
+𝒩₁′ = 0 , suc , tt
 #+end_src
 
-Let's see this in action, and for variety let's encode monoids.
+It seems what we need is method, say ~Π→λ~, that takes a ~Π~-type and transforms it
+into a ~λ~-expression.  One could use a universe, an algebraic type of codes
+denoting types, to define ~Π→λ~. However, one can no longer then easily use
+existing types since they are not formed from the universe's constructors,
+thereby resulting in duplication of existing types via the universe
+encoding. This is not practical nor pragmatic.
+
+As such, we are left with pattern matching on the language's type formation
+primitives as the only reasonable approach. The method ~Π→λ~ is thus a macro that
+acts on the syntactic term representations of types.
+#+begin_src agda :tangle no
+Π→λ (Π a ∶ A • Ba) = (λ a ∶ A • Ba)
+{- One then extends this homomorphically over all possible term formers. -}
+#+end_src
+That is, we walk along the term tree replacing occurrences of ~Π~ with ~λ~. For example,
+#+begin_src agda :tangle no
+  Π→λ (Π→λ (DynamicSystem 2))
+≡ Π→λ (Π→λ (Π X ∶ Set • Π s ∶ X  • Σ n ∶ X → X  • 𝟙))
+≡ Π→λ (λ X ∶ Set • Π s ∶ X  • Σ n ∶ X → X  • 𝟙)
+≡ λ X ∶ Set • λ s ∶ X  • Σ n ∶ X → X  • 𝟙
+#+end_src
+
+For practicality, ~_:waist_~ is a macro acting on contexts that repeats ~Π→λ~ a number of
+times in order to lift a number of field components to the parameter level.
+#+begin_src agda :tangle no
+τ :waist n     = Π→λⁿ n (τ n)
+
+Π→λⁿ 0       τ = τ
+Π→λⁿ (n + 1) τ = Π→λⁿ n (Π→λ τ)
+#+end_src
+
+We can now “fix arguments ahead of time”. Before such demonstration, we need to
+be mindful of our practicality goals: One declares a grouping mechanism with
+~do … End~, which in turn has its instance values constructed with ~⟨ … ⟩~.
+#+begin_src agda :tangle no
+-- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
+infixr 5 ⟨ _⟩
+⟨⟩ : ∀ {ℓ} → 𝟙 {ℓ}
+⟨⟩ = tt
+
+⟨ : ∀ {ℓ} {S : Set ℓ} → S → S
+⟨ s = s
+
+_⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × (𝟙 {ℓ})
+s ⟩ = s , tt
+#+end_src
+
+The following instances of grouping types demonstrate how information moves from
+the body level to the parameter level.
+
+#+BEGIN_SRC agda
+𝒩⁰ : DynamicSystem :waist 0
+𝒩⁰ = ⟨ ℕ , 0 , suc ⟩
+
+𝒩¹ : (DynamicSystem :waist 1) ℕ
+𝒩¹ = ⟨ 0 , suc ⟩
+
+𝒩² : (DynamicSystem :waist 2) ℕ 0
+𝒩² = ⟨ suc ⟩
+
+𝒩³ : (DynamicSystem :waist 3) ℕ 0 suc
+𝒩³ = ⟨⟩
+#+END_SRC
+
+Using ~:waist 𝒾~ we may fix the first ~𝒾~-parameters ahead of time.  Indeed, the
+type ~(DynamicSystem :waist 1) ℕ~ is /the type of dynamic systems over carrier ℕ/,
+whereas ~(DynamicSystem :waist 2) ℕ 0~ is /the type of dynamic systems over
+carrier ℕ and start state 0/.
+
+Examples of the need for such on-the-fly unbundling can be found in numerous
+places in the Haskell standard library. For instance, the standard libraries
+have two isomorphic copies of the integers, called ~Sum~ and ~Prod~, whose reason
+for being is to distinguish two common monoids: The latter is for /integers with
+addition/ whereas the latter is for /integers with multiplication/.
+An orthogonal solution would be to use contexts:
 #+begin_src agda :tangle no
 Monoid : ∀ ℓ → Context (ℓsuc ℓ)
 Monoid ℓ = do Carrier ← Set ℓ
@@ -744,220 +812,107 @@ Monoid ℓ = do Carrier ← Set ℓ
               assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
               End {ℓ}
 #+end_src
+With this context, (~Monoid ℓ₀ :waist 2) M ⊕~ is the type of monoids over
+/particular/ types ~M~ and /particular/ operations ~⊕~.  Of-course, this is orthogonal,
+since Haskell's use-case is for canonical typeclasses, which utilise unification
+on the carrier type ~M~ to find instance implementations.
 
-Likewise, we encode a context ~DynamicSystem~, ref:contexts-table, which we
-tabulate its elaboration at particular waists:
+* Termtypes as Fixed-points
+  <<sec:termtypes-as-fixedpoints>>
 
-| Waist |   | Elaboration                                |
-|-------+---+--------------------------------------------|
-|     0 |   | =Σ X ∶ Set  • Σ z ∶ X  • Σ s ∶ (X → X)  • ⊤= |
-|     1 |   | =Π X ∶ Set  • Σ z ∶ X  • Σ s ∶ (X → X)  • ⊤= |
-|     2 |   | =Π X ∶ Set  • Π z ∶ X  • Σ s ∶ (X → X)  • ⊤= |
-|     3 |   | =Π X ∶ Set  • Π z ∶ X  • Π s ∶ (X → X)  • ⊤= |
+  We have a practical monadic syntax for possibly parameterised record types
+  that we would like to extend to termtypes. Algebraic data types are a means to
+  declare concrete representations of the least fixed-point of a functor.
 
-Notice that the elaborations are function types, but we want functions /on/ types
----as is the case with the ~DynamicSystemᵢ~ from the introduction.
+  In particular, the description language ~𝔻~ for dynamical systems,
+  ref:contexts-table, declares concrete constructors for the fixpoint of ~F~:
 
-* Unbundling: From Function Types to Functions /on/ Types
+       | ~F : Set → Set~                 |
+       | ~F = λ (D ∶ Set) → D ⊎ (D → D)~ |
 
-Evaluation transforms functions to values and currying reorganises functions,
-but we want a combinator, call it ~Π→λ~, that takes a type and results in a value
-of that type.  In general, this is not feasible when the type is empty nor is it
-naturally canonical when there are multiple possible values to choose from.
-
-One could use a universe, an algebraic type of codes denoting types, to define
-~Π→λ~. However, one can no longer then easily use existing types since they are
-not formed from the universe's constructors, thereby resulting in duplication of
-existing types via the universe encoding. This is not practical nor pragmatic.
-
-As such, we are left with pattern matching on the language's type formation
-primitives as the only reasonable approach. The method ~Π→λ~ is thus a macro that
-acts on the syntactic term representations of types.
-#+begin_src agda :tangle no
-Π→λ (Π a ∶ A • Ba) = (λ a ∶ A • Ba)
-Π→λ τ              = τ  {- otherwise -}
-#+end_src
-Similarly, ~_:waist_~ is a macro acting on contexts that repeats ~Π→λ~ a number of
-times in order to lift a number of field components to the parameter level.
-#+begin_src agda :tangle no
-τ :waist n     = Π→λⁿ n (τ n)
-
-Π→λⁿ 0       τ = τ
-Π→λⁿ (n + 1) τ = Π→λⁿ n (Π→λ τ)
+  That is, ~𝔻 ≅ Fix F~ where:
+  #+begin_src agda :tangle no
+data Fix (F : Set → Set) : Set where
+  μ : F (Fix F) → Fix F
 #+end_src
 
-Let's see this in action. Here are our dynamical systems.
-#+begin_src agda :tangle no
-DynamicSystem : Context (ℓsuc Level.zero)
-DynamicSystem = do X ← Set
-                   s ← X
-                   n ← (X → X)
-                   End {Level.zero}
-#+end_src
+ The problem is whether we can derive ~F~ from ~DynamicSystem~.
+ Let us attempt a quick calculation.
+ #+begin_src agda :tangle no
+  DynamicSystem                        {- Definition -}
+↝ do S ← Set; s ← S; n ← (S → S); End  {- Wait 1     -}
+↝ λ S • Σ s ∶ S • Σ n ∶ S → S • 𝟙      {- Replace products with sums -}
+↝ λ S •       S ⊎      (S → S) ⊎ 𝟘    {- Isomorphisms; definition -}
+↝ F
+ #+end_src
 
-Then using our macros:
-#+begin_src agda :tangle no
-DynamicSystem 1        ≡  Π X ∶ Set • Σ s ∶ X  • Σ n ∶ X → X  • ⊤
-DynamicSystem :waist 1 ≡  λ X ∶ Set • Σ s ∶ X  • Σ n ∶ X → X  • ⊤
-#+end_src
+ Since we may view an
+  algebraic data-type as a fixed-point of the functor obtained from the union of the
+  sources of its constructors, it suffices to treat the fields of a record
+  as constructors, then obtain their sources, then union them.
+  That is, since algebraic-datatype constructors necessarily
+  target the declared type, they are determined by their sources.
+  For example, considered as a nullary constructor ~s : S~
+  targets the type ~S~ and so its source is ~𝟙~ ---since we're introducing
+  unit types, any existing unit types are dropped via ~𝟘~.
 
-Each type exposes more and more information about what kind of grouping
-structure we have at hand. The definitions could not be simpler.
-#+begin_src agda :tangle no
-A′ : Set₁
-B′ : Π X ∶ Set • Set
-C′ : Π X ∶ Set • Π x ∶ X • Set
-D′ : Π X ∶ Set • Π x ∶ X • Π s ∶ (X → X) • Set
-
-A′ = DynamicSystem :waist 0
-B′ = DynamicSystem :waist 1
-C′ = DynamicSystem :waist 2
-D′ = DynamicSystem :waist 3
-#+end_src
-
-If the language allows mixfix unicode identifiers, then one declares
-grouping mechanisms  with ~do ⋯ End~ then forms instances using, say, ~⟨⋯⟩~.
-#+begin_src agda :tangle no
--- Helpful syntactic sugar
-⟨ : ∀ {ℓ} {S : Set ℓ} → S → S
-⟨ s = s
-
-_⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × ⊤ {ℓ}
-s ⟩ = s , tt
-
-⟨⟩ : ∀ {ℓ} → ⊤ {ℓ}
-⟨⟩ = tt
-#+end_src
-The following /instances/ of these grouping types demonstrate how /information moves from the body level to the parameter level./
-#+begin_src agda :tangle no
-𝒩⁰ : A′
-𝒩⁰ = ⟨ ℕ , 0 , suc ⟩
-
-𝒩¹ : B′ ℕ
-𝒩¹ = ⟨ 0 , suc ⟩
-
-𝒩² : C′ ℕ 0
-𝒩² = ⟨ suc ⟩
-
-𝒩³ : D′ ℕ 0 suc
-𝒩³ = ⟨⟩
-#+end_src
-
-It is interesting to note, that if a context =𝒞= has only 𝓃-many fields, then
-there are only 𝓃-many interesting unbundled forms, after which there are no new
-ones: ~𝒞 (𝓃 + k) ≡ 𝒞 𝓃~.
-
-With ~:waist~ we can fix parameters ahead of time.  For example, above the type =B′
-ℕ= is the type of “dynamic systems over carrier ℕ” whereas =C′ ℕ 0= is the type of
-“dynamic systems over carrier ℕ and start state 0”.  Without the unbundling
-mechanism we would have had to resort to awkward trivial constraints, as below,
-which are tolerable for one-off uses but clearly do not scale at all as
-indicated by the need to use equals-for-equals ~subst~-itutions of propositional
-equalities.
-#+begin_src agda
-C″ : Π X ∶ Set • Π x ∶ X • Set₁
-C″ X x = Σ 𝒟 ∶ DynamicSystem 0
-       • Σ Carrier-is-X ∶ proj₁ 𝒟 ≡ X
-       • proj₁ (proj₂ 𝒟) ≡ subst id (sym Carrier-is-X) x
-
-𝒩²eek : C″ ℕ 0
-𝒩²eek = (ℕ , 0 , suc , tt) , refl , refl
-#+end_src
-
-Traditionally cite:coq_cat_experiences, unbundling a record requires the use of
-transport along propositional equalities, with trivial ~refl~-exivity proofs.  The
-~:waist~ approach presented here removes the boilerplate necessary at the type
-specialisation location as well as at the instance declaration location.
-
-* COMMENT =termtype=: Algebraic Datatypes are Fixpoints of Derived Functors
-With a bit of reflection, records and typeclasses have been coerced into a
-unified notation. It remains to bring algebraic datatypes into the fold.
-
-* Semantics for PackageFormer
-
-  The PackageFormer cite:DBLP:conf/gpce/Al-hassyCK19,alhassy_thesis_proposal
-  editor extension reads contexts ---in nearly the same notation as above---
-  enclosed in dedicated comments, then generates and imports Agda code from them
-  seamlessly in the background whenever typechecking transpires. The framework
-  provides a fixed number of meta-primitives for producing arbitrary notions of
-  grouping mechanisms, and allows arbitrary Emacs Lisp to be invoked in the
-  construction of complex grouping mechanisms.
-
-  One of PackageFormer's primitives is called ~:waist~ and behaves exactly as ours
-  above. As such, our current setup provides a formalisation of PackageFormer
-  limited to only the ~:waist~ meta-primitive. Moreover, it is nearly as readable
-  and is a library method, rather than an editor extension.
-
-  PackageFormer is extensible via Emacs Lisp cite:10.5555/229872 and one of its
-  possible uses is to obtain algebraic data types from a context. With Agda's
-  current reflection mechanism, even this is possible! For example, we may
-  obtain a type ~𝔻~ from =DynamicSystem= with user-defined constructors =zeroD= and
-  =sucD= as if it where defined:
-#+begin_src agda :tangle no
-data 𝔻 : Set where
-     zeroD : 𝔻
-     sucD  : 𝔻 → 𝔻
-#+end_src
-
-  #
-
-  Here are the core pieces necessary to form ~termtype~; obtained by viewing an
-  algebraic data-type as a fixed-point of the functor obtained from union of the
-  sources of its constructors. For example, the above =𝔻= is the fixpoint of ~λ 𝔻 →
-  𝟙 ⊎ 𝔻~, where the summands are the sources of =𝔻='s constructors.
   #+begin_src agda :tangle no
 ⇊ τ = “reduce all de brujin indices by 1”
 
-Σ→⊎ (Σ a ∶ A • Ba) = A ⊎ Σ→⊎ (⇊ Ba)
-{- Extend ‘Σ→⊎’ homomorphicly to other syntactic constructs -}
-
 sources (λ x ∶ (Π a ∶ A • Ba) • ⋯) = (λ x ∶ A • ⋯)
-sources (λ x ∶ A              • ⋯) = (λ x ∶ ⊤ • ⋯)
-{- Extend ‘sources’ homomorphicly to other syntactic constructs -}
+sources (λ x ∶ A              • ⋯) = (λ x ∶ 𝟙 • ⋯)
 
-data Fix (F : Set → Set) : Set where
-  μ : F (Fix F) → Fix F
+Σ→⊎ (Σ a ∶ A • Ba) = A ⊎ Σ→⊎ (⇊ Ba)
+
+{- Extend “sources, Σ→⊎” homomorphicly to other syntactic constructs -}
 
 termtype τ = Fix (Σ→⊎ (sources τ))
-#+end_src
+             #+end_src
 
-One can then declare ~𝔻 = termtype (DynamicSystem :waist 1)~.
+The hint ~“Replace products with sums”~ in the above calculation is realised
+formally as ~Σ→⊎ (sources τ)~.
 
-With ~termtype~ in hand, we have provided a theoretical basis for yet another
-meta-primitive of PackageFormer, the ~_:kind_~ primitive which dictates how an
-abstract grouping mechanism should be viewed in terms of existing Agda syntax.
-However, unlike PackageFormer all of our syntax is legitimate Agda syntax.
-
+It is instructive to visually see how ~𝔻~ is obtained from ~termtype~
+in order to demonstrate that this approach to algebraic data types
+is practical.
 #+begin_src agda :tangle no
-data Kind : Set where
-  ‵record    : Kind
-  ‵typeclass : Kind
-  ‵data      : Kind
-#+end_src
+𝔻 = termtype (DynamicSystem :waist 1)
 
-Since syntax is being manipulated, we have yet another macro:
+-- Pattern synonyms for more compact presentation
+pattern startD  = μ (inj₁ tt)       -- : 𝔻
+pattern nextD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
+#+end_src
+With the ~pattern~ declarations, we can actually use these more meaningful names,
+when pattern matching, instead of the seemingly daunting ~inj~-ections.
+For instance, we can immediately see that the natural numbers act as
+the description language for dynamical systems:
 #+begin_src agda :tangle no
-𝒞 :kind ‵record    = 𝒞 0
-𝒞 :kind ‵typeclass = 𝒞 :waist 1
-𝒞 :kind ‵typeclass = termtype (𝒞 :waist 1)
+to : 𝔻 → ℕ
+to startD    = 0
+to (nextD x) = suc (to x)
+
+from : ℕ → 𝔻
+from zero    = startD
+from (suc n) = nextD (from n)
 #+end_src
 
-Interestingly, useful programming datatypes arise from termtypes of theories
-(contexts). That is, if =𝒞 : Set → Context ℓ₀= then =ℂ′ = λ X → 𝒞 X :kind ‵data= can
-be used to form ‘free, lawless, 𝒞-instances’.  For example,
+Astonishingly, useful programming datatypes arise from termtypes of theories
+(contexts). That is, if =𝒞 : Set → Context ℓ₀= then =ℂ′ = λ X → termtype (𝒞 X
+:waist 1)= can be used to form ‘free, lawless, 𝒞-instances’.
+#+label: theories-data-structures
+#+caption: Data strcutrues as free theories
 | Theory             | Termtype     |
 |--------------------+--------------|
 | Dynamical Systems  | ℕ            |
 | Pointed Structures | Maybe        |
 | Monoids            | Binary Trees |
 
-The final correspondence in the table is a claim mentioned briefly in the first
-PackageFormer paper. With our setup we can not only formally express the
-relationship but also prove it true. We present the setup and
-leave it as a tremendously easy exercise to the reader to present a bijective
-pair of functions between =𝕄= and =TreeSkeleton=. Hint: Interactively case-split on values
-of =𝕄= until the declared patterns appear, then replace them with the constructors
-of ~TreeSkeleton~.
+The final correspondence in the table is a well known correspondence, that we
+can, not only formally express, but also prove to be true. We present the setup
+and leave it as an instructive exercise to the reader to present a
+bijective pair of functions between =𝕄= and =TreeSkeleton=. Hint: Interactively
+case-split on values of =𝕄= until the declared patterns appear, then replace them
+with the constructors of ~TreeSkeleton~.
 
 #+begin_src agda :tangle no
 𝕄 : Set
@@ -976,7 +931,7 @@ data TreeSkeleton : Set where
 To obtain trees over some ‘value type’ Ξ, one must start at the theory of
 “monoids containing a given set Ξ”. Similarly, by starting at “theories of
 pointed sets over a given set Ξ”, the resulting termtype is the ~Maybe~
-type constructor ---another simple exercise to the reader: Show ~ℙ ≅ Maybe~.
+type constructor ---another instructive exercise to the reader: Show ~ℙ ≅ Maybe~.
 #+begin_src agda :tangle no
 PointedOver  : Set → Context (ℓsuc ℓ₀)
 PointedOver Ξ    = do Carrier ← Set ℓ₀
@@ -992,6 +947,78 @@ pattern nothingP = μ (inj₁ tt)       -- : ℙ
 pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
 #+end_src
 
+* Related Works
+  <<sec:related-works>>
+
+  Surprisingly, conflating parameterised and non-parameterised record types
+  with termtypes /within a language/ has not been done before.
+
+  The PackageFormer cite:DBLP:conf/gpce/Al-hassyCK19,alhassy_thesis_proposal
+  editor extension reads contexts ---in nearly the same notation as ours---
+  enclosed in dedicated comments, then generates and imports Agda code from them
+  seamlessly in the background whenever typechecking transpires. The framework
+  provides a fixed number of meta-primitives for producing arbitrary notions of
+  grouping mechanisms, and allows arbitrary Emacs Lisp cite:10.5555/229872 to be
+  invoked in the construction of complex grouping mechanisms.
+
+  #+caption: Comparing the in-language Context mechanism with the PackageFormer editor extension
+  |                          | PackageFormer      | Contexts             |
+  |--------------------------+--------------------+----------------------|
+  | Type of Entity           | Preprocessing Tool | Language Library     |
+  | Specification Language   | Lisp + Agda        | Agda                 |
+  | Well-formedness Checking | ❌               | ✓                    |
+  | Termination Checking     | ✓                  | ✓                    |
+  | Elaboration Tooltips     | ✓                  | ❌                 |
+  | Rapid Prototyping        | ✓                  | ✓ (Slower)           |
+  | Usability Barrier        | None               | None                 |
+  | Extensibility Barrier    | Lisp               | Weak Metaprogramming |
+
+  The original PackageFormer paper provided the syntax necessary to form useful
+  grouping mechanisms but was shy on the semantics of such constructs.  We have
+  chosen the names of our combinators to closely match those of PackageFormer's
+  with an eye to furnishing the mechanism with semantics by construing the
+  syntax as semantics-functions; i.e., we have a shallow embedding of
+  PackageFormer's constructs as Agda functions:
+
+#+caption: Contexts as a semantics for PackageFormer constructs
+| Syntax          | Semantics                    |
+|-----------------+------------------------------|
+| ~PackageFormer~   | ~Context~                      |
+| ~:waist~          | ~:waist~                       |
+| ~⟴~               | Forward function application |
+| ~:kind~           | ~:kind~, see below             |
+| ~:level~          | Agda built-in                |
+| ~:alter-elements~ | Agda macros                  |
+
+# Moreover, it is nearly as readable
+#  and is a library method, rather than an editor extension.
+
+PackageFormer's ~_:kind_~ meta-primitive dictates how an abstract grouping
+mechanism should be viewed in terms of existing Agda syntax.  However, unlike
+PackageFormer, all of our syntax is legitimate Agda syntax.
+Since syntax is being manipulated, we are forced to define it as a macro:
+
+#+begin_src agda :tangle no
+data Kind : Set where
+  ‵record    : Kind
+  ‵typeclass : Kind
+  ‵data      : Kind
+
+𝒞 :kind ‵record    = 𝒞 0
+𝒞 :kind ‵typeclass = 𝒞 :waist 1
+𝒞 :kind ‵data      = termtype (𝒞 :waist 1)
+#+end_src
+
+We did not expect to be able to assign a full semantics to PackageFormer's
+syntactic constructs due to Agda's substantially weak metaprogramming mechanism.
+However, it is important to note that PackageFormer's Lisp extensibility
+expedites the process of trying out arbitrary grouping mechanisms ---such as
+partial-choices of pushouts and pullbacks along user-provided assignment
+functions--- since it is all either string symbolic list manipulation. On the
+Agda side, using contexts, it would require exponentially more effort due to the
+limited reflection mechanism and the intrusion of the stringent type system.
+
+:Ignore:
 For PackageFormer, we have implemented its primitives ~:waist~ and ~:kind~, the
 other core meta-primitives are ~_⟴_~ and ~:alter-elements~. The former is a
 syntactic form of function application, ~x ⟴ f ≈ f x~, which we already have by
@@ -1000,90 +1027,7 @@ constituents of a grouping mechanism in an arbitrary fashion using the entire
 power of Emacs Lisp ---which includes a large portion of Common Lisp.  We have
 currently presented a partial semantics of PackageFormer's syntactic entities by
 presenting them here as semantic functions on contexts.
-
-* What about the meta-language's parameters?
-
-Besides ~:waist~, another way to introduce parameters into a context grouping
-mechanism is to use the language's existing utility of parameterising a context
-by another type ---as was done earlier in ~PointedOver~.
-
-For example, a pointed set needn't necessarily be termined with ~End~.
-#+begin_src agda
-PointedSet : Context ℓ₁
-PointedSet = do Carrier ← Set
-                point   ← Carrier
-                End {ℓ₁}
-#+end_src
-We instead form a grouping consisting of a single type and a value of that type,
-along with an instance of the parameter type =Ξ=.
-#+begin_src agda
-PointedPF : (Ξ : Set₁) → Context ℓ₁
-PointedPF Ξ = do Carrier ← Set
-                 point   ← Carrier
-                 ‵ Ξ
-#+end_src
-Clearly ~PointedPF ⊤ ≈ PointedSet~, so we have a more generic grouping mechanism.
-The natural next step is to consider other parameters such as ~PointedSet~
-in-place of =Ξ=.
-:AgdaCheckedEvidence:
-#+begin_src agda
-_ : ∀ {n} → PointedPF ⊤ n ≡ PointedSet n
-_ = refl
-#+end_src
 :End:
-#+begin_src agda
--- Convenience names
-PointedSetᵣ = PointedSet        :kind ‵record
-PointedPFᵣ  = λ Ξ → PointedPF Ξ :kind ‵record
-
--- An extended record type: Two types with a point of each.
-TwoPointedSets = PointedPFᵣ PointedSetᵣ
-
-_ :   TwoPointedSets
-    ≡ ( Σ Carrier₁ ∶ Set • Σ point₁ ∶ Carrier₁
-      • Σ Carrier₂ ∶ Set • Σ point₂ ∶ Carrier₂ • ⊤)
-_ = refl
-
--- Here's an instance
-one : PointedSet :kind ‵record
-one = 𝔹 , false , tt
-
--- Another; a pointed natural extended by a pointed bool,
--- with particular choices for both.
-two : TwoPointedSets
-two = ℕ , 0 , one
-#+end_src
-More generally, /record *structure* can be dependent on values:/
-#+begin_src agda
-_PointedSets : ℕ → Set₁
-zero  PointedSets = ⊤
-suc n PointedSets = PointedPFᵣ (n PointedSets)
-
-_ :   4 PointedSets
-    ≡ (Σ Carrier₁ ∶ Set • Σ point₁ ∶ Carrier₁
-      • Σ Carrier₂ ∶ Set • Σ point₂ ∶ Carrier₂
-      • Σ Carrier₃ ∶ Set • Σ point₃ ∶ Carrier₃
-      • Σ Carrier₄ ∶ Set • Σ point₄ ∶ Carrier₄ • ⊤)
-_ = refl
-#+end_src
-Using traditional grouping mechanisms, it is difficult to create the family of
-types =n PointedSets= since the number of fields, $2 × n$, depends on $n$.
-
-It is interesting to note that the termtype of ~PointedPF~ is the same as the
-termtype of ~PointedOver~, the ~Maybe~ type constructor!
-#+begin_src agda
-PointedD : (X : Set) → Set₁
-PointedD X = termtype (PointedPF (Lift _ X) :waist 1)
-
--- Pattern synonyms for more compact presentation
-pattern nothingP = μ (inj₁ tt)
-pattern justP x  = μ (inj₂ (lift x))
-
-casingP : ∀ {X} (e : PointedD X)
-        → (e ≡ nothingP) ⊎ (Σ x ∶ X • e ≡ justP x)
-casingP nothingP  = inj₁ refl
-casingP (justP x) = inj₂ (x , refl)
-#+end_src
 
 * Next Steps
 
@@ -1107,53 +1051,379 @@ casingP (justP x) = inj₂ (x , refl)
 
 Lots to do, so little time.
 
-* COMMENT DSTerms
+* APPENDIX: What about the meta-language's parameters? :MaybeDelete:
 
-* COMMENT Old Ideas
-** COMMENT Introduction [0/4]                                :boring:unclear:
+Besides ~:waist~, another way to introduce parameters into a context grouping
+mechanism is to use the language's existing utility of parameterising a context
+by another type ---as was done earlier in ~PointedOver~.
 
-   + [ ] Show example of a PackageFormer.
-         - Demonstrate how: PackageFormer  ≈  named context + header.
-   + [ ] Show example of how it can be used to give a record.
-   + [ ] Show how it can be used to give us a homomorphism definition.
-   + [ ] What are the pre- and post-conditions of the homomorphism construction?
-         - This is what we are trying to solve.
+For example, a pointed set needn't necessarily be termined with ~End~.
+#+begin_src agda
+PointedSet : Context ℓ₁
+PointedSet = do Carrier ← Set
+                point   ← Carrier
+                End {ℓ₁}
+#+end_src
+We instead form a grouping consisting of a single type and a value of that type,
+along with an instance of the parameter type =Ξ=.
+#+begin_src agda
+PointedPF : (Ξ : Set₁) → Context ℓ₁
+PointedPF Ξ = do Carrier ← Set
+                 point   ← Carrier
+                 ‵ Ξ
+#+end_src
+Clearly ~PointedPF 𝟙 ≈ PointedSet~, so we have a more generic grouping mechanism.
+The natural next step is to consider other parameters such as ~PointedSet~
+in-place of =Ξ=.
+:AgdaCheckedEvidence:
+#+begin_src agda
+_ : ∀ {n} → PointedPF 𝟙 n ≡ PointedSet n
+_ = refl
+#+end_src
+:End:
+#+begin_src agda
+-- Convenience names
+PointedSetᵣ = PointedSet        :kind ‵record
+PointedPFᵣ  = λ Ξ → PointedPF Ξ :kind ‵record
 
-** COMMENT A Grammar for PackageFormer [0/5]               :rather:promising:
+-- An extended record type: Two types with a point of each.
+TwoPointedSets = PointedPFᵣ PointedSetᵣ
 
-   + [ ] Grammar for PackageFormer heading.
-   + [ ] Grammar for element datatype.
-   + [ ] Grammar for “types”.
-     - We clearly cannot use any Agda/MLTT types.
-   + [ ] Define a fold for PackageFormer ---the homepage currently calls this ~graph-map~ due to
-         the graph theoretic nature of element dependencies.
-   + [ ] Prove that this fold preserves well-formedness & well-typedness of PackageFormers.
-     - This is the semantics function!
-     - *PackageFormers are an M-Set and fold is an M-Set homomorphism!*
+_ :   TwoPointedSets
+    ≡ ( Σ Carrier₁ ∶ Set • Σ point₁ ∶ Carrier₁
+      • Σ Carrier₂ ∶ Set • Σ point₂ ∶ Carrier₂ • 𝟙)
+_ = refl
 
-       Call this M-Set “𝑷𝑭”.
-       1. Two sorts: ~PackageFormer~ and ~Element~.
-       2. Action: ~_◁_ : PackageFormer → Element → PackageFormer~
-       3. Monoid on ~PackageFormer~
-          - Unit: The empty PackageFormer
-          - Bop: Union of contexts
-            + If they agree on their intersection, then union of element lists;
-              otherwise ‘crash’ by yielding ANN.
-            + ANN is the annihilating PackageFormer: It is a postulated value
-              that acts as the zero of union.
-            - This ensures that a crash propagates and so a union of PF's
-                is ANN if any two items conflict.
-            - E.g., “crash : PackageFormer⊥ → PackageFormer⊥ → Boolean”
-                is defined with “crash ⊥ x ≈ true” and symmetrically so.
-            - Taking ANN = ⊥, as a bottom element; e.g., ~nothing~.
-            + Proof outline of associativity:
-            - Case 1: No crashes, then ordinary list catenation, which is associative.
-            - Case 2: Some two items conflict, then ANN is propagated and both sides equal ANN.
+-- Here's an instance
+one : PointedSet :kind ‵record
+one = 𝔹 , false , tt
 
-*** Deriving Fold
+-- Another; a pointed natural extended by a pointed bool,
+-- with particular choices for both.
+two : TwoPointedSets
+two = ℕ , 0 , one
+#+end_src
+More generally, /record *structure* can be dependent on values:/
+#+begin_src agda
+_PointedSets : ℕ → Set₁
+zero  PointedSets = 𝟙
+suc n PointedSets = PointedPFᵣ (n PointedSets)
 
-    1. Define a “Right M-Set” ( close, but not really ):
-       #+BEGIN_SRC agda
+_ :   4 PointedSets
+    ≡ (Σ Carrier₁ ∶ Set • Σ point₁ ∶ Carrier₁
+      • Σ Carrier₂ ∶ Set • Σ point₂ ∶ Carrier₂
+      • Σ Carrier₃ ∶ Set • Σ point₃ ∶ Carrier₃
+      • Σ Carrier₄ ∶ Set • Σ point₄ ∶ Carrier₄ • 𝟙)
+_ = refl
+#+end_src
+Using traditional grouping mechanisms, it is difficult to create the family of
+types =n PointedSets= since the number of fields, $2 × n$, depends on $n$.
+
+It is interesting to note that the termtype of ~PointedPF~ is the same as the
+termtype of ~PointedOver~, the ~Maybe~ type constructor!
+#+begin_src agda :tangle no
+PointedD : (X : Set) → Set₁
+PointedD X = termtype (PointedPF (Lift _ X) :waist 1)
+
+-- Pattern synonyms for more compact presentation
+pattern nothingP = μ (inj₁ tt)
+pattern justP x  = μ (inj₂ (lift x))
+
+casingP : ∀ {X} (e : PointedD X)
+        → (e ≡ nothingP) ⊎ (Σ x ∶ X • e ≡ justP x)
+casingP nothingP  = inj₁ refl
+casingP (justP x) = inj₂ (x , refl)
+#+end_src
+
+* COMMENT Other misc ideas
+** Why syntax
+   The archetype for records and termtypes ---algebraic data types--- are
+   monoids. They describe untyped compositional structures, such as programs in
+   dynamically type-checked language. In turn, their termtype is linked lists
+   which reify a monoid value ---such as a program--- as a sequence of values
+   ---i.e., a list of language instructions--- which ‘evaluate’ to the original
+   value. The shift to syntax gives rise to evaluators, optimisers, and  constrained
+   recursion-induction principles.
+
+** Introduction
+
+ In dependently-typed programming languages, such as Agda
+ cite:Norell-2007,agda_overview, there is a tendency to define concepts
+ repeatedly along syntactic constructs provided by the language.  In particular,
+ one bundles up related data into a record structure, then considers the need to
+ expose some of the fields as parameters and so provides a parameterised record
+ construction, then for the need to have a description language for terms of
+ these record types, one forms an associated algebraic datatype.  For example, we
+ may form a type ~Monoid₀~ of monoids, which consists of a type along with an
+ operation and some laws, but may want ~Monoid₁ M ⊕~ to speak of monoids over
+ /particular/ types ~M~ and particular operations ~⊕~ ---the latter is handled, say in
+ the Haskell standard library, by having isomorphic copies of types for each
+ binary operation, such as ~Sum ≅ Prod ≅ Int~ for the classical additive and
+ multiplicative monoidal structures on integers.  This is the problem we are
+ solving: /How can parameterised records and their associated algebraic datatypes
+ be obtained from a core declaration?/
+
+ The humblest notion of a grouping mechanism is described by a pair type ~A × B ×
+ C~, usually later values depend on earlier values and so we have the
+ dependent-pair type src_agda[:exports code]{Σ a ∶ A • Σ b ∶ B a • Σ C a b}. The kind of these types is
+ ~Set₁~, the type of small types. If we wish to speak of groupings where ~a ∶ A~ is
+ /fixed/, then we must lift it from being a /field/ component to being a /parameter/,
+ thereby arriving at the /function/ ~λ a ∶ A • Σ b ∶ B a • Σ C a b~ which has /type/ ~Π a ∶
+ A • Set~. Similarly, we may expose ~b~ as a parameter to further indicate the
+ possible grouping structure.
+
+ | Grouping Description          |   | Kind                      |
+ |-------------------------------+---+---------------------------|
+ | =Σ a ∶ A • Σ b ∶ B a • Σ C a b= |   | ~Set~                       |
+ | =λ a ∶ A • Σ b ∶ B a • Σ C a b= |   | ~Π a ∶ A • Set~             |
+ | =λ a ∶ A • λ b ∶ B a • Σ C a b= |   | ~Π a ∶ A • Π b ∶ B a • Set~ |
+
+ At each step, we “pull out” more information at the kind level; at first we have
+ a ~Set~, an opaque grouping mechanism, then we obtain a ~Π a ∶ A • Set~ which is a
+ grouping mechanism that somehow makes use of an ~A~-value.
+
+ 1. *Type constructor reification Π→λ:* Function /types/ like ~Π a ∶ A • Set~ cannot be
+    applied since they are not functions, so how do we get to ~λ a : A • Set~?
+
+    + λ-terms are values of Π-types, but in general there is no natural
+      construction to transform a type into one of its values.
+
+    + Given ~τ = Π (X : Set) • ⋯ : Set₁~, we want ~Π→λ τ = λ (X : Set) • ⋯ : Π (X :
+      Set) • Set~; the former's type states it to be a =Set₁=, a grouping mechanism of
+      which we know nothing, whereas the latter's type indicates it to be a
+      parameterised grouping mechanism. Since ~Π→λ τ~ can be applied and is thus more
+      concrete, we call ~Π→λ~ a reification combinator.
+
+ 2. *Unbundling* cite:packaging_mathematical_structures:
+    How do we go from ~Set~ to ~Π a ∶ A • Set~?
+
+    A function from function-types to functions-on-types necessarily requires a
+    way to pattern match on the possible type constructions in a language.
+
+    Perhaps an example will clarify the issue. The ubiquitous graph structure
+    is contravariant in its collection of vertices. Recall that a multi-graph, or
+    quiver, is a collection of vertices along with a collection of edges between
+    any two vertices; here's the traditional record form:
+    #+begin_src agda
+Graph  : Context ℓ₁
+Graph  = do Vertex ← Set
+            Edges  ← (Vertex → Vertex → Set)
+            End {ℓ₀}
+ #+end_src
+
+    Using the record form, it is akward to phrase contravariance, which simply
+    “relabels the vertices”. Even worse, the awkward phrasing only serves to
+    ensure certain constraints hold ---which are reified at the value level via
+    the uninsightful ~refl~-exivity proof.
+    #+begin_src agda
+comap₀ : ∀ {A B : Set}
+      → (f : A → B)
+      → Σ G ∶ Graph :kind ‵record • Field 0 G ≡ B
+      → Σ G ∶ Graph :kind ‵record • Field 0 G ≡ A
+comap₀ {A} {B} f (⟨ .B , edgs ⟩ , refl) = (A , (λ a₁ a₂ → edgs (f a₁) (f a₂)) , tt) , refl
+        #+end_src
+    /Without redefining graphs/, we can phrase the definition at the typeclass
+    level ---i.e., records parameterised by the vertices. This form is not only
+    clearer and easier to implement at the value-level, it also makes it clear
+    that we are “pulling back” the vertex type and so have also shown graphs are
+    closed under reducts.
+        #+begin_src agda
+-- Way better and less awkward!
+comap : ∀ {A B : Set}
+     → (f : A → B)
+     → (Graph :kind ‵typeclass) B
+     → (Graph :kind ‵typeclass) A
+comap f ⟨ edgs ⟩₁ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩₁
+    #+end_src
+
+    Later we show how to form ~Context~, its do-notation, and the ~:kind~ mechanism
+    which shifts between records, typeclasses, and algebraic datatypes.
+
+    It is important to note that we are using the word ‘typeclass’ as an
+    abbreviation for “parameterised record”. In particular, we have no support
+    for the traditional unification algorithm that makes typeclasses and
+    canonical structures cite:coq_canonical_tutorial useful for ad-hoc
+    polymorphism.
+ # eval  : A × (A → B) → B
+ # curry : (A × B → C) → (A → (B → C))
+ # #
+ # Π a ∶ A • (Π f ∶ (Π x ∶ A • B x)) • B a
+ # Π f ∶ (Π p ∶ (Π x ∶ A • B x) • C p) • Π a ∶ A • Π b ∶ B a • C (a, b)
+ # Π f ∶ Set • (Π x ∶ A • Set)
+
+ We shall outline how this can be achieved in dependently-typed languages which
+ have support for reflection. Our target language will be Agda, but the ideas
+ easily transfer to other languages. In particular, the resulting in-language
+ syntax we obtain is rather close to the existing Agda record syntax for
+ declarations and Agda constructor tuples for instances.  In the next section, we
+ begin by way of a more concrete example of a grouping mechanism, then we take a
+ goal-driven approach to building the necessarily apparatus for a clean
+ imperative-like declaration notation, then we conclude with a brief discussion
+ on how the resulting framework can act as a simple theory for the Agda
+ PackageFormer editor extension cite:DBLP:conf/gpce/Al-hassyCK19 ---which solves
+ the =Monoidᵢ= problem mentioned earlier.
+
+ In order to be language-agnostic and underscore the ideas, we shall present the
+ core definitions along with Agda-checked examples. Details can be read at the
+ following URL in a literate and reproducible fashion
+ cite:DBLP:conf/europar/StanisicL14.
+ # Details are left to an
+ # appendix(?) or can be read below (MA: Haven't decided yet):
+ | =https://github.com/alhassy/next-700-module-systems/tree/master/prototype= |
+
+** OLD From Do-notation to (Parameterised) Record Types
+   CLOSED: [2020-03-02 Mon 12:43]
+
+ Traditionally a context is a list of name-type pairs, for us it will be a set
+ ---namely the product of the types, since the names “do not matter”.  Moreover,
+ contexts will be have a numeric ‘waist’ argument that indicates which of the
+ first entries are ‘parameters’, leaving the remaining elements as ‘fields’.
+ The subtlety of what is a ‘parameter’ ---exposed at the type level--- and what is a
+ ‘field’ ---a component value--- has led to awkward formulations and
+ the duplication of existing types for the sole purpose of different uses.
+ We shall aim toward a monadic cite:DBLP:journals/iandc/Moggi91 interface
+ to declare such grouping mechanisms.
+
+ Let's see this in action, and for variety let's encode monoids.
+
+
+ Notice that the elaborations are function types, but we want functions /on/ types
+ ---as is the case with the ~DynamicSystemᵢ~ from the introduction.
+
+** Unbundling: From Function Types to Functions /on/ Types
+
+ Evaluation transforms functions to values and currying reorganises functions,
+ but we want a combinator, call it ~Π→λ~, that takes a type and results in a value
+ of that type.  In general, this is not feasible when the type is empty nor is it
+ naturally canonical when there are multiple possible values to choose from.
+
+ Let's see this in action. Here are our dynamical systems.
+ #+begin_src agda :tangle no
+DynamicSystem : Context (ℓsuc Level.zero)
+DynamicSystem = do X ← Set
+                   s ← X
+                   n ← (X → X)
+                   End {Level.zero}
+ #+end_src
+
+ Each type exposes more and more information about what kind of grouping
+ structure we have at hand. The definitions could not be simpler.
+ #+begin_src agda :tangle no
+A′ : Set₁
+B′ : Π X ∶ Set • Set
+C′ : Π X ∶ Set • Π x ∶ X • Set
+D′ : Π X ∶ Set • Π x ∶ X • Π s ∶ (X → X) • Set
+
+A′ = DynamicSystem :waist 0
+B′ = DynamicSystem :waist 1
+C′ = DynamicSystem :waist 2
+D′ = DynamicSystem :waist 3
+ #+end_src
+
+ If the language allows mixfix unicode identifiers, then one declares
+ grouping mechanisms  with ~do ⋯ End~ then forms instances using, say, ~⟨⋯⟩~.
+ #+begin_src agda :tangle no
+-- Helpful syntactic sugar
+⟨ : ∀ {ℓ} {S : Set ℓ} → S → S
+⟨ s = s
+
+_⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × 𝟙 {ℓ}
+s ⟩ = s , tt
+
+⟨⟩ : ∀ {ℓ} → 𝟙 {ℓ}
+⟨⟩ = tt
+ #+end_src
+ The following /instances/ of these grouping types demonstrate how /information moves from the body level to the parameter level./
+ #+begin_src agda :tangle no
+𝒩⁰ : A′
+𝒩⁰ = ⟨ ℕ , 0 , suc ⟩
+
+𝒩¹ : B′ ℕ
+𝒩¹ = ⟨ 0 , suc ⟩
+
+𝒩² : C′ ℕ 0
+𝒩² = ⟨ suc ⟩
+
+𝒩³ : D′ ℕ 0 suc
+𝒩³ = ⟨⟩
+ #+end_src
+
+ It is interesting to note, that if a context =𝒞= has only 𝓃-many fields, then
+ there are only 𝓃-many interesting unbundled forms, after which there are no new
+ ones: ~𝒞 (𝓃 + k) ≡ 𝒞 𝓃~.
+
+ With ~:waist~ we can fix parameters ahead of time.  For example, above the type =B′
+ ℕ= is the type of “dynamic systems over carrier ℕ” whereas =C′ ℕ 0= is the type of
+ “dynamic systems over carrier ℕ and start state 0”.  Without the unbundling
+ mechanism we would have had to resort to awkward trivial constraints, as below,
+ which are tolerable for one-off uses but clearly do not scale at all as
+ indicated by the need to use equals-for-equals ~subst~-itutions of propositional
+ equalities.
+ #+begin_src agda
+C″ : Π X ∶ Set • Π x ∶ X • Set₁
+C″ X x = Σ 𝒟 ∶ DynamicSystem 0
+       • Σ Carrier-is-X ∶ proj₁ 𝒟 ≡ X
+       • proj₁ (proj₂ 𝒟) ≡ subst id (sym Carrier-is-X) x
+
+𝒩²eek : C″ ℕ 0
+𝒩²eek = (ℕ , 0 , suc , tt) , refl , refl
+ #+end_src
+
+ Traditionally cite:coq_cat_experiences, unbundling a record requires the use of
+ transport along propositional equalities, with trivial ~refl~-exivity proofs.  The
+ ~:waist~ approach presented here removes the boilerplate necessary at the type
+ specialisation location as well as at the instance declaration location.
+
+** =termtype=: Algebraic Datatypes are Fixpoints of Derived Functors
+ With a bit of reflection, records and typeclasses have been coerced into a
+ unified notation. It remains to bring algebraic datatypes into the fold.
+** DSTerms
+
+** Old Ideas
+*** COMMENT Introduction [0/4]                               :boring:unclear:
+
+    + [ ] Show example of a PackageFormer.
+          - Demonstrate how: PackageFormer  ≈  named context + header.
+    + [ ] Show example of how it can be used to give a record.
+    + [ ] Show how it can be used to give us a homomorphism definition.
+    + [ ] What are the pre- and post-conditions of the homomorphism construction?
+          - This is what we are trying to solve.
+
+*** COMMENT A Grammar for PackageFormer [0/5]              :rather:promising:
+
+    + [ ] Grammar for PackageFormer heading.
+    + [ ] Grammar for element datatype.
+    + [ ] Grammar for “types”.
+      - We clearly cannot use any Agda/MLTT types.
+    + [ ] Define a fold for PackageFormer ---the homepage currently calls this ~graph-map~ due to
+          the graph theoretic nature of element dependencies.
+    + [ ] Prove that this fold preserves well-formedness & well-typedness of PackageFormers.
+      - This is the semantics function!
+      - *PackageFormers are an M-Set and fold is an M-Set homomorphism!*
+
+        Call this M-Set “𝑷𝑭”.
+        1. Two sorts: ~PackageFormer~ and ~Element~.
+        2. Action: ~_◁_ : PackageFormer → Element → PackageFormer~
+        3. Monoid on ~PackageFormer~
+           - Unit: The empty PackageFormer
+           - Bop: Union of contexts
+             + If they agree on their intersection, then union of element lists;
+               otherwise ‘crash’ by yielding ANN.
+             + ANN is the annihilating PackageFormer: It is a postulated value
+               that acts as the zero of union.
+             - This ensures that a crash propagates and so a union of PF's
+                 is ANN if any two items conflict.
+             - E.g., “crash : PackageFormer⊥ → PackageFormer⊥ → Boolean”
+                 is defined with “crash ⊥ x ≈ true” and symmetrically so.
+             - Taking ANN = ⊥, as a bottom element; e.g., ~nothing~.
+             + Proof outline of associativity:
+             - Case 1: No crashes, then ordinary list catenation, which is associative.
+             - Case 2: Some two items conflict, then ANN is propagated and both sides equal ANN.
+
+**** Deriving Fold
+
+     1. Define a “Right M-Set” ( close, but not really ):
+        #+BEGIN_SRC agda
 PackageFormer M-Set : Set₁ where
    Carrier₁     : Set
    Carrier₂     : Set
@@ -1162,24 +1432,24 @@ PackageFormer M-Set : Set₁ where
    _∪_          : Carrier₁ → Carrier₁ → Carrier₁
    leftId       : {𝓋 : Carrier₂}  →  ∅ ◁ 𝓋  ≡  𝓋
    assoc        : {a b : Carrier₁} {𝓋 : Carrier₂} → (a ∪ b) ◁ 𝓋  ≡  a ∪ (b ◁ 𝓋)
- #+END_SRC
+  #+END_SRC
 
-    2. Let ℳ denote an M-Set.
+     2. Let ℳ denote an M-Set.
 
-    3. For ~fold : 𝑷𝑭 ⟶ ℳ~ to be an M-Set homomorphism, we are *forced* to have …
+     3. For ~fold : 𝑷𝑭 ⟶ ℳ~ to be an M-Set homomorphism, we are *forced* to have …
 
-    4. Two maps, ~foldᵢ : 𝑷𝑭.Carrierᵢ → ℳ.Carrierᵢ~
-    5. ~fold₁~ is a monoid homomorphism
-       1. Unit₁: ~fold₁ ∅ ≈ ∅~
-       2. Assoc₁: ~fold₁ (p ∪ q) ≈ fold₁ p ∪ fold₁ q~
-    6. Equivariance:
-       ~fold₁ (p ◁ e) ≈ fold₁ p ◁ fold₂ e~
+     4. Two maps, ~foldᵢ : 𝑷𝑭.Carrierᵢ → ℳ.Carrierᵢ~
+     5. ~fold₁~ is a monoid homomorphism
+        1. Unit₁: ~fold₁ ∅ ≈ ∅~
+        2. Assoc₁: ~fold₁ (p ∪ q) ≈ fold₁ p ∪ fold₁ q~
+     6. Equivariance:
+        ~fold₁ (p ◁ e) ≈ fold₁ p ◁ fold₂ e~
 
-       \newpage
+        \newpage
 
-    7. Since a PackageFormer, by extensionality, can always be expressed
-       as a finite sequence of extensions we find:
-        #+BEGIN_SRC agda
+     7. Since a PackageFormer, by extensionality, can always be expressed
+        as a finite sequence of extensions we find:
+         #+BEGIN_SRC agda
   fold₁ p
 = {- Extensionality, with eᵢ elements of p -}
   fold₁ (∅ ◁ e₁ ◁ e₂ ◁ ⋯ ◁ eₙ)
@@ -1189,86 +1459,86 @@ PackageFormer M-Set : Set₁ where
   ∅ ◁ fold₂ e₁ ◁ ⋯ ◁ fold₂ eₙ
 = {- M-Set.leftId -}
   fold₂ e₁ ◁ ⋯ ◁ fold₂ eₙ
- #+END_SRC
+  #+END_SRC
 
-    8. Whence it seems ~fold₁~ is defined uniquely in terms of ~fold₂~ ---which is unsurprising:
-       *PackageFormers are an inductive type!*
+     8. Whence it seems ~fold₁~ is defined uniquely in terms of ~fold₂~ ---which is unsurprising:
+        *PackageFormers are an inductive type!*
 
-    9. TODO: Realise this argument _within_ Agda!
+     9. TODO: Realise this argument _within_ Agda!
 
-** COMMENT An Application to Universal Algebra                :super_sketchy:
-   + [ ] Grammar for the minimal language necessary to form homomorphism contexts.
-     - How? What? Huh!?
-     - I'm not sure I know what I'm thinking here.
-     - I'm trying to “know” what the ~hom~ variational, from the webpage does!
-   + [ ] Define a function: ~𝑯 : PFSyntax → List HomoSyntax~.
-   + [ ] Show a coherence such as ~𝑯(T ◁ e) = 𝑯 T ◁ 𝑯 e~
-         where ◁ denotes context extension; i.e., append.
-     - This would ensure that we have a ‘modular’ way to define homomorphisms.
+*** COMMENT An Application to Universal Algebra               :super_sketchy:
+    + [ ] Grammar for the minimal language necessary to form homomorphism contexts.
+      - How? What? Huh!?
+      - I'm not sure I know what I'm thinking here.
+      - I'm trying to “know” what the ~hom~ variational, from the webpage does!
+    + [ ] Define a function: ~𝑯 : PFSyntax → List HomoSyntax~.
+    + [ ] Show a coherence such as ~𝑯(T ◁ e) = 𝑯 T ◁ 𝑯 e~
+          where ◁ denotes context extension; i.e., append.
+      - This would ensure that we have a ‘modular’ way to define homomorphisms.
 
-   Applications to structures that CS people are interested in?
-   - Monoids    ⇐ for-loops
-   - Graphs     ⇐ databases
-   - Lattices   ⇐ optimisation
+    Applications to structures that CS people are interested in?
+    - Monoids    ⇐ for-loops
+    - Graphs     ⇐ databases
+    - Lattices   ⇐ optimisation
 
-     \vfill
+      \vfill
 
-** COMMENT Conclusion & Next Steps                                  :sketchy:
+*** COMMENT Conclusion & Next Steps                                 :sketchy:
 
-   + Initial semantics is enough?
-   + Limitations?
-   + Dependent-type?
-   + A counterexample not covered by the semantics?
-   + Soundness?
+    + Initial semantics is enough?
+    + Limitations?
+    + Dependent-type?
+    + A counterexample not covered by the semantics?
+    + Soundness?
 
-** space COMMENT newpage                                             :ignore:
-   \newpage
-** OLD COMMENT Idea: Making Staging Accessible by Generating Partial Evaluators (Short Paper)
-*** Abstract                                                         :ignore:
-  # Do not use footnotes and references in the abstract!
+*** space COMMENT newpage                                            :ignore:
+    \newpage
+*** OLD COMMENT Idea: Making Staging Accessible by Generating Partial Evaluators (Short Paper)
+**** Abstract                                                        :ignore:
+   # Do not use footnotes and references in the abstract!
 
-  #+begin_abstract
+   #+begin_abstract
 
 
-    Interpreters are generally written with a syntax first then an interpretation second.
-    The relationship between the two is sometimes made explicit by having the
-    interpretation function target an existing record type ---e.g., syntactic
-    datatype constructors are mapped to semantic projections of record values.
-    However, this process only needs the record definition ---all else is needless
-    duplication.
+     Interpreters are generally written with a syntax first then an interpretation second.
+     The relationship between the two is sometimes made explicit by having the
+     interpretation function target an existing record type ---e.g., syntactic
+     datatype constructors are mapped to semantic projections of record values.
+     However, this process only needs the record definition ---all else is needless
+     duplication.
 
-    Using ~PackageFormer~, a recent Emacs editor extension to the dependently typed language
-    Agda, we demonstrate how partially-static data may be mechanically derived from
-    theory presentations. Moreover, we also show how to mechanically obtain
-    the necessary tools to work with staged interpreters; namely, automatically deriving
-    evaluation functions and notions of ground terms.
-  #+end_abstract
+     Using ~PackageFormer~, a recent Emacs editor extension to the dependently typed language
+     Agda, we demonstrate how partially-static data may be mechanically derived from
+     theory presentations. Moreover, we also show how to mechanically obtain
+     the necessary tools to work with staged interpreters; namely, automatically deriving
+     evaluation functions and notions of ground terms.
+   #+end_abstract
 
-   \maketitle
-*** Relevant Links
-    + [[http://www.cs.tsukuba.ac.jp/~kam/papers/pepm2018.pdf][Program Generation for ML Modules]] --- Kameyama et al.
-    + [[http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.438.6924&rep=rep1&type=pdf][A Gentle Introduction to Multi-stage Programming]] -- Walid Taha
-    + [[https://www.cl.cam.ac.uk/~jdy22/papers/partially-static-data-as-free-extension-of-algebras.pdf][Partially-Static Data as Free Extension of Algebras]] -- Yallop et al.
-    + [[http://okmij.org/ftp/meta-programming/StagingNG.pdf][Staging Beyond Terms: Prospects and Challenges]] --- Oleg et al.
+    \maketitle
+**** Relevant Links
+     + [[http://www.cs.tsukuba.ac.jp/~kam/papers/pepm2018.pdf][Program Generation for ML Modules]] --- Kameyama et al.
+     + [[http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.438.6924&rep=rep1&type=pdf][A Gentle Introduction to Multi-stage Programming]] -- Walid Taha
+     + [[https://www.cl.cam.ac.uk/~jdy22/papers/partially-static-data-as-free-extension-of-algebras.pdf][Partially-Static Data as Free Extension of Algebras]] -- Yallop et al.
+     + [[http://okmij.org/ftp/meta-programming/StagingNG.pdf][Staging Beyond Terms: Prospects and Challenges]] --- Oleg et al.
 
-*** Introduction: The Difficulties of Staging
+**** Introduction: The Difficulties of Staging
 
-  + Easy to get things wrong!
+   + Easy to get things wrong!
 
-*** Automatically Introducing Dynamic Forms
+**** Automatically Introducing Dynamic Forms
 
-  + A view that adds on variables and forms partial evaluators
+   + A view that adds on variables and forms partial evaluators
 
-  #+BEGIN_SRC agda
+   #+BEGIN_SRC agda
 data BindingTime : Set where Static Dynamic : BindingTime
 
 {- Aliases -}
 Now   = Static
 Later = Dynamic
-          #+END_SRC
+           #+END_SRC
 
-  Then:
-  #+BEGIN_SRC agda
+   Then:
+   #+BEGIN_SRC agda
 {- Given -}
 record Magma : Set₁ where
   field
@@ -1329,17 +1599,45 @@ power : {{ℳ : Magma }} (let M = Magma.Carrier ℳ)
       → TreeV M V → ℕ → TreeV M V
 power x zero    = x
 power x (suc n) = x ⊕ power x n
-  #+END_SRC
+   #+END_SRC
 
-*** Multistaging via PackageFormers
+**** Multistaging via PackageFormers
 
-    + How writing different PackageFormers allows us to merely select to what degree we want
-      staging to occur; e.g., stageᵢ.
-*** Conclusion and Next Steps
+     + How writing different PackageFormers allows us to merely select to what degree we want
+       staging to occur; e.g., stageᵢ.
+**** Conclusion and Next Steps
 
-    + Theory?
-    + Applications?
-    + Pedagogy?
+     + Theory?
+     + Applications?
+     + Pedagogy?
+
+** OLD Abstract                                                      :ignore:
+   CLOSED: [2020-03-02 Mon 16:00]
+
+   #+begin_abstract org
+   Folklore has held that any ‘semantic unit’ is essentially a type-theoretic
+   context ---this includes, for example, records and algebraic datatypes.  We
+   provide foundation for such an observation.
+
+   We show that languages with a sufficiently powerful type system and reflection
+   mechanism permit a /single declaration interface/ for functions, records, type
+   classes, type constructors, and algebraic data types. Moreover, the interface
+   is monadic and thus actually practical to use.
+
+   Along the way, we solve the bundling problem: Record fields can be lifted to
+   parameters as needed. Traditionally, unbundling a record requires the use of
+   transport along propositional equalities, with trivial ~refl~-exivity proofs.
+   The ~:waist~ approach presented here removes the boilerplate necessary at the
+   type specialisation location as well as at the instance declaration location.
+
+   An application of our setup will be to provide a semantics for the
+   PackageFormer editor extension, which realises the aforementioned folklore
+   observation by providing users with meta-primitives for making modules to
+   allow arbitrary grouping mechanisms to be derived, such as obtaining the
+   homomorphism type of a given record.
+ #+end_abstract
+
+  \maketitle
 
 * Bib                                                        :ignore:
 
