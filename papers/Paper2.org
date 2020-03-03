@@ -260,9 +260,12 @@ See here for more: http://kitchingroup.cheme.cmu.edu/blog/2014/05/13/Using-org-r
   #+LATEX_HEADER: \newcommand\boldgreen[1]{\textcolor{darkgreen}{\textbf{#1}}}
 
   #+LATEX_HEADER: \newunicodechar{ʳ}{\boldblue{\text{\ensuremath{^r}}}}
+  #+LATEX_HEADER: \newunicodechar{⁺}{\boldblue{\text{\ensuremath{^+}}}}
 
   #+LATEX_HEADER: \newunicodechar{Σ}{\boldblue{\text{\ensuremath{\Sigma}}}}
   #+LATEX_HEADER: \newunicodechar{⊎}{\boldblue{\text{\ensuremath{\uplus}}}}
+  #+LATEX_HEADER: \newunicodechar{⟨}{\boldgreen{\text{\ensuremath{\langle}}}}
+  #+LATEX_HEADER: \newunicodechar{⟩}{\boldgreen{\text{\ensuremath{\rangle}}}}
   #+LATEX_HEADER: \newunicodechar{×}{\boldblue{\text{\ensuremath{\times}}}}
   #+LATEX_HEADER: \newunicodechar{Π}{\boldred{\text{\ensuremath{\Pi}}}}
   #+LATEX_HEADER: \newunicodechar{λ}{\boldgreen{\text{\ensuremath{\lambda}}}}
@@ -559,9 +562,13 @@ comap₁ f ⟨ edges ⟩₁ = ⟨ (λ x y → edges (f x) (f y)) ⟩₁
   of graphs from a single declaration using similar notation.  Our contributions
   are to show:
   1. Languages with sufficiently powerful type systems and meta-programming can
-     conflate record and term datatype declarations into one practical interface.  We
-     identify the problem and the subtleties in shifting between representations
-     in Section [[sec:problems]].
+     conflate record and term datatype declarations into one practical
+     interface. In addition, the contents of these grouping mechanisms
+     may be function symbols as well as propositional invariants ---an example
+     is shown at the end of [[sec:monadic-notation]].
+
+     We identify the problem and the subtleties in shifting between
+     representations in Section [[sec:problems]].
 
   2. Parameterised records can be obtained on-demand from non-parameterised
      records (Section [[sec:monadic-notation]]).
@@ -583,6 +590,12 @@ comap₁ f ⟨ edges ⟩₁ = ⟨ (λ x y → edges (f x) (f y)) ⟩₁
   As an application, in Section [[sec:related-works]] we show that the resulting
   setup applies as a semantics for a declarative pre-processing tool that accomplishes the
   above tasks.
+
+  For brevity, and accessibility, a number of definitions are elided and only
+  pseudo-code is presented in the paper. Enough is shown to communicate the
+  techniques and ideas, as well as to make the resulting library usable.  The
+  details, which users do not need to bother with, can be found in the
+  appendices.
 
 * The Problems
   <<sec:problems>>
@@ -756,7 +769,7 @@ _>>=_ : ∀ {a b}
       → (∀ {n} → Γ n → Context b)
       → Context (a ⊍ b)
 (Γ >>= f) ℕ.zero  = Σ γ ∶ Γ 0 • f γ 0
-(Γ >>= f) (suc n) = (γ : Γ n) → f γ n
+(Γ >>= f) (suc n) = Π γ ∶ Γ n • f γ n
 #+end_src
 #+latex: \noindent
 The definition here accounts for the current exposure index: If zero, we have
@@ -776,13 +789,14 @@ Interestingly cite:Bird_2009,DBLP:conf/hopl/HudakHJW07, use of ~do~-notation in
 preference to bind, ~>>=~, was suggested by John Launchbury in 1993 and was first
 implemented by Mark Jones in Gofer.  Anyhow, with our goal of practicality in
 mind, we shall “build the lifting quote into the definition” of bind:
+#+caption: Semantics: Context do-syntax is interpreted as Π-Σ-types
 #+begin_src agda :tangle no
 _>>=_ : ∀ {a b}
       → (Γ : Set a)  -- Main difference
       → (Γ → Context b)
       → Context (a ⊍ b)
 (Γ >>= f) ℕ.zero  = Σ γ ∶ Γ • f γ 0
-(Γ >>= f) (suc n) = (γ : Γ) → f γ n
+(Γ >>= f) (suc n) = Π γ ∶ Γ • f γ n
 #+end_src
 #+latex: \noindent
 With this definition, the above declaration ~DynamicSystem~ typechecks.  However,
@@ -801,7 +815,7 @@ of the factory arguments ahead of time?
 𝒩₁′ = 0 , suc , tt
 #+end_src
 #+latex: \noindent
-It seems what we need is method, say ~Π→λ~, that takes a ~Π~-type and transforms it
+It seems what we need is a method, say ~Π→λ~, that takes a ~Π~-type and transforms it
 into a ~λ~-expression.  One could use a universe, an algebraic type of codes
 denoting types, to define ~Π→λ~. However, one can no longer then easily use
 existing types since they are not formed from the universe's constructors,
@@ -834,10 +848,10 @@ That is, we walk along the term tree replacing occurrences of ~Π~ with ~λ~. Fo
 For practicality, ~_:waist_~ is a macro acting on contexts that repeats ~Π→λ~ a number of
 times in order to lift a number of field components to the parameter level.
 #+begin_src agda :tangle no
-τ :waist n     = Π→λⁿ n (τ n)
+τ :waist n  =  Π→λⁿ (τ n)
 
-Π→λⁿ 0       τ = τ
-Π→λⁿ (n + 1) τ = Π→λⁿ n (Π→λ τ)
+f⁰   x      =  x
+fⁿ⁺¹ x      =  fⁿ (f x)
 #+end_src
 #+latex: \noindent
 We can now “fix arguments ahead of time”. Before such demonstration, we need to
@@ -908,16 +922,17 @@ polymorphism.
 
   We have a practical monadic syntax for possibly parameterised record types
   that we would like to extend to termtypes. Algebraic data types are a means to
-  declare concrete representations of the least fixed-point of a functor.
-
-  In particular, the description language ~𝔻~ for dynamical systems,
-  ref:contexts-table, declares concrete constructors for the fixpoint of ~F~:
-
-       | ~F : Set → Set~                 |
-       | ~F = λ (D ∶ Set) → D ⊎ D~       |
-
-  That is, ~𝔻 ≅ Fix F~ where:
+  declare concrete representations of the least fixed-point of a functor.  In
+  particular, the description language ~𝔻~ for dynamical systems, below, declares
+  concrete constructors for a certain fixpoint ~F~; i.e., ~𝔻 ≅ Fix F~ where:
   #+begin_src agda :tangle no
+data 𝔻 : Set where
+    startD : 𝔻
+    nextD  : 𝔻 → 𝔻
+
+F : Set → Set
+F = λ (D ∶ Set) → 𝟙 ⊎ D
+
 data Fix (F : Set → Set) : Set where
   μ : F (Fix F) → Fix F
 #+end_src
@@ -955,7 +970,7 @@ data Fix (F : Set → Set) : Set where
   # ---since we're introducing
   # unit types, any existing unit types are dropped via ~𝟘~.
   #+begin_src agda :tangle no
-⇊ τ = “reduce all de brujin indices of τ by 1”
+⇊ τ = “reduce all de brujin indices within τ by 1”
 
 Σ→⊎ (Σ a ∶ A • Ba) = A ⊎ Σ→⊎ (⇊ Ba)
 
@@ -966,9 +981,6 @@ sources (λ x ∶ A              • τ) = (λ x ∶ 𝟙 • sources τ)
 
 termtype τ = Fix (Σ→⊎ (sources τ))
              #+end_src
-
-# The hint ~“Replace products with sums”~ in the above calculation is realised
-# formally as ~Σ→⊎ (sources τ)~.
 #+latex: \noindent
 It is instructive to visually see how ~𝔻~ is obtained from ~termtype~
 in order to demonstrate that this approach to algebraic data types
@@ -994,6 +1006,14 @@ from : ℕ → 𝔻
 from zero    = startD
 from (suc n) = nextD (from n)
 #+end_src
+
+#+latex: \noindent
+Readers whose language does not have src_agda[:exports code]{pattern} clauses
+need not despair.  With the macro @@latex:\newline@@ src_agda[:exports code]{Inj n x = μ (inj₂ ⁿ
+(inj₁ x)}, we may define src_agda[:exports code]{startD = Inj 0 tt} and
+src_agda[:exports code]{nextD e = Inj 1 e} ---that is, constructors of termtypes
+are particular injections into the possible summands that the termtype consists
+of.  Details on this macro may be found in appendix [[sec:inj-macro]].
 
 * TODO Free Datatypes from Theories
   <<sec:free-datatypes>>
@@ -1135,6 +1155,11 @@ presenting them here as semantic functions on contexts.
 
 * Conclusion
 
+# In addition, the contents of these grouping mechanisms
+ #    may be function symbols as well as propositional invariants ---an example
+  #   is shown at the end of [[sec:monadic-notation]].
+
+
 Starting from the insight that related grouping mechanisms could be unified, we
 showed how related structures can be obtained from a single declaration using a
 practical interface. The resulting framework, based on contexts, still captures
@@ -1218,6 +1243,13 @@ open import Data.List as List using (List ; [] ; _∷_ ; _∷ʳ_; sum)
   In Agda, we use ~\:~ to obtain the “ghost colon” since standard colon ~:~ is an
   Agda operator.
 
+  Even though Agda provides ~∀ (x : τ) → fx~ as a built-in syntax for Π-types, we
+  have chosen the Z-style one below to mirror the notation for Σ-types, which
+  Agda provides as src_agda[:exports code]{record} declarations.  In the paper
+  proper, in the definition of bind, the subtle shift between Σ-types and
+  Π-types is easier to notice when the notations are so similar that only the
+  quantifier symbol changes.
+
 #+begin_src agda :tangle Context.agda
 open import Data.Empty using (⊥)
 open import Data.Sum
@@ -1242,7 +1274,7 @@ record ⊤ {ℓ} : Set ℓ where
 𝟙 = ⊤ {ℓ₀}
 𝟘 = ⊥
 #+end_src
-
+#+latex: \noindent
 ** Reflection
 
 We form a few metaprogramming utilities we would have expected to be in the
@@ -1720,6 +1752,7 @@ from∘to (sucD x) = cong sucD (from∘to x)
 #+end_src
 
 *** ~termtype~ and ~Inj~ macros
+<<sec:inj-macro>>
 
 We summarise the stages together into one macro:
 ~“termtype : UnaryFunctor → Type”~.
@@ -2019,90 +2052,6 @@ PointedOver₁₀       = do Carrier ← Set
 ℙ₁₀ = termtype (λ (X : Set) → (PointedOver₁₀ :waist 1) X)
 -- Fix (λ X → X), which does not exist.
 
-#+end_src
-
-* COMMENT APPENDIX: What about the meta-language's parameters? :Maybe_Delete:
-
-Besides ~:waist~, another way to introduce parameters into a context grouping
-mechanism is to use the language's existing utility of parameterising a context
-by another type ---as was done earlier in ~PointedOver~.
-
-For example, a pointed set needn't necessarily be termined with ~End~.
-#+begin_src agda
-PointedSet : Context ℓ₁
-PointedSet = do Carrier ← Set
-                point   ← Carrier
-                End {ℓ₁}
-#+end_src
-We instead form a grouping consisting of a single type and a value of that type,
-along with an instance of the parameter type =Ξ=.
-#+begin_src agda
-PointedPF : (Ξ : Set₁) → Context ℓ₁
-PointedPF Ξ = do Carrier ← Set
-                 point   ← Carrier
-                 ‵ Ξ
-#+end_src
-Clearly ~PointedPF 𝟙 ≈ PointedSet~, so we have a more generic grouping mechanism.
-The natural next step is to consider other parameters such as ~PointedSet~
-in-place of =Ξ=.
-:AgdaCheckedEvidence:
-#+begin_src agda
-_ : ∀ {n} → PointedPF 𝟙 n ≡ PointedSet n
-_ = refl
-#+end_src
-:End:
-#+begin_src agda
--- Convenience names
-PointedSetᵣ = PointedSet        :kind ‵record
-PointedPFᵣ  = λ Ξ → PointedPF Ξ :kind ‵record
-
--- An extended record type: Two types with a point of each.
-TwoPointedSets = PointedPFᵣ PointedSetᵣ
-
-_ :   TwoPointedSets
-    ≡ ( Σ Carrier₁ ∶ Set • Σ point₁ ∶ Carrier₁
-      • Σ Carrier₂ ∶ Set • Σ point₂ ∶ Carrier₂ • 𝟙)
-_ = refl
-
--- Here's an instance
-one : PointedSet :kind ‵record
-one = 𝔹 , false , tt
-
--- Another; a pointed natural extended by a pointed bool,
--- with particular choices for both.
-two : TwoPointedSets
-two = ℕ , 0 , one
-#+end_src
-More generally, /record *structure* can be dependent on values:/
-#+begin_src agda
-_PointedSets : ℕ → Set₁
-zero  PointedSets = 𝟙
-suc n PointedSets = PointedPFᵣ (n PointedSets)
-
-_ :   4 PointedSets
-    ≡ (Σ Carrier₁ ∶ Set • Σ point₁ ∶ Carrier₁
-      • Σ Carrier₂ ∶ Set • Σ point₂ ∶ Carrier₂
-      • Σ Carrier₃ ∶ Set • Σ point₃ ∶ Carrier₃
-      • Σ Carrier₄ ∶ Set • Σ point₄ ∶ Carrier₄ • 𝟙)
-_ = refl
-#+end_src
-Using traditional grouping mechanisms, it is difficult to create the family of
-types =n PointedSets= since the number of fields, $2 × n$, depends on $n$.
-
-It is interesting to note that the termtype of ~PointedPF~ is the same as the
-termtype of ~PointedOver~, the ~Maybe~ type constructor!
-#+begin_src agda :tangle no
-PointedD : (X : Set) → Set₁
-PointedD X = termtype (PointedPF (Lift _ X) :waist 1)
-
--- Pattern synonyms for more compact presentation
-pattern nothingP = μ (inj₁ tt)
-pattern justP x  = μ (inj₂ (lift x))
-
-casingP : ∀ {X} (e : PointedD X)
-        → (e ≡ nothingP) ⊎ (Σ x ∶ X • e ≡ justP x)
-casingP nothingP  = inj₁ refl
-casingP (justP x) = inj₂ (x , refl)
 #+end_src
 
 * COMMENT Other misc ideas
@@ -2636,6 +2585,90 @@ power x (suc n) = x ⊕ power x n
  #+latex: \bibliography{References}
  #+latex: \bibliographystyle{plainnat}
  # latex: \bibliographystyle{ACM-Reference-Format}
+
+* APPENDIX: What about the meta-language's parameters? :Maybe_Delete:
+
+Besides ~:waist~, another way to introduce parameters into a context grouping
+mechanism is to use the language's existing utility of parameterising a context
+by another type ---as was done earlier in ~PointedOver~.
+
+For example, a pointed set needn't necessarily be termined with ~End~.
+#+begin_src agda
+PointedSet : Context ℓ₁
+PointedSet = do Carrier ← Set
+                point   ← Carrier
+                End {ℓ₁}
+#+end_src
+We instead form a grouping consisting of a single type and a value of that type,
+along with an instance of the parameter type =Ξ=.
+#+begin_src agda
+PointedPF : (Ξ : Set₁) → Context ℓ₁
+PointedPF Ξ = do Carrier ← Set
+                 point   ← Carrier
+                 ‵ Ξ
+#+end_src
+Clearly ~PointedPF 𝟙 ≈ PointedSet~, so we have a more generic grouping mechanism.
+The natural next step is to consider other parameters such as ~PointedSet~
+in-place of =Ξ=.
+:AgdaCheckedEvidence:
+#+begin_src agda
+_ : ∀ {n} → PointedPF 𝟙 n ≡ PointedSet n
+_ = refl
+#+end_src
+:End:
+#+begin_src agda
+-- Convenience names
+PointedSetᵣ = PointedSet        :kind ‵record
+PointedPFᵣ  = λ Ξ → PointedPF Ξ :kind ‵record
+
+-- An extended record type: Two types with a point of each.
+TwoPointedSets = PointedPFᵣ PointedSetᵣ
+
+_ :   TwoPointedSets
+    ≡ ( Σ Carrier₁ ∶ Set • Σ point₁ ∶ Carrier₁
+      • Σ Carrier₂ ∶ Set • Σ point₂ ∶ Carrier₂ • 𝟙)
+_ = refl
+
+-- Here's an instance
+one : PointedSet :kind ‵record
+one = 𝔹 , false , tt
+
+-- Another; a pointed natural extended by a pointed bool,
+-- with particular choices for both.
+two : TwoPointedSets
+two = ℕ , 0 , one
+#+end_src
+More generally, /record *structure* can be dependent on values:/
+#+begin_src agda
+_PointedSets : ℕ → Set₁
+zero  PointedSets = 𝟙
+suc n PointedSets = PointedPFᵣ (n PointedSets)
+
+_ :   4 PointedSets
+    ≡ (Σ Carrier₁ ∶ Set • Σ point₁ ∶ Carrier₁
+      • Σ Carrier₂ ∶ Set • Σ point₂ ∶ Carrier₂
+      • Σ Carrier₃ ∶ Set • Σ point₃ ∶ Carrier₃
+      • Σ Carrier₄ ∶ Set • Σ point₄ ∶ Carrier₄ • 𝟙)
+_ = refl
+#+end_src
+Using traditional grouping mechanisms, it is difficult to create the family of
+types =n PointedSets= since the number of fields, $2 × n$, depends on $n$.
+
+It is interesting to note that the termtype of ~PointedPF~ is the same as the
+termtype of ~PointedOver~, the ~Maybe~ type constructor!
+#+begin_src agda :tangle no
+PointedD : (X : Set) → Set₁
+PointedD X = termtype (PointedPF (Lift _ X) :waist 1)
+
+-- Pattern synonyms for more compact presentation
+pattern nothingP = μ (inj₁ tt)
+pattern justP x  = μ (inj₂ (lift x))
+
+casingP : ∀ {X} (e : PointedD X)
+        → (e ≡ nothingP) ⊎ (Σ x ∶ X • e ≡ justP x)
+casingP nothingP  = inj₁ refl
+casingP (justP x) = inj₂ (x , refl)
+#+end_src
 
 * footer                                                     :ignore:
 
