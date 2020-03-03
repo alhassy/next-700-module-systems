@@ -10,6 +10,7 @@
 #+MACRO: PF \textsf{PackageFormer}
 #+property: header-args :tangle paper2.agda :comments link
 
+# src_agda[:exports code]{
 :PDF:
 For some reason “src agda2” crashes minted, but “src agda” works fine.
 
@@ -47,6 +48,32 @@ For some reason “src agda2” crashes minted, but “src agda” works fine.
 #+RESULTS:
 : /Users/musa/thesis-proposal/papers/Paper2.pdf
 
+:End:
+
+:WK:
++ [ ] The ``Graph'' in ``data Graph'' seems to be a misnomer (should be ``Edge''?) --- poor example?
+
++ [ ] First occurrence of ``termtypes'' --> ``term datatypes'' or ``datatypes of expressions/terms''?
+
++ [ ] ``is thus a macro that acts on the syntactic term representations''
+    Explanation of and reference for Agda's ``reflection'' mechanism necessary:
+    This needs to be reasonably readable for Haskell programmers who have never looked into Agda.
+    (Also explain pattern synonyms, and probably also some other Agda features.)
+
++ [ ] The ``definition'' of \Pi\to\lambda is presumably pseudo-Agda:
+    Please be clear about that! Preferably put the full definition into an appendix.
+
++ [ ] After code blocks, \noindent.
+    Consider indenting the code blocks instead, for more traditional
+    literate programming appearance.
+
++ [ ] Avoid linebreak in thh middle of math --- \hbox{}.
+  - src_agda[:exports code]{
+
++ [ ] |Maybe| is not a terribly high climax...
+
++ [ ] PointedSet/PointedPF: Currently does not look very attractive to me ---
+    do you have any ``bigger'' examples?
 :End:
 
 * README COMMENT Dependencies of this org file
@@ -186,6 +213,9 @@ See here for more: http://kitchingroup.cheme.cmu.edu/blog/2014/05/13/Using-org-r
 #+RESULTS:
 : References.bib
 
+#+RESULTS:
+: References.bib
+
   Execute ~M-x helm-bibtex~ and, say, enter ~agda~ and you will be presented with
   all the entries in the bib database that mention ‘agda’. Super cool stuff.
 
@@ -264,6 +294,12 @@ See here for more: http://kitchingroup.cheme.cmu.edu/blog/2014/05/13/Using-org-r
 
   #+LATEX_HEADER: \newunicodechar{Ξ}{\ensuremath{\Xi}}
   #+LATEX_HEADER: \newunicodechar{ξ}{\ensuremath{\xi}}
+
+  #+LATEX_HEADER: \newunicodechar{𝕆}{\ensuremath{\textbb{O}}}
+  #+LATEX_HEADER: \newunicodechar{𝕟}{\ensuremath{\textbb{n}}}
+  #+LATEX_HEADER: \newunicodechar{𝕖}{\ensuremath{\textbb{e}}}
+
+  #+LATEX_HEADER: \newunicodechar{⇌}{\ensuremath{\rightleftharpoons}}
 
   #+LATEX_HEADER: \newunicodechar{𝔾}{\ensuremath{\textbb{G}}}
   #+LATEX_HEADER: \newunicodechar{𝕣}{\ensuremath{\textbb{r}}}
@@ -488,6 +524,7 @@ data 𝔾𝕣𝕒𝕡𝕙 (Vertex : Set) : Set where
   ⟨_,_⟩ₛ : Vertex → Vertex → 𝔾𝕣𝕒𝕡𝕙 Vertex
 #+end_src
 
+  #+latex: \noindent
   To illustrate the difference of the first two, consider the function ~comap~, which
   relabels the vertices of a graph, using a function ~f~ to transform vertices:
   :Hide:
@@ -508,6 +545,8 @@ comap₁ : {A B : Set}
        → Graph₁ A
 comap₁ f ⟨ edges ⟩₁ = ⟨ (λ x y → edges (f x) (f y)) ⟩₁
   #+end_src
+
+  #+latex: \noindent
   In ~comap₀~, the input graph ~G~ and the output graph ~H~ have their vertex sets
   constrained to match the type of the relabelling function ~f~.  Without the
   constraints, we could not even write the function for ~Graph₀~.
@@ -520,7 +559,7 @@ comap₁ f ⟨ edges ⟩₁ = ⟨ (λ x y → edges (f x) (f y)) ⟩₁
   of graphs from a single declaration using similar notation.  Our contributions
   are to show:
   1. Languages with sufficiently powerful type systems and meta-programming can
-     conflate record and termtype declarations into one practical interface.  We
+     conflate record and term datatype declarations into one practical interface.  We
      identify the problem and the subtleties in shifting between representations
      in Section [[sec:problems]].
 
@@ -534,9 +573,12 @@ comap₁ f ⟨ edges ⟩₁ = ⟨ (λ x y → edges (f x) (f y)) ⟩₁
        at the instance declaration location.
 
   3. Programming with fixed-points of unary type constructors can be made
-     as simple as programming with termtypes (Section [[sec:termtypes-as-fixedpoints]]).
-     - Astonishingly, we mechanically regain ubiquitous data structures such as ~ℕ, Maybe,
-       List~ as the termtypes of simple pointed and monoidal theories.
+     as simple as programming with term datatypes (Section
+     [[sec:termtypes-as-fixedpoints]]).
+
+  4. Astonishingly, we mechanically regain ubiquitous data structures such as ~ℕ,
+     Maybe, List~ as the termtypes of simple pointed and monoidal theories
+     (Section [[sec:free-datatypes]]).
 
   As an application, in Section [[sec:related-works]] we show that the resulting
   setup applies as a semantics for a declarative pre-processing tool that accomplishes the
@@ -554,20 +596,21 @@ transition function.
 #+begin_src agda :tangle paper2.agda
 record DynamicSystem₀ : Set₁ where
   field
-    States : Set
-    start  : States
-    next   : States → States
+    State : Set
+    start  : State
+    next   : State → State
 
-record DynamicSystem₁ (States : Set) : Set where
+record DynamicSystem₁ (State : Set) : Set where
   field
-    start : States
-    next  : States → States
+    start : State
+    next  : State → State
 
-record DynamicSystem₂ (States : Set) (start : States) : Set where
+record DynamicSystem₂ (State : Set) (start : State) : Set where
   field
-    next : States → States
+    next : State → State
 #+end_src
 
+#+latex: \noindent
 Each =DynamicSystemᵢ= is a type constructor of =i=-many arguments;
 but it is the types of these constructors that provide insight
 into the sort of data they contain:
@@ -612,6 +655,7 @@ id₂ : Π X ∶ Set • Π e ∶ X • Set
 id₂ = λ (X : Set) (e : X) → X
 #+end_src
 
+#+latex: \noindent
 Of-course, there is also the need for descriptions of values, which leads to the
 following termtypes. We shall refer to the shift from record types to algebraic
 data types as *the termtype problem*.
@@ -620,12 +664,12 @@ data DSTerms₀ : Set where
   start : DSTerms₀
   next  : DSTerms₀ → DSTerms₀
 
-data DSTerms₁ (States : Set) : Set where
-  start : States → DSTerms₁ States
-  next  : DSTerms₁ States → DSTerms₁ States
+data DSTerms₁ (State : Set) : Set where
+  start : State → DSTerms₁ State
+  next  : DSTerms₁ State → DSTerms₁ State
 
-data DSTerms₂ (States : Set) (start : States) : Set where
-  next : DSTerms₂ States start → DSTerms₂ States start
+data DSTerms₂ (State : Set) (start : State) : Set where
+  next : DSTerms₂ State start → DSTerms₂ State start
 #+end_src
 :Ignore:
 Yet another way to encode dynamical systems would be by their syntax, as it
@@ -634,9 +678,9 @@ descriptions of dynamical system values.
 
 
 Notice that the first algebraic data type is isomorphic to ~ℕ~, whereas the
-remaining two are isomorphic to ~States × ℕ~ which keeps track of how many =next=
+remaining two are isomorphic to ~State × ℕ~ which keeps track of how many =next=
 steps are necessary until a =State= value is reached ---this may be called
-=Eventually States=.
+=Eventually State=.
 The ~DSTermsᵢ~ share the same pattern of kind exposure as the ~DynamicSystemᵢ~ types.
 
 AgdaCheckedEvidence
@@ -652,17 +696,7 @@ _ = DSTerms₂
 #+end_src
 :End:
 
-#+name: contexts-table
-#+caption: Contexts embody all kinds of grouping mechanisms
-| Concept            | Concrete Syntax                       | Description            |
-|--------------------+---------------------------------------+------------------------|
-| Context            | =do S ← Set; s ← S; n ← (S → S); End=   | “name-type pairs”      |
-|--------------------+---------------------------------------+------------------------|
-| Record Type        | =Σ S ∶ Set • Σ s ∶ S • Σ n ∶ S → S • 𝟙= | “bundled-up data”      |
-| Function Type      | =Π S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a type of functions”  |
-| Type constructor   | =λ S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a function on types”  |
-| Algebraic datatype | ~data 𝔻 : Set where s : 𝔻; n : 𝔻 → 𝔻~   | “a descriptive syntax” |
-
+#+latex: \noindent
 Our aim is to obtain all of these notions ---of ways to group data together---
 from a single user-friendly context declaration, using monadic notation.
 
@@ -681,6 +715,7 @@ from a single user-friendly context declaration, using monadic notation.
                      s ← (X → X)
                      End
 #+end_src
+ #+latex: \noindent
  Here ~Context, End~, and the underlying monadic bind operator are unknown.  Since
  we want to be able to /expose/ a number of fields at will, we may take ~Context~ to
  be types indexed by a number denoting exposure.  Moreover, since records are a
@@ -709,6 +744,7 @@ End : ∀ {ℓ} → Context ℓ
 End = ‵ 𝟙
 #+end_src
 
+#+latex: \noindent
 It remains to identify the definition of the underlying bind operation ~>>=~.
 Classically, for a type constructor ~m~, bind is typed ~∀ {X Y : Set} → m X → (X →
 m Y) → m Y~. It allows one to “extract an ~X~-value for later use” in the ~m Y~
@@ -722,6 +758,7 @@ _>>=_ : ∀ {a b}
 (Γ >>= f) ℕ.zero  = Σ γ ∶ Γ 0 • f γ 0
 (Γ >>= f) (suc n) = (γ : Γ n) → f γ n
 #+end_src
+#+latex: \noindent
 The definition here accounts for the current exposure index: If zero, we have
 /record types/, otherwise /function types/. Using this definition, the above
 dynamical system context would need to be expressed using the lifting quote operation.
@@ -734,6 +771,7 @@ do X ← ‵ Set
    End
 #+end_src
 # See page 275.
+#+latex: \noindent
 Interestingly cite:Bird_2009,DBLP:conf/hopl/HudakHJW07, use of ~do~-notation in
 preference to bind, ~>>=~, was suggested by John Launchbury in 1993 and was first
 implemented by Mark Jones in Gofer.  Anyhow, with our goal of practicality in
@@ -746,7 +784,7 @@ _>>=_ : ∀ {a b}
 (Γ >>= f) ℕ.zero  = Σ γ ∶ Γ • f γ 0
 (Γ >>= f) (suc n) = (γ : Γ) → f γ n
 #+end_src
-
+#+latex: \noindent
 With this definition, the above declaration ~DynamicSystem~ typechecks.  However,
 ~DynamicSystem 𝒾 ≇ DynamicSystemᵢ~, instead ~DynamicSystem 𝒾~ are “factories”: Given
 ~𝒾~-many arguments, a product value is formed. What if we want to /instantiate/ some
@@ -762,7 +800,7 @@ of the factory arguments ahead of time?
 𝒩₁′ : let X = ℕ in Σ z ∶ X  • Σ s ∶ (X → X)  • 𝟙
 𝒩₁′ = 0 , suc , tt
 #+end_src
-
+#+latex: \noindent
 It seems what we need is method, say ~Π→λ~, that takes a ~Π~-type and transforms it
 into a ~λ~-expression.  One could use a universe, an algebraic type of codes
 denoting types, to define ~Π→λ~. However, one can no longer then easily use
@@ -773,10 +811,13 @@ encoding. This is not practical nor pragmatic.
 As such, we are left with pattern matching on the language's type formation
 primitives as the only reasonable approach. The method ~Π→λ~ is thus a macro that
 acts on the syntactic term representations of types.
+Below is main transformation ---the details can be found in Appendix
+[[sec:pi-to-lambda]].
 #+begin_src agda :tangle no
 Π→λ (Π a ∶ A • τ) = (λ a ∶ A • τ)
 {- One then extends this homomorphically over all possible term formers. -}
 #+end_src
+#+latex: \noindent
 That is, we walk along the term tree replacing occurrences of ~Π~ with ~λ~. For example,
 #+begin_src agda :tangle no
   Π→λ (Π→λ (DynamicSystem 2))
@@ -798,7 +839,7 @@ times in order to lift a number of field components to the parameter level.
 Π→λⁿ 0       τ = τ
 Π→λⁿ (n + 1) τ = Π→λⁿ n (Π→λ τ)
 #+end_src
-
+#+latex: \noindent
 We can now “fix arguments ahead of time”. Before such demonstration, we need to
 be mindful of our practicality goals: One declares a grouping mechanism with
 ~do … End~, which in turn has its instance values constructed with ~⟨ … ⟩~.
@@ -814,10 +855,9 @@ infixr 5 ⟨ _⟩
 _⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × (𝟙 {ℓ})
 s ⟩ = s , tt
 #+end_src
-
+#+latex: \noindent
 The following instances of grouping types demonstrate how information moves from
 the body level to the parameter level.
-
 #+BEGIN_SRC agda
 𝒩⁰ : DynamicSystem :waist 0
 𝒩⁰ = ⟨ ℕ , 0 , suc ⟩
@@ -831,28 +871,29 @@ the body level to the parameter level.
 𝒩³ : (DynamicSystem :waist 3) ℕ 0 suc
 𝒩³ = ⟨⟩
 #+END_SRC
-
+#+latex: \noindent
 Using ~:waist 𝒾~ we may fix the first ~𝒾~-parameters ahead of time.  Indeed, the
 type ~(DynamicSystem :waist 1) ℕ~ is /the type of dynamic systems over carrier ℕ/,
 whereas ~(DynamicSystem :waist 2) ℕ 0~ is /the type of dynamic systems over
 carrier ℕ and start state 0/.
 
 Examples of the need for such on-the-fly unbundling can be found in numerous
-places in the Haskell standard library. For instance, the standard libraries
-have two isomorphic copies of the integers, called ~Sum~ and ~Prod~, whose reason
+places in the Haskell standard library. For instance, the standard libraries cite:data_monoid
+have two isomorphic copies of the integers, called ~Sum~ and ~Product~, whose reason
 for being is to distinguish two common monoids: The former is for /integers with
 addition/ whereas the latter is for /integers with multiplication/.
 An orthogonal solution would be to use contexts:
 #+begin_src agda :tangle no
 Monoid : ∀ ℓ → Context (ℓsuc ℓ)
 Monoid ℓ = do Carrier ← Set ℓ
-              Id      ← Carrier
               _⊕_     ← (Carrier → Carrier → Carrier)
+              Id      ← Carrier
               leftId  ← ∀ {x : Carrier} → x ⊕ Id ≡ x
               rightId ← ∀ {x : Carrier} → Id ⊕ x ≡ x
               assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
               End {ℓ}
 #+end_src
+#+latex: \noindent
 With this context, (~Monoid ℓ₀ :waist 2) M ⊕~ is the type of monoids over
 /particular/ types ~M~ and /particular/ operations ~⊕~.  Of-course, this is orthogonal,
 since traditionally unification on the carrier type ~M~ is what makes typeclasses
@@ -880,41 +921,41 @@ polymorphism.
 data Fix (F : Set → Set) : Set where
   μ : F (Fix F) → Fix F
 #+end_src
-
+#+latex: \noindent
  The problem is whether we can derive ~F~ from ~DynamicSystem~.
  Let us attempt a quick calculation.
 #+name: termtypes-guide
 #+caption: Guide to termtypes
 #+BEGIN_SRC agda :tangle no
   do X ← Set; z ← X; s ← (X → X); End
-↝{- Use existing interpretation to obtain a record. -}
+⇒{- Use existing interpretation to obtain a record. -}
   Σ X : Set • Σ z : X • Σ s : (X → X) • 𝟙
-↝{- Pull out the carrier, “:waist 1”, to obtain a type constructor using “Π→λ”. -}
+⇒{- Pull out the carrier, “:waist 1”, to obtain a type constructor using “Π→λ”. -}
   λ X : Set • Σ z : X • Σ s : (X → X) • 𝟙
-↝{- Termtype constructors target the declared type, so only their sources matter.
+⇒{- Termtype constructors target the declared type, so only their sources matter.
    E.g., ‘z : X’ is a nullary constructor targeting the carrier ‘X’.
    This introduces 𝟙 types, so any existing occurances are dropped via 𝟘.
  -}
   λ X : Set • Σ z : 𝟙 • Σ s : X • 𝟘
-↝{- Termtypes are sums of products. -}
+⇒{- Termtypes are sums of products. -}
   λ X : Set •       𝟙   ⊎     X  ⊎ 𝟘
-↝{- Termtypes are fixpoints of type constructors. -}
+⇒{- Termtypes are fixpoints of type constructors. -}
   Fix (λ X • 𝟙 ⊎ X)  -- i.e., 𝔻
  #+END_SRC
-
- Since we may view an
-  algebraic data-type as a fixed-point of the functor obtained from the union of the
-  sources of its constructors, it suffices to treat the fields of a record
-  as constructors, then obtain their sources, then union them.
-  That is, since algebraic-datatype constructors necessarily
-  target the declared type, they are determined by their sources.
-  For example, considered as a unary constructor ~op : A → B~
-  targets the type termtype ~B~ and so its source is ~A~.
+#+latex: \noindent
+ Since we may view an algebraic data-type as a fixed-point of the functor
+  obtained from the union of the sources of its constructors, it suffices to
+  treat the fields of a record as constructors, then obtain their sources, then
+  union them.  That is, since algebraic-datatype constructors necessarily target
+  the declared type, they are determined by their sources.  For example,
+  considered as a unary constructor ~op : A → B~ targets the type termtype ~B~ and
+  so its source is ~A~.  The details on the operations ~⇊, Σ→⊎, sources~ shown below
+  can be found in appendices [[sec:decreasing-de-brujin]], [[sec:sigma-to-sum]], and
+  [[sec:sources]], respectively.
   # ---since we're introducing
   # unit types, any existing unit types are dropped via ~𝟘~.
-
   #+begin_src agda :tangle no
-⇊ τ = “reduce all de brujin indices by 1”
+⇊ τ = “reduce all de brujin indices of τ by 1”
 
 Σ→⊎ (Σ a ∶ A • Ba) = A ⊎ Σ→⊎ (⇊ Ba)
 
@@ -928,7 +969,7 @@ termtype τ = Fix (Σ→⊎ (sources τ))
 
 # The hint ~“Replace products with sums”~ in the above calculation is realised
 # formally as ~Σ→⊎ (sources τ)~.
-
+#+latex: \noindent
 It is instructive to visually see how ~𝔻~ is obtained from ~termtype~
 in order to demonstrate that this approach to algebraic data types
 is practical.
@@ -939,6 +980,7 @@ is practical.
 pattern startD  = μ (inj₁ tt)       -- : 𝔻
 pattern nextD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
 #+end_src
+#+latex: \noindent
 With the ~pattern~ declarations, we can actually use these more meaningful names,
 when pattern matching, instead of the seemingly daunting μ-~inj~-ections.
 For instance, we can immediately see that the natural numbers act as
@@ -953,42 +995,26 @@ from zero    = startD
 from (suc n) = nextD (from n)
 #+end_src
 
+* TODO Free Datatypes from Theories
+  <<sec:free-datatypes>>
+
 Astonishingly, useful programming datatypes arise from termtypes of theories
-(contexts). That is, if =𝒞 : Set → Context ℓ₀= then =ℂ′ = λ X → termtype (𝒞 X
-:waist 1)= can be used to form ‘free, lawless, 𝒞-instances’.
+(contexts). That is, if src_agda[:exports code]{𝒞 : Set → Context ℓ₀} then
+src_agda[:exports code]{ℂ′ = λ X → termtype (𝒞 X :waist 1)} can be used to form
+‘free, lawless, 𝒞-instances’. For instance, earlier we witnessed that
+the termtype of dynamical systems is essentially the natural numbers.
 #+label: theories-data-structures
-#+caption: Data strcutrues as free theories
+#+caption: Data structures as free theories
 | Theory             | Termtype     |
 |--------------------+--------------|
 | Dynamical Systems  | ℕ            |
 | Pointed Structures | Maybe        |
 | Monoids            | Binary Trees |
 
-The final entry in the table is a well known correspondence, that we
-can, not only formally express, but also prove to be true. We present the setup
-and leave it as an instructive exercise to the reader to present a
-bijective pair of functions between =𝕄= and =TreeSkeleton=. Hint: Interactively
-case-split on values of =𝕄= until the declared patterns appear, then associate them
-with the constructors of ~TreeSkeleton~.
-
-#+begin_src agda :tangle no
-𝕄 : Set
-𝕄 = termtype (Monoid ℓ₀ :waist 1)
-
--- Pattern synonyms for more compact presentation
-pattern emptyM      = μ (inj₁ tt)                      -- : 𝕄
-pattern branchM l r = μ (inj₂ (inj₁ (l , r , tt)))     -- : 𝕄 → 𝕄 → 𝕄
-pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a))))  -- absurd values of 𝟘
-
-data TreeSkeleton : Set where
-  empty  : TreeSkeleton
-  branch : TreeSkeleton → TreeSkeleton → TreeSkeleton
-#+end_src
-
 To obtain trees over some ‘value type’ Ξ, one must start at the theory of
 “monoids containing a given set Ξ”. Similarly, by starting at “theories of
 pointed sets over a given set Ξ”, the resulting termtype is the ~Maybe~
-type constructor ---another instructive exercise to the reader: Show ~ℙ ≅ Maybe~.
+type constructor ---another instructive exercise to the reader: Show that ~ℙ ≅ Maybe~.
 #+begin_src agda :tangle no
 PointedOver  : Set → Context (ℓsuc ℓ₀)
 PointedOver Ξ    = do Carrier ← Set ℓ₀
@@ -1002,6 +1028,27 @@ PointedOver Ξ    = do Carrier ← Set ℓ₀
 -- Pattern synonyms for more compact presentation
 pattern nothingP = μ (inj₁ tt)       -- : ℙ
 pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
+#+end_src
+
+#+latex: \noindent
+The final entry in the table is a well known correspondence, that we
+can, not only formally express, but also prove to be true. We present the setup
+and leave it as an instructive exercise to the reader to present a
+bijective pair of functions between =𝕄= and =TreeSkeleton=. Hint: Interactively
+case-split on values of =𝕄= until the declared patterns appear, then associate them
+with the constructors of ~TreeSkeleton~.
+#+begin_src agda :tangle no
+𝕄 : Set
+𝕄 = termtype (Monoid ℓ₀ :waist 1)
+
+-- Pattern synonyms for more compact presentation
+pattern emptyM      = μ (inj₁ tt)                      -- : 𝕄
+pattern branchM l r = μ (inj₂ (inj₁ (l , r , tt)))     -- : 𝕄 → 𝕄 → 𝕄
+pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a))))  -- absurd values of 𝟘
+
+data TreeSkeleton : Set where
+  empty  : TreeSkeleton
+  branch : TreeSkeleton → TreeSkeleton → TreeSkeleton
 #+end_src
 
 * Related Works
@@ -1065,7 +1112,7 @@ data Kind : Set where
 𝒞 :kind ‵typeclass = 𝒞 :waist 1
 𝒞 :kind ‵data      = termtype (𝒞 :waist 1)
 #+end_src
-
+# +latex: \noindent
 We did not expect to be able to assign a full semantics to PackageFormer's
 syntactic constructs due to Agda's substantially weak metaprogramming mechanism.
 However, it is important to note that PackageFormer's Lisp extensibility
@@ -1104,7 +1151,17 @@ termtypes.  In addition, to obtain parameterised variants, we needed to
 explicitly form “contexts whose contents are over a given ambient context”
 ---e.g., contexts of vector spaces are usually discussed with the understanding
 that there is a context of fields that can be referenced--- which we did using
-monads.
+monads. These relationships are summarised in the following table.
+
+#+caption: Contexts embody all kinds of grouping mechanisms
+| Concept            | Concrete Syntax                       | Description            |
+|--------------------+---------------------------------------+------------------------|
+| Context            | =do S ← Set; s ← S; n ← (S → S); End=   | “name-type pairs”      |
+|--------------------+---------------------------------------+------------------------|
+| Record Type        | =Σ S ∶ Set • Σ s ∶ S • Σ n ∶ S → S • 𝟙= | “bundled-up data”      |
+| Function Type      | =Π S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a type of functions”  |
+| Type constructor   | =λ S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a function on types”  |
+| Algebraic datatype | ~data 𝔻 : Set where s : 𝔻; n : 𝔻 → 𝔻~   | “a descriptive syntax” |
 
 To those interested in exotic ways to group data together ---such as,
 mechanically deriving product types and homomorphism types of theories---
@@ -1205,6 +1262,7 @@ _app_ : Term → Term → Term
 tm app arg′ = tm
 #+end_src
 
+#+latex: \noindent
 Notice that we maintain existing applications:
 | ~quoteTerm (f x) app quoteTerm y~ | ≈ | ~quoteTerm (f x y)~ |
 
@@ -1232,15 +1290,17 @@ lengthₜ (Π[ x ∶ A ] Bx)   = 1 + lengthₜ Bx
 -- sort, lit, meta, unknown
 lengthₜ t = 0
 #+end_src
+#+latex: \noindent
 Here is an example use:
 #+begin_src agda :tangle Context.agda
 _ : lengthₜ (quoteTerm (Σ x ∶ ℕ • x ≡ x)) ≡ 10
 _ = refl
 #+end_src
 
-*** Decreasing Debrujin Indices
+*** Decreasing de Brujin Indices
+<<sec:decreasing-de-brujin>>
 Given a quantification ~(⊕ x ∶ τ • fx)~, its body ~fx~ may refer to a free variable
-~x~.  If we decrement all Debrujin indices ~fx~ contains, then there would be no
+~x~.  If we decrement all de Brujin indices ~fx~ contains, then there would be no
 reference to ~x~.
 
 #+begin_src agda :tangle Context.agda
@@ -1258,12 +1318,13 @@ var-dec₀ (suc n) (Π[ s ∶ arg i A ] B) = Π[ s ∶ arg i (var-dec₀ n A) ] 
 -- sort, lit, meta, unknown
 var-dec₀ n t = t
 #+end_src
+#+latex: \noindent
 In the paper proper, ~var-dec~ was mentioned once under the name ~⇊~.
 #+begin_src agda :tangle Context.agda
 var-dec : Term → Term
 var-dec t = var-dec₀ (lengthₜ t) t
 #+end_src
-
+#+latex: \noindent
 Notice that we made the decision that ~x~, the body of ~(⊕ x • x)~, will reduce to ~𝟘~,
 the empty type. Indeed, in such a situation the only Debrujin index cannot be
 reduced further. Here is an example:
@@ -1351,6 +1412,7 @@ ex = ⟨ 0 , suc ⟩
 #+end_src
 
 ** Π→λ
+   <<sec:pi-to-lambda>>
 #+begin_src agda :tangle Context.agda
 Π→λ-helper : Term → Term
 Π→λ-helper (pi  a b)         = lam visible b
@@ -1404,7 +1466,7 @@ D′ = DynamicSystem :waist 3
 𝒩³ : D′ ℕ 0 suc
 𝒩³ = ⟨⟩
 #+end_src
-
+#+latex: \noindent
 It may be the case that ~Γ 0 ≡ Γ :waist 0~ for every context Γ.
 #+begin_src agda :tangle Context.agda
 _ : DynamicSystem 0 ≡ DynamicSystem :waist 0
@@ -1505,13 +1567,14 @@ D₂ = DynamicSystem :waist 1
 #+end_src
 
 *** Stage 3: Sources
+<<sec:sources>>
 Let's begin with an example to motivate the definition of ~sources~.
     #+begin_src agda :tangle Context.agda
 _ :   quoteTerm (∀ {x : ℕ} → ℕ)
     ≡ pi (arg (arg-info hidden relevant) (quoteTerm ℕ)) (abs "x" (quoteTerm ℕ))
 _ = refl
 #+end_src
-
+#+latex: \noindent
 We now form two sources-helper utilities, although we suspect they could be
 combined into one function.
 #+begin_src agda :tangle Context.agda
@@ -1547,6 +1610,7 @@ sources₁ (pat-lam cs args) = pat-lam cs (List.map (map-Arg sources₁) args)
 -- sort, lit, meta, unknown
 sources₁ t = t
 #+end_src
+#+latex: \noindent
 We now form the macro and some unit tests.
 #+begin_src agda :tangle Context.agda
 macro
@@ -1577,7 +1641,8 @@ _ : ∀ {A B C D E : Set} → sources (A → B → C → D → E)
                         ≡ Σ A (λ _ → Σ B (λ _ → Σ C (λ _ → Σ D (λ _ → ⊤))))
 _ = refl
 #+end_src
-Design descision: Types starting with implicit arguments are /invariants/, not /constructors/.
+#+latex: \noindent
+Design decision: Types starting with implicit arguments are /invariants/, not /constructors/.
 #+begin_src agda :tangle Context.agda
 -- one implicit
 _ : sources (∀ {x : ℕ} → x ≡ x) ≡ 𝟘
@@ -1587,6 +1652,7 @@ _ = refl
 _ : sources (∀ {x y z : ℕ} → x ≡ y) ≡ 𝟘
 _ = refl
 #+end_src
+#+latex: \noindent
 The third stage can now be formed.
 #+begin_src agda :tangle Context.agda
 D₃ = sources D₂
@@ -1595,6 +1661,7 @@ D₃ = sources D₂
 3-sources = refl
 #+end_src
 *** Stage 4: ~Σ→⊎~ --Replacing Products with Sums
+    <<sec:sigma-to-sum>>
 #+begin_src agda :tangle Context.agda
 {-# TERMINATING #-}
 Σ→⊎₀ : Term → Term
@@ -1654,7 +1721,8 @@ from∘to (sucD x) = cong sucD (from∘to x)
 
 *** ~termtype~ and ~Inj~ macros
 
-We summarise the stages together into one macro.
+We summarise the stages together into one macro:
+~“termtype : UnaryFunctor → Type”~.
 #+begin_src agda :tangle Context.agda
 macro
   termtype : Term → Term → TC Unit.⊤
@@ -1662,7 +1730,7 @@ macro
                 normalise tm
            >>=ₘ λ tm′ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ tm′))) ∷ []))
  #+end_src
-
+#+latex: \noindent
 It is interesting to note that in place of ~pattern~ clauses, say for languages
 that do not support them, we would resort to “fancy injections”.
 #+begin_src agda :tangle Context.agda
@@ -1678,6 +1746,7 @@ macro
   Inj : ℕ → Term → Term → TC Unit.⊤
   Inj n t goal = unify goal ((con (quote μ) []) app (Inj₀ n t))
 #+end_src
+#+latex: \noindent
 With this alternative, we regain the “user chosen constructor names” for ~𝔻~:
 #+begin_src agda :tangle Context.agda
 startD : 𝔻
@@ -1750,12 +1819,6 @@ data Kind : Set where
   ‵typeclass : Kind
   ‵data      : Kind
 
-{- Nope: Since :waist may return type constructors, not sets!
-_:kind_ : ∀ {ℓ} → Context ℓ → Kind → Set ℓ
-𝒞 :kind ‵record    = 𝒞 :waist 0
-𝒞 :kind ‵typeclass = 𝒞 :waist 1
-𝒞 :kind ‵data      = termtype (𝒞 :waist 1)
--}
 macro
   _:kind_ : Term → Term → Term → TC Unit.⊤
   _:kind_ t (con (quote ‵record) _)    goal = normalise (t app (quoteTerm 0))
@@ -1766,15 +1829,17 @@ macro
                       >>=ₘ λ t′ → normalise (waist-helper 1 t′)
                       >>=ₘ λ t″ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ t″))) ∷ []))
   _:kind_ t _ goal = unify t goal
-
--- _⟴_ : ∀ {a b} {A : Set a} {B : Set b} → A → (A → B) → B
--- x ⟴ f = f x
+#+end_src
+#+latex: \noindent
+Informally, ~_:kind_~ behaves as follows:
+#+begin_src agda :tangle Context.agda
+𝒞 :kind ‵record    = 𝒞 :waist 0
+𝒞 :kind ‵typeclass = 𝒞 :waist 1
+𝒞 :kind ‵data      = termtype (𝒞 :waist 1)
 #+end_src
 
-** COMMENT Other experiments
-#+begin_src agda :tangle Context.agda
---------------------------------------------------------------------------------
-
+** ~termtype PointedSet ≅ 𝟙~
+   #+begin_src agda :tangle Context.agda
 -- termtype (PointedSet) ≅ ⊤ !
 One  : Context (ℓsuc ℓ₀)
 One      = do Carrier ← Set ℓ₀
@@ -1784,16 +1849,13 @@ One      = do Carrier ← Set ℓ₀
 𝕆𝕟𝕖 : Set
 𝕆𝕟𝕖 = termtype (One :waist 1)
 
-case₁ : 𝕆𝕟𝕖 → Set
-case₁ emptyM = 𝟙
-
--- Note: “termtype : UnaryFunctor → Type”
-
---------------------------------------------------------------------------------
-
--- From simple graphs (relations) to a syntax about them:
--- One describes a simple graph by presenting edges as pairs of vertices!
-
+view₁ : 𝕆𝕟𝕖 → 𝟙
+view₁ emptyM = tt
+#+end_src
+** The Termtype of Graphs is Edge Pairs
+From simple graphs (relations) to a syntax about them:
+One describes a simple graph by presenting edges as pairs of vertices!
+#+begin_src agda :tangle Context.agda
 PointedOver₂  : Set → Context (ℓsuc ℓ₀)
 PointedOver₂ Ξ    = do Carrier ← Set ℓ₀
                        relation ← (Ξ → Ξ → Carrier)
@@ -1802,14 +1864,14 @@ PointedOver₂ Ξ    = do Carrier ← Set ℓ₀
 ℙ₂ : Set → Set
 ℙ₂ X = termtype (PointedOver₂ X :waist 1)
 
-
 pattern _⇌_ x y = μ (inj₁ (x , y , tt))
 
-case₂ : ∀ {X} → ℙ₂ X → Set₁
-case₂ (x ⇌ y) = Set
+view₂ : ∀ {X} → ℙ₂ X → X × X
+view₂ (x ⇌ y) = x , y
+#+end_src
 
---------------------------------------------------------------------------------
-
+** COMMENT Other experiments
+#+begin_src agda :tangle Context.agda
 -- No ‘constants’, whence a type of inifinitely branching terms.
 PointedOver₃  : Set → Context (ℓ₀)
 PointedOver₃ Ξ    = do relation ← (Ξ → Ξ → Ξ)
@@ -1907,10 +1969,6 @@ case₇ : ∀ {X} → ℙ₇ X → Set
 case₇ {X} (μ (inj₁ x)) = X
 
 -}
-
---------------------------------------------------------------------------------
-
--- Add to paper: Another PF primitive is :level, which we have via type inference xD
 
 --------------------------------------------------------------------------------
 
