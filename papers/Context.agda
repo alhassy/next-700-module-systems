@@ -1,44 +1,27 @@
-module semantics-with-waist where
+-- [[file:~/thesis-proposal/papers/Paper2.org::*APPENDICES][APPENDICES:1]]
+module Context where
+-- APPENDICES:1 ends here
 
+-- [[file:~/thesis-proposal/papers/Paper2.org::*Imports][Imports:1]]
 open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc; zero to ℓ₀)
-open import Data.Nat
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
-open import Data.Empty
-open import Data.Bool using (Bool ; true ; false)
-open import Data.List as List using (List ; [] ; _∷_ ; _∷ʳ_; sum)
-open import Function using (_∘_)
-open import Data.Sum
+
+open import Data.Nat
 open import Data.Fin  as Fin using (Fin)
 open import Data.Maybe  hiding (_>>=_)
 
+open import Data.Bool using (Bool ; true ; false)
+open import Data.List as List using (List ; [] ; _∷_ ; _∷ʳ_; sum)
+
 ℓ₁   = Level.suc ℓ₀
+-- Imports:1 ends here
 
-
-
--- “s ≔ v” is just a way to document v with string s.
-open import Data.String using (String)
-_≔_ : ∀ {ℓ} {A : Set ℓ} → String → A → A
-s ≔ v = v
-infix 9 _≔_
-
--- Used in an example later on; too boring to be placed there.
-data Digit : Set where
-  #0 #1 #2 #3 #4 #5 #6 #7 #8 #9 : Digit
-
-#→ℕ : Digit → ℕ
-#→ℕ #0 = 0
-#→ℕ #1 = 1
-#→ℕ #2 = 2
-#→ℕ #3 = 3
-#→ℕ #4 = 4
-#→ℕ #5 = 5
-#→ℕ #6 = 6
-#→ℕ #7 = 7
-#→ℕ #8 = 8
-#→ℕ #9 = 9
-
+-- [[file:~/thesis-proposal/papers/Paper2.org::*Quantifiers Π∶•/Σ∶• and Products/Sums][Quantifiers Π∶•/Σ∶• and Products/Sums:1]]
+open import Data.Empty using (⊥)
+open import Data.Sum
 open import Data.Product
+open import Function using (_∘_)
 
 Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
 Σ∶• = Σ
@@ -55,12 +38,11 @@ syntax Π∶• A (λ x → B) = Π x ∶ A • B
 record ⊤ {ℓ} : Set ℓ where
   constructor tt
 
-open import Data.Empty using (⊥)
-
 𝟙 = ⊤ {ℓ₀}
--- 𝟘 = λ {ℓ} → Lift ℓ ⊥  -- ???
 𝟘 = ⊥
+-- Quantifiers Π∶•/Σ∶• and Products/Sums:1 ends here
 
+-- [[file:~/thesis-proposal/papers/Paper2.org::*⟨⟩ Notation][⟨⟩ Notation:1]]
 -- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
 infixr 5 ⟨ _⟩
 ⟨⟩ : ∀ {ℓ} → ⊤ {ℓ}
@@ -71,7 +53,9 @@ infixr 5 ⟨ _⟩
 
 _⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × ⊤ {ℓ}
 s ⟩ = s , tt
+-- ⟨⟩ Notation:1 ends here
 
+-- [[file:~/thesis-proposal/papers/Paper2.org::*Reflection][Reflection:1]]
 import Data.Unit as Unit
 open import Reflection hiding (name; Type) renaming (_>>=_ to _>>=ₘ_)
 
@@ -90,6 +74,7 @@ toℕ _ = 0
 arg-term : ∀ {ℓ} {A : Set ℓ} → (Term → A) → Arg Term → A
 arg-term f (arg i x) = f x
 
+{-# TERMINATING #-}
 var-dec₀ : (fuel : ℕ) → Term → Term
 var-dec₀ zero t  = t
 -- var-dec₀ (suc n) (var Fin.0F args) = var Fin.0F args
@@ -126,7 +111,9 @@ var-dec t = var-dec₀ (lengthₜ t) t
 _ :   var-dec (quoteTerm ((X : Set) → X))
     ≡ pi (vArg (sort (lit 0))) (abs "X" (def (quote ⊥) []))
 _ = refl
+-- Reflection:1 ends here
 
+-- [[file:~/thesis-proposal/papers/Paper2.org::*Context Monad][Context Monad:1]]
 Context = λ ℓ → ℕ → Set ℓ
 
 infix -1000 ‵_
@@ -144,7 +131,9 @@ _>>=_ : ∀ {a b}
       → Context (a ⊍ b)
 (Γ >>= f) ℕ.zero  = Σ γ ∶ Γ • f γ 0
 (Γ >>= f) (suc n) = (γ : Γ) → f γ n
+-- Context Monad:1 ends here
 
+-- [[file:~/thesis-proposal/papers/Paper2.org::*Monoid Context][Monoid Context:1]]
 Monoid : ∀ ℓ → Context (ℓsuc ℓ)
 Monoid ℓ = do Carrier ← Set ℓ
               Id      ← Carrier
@@ -153,7 +142,9 @@ Monoid ℓ = do Carrier ← Set ℓ
               rightId ← ∀ {x : Carrier} → Id ⊕ x ≡ x
               assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
               End {ℓ}
+-- Monoid Context:1 ends here
 
+-- [[file:~/thesis-proposal/papers/Paper2.org::*DynamicSystem Context][DynamicSystem Context:1]]
 DynamicSystem : Context (ℓsuc Level.zero)
 DynamicSystem = do X ← Set
                    z ← X
@@ -199,7 +190,9 @@ id₁ = λ (X : Set) → ((e : X) → X)
 
 id₂ : ∀ (X : Set) (e : X) → Set
 id₂ = λ (X : Set) (e : X) → X
+-- DynamicSystem Context:1 ends here
 
+-- [[file:~/thesis-proposal/papers/Paper2.org::*Π→λ and :waist][Π→λ and :waist:1]]
 Π→λ-helper : Term → Term
 Π→λ-helper (pi  a b)         = lam visible b
 Π→λ-helper (lam a (abs x y)) = lam a (abs x (Π→λ-helper y))
@@ -260,39 +253,9 @@ _ = refl
 
 𝒩³ : D′ ℕ 0 suc
 𝒩³ = ⟨⟩
+-- Π→λ and :waist:1 ends here
 
-Collection : ∀ ℓ → Context (ℓsuc ℓ)
-Collection ℓ = do
-  Elem    ← Set ℓ
-  Carrier ← Set ℓ
-  insert  ← (Elem → Carrier → Carrier)
-  ∅       ← Carrier
-  isEmpty ← (Carrier → Bool)
-  insert-nonEmpty ← ∀ {e : Elem} {x : Carrier} → isEmpty (insert e x) ≡ false
-  End {ℓ}
-
-ListColl : {ℓ : Level} → Collection ℓ 1
-ListColl E = ⟨ List E
-             , _∷_
-             , []
-             , (λ { [] → true; _ → false})
-             , (λ {x} {x = x₁} → refl)
-             ⟩
-
-ℕCollection = (Collection ℓ₀ :waist 2)
-                ("Elem"    ≔ Digit)
-                ("Carrier" ≔ ℕ)
---
--- i.e., (Collection ℓ₀ :waist 2) Digit ℕ
-
-stack : ℕCollection
-stack = ⟨ "insert"      ≔ (λ d s → suc (10 * s + #→ℕ d))
-        , "empty stack" ≔ 0
-        , "is-empty"    ≔ (λ { 0 → true; _ → false})
-        -- Properties --
-        , (λ {d : Digit} {s : ℕ} → refl {x = false})
-        ⟩
-
+-- [[file:~/thesis-proposal/papers/Paper2.org::*Field projections][Field projections:1]]
 Field₀ : ℕ → Term → Term
 Field₀ zero c    = def (quote proj₁) (arg (arg-info visible relevant) c ∷ [])
 Field₀ (suc n) c = Field₀ n (def (quote proj₂) (arg (arg-info visible relevant) c ∷ []))
@@ -300,32 +263,9 @@ Field₀ (suc n) c = Field₀ n (def (quote proj₂) (arg (arg-info visible rele
 macro
   Field : ℕ → Term → Term → TC Unit.⊤
   Field n t goal = unify goal (Field₀ n t)
+-- Field projections:1 ends here
 
-Elem      : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
-Elem      = λ C   → Field 0 C
-
-Carrier   : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
-Carrier₁  : ∀ {ℓ} → Collection ℓ 1 → (γ : Set ℓ) → Set ℓ
-Carrier₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → Set ℓ
-
-Carrier   = λ C   → Field 1 C
-Carrier₁  = λ C γ → Field 0 (C γ)
-Carrier₁′ = λ C   → Field 0 C
-
-insert   : ∀ {ℓ} (C : Collection ℓ 0) → (Elem C → Carrier C → Carrier C)
-insert₁  : ∀ {ℓ} (C : Collection ℓ 1) (γ : Set ℓ) →  γ → Carrier₁ C γ → Carrier₁ C γ
-insert₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → γ → Carrier₁′ C → Carrier₁′ C
-
-insert    = λ C   → Field 2 C
-insert₁   = λ C γ → Field 1 (C γ)
-insert₁′  = λ C   → Field 1 C
-
-insert₂  : ∀ {ℓ} (C : Collection ℓ 2) (El Cr : Set ℓ) → El → Cr → Cr
-insert₂′ : ∀ {ℓ} {El Cr : Set ℓ} (C : (Collection ℓ :waist 2) El Cr) → El → Cr → Cr
-
-insert₂ = λ C El Cr → Field 0 (C El Cr)
-insert₂′ = λ C → Field 0 C
-
+-- [[file:~/thesis-proposal/papers/Paper2.org::*Termtypes][Termtypes:1]]
 {-# NO_POSITIVITY_CHECK #-}
 data Fix {ℓ} (F : Set ℓ → Set ℓ) : Set ℓ where
   μ : F (Fix F) → Fix F
@@ -458,7 +398,9 @@ oh∘ho (suc n) = cong suc (oh∘ho n)
 ho∘oh : ∀ d → ho (oh d) ≡ d
 ho∘oh zeroD    = refl
 ho∘oh (sucD x) = cong sucD (ho∘oh x)
+-- Termtypes:1 ends here
 
+-- [[file:~/thesis-proposal/papers/Paper2.org::*~termtype~][~termtype~:1]]
 Inj₀ : ℕ → Term → Term
 Inj₀ zero c    = con (quote inj₁) (arg (arg-info visible relevant) c ∷ [])
 Inj₀ (suc n) c = con (quote inj₂) (vArg (Inj₀ n c) ∷ [])
@@ -476,7 +418,9 @@ macro
   termtype tm goal =
                 normalise tm
            >>=ₘ λ tm′ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ tm′))) ∷ []))
+-- ~termtype~:1 ends here
 
+-- [[file:~/thesis-proposal/papers/Paper2.org::*Monoid termtype][Monoid termtype:1]]
 𝕄 : Set
 𝕄 = termtype (Monoid ℓ₀ :waist 1)
 {- ie Fix (λ X → 𝟙         -- Id, nil leaf
@@ -517,7 +461,9 @@ data TreeSkeleton : Set where
 𝕄→Tree∘𝕄←Tree (branch l r) = cong₂ branch (𝕄→Tree∘𝕄←Tree l) (𝕄→Tree∘𝕄←Tree r)
 
 -- “a pointed set that contains Ξ” ─c.f., “a group over Ξ”
+-- Monoid termtype:1 ends here
 
+-- [[file:~/thesis-proposal/papers/Paper2.org::*~:kind~][~:kind~:1]]
 data Kind : Set where
   ‵record    : Kind
   ‵typeclass : Kind
@@ -542,207 +488,4 @@ macro
 
 -- _⟴_ : ∀ {a b} {A : Set a} {B : Set b} → A → (A → B) → B
 -- x ⟴ f = f x
-
---------------------------------------------------------------------------------
-
-
-{-
-PointedOver  : Set → Context (ℓsuc ℓ₀)
-PointedOver Ξ    = do Carrier ← Set ℓ₀
-                      point   ← Carrier
-                      embed   ← (Ξ → Carrier)
-                      End {ℓ₀}
-
-ℙ : Set → Set
-ℙ X = termtype (PointedOver X :waist 1)
--}
-
---------------------------------------------------------------------------------
-
--- termtype (PointedSet) ≅ ⊤ !
-One  : Context (ℓsuc ℓ₀)
-One      = do Carrier ← Set ℓ₀
-              point  ← Carrier
-              End {ℓ₀}
-
-𝕆𝕟𝕖 : Set
-𝕆𝕟𝕖 = termtype (One :waist 1)
-
-case₁ : 𝕆𝕟𝕖 → Set
-case₁ emptyM = 𝟙
-
--- Note: “termtype : UnaryFunctor → Type”
-
---------------------------------------------------------------------------------
-
--- From simple graphs (relations) to a syntax about them:
--- One describes a simple graph by presenting edges as pairs of vertices!
-
-PointedOver₂  : Set → Context (ℓsuc ℓ₀)
-PointedOver₂ Ξ    = do Carrier ← Set ℓ₀
-                       relation ← (Ξ → Ξ → Carrier)
-                       End {ℓ₀}
-
-ℙ₂ : Set → Set
-ℙ₂ X = termtype (PointedOver₂ X :waist 1)
-
-
-pattern _⇌_ x y = μ (inj₁ (x , y , tt))
-
-case₂ : ∀ {X} → ℙ₂ X → Set₁
-case₂ (x ⇌ y) = Set
-
---------------------------------------------------------------------------------
-
--- No ‘constants’, whence a type of inifinitely branching terms.
-PointedOver₃  : Set → Context (ℓ₀)
-PointedOver₃ Ξ    = do relation ← (Ξ → Ξ → Ξ)
-                       End {ℓ₀}
-
-ℙ₃ : Set
-ℙ₃ = termtype (λ X → PointedOver₃ X 0)
-
--- case₃ : ℙ₃ → Set₁
--- case₃ (px ⇌ py) = {!!}
-
---------------------------------------------------------------------------------
-
-PointedOver₄  : Context (ℓsuc ℓ₀)
-PointedOver₄       = do Ξ ← Set
-                        Carrier ← Set ℓ₀
-                        relation ← (Ξ → Ξ → Carrier)
-                        End {ℓ₀}
-
--- The current implementation of “termtype” only allows for one “Set” in the body.
--- So we lift both out; thereby regaining ℙ₂!
-
-ℙ₄ : Set → Set
-ℙ₄ X = termtype ((PointedOver₄ :waist 2) X)
-
-pattern _⇌_ x y = μ (inj₁ (x , y , tt))
-
-case₄ : ∀ {X} → ℙ₄ X → Set₁
-case₄ (x ⇌ y) = Set
-
--- Claim: Mention in paper.
---
---    P₁ : Set → Context = λ Ξ → do ⋯ End
--- ≅  P₂ :waist 1
--- where P₂ : Context = do Ξ ← Set; ⋯ End
-
---------------------------------------------------------------------------------
-
-{- Yellow:
-
-PointedOver₅  : Context (ℓsuc ℓ₀)
-PointedOver₅   = do One ← Set
-                    Two ← Set
-                    Three ← (One → Two → Set)
-                    End {ℓ₀}
-
-ℙ₅ : Set → Set₁
-ℙ₅ X = termtype ((PointedOver₅ :waist 2) X)
--- Fix (λ Two → One × Two)
-
-pattern _∷₅_ x y = μ (inj₁ (x , y , tt))
-
-case₅ : ∀ {X} → ℙ₅ X → Set₁
-case₅ (x ∷₅ xs) = Set
-
--}
-
---------------------------------------------------------------------------------
-
-{-- Dependent sums
-
-PointedOver₆  : Context ℓ₁
-PointedOver₆ = do Sort ← Set
-                  Carrier ← (Sort → Set)
-                  End {ℓ₀}
-
-ℙ₆ : Set₁
-ℙ₆ = termtype ((PointedOver₆ :waist 1) )
--- Fix (λ X → X)
-
--}
-
---------------------------------------------------------------------------------
-
--- Distinuighed subset algebra
-
-open import Data.Bool renaming (Bool to 𝔹)
-
-{-
-PointedOver₇  : Context (ℓsuc ℓ₀)
-PointedOver₇       = do Index ← Set
-                        Is    ← (Index → 𝔹)
-                        End {ℓ₀}
-
--- The current implementation of “termtype” only allows for one “Set” in the body.
--- So we lift both out; thereby regaining ℙ₂!
-
-ℙ₇ : Set → Set
-ℙ₇ X = termtype (λ (_ : Set) → (PointedOver₇ :waist 1) X)
--- ℙ₁ X ≅ X
-
-pattern _⇌_ x y = μ (inj₁ (x , y , tt))
-
-case₇ : ∀ {X} → ℙ₇ X → Set
-case₇ {X} (μ (inj₁ x)) = X
-
--}
-
---------------------------------------------------------------------------------
-
--- Add to paper: Another PF primitive is :level, which we have via type inference xD
-
---------------------------------------------------------------------------------
-
--- indexed unary algebras; i.e., “actions”
-
-PointedOver₈  : Context (ℓsuc ℓ₀)
-PointedOver₈       = do Index     ← Set
-                        Carrier   ← Set
-                        Operation ← (Index → Carrier → Carrier)
-                        End {ℓ₀}
-
-ℙ₈ : Set → Set
-ℙ₈ X = termtype ((PointedOver₈ :waist 2) X)
-
-pattern _·_ x y = μ (inj₁ (x , y , tt))
-
-case₈ : ∀ {I} → ℙ₈ I → Set₁
-case₈ (i · e) = Set
-
--- This is just ℙ₄ again lol!
-
---------------------------------------------------------------------------------
-
-{-
-PointedOver₉  : Context ℓ₁
-PointedOver₉       = do Carrier ← Set
-                        End {ℓ₀}
-
--- The current implementation of “termtype” only allows for one “Set” in the body.
--- So we lift both out; thereby regaining ℙ₂!
-
-ℙ₉ : Set
-ℙ₉ = termtype (λ (X : Set) → (PointedOver₉ :waist 1) X)
--- ≅ 𝟘 ≅ Fix (λ X → 𝟘)
--}
-
---------------------------------------------------------------------------------
-
-PointedOver₁₀  : Context ℓ₁
-PointedOver₁₀       = do Carrier ← Set
-                         next    ← (Carrier → Carrier)
-                         End {ℓ₀}
-
--- The current implementation of “termtype” only allows for one “Set” in the body.
--- So we lift both out; thereby regaining ℙ₂!
-
-ℙ₁₀ : Set
-ℙ₁₀ = termtype (λ (X : Set) → (PointedOver₁₀ :waist 1) X)
--- Fix (λ X → X), which does not exist.
-
---------------------------------------------------------------------------------
+-- ~:kind~:1 ends here

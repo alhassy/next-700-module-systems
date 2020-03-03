@@ -229,6 +229,8 @@ See here for more: http://kitchingroup.cheme.cmu.edu/blog/2014/05/13/Using-org-r
   #+LATEX_HEADER: \newcommand\boldred[1]{\textcolor{red}{\textbf{#1}}}
   #+LATEX_HEADER: \newcommand\boldgreen[1]{\textcolor{darkgreen}{\textbf{#1}}}
 
+  #+LATEX_HEADER: \newunicodechar{ʳ}{\boldblue{\text{\ensuremath{^r}}}}
+
   #+LATEX_HEADER: \newunicodechar{Σ}{\boldblue{\text{\ensuremath{\Sigma}}}}
   #+LATEX_HEADER: \newunicodechar{⊎}{\boldblue{\text{\ensuremath{\uplus}}}}
   #+LATEX_HEADER: \newunicodechar{×}{\boldblue{\text{\ensuremath{\times}}}}
@@ -1102,7 +1104,794 @@ core combinators, leaving the Agda-specific details to the appendices, it is
 also straightforward to translate the library into other dependently-typed
 languages.
 
-* APPENDIX: What about the meta-language's parameters? :Maybe_Delete:
+* APPENDICES
+
+#+begin_src agda :tangle Context.agda
+module Context where
+#+end_src
+
+** Imports
+#+begin_src agda :tangle Context.agda
+open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc; zero to ℓ₀)
+open import Relation.Binary.PropositionalEquality
+open import Relation.Nullary
+
+open import Data.Nat
+open import Data.Fin  as Fin using (Fin)
+open import Data.Maybe  hiding (_>>=_)
+
+open import Data.Bool using (Bool ; true ; false)
+open import Data.List as List using (List ; [] ; _∷_ ; _∷ʳ_; sum)
+
+ℓ₁   = Level.suc ℓ₀
+#+end_src
+
+** Quantifiers Π∶•/Σ∶• and Products/Sums
+
+  We shall using Z-style quantifier notation cite:10.5555/235337 in which the
+  quantifier dummy variables are separated from the body by a large bullet.
+
+  In Agda, we use ~\:~ to obtain the “ghost colon” since standard colon ~:~ is an
+  Agda operator.
+
+#+begin_src agda :tangle Context.agda
+open import Data.Empty using (⊥)
+open import Data.Sum
+open import Data.Product
+open import Function using (_∘_)
+
+Σ∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
+Σ∶• = Σ
+
+infix -666 Σ∶•
+syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
+
+Π∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
+Π∶• A B = (x : A) → B x
+
+infix -666 Π∶•
+syntax Π∶• A (λ x → B) = Π x ∶ A • B
+
+record ⊤ {ℓ} : Set ℓ where
+  constructor tt
+
+𝟙 = ⊤ {ℓ₀}
+𝟘 = ⊥
+#+end_src
+
+** ⟨⟩ Notation
+
+As mentioned, grouping mechanisms are declared with ~do … End~, and instances of
+them are constructed using ~⟨ … ⟩~.
+#+begin_src agda :tangle Context.agda
+-- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
+infixr 5 ⟨ _⟩
+⟨⟩ : ∀ {ℓ} → ⊤ {ℓ}
+⟨⟩ = tt
+
+⟨ : ∀ {ℓ} {S : Set ℓ} → S → S
+⟨ s = s
+
+_⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × ⊤ {ℓ}
+s ⟩ = s , tt
+#+end_src
+
+** Reflection
+
+We form a few metaprogramming utilities we would have expected to be in the
+standard library.
+
+#+begin_src agda :tangle Context.agda
+import Data.Unit as Unit
+open import Reflection hiding (name; Type) renaming (_>>=_ to _>>=ₘ_)
+#+end_src
+
+*** Single argument application
+#+begin_src agda :tangle Context.agda
+_app_ : Term → Term → Term
+(def f args) app arg′ = def f (args ∷ʳ arg (arg-info visible relevant) arg′) -- keep existing arguments!
+{-# CATCHALL #-}
+tm app arg′ = tm
+#+end_src
+
+*** Reify ℕ term encodings as ℕ values
+#+begin_src agda :tangle Context.agda
+toℕ : Term → ℕ
+toℕ (lit (nat n)) = n
+{-# CATCHALL #-}
+toℕ _ = 0
+#+end_src
+*** The Length of a Term
+#+begin_src agda :tangle Context.agda
+arg-term : ∀ {ℓ} {A : Set ℓ} → (Term → A) → Arg Term → A
+arg-term f (arg i x) = f x
+
+{-# TERMINATING #-}
+lengthₜ : Term → ℕ
+lengthₜ (var x args)      = 1 + sum (List.map (arg-term lengthₜ ) args)
+lengthₜ (con c args)      = 1 + sum (List.map (arg-term lengthₜ ) args)
+lengthₜ (def f args)      = 1 + sum (List.map (arg-term lengthₜ ) args)
+lengthₜ (lam v (abs s x)) = 1 + lengthₜ x
+lengthₜ (pat-lam cs args) = 1 + sum (List.map (arg-term lengthₜ ) args)
+lengthₜ (Π[ x ∶ A ] Bx)   = 1 + lengthₜ Bx
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+lengthₜ t = 0
+
+_ : lengthₜ (quoteTerm (Σ x ∶ ℕ • x ≡ x)) ≡ 10
+_ = refl
+#+end_src
+
+*** Decreasing Debrujin Indices
+#+begin_src agda :tangle Context.agda
+var-dec₀ : (fuel : ℕ) → Term → Term
+var-dec₀ zero t  = t
+-- var-dec₀ (suc n) (var Fin.0F args) = var Fin.0F args
+-- Let's use an “impossible” term.
+var-dec₀ (suc n) (var zero args)    = def (quote ⊥) []
+var-dec₀ (suc n) (var (suc x) args)   = var x args
+var-dec₀ (suc n) (con c args)         = con c (map-Args (var-dec₀ n) args)
+var-dec₀ (suc n) (def f args)         = def f (map-Args (var-dec₀ n) args)
+var-dec₀ (suc n) (lam v (abs s x))    = lam v (abs s (var-dec₀ n x))
+var-dec₀ (suc n) (pat-lam cs args)    = pat-lam cs (map-Args (var-dec₀ n) args)
+var-dec₀ (suc n) (Π[ s ∶ arg i A ] B) = Π[ s ∶ arg i (var-dec₀ n A) ] var-dec₀ n B
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+var-dec₀ n t = t
+
+var-dec : Term → Term
+var-dec t = var-dec₀ (lengthₜ t) t
+
+_ :   var-dec (quoteTerm ((X : Set) → X))
+    ≡ pi (vArg (sort (lit 0))) (abs "X" (def (quote ⊥) []))
+_ = refl
+#+end_src
+
+In the paper proper, ~var-dec~ was mentioned once under the name ~⇊~.
+
+** Context Monad
+#+begin_src agda :tangle Context.agda
+Context = λ ℓ → ℕ → Set ℓ
+
+infix -1000 ‵_
+‵_ : ∀ {ℓ} → Set ℓ → Context ℓ
+‵ S = λ _ → S
+
+End : ∀ {ℓ} → Context ℓ
+End = ‵ ⊤
+
+End₀ = End {ℓ₀}
+
+_>>=_ : ∀ {a b}
+      → (Γ : Set a)  -- Main diference
+      → (Γ → Context b)
+      → Context (a ⊍ b)
+(Γ >>= f) ℕ.zero  = Σ γ ∶ Γ • f γ 0
+(Γ >>= f) (suc n) = (γ : Γ) → f γ n
+#+end_src
+
+** DynamicSystem Context
+#+begin_src agda :tangle Context.agda
+DynamicSystem : Context (ℓsuc Level.zero)
+DynamicSystem = do X ← Set
+                   z ← X
+                   s ← (X → X)
+                   End {Level.zero}
+
+-- Records with 𝓃-Parameters, 𝓃 : 0..3
+A B C D : Set₁
+A = DynamicSystem 0 -- Σ X ∶ Set  • Σ z ∶ X  • Σ s ∶ X → X  • ⊤
+B = DynamicSystem 1 --  (X ∶ Set) → Σ z ∶ X  • Σ s ∶ X → X  • ⊤
+C = DynamicSystem 2 --  (X ∶ Set)    (z ∶ X) → Σ s ∶ X → X  • ⊤
+D = DynamicSystem 3 --  (X ∶ Set)    (z ∶ X) →  (s ∶ X → X) → ⊤
+
+_ : A ≡ (Σ X ∶ Set  • Σ z ∶ X  • Σ s ∶ (X → X)  • ⊤) ; _ = refl
+_ : B ≡ (Π X ∶ Set  • Σ z ∶ X  • Σ s ∶ (X → X)  • ⊤) ; _ = refl
+_ : C ≡ (Π X ∶ Set  • Π z ∶ X  • Σ s ∶ (X → X)  • ⊤) ; _ = refl
+_ : D ≡ (Π X ∶ Set  • Π z ∶ X  • Π s ∶ (X → X)  • ⊤) ; _ = refl
+
+stability : ∀ {n} →   DynamicSystem (3 + n)
+                   ≡ DynamicSystem  3
+stability = refl
+
+B-is-empty : ¬ B
+B-is-empty b = proj₁( b ⊥)
+
+𝒩₀ : DynamicSystem 0
+𝒩₀ = ℕ , 0 , suc , tt
+
+𝒩 : DynamicSystem 0
+𝒩 = ⟨ ℕ , 0 , suc ⟩
+
+B-on-ℕ : Set
+B-on-ℕ = let X = ℕ in Σ z ∶ X  • Σ s ∶ (X → X)  • ⊤
+
+ex : B-on-ℕ
+ex = ⟨ 0 , suc ⟩
+
+idτ : Set₁
+idτ = ∀ (X : Set) (e : X) → X
+
+id₁ : ∀ (X : Set) → Set
+id₁ = λ (X : Set) → ((e : X) → X)
+
+id₂ : ∀ (X : Set) (e : X) → Set
+id₂ = λ (X : Set) (e : X) → X
+#+end_src
+
+** Π→λ and :waist
+#+begin_src agda :tangle Context.agda
+Π→λ-helper : Term → Term
+Π→λ-helper (pi  a b)         = lam visible b
+Π→λ-helper (lam a (abs x y)) = lam a (abs x (Π→λ-helper y))
+{-# CATCHALL #-}
+Π→λ-helper x = x
+
+macro
+  Π→λ : Term → Term → TC Unit.⊤
+  Π→λ tm goal = normalise tm >>=ₘ λ tm′ → unify (Π→λ-helper tm′) goal
+
+_ : Π→λ idτ ≡ id₁
+_ = refl
+
+-- Too much yellow, sort constraints cannot be solved. It's okay.
+-- _ : Π→λ (Π→λ idτ) ≡ id₂
+-- _ = refl
+
+_ : Π→λ (DynamicSystem 1) ≡ λ γ → Σ γ (λ _ → Σ ((x : γ) → γ) (λ _ → ⊤))
+_ = refl
+
+CC : ∀ (X : Set) (x : X) → Set
+CC = Π→λ (Π→λ (DynamicSystem 2))   -- c.f., C above and C′ below.
+
+waist-helper : ℕ → Term → Term
+waist-helper zero t    = t
+-- waist-helper (suc n) t = waist-helper n (Π→λ t)
+waist-helper (suc n) t = waist-helper n (Π→λ-helper t)
+
+macro
+  _:waist_ : Term → Term → Term → TC Unit.⊤
+  _:waist_ t 𝓃 goal =      normalise (t app 𝓃)
+                      >>=ₘ λ t′ → unify (waist-helper (toℕ 𝓃) t′) goal
+
+A′ : Set₁
+B′ : ∀ (X : Set) → Set
+C′ : ∀ (X : Set) (x : X) → Set
+D′ : ∀ (X : Set) (x : X) (s : X → X) → Set
+
+A′ = DynamicSystem :waist 0
+B′ = DynamicSystem :waist 1
+C′ = DynamicSystem :waist 2
+D′ = DynamicSystem :waist 3
+
+_ : DynamicSystem 0 ≡ DynamicSystem :waist 0
+_ = refl
+
+-- _ : ∀ {ℓ} {Γ : Context (ℓsuc ℓ)} → Γ 0 ≡ {! Γ :waist 0 !}
+-- _ = refl
+
+𝒩⁰ : A′
+𝒩⁰ = ⟨ ℕ , 0 , suc ⟩
+
+𝒩¹ : B′ ℕ
+𝒩¹ = ⟨ 0 , suc ⟩
+
+𝒩² : C′ ℕ 0
+𝒩² = ⟨ suc ⟩
+
+𝒩³ : D′ ℕ 0 suc
+𝒩³ = ⟨⟩
+#+end_src
+
+** COMMENT Collection Context
+#+begin_src agda :tangle Context.agda
+Collection : ∀ ℓ → Context (ℓsuc ℓ)
+Collection ℓ = do
+  Elem    ← Set ℓ
+  Carrier ← Set ℓ
+  insert  ← (Elem → Carrier → Carrier)
+  ∅       ← Carrier
+  isEmpty ← (Carrier → Bool)
+  insert-nonEmpty ← ∀ {e : Elem} {x : Carrier} → isEmpty (insert e x) ≡ false
+  End {ℓ}
+
+ListColl : {ℓ : Level} → Collection ℓ 1
+ListColl E = ⟨ List E
+             , _∷_
+             , []
+             , (λ { [] → true; _ → false})
+             , (λ {x} {x = x₁} → refl)
+             ⟩
+
+ℕCollection = (Collection ℓ₀ :waist 2)
+                ("Elem"    ≔ Digit)
+                ("Carrier" ≔ ℕ)
+--
+-- i.e., (Collection ℓ₀ :waist 2) Digit ℕ
+
+stack : ℕCollection
+stack = ⟨ "insert"      ≔ (λ d s → suc (10 * s + #→ℕ d))
+        , "empty stack" ≔ 0
+        , "is-empty"    ≔ (λ { 0 → true; _ → false})
+        -- Properties --
+        , (λ {d : Digit} {s : ℕ} → refl {x = false})
+        ⟩
+#+end_src
+
+** Field projections
+#+begin_src agda :tangle Context.agda
+Field₀ : ℕ → Term → Term
+Field₀ zero c    = def (quote proj₁) (arg (arg-info visible relevant) c ∷ [])
+Field₀ (suc n) c = Field₀ n (def (quote proj₂) (arg (arg-info visible relevant) c ∷ []))
+
+macro
+  Field : ℕ → Term → Term → TC Unit.⊤
+  Field n t goal = unify goal (Field₀ n t)
+#+end_src
+
+** COMMENT Elem, Carrier, insert projections
+#+begin_src agda :tangle Context.agda
+Elem      : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
+Elem      = λ C   → Field 0 C
+
+Carrier   : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
+Carrier₁  : ∀ {ℓ} → Collection ℓ 1 → (γ : Set ℓ) → Set ℓ
+Carrier₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → Set ℓ
+
+Carrier   = λ C   → Field 1 C
+Carrier₁  = λ C γ → Field 0 (C γ)
+Carrier₁′ = λ C   → Field 0 C
+
+insert   : ∀ {ℓ} (C : Collection ℓ 0) → (Elem C → Carrier C → Carrier C)
+insert₁  : ∀ {ℓ} (C : Collection ℓ 1) (γ : Set ℓ) →  γ → Carrier₁ C γ → Carrier₁ C γ
+insert₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → γ → Carrier₁′ C → Carrier₁′ C
+
+insert    = λ C   → Field 2 C
+insert₁   = λ C γ → Field 1 (C γ)
+insert₁′  = λ C   → Field 1 C
+
+insert₂  : ∀ {ℓ} (C : Collection ℓ 2) (El Cr : Set ℓ) → El → Cr → Cr
+insert₂′ : ∀ {ℓ} {El Cr : Set ℓ} (C : (Collection ℓ :waist 2) El Cr) → El → Cr → Cr
+
+insert₂ = λ C El Cr → Field 0 (C El Cr)
+insert₂′ = λ C → Field 0 C
+#+end_src
+
+** Termtypes
+#+begin_src agda :tangle Context.agda
+{-# NO_POSITIVITY_CHECK #-}
+data Fix {ℓ} (F : Set ℓ → Set ℓ) : Set ℓ where
+  μ : F (Fix F) → Fix F
+
+D₁ = DynamicSystem 0
+
+1-records : D₁ ≡ (Σ X ∶ Set • Σ z ∶ X • Σ s ∶ (X → X) • ⊤)
+1-records = refl
+
+D₂ = DynamicSystem :waist 1
+
+2-funcs : D₂ ≡ (λ (X : Set) → Σ z ∶ X • Σ s ∶ (X → X) • ⊤)
+2-funcs = refl
+
+-- useful to motivate defn of sources₀
+_ :   quoteTerm (∀ {x : ℕ} → ℕ)
+    ≡ pi (arg (arg-info hidden relevant) (quoteTerm ℕ)) (abs "x" (quoteTerm ℕ))
+_ = refl
+
+sources₀ : Term → Term
+-- Otherwise:
+sources₀ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) = def (quote _×_) (vArg A ∷
+  vArg (def (quote _×_) (vArg (var-dec Ba) ∷ vArg (var-dec (var-dec (sources₀ Cab))) ∷ [])) ∷ [])
+  -- sources₀ (Π[ a ∶ arg i A ] (Π[ b ∶ Ba ] Cab)) = Π[ a ∶ arg i A ] Π[ b ∶ Ba ] sources₀ Cab
+-- Design descision: Types starting with implicit arguments are ‘invariants’, not ‘constructors’ ⇐ Couldn't do this.
+sources₀ (Π[ a ∶ arg (arg-info hidden _) A ] Ba) = quoteTerm 𝟘
+-- Another attempt: If it has a “≡” then an invariant.
+-- sources₀ (Π[ a ∶ arg i A ] (def (quote _≡_) args)) = quoteTerm 𝟘
+sources₀ (Π[ x ∶ arg i A ] Bx) = A
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+sources₀ t = quoteTerm 𝟙
+
+{-# TERMINATING #-}
+sources₁ : Term → Term
+sources₁ (Π[ a ∶ arg (arg-info hidden _) A ] Ba) = quoteTerm 𝟘
+sources₁ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) = def (quote _×_) (vArg A ∷
+  vArg (def (quote _×_) (vArg (var-dec Ba) ∷ vArg (var-dec (var-dec (sources₀ Cab))) ∷ [])) ∷ [])
+-- sources₁ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) = def (quote _×_) (vArg A ∷ vArg Ba ∷ [])
+sources₁ (Π[ x ∶ arg i A ] Bx) = A
+sources₁ (def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ τ ∷ body)) = def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ map-Arg sources₀ τ ∷ List.map (map-Arg sources₁) body)
+sources₁ (def (quote ⊤) _) = def (quote 𝟘) [] -- This function introduces 𝟙s, so let's drop any old occurances a la 𝟘.
+sources₁ (lam v (abs s x))     = lam v (abs s (sources₁ x))
+sources₁ (var x args) = var x (List.map (map-Arg sources₁) args)
+sources₁ (con c args) = con c (List.map (map-Arg sources₁) args)
+sources₁ (def f args) = def f (List.map (map-Arg sources₁) args)
+sources₁ (pat-lam cs args) = pat-lam cs (List.map (map-Arg sources₁) args)
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+sources₁ t = t
+
+macro
+  sources : Term → Term → TC Unit.⊤
+  sources tm goal = normalise tm >>=ₘ λ tm′ → unify (sources₁ tm′) goal
+
+_ : sources (ℕ → Set) ≡ ℕ ; _ = refl
+-- _ : sources (λ (x : (ℕ → Fin 3)) → ℕ) ≡ λ (x : ℕ) → ℕ ; _ = refl
+_ : sources (Σ x ∶ (ℕ → Fin 3) • ℕ) ≡ (Σ x ∶ ℕ • ℕ) ; _ = refl
+_ : ∀ {ℓ : Level} {A B C : Set} → sources (Σ x ∶ (A → B) • C) ≡ (Σ x ∶ A • C) ; _ = refl
+-- MA: Heterogenous levels wont work; e.g., A ≔ ℕ crashes.
+_ : sources (Fin 1 → Fin 2 → Fin 3) ≡ (Σ _ ∶ Fin 1 • Fin 2 × 𝟙) ; _ = refl
+_ : sources (Σ f ∶ (Fin 1 → Fin 2 → Fin 3 → Fin 4) • Fin 5) ≡ (Σ f ∶ (Fin 1 × Fin 2 × Fin 3) • Fin 5) ; _ = refl
+_ : ∀ {A B C : Set} → sources (A → B → C) ≡ (A × B × 𝟙) ; _ = refl
+_ : ∀ {A B C D E : Set} → sources (A → B → C → D → E) ≡ Σ A (λ _ → Σ B (λ _ → Σ C (λ _ → Σ D (λ _ → ⊤)))) ; _ = refl
+-- Not desirable:
+-- _ : sources (∀ {x : ℕ} → x ≡ x) ≡ ℕ ; _ = refl
+-- Design descision: Types starting with implicit arguments are ‘invariants’, not ‘constructors’
+_ : sources (∀ {x : ℕ} → x ≡ x) ≡ 𝟘 ; _ = refl -- one implicit
+_ : sources (∀ {x y z : ℕ} → x ≡ y) ≡ 𝟘 ; _ = refl   -- multiple implicits
+
+D₃ = sources D₂
+
+3-sources : D₃ ≡ λ (X : Set) → Σ z ∶ 𝟙 • Σ s ∶ X • 𝟘
+3-sources = refl
+
+{-# TERMINATING #-}
+Σ→⊎₀ : Term → Term
+Σ→⊎₀ (def (quote Σ) (𝒽₁ ∷ 𝒽₀ ∷ arg i A ∷ arg i₁ (lam v (abs s x)) ∷ []))
+  =  def (quote _⊎_) (𝒽₁ ∷ 𝒽₀ ∷ arg i A ∷ vArg (Σ→⊎₀ (var-dec x)) ∷ [])
+  -- def (quote _⊎_) (𝒽₁ ∷ 𝒽₀ ∷ arg i (var-dec A) ∷ vArg (Σ→⊎₀ (var-dec x)) ∷ [])
+Σ→⊎₀ (def (quote ⊤) _) = def (quote ⊥) [] -- Interpret “End” in do-notation to be an empty, impossible, constructor.
+ -- Walk under λ's and Π's.
+Σ→⊎₀ (lam v (abs s x)) = lam v (abs s (Σ→⊎₀ x))
+Σ→⊎₀ (Π[ x ∶ A ] Bx) = Π[ x ∶ A ] Σ→⊎₀ Bx
+{-# CATCHALL #-}
+Σ→⊎₀ t = t
+
+macro
+  Σ→⊎ : Term → Term → TC Unit.⊤
+  Σ→⊎ tm goal = normalise tm >>=ₘ λ tm′ → unify (Σ→⊎₀ tm′) goal
+
+-- _ :   Σ→⊎ (Σ x ∶ ℕ • ⊤ {ℓ₀})
+--     ≡ (ℕ ⊎ ⊥)
+-- _ = refl
+
+-- Fails due to the ⊥-choice above.
+-- _ :   ∀ {C : Set} → Σ→⊎ (Σ x ∶ C • Σ y ∶ C • ⊤ {ℓ₀})
+--                   ≡ (C ⊎ C ⊎ ⊤)
+-- _ = refl
+
+-- Unit tests
+_ : Σ→⊎ (Π X ∶ Set • (X → X))     ≡ (Π X ∶ Set • (X → X)); _ = refl
+_ : Σ→⊎ (Π X ∶ Set • Σ s ∶ X • X) ≡ (Π X ∶ Set • X ⊎ X)  ; _ = refl
+_ : Σ→⊎ (Π X ∶ Set • Σ s ∶ (X → X) • X) ≡ (Π X ∶ Set • (X → X) ⊎ X)  ; _ = refl
+_ : Σ→⊎ (Π X ∶ Set • Σ z ∶ X • Σ s ∶ (X → X) • ⊤ {ℓ₀}) ≡ (Π X ∶ Set • X ⊎ (X → X) ⊎ ⊥)  ; _ = refl
+
+D₄ = Σ→⊎ D₃
+
+4-unions : D₄ ≡ λ X → 𝟙 ⊎ X ⊎ 𝟘
+4-unions = refl
+
+𝔻 = Fix D₄
+
+-- Pattern synonyms for more compact presentation
+pattern zeroD  = μ (inj₁ tt)       -- : 𝔻
+pattern sucD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
+
+oh : 𝔻 → ℕ
+oh zeroD    = 0
+oh (sucD x) = suc (oh x)
+
+ho : ℕ → 𝔻
+ho zero    = zeroD
+ho (suc n) = sucD (ho n)
+
+oh∘ho : ∀ n → oh (ho n) ≡ n
+oh∘ho zero    = refl
+oh∘ho (suc n) = cong suc (oh∘ho n)
+
+ho∘oh : ∀ d → ho (oh d) ≡ d
+ho∘oh zeroD    = refl
+ho∘oh (sucD x) = cong sucD (ho∘oh x)
+#+end_src
+
+** ~termtype~
+#+begin_src agda :tangle Context.agda
+
+Inj₀ : ℕ → Term → Term
+Inj₀ zero c    = con (quote inj₁) (arg (arg-info visible relevant) c ∷ [])
+Inj₀ (suc n) c = con (quote inj₂) (vArg (Inj₀ n c) ∷ [])
+
+-- Duality!
+-- 𝒾-th projection: proj₁ ∘ (proj₂ ∘ ⋯ ∘ proj₂)
+-- 𝒾-th injection:  (inj₂ ∘ ⋯ ∘ inj₂) ∘ inj₁
+
+macro
+  Inj : ℕ → Term → Term → TC Unit.⊤
+  Inj n t goal = unify goal (Inj₀ n t)
+
+macro
+  termtype : Term → Term → TC Unit.⊤
+  termtype tm goal =
+                normalise tm
+           >>=ₘ λ tm′ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ tm′))) ∷ []))
+#+end_src
+
+** Monoids
+#+begin_src agda :tangle Context.agda
+Monoid : ∀ ℓ → Context (ℓsuc ℓ)
+Monoid ℓ = do Carrier ← Set ℓ
+              Id      ← Carrier
+              _⊕_     ← (Carrier → Carrier → Carrier)
+              leftId  ← ∀ {x : Carrier} → x ⊕ Id ≡ x
+              rightId ← ∀ {x : Carrier} → Id ⊕ x ≡ x
+              assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
+              End {ℓ}
+#+end_src
+
+
+#+begin_src agda :tangle Context.agda
+𝕄 : Set
+𝕄 = termtype (Monoid ℓ₀ :waist 1)
+{- ie Fix (λ X → 𝟙         -- Id, nil leaf
+               ⊎ X × X × 𝟙 -- _⊕_, branch
+               ⊎ 𝟘         -- src of leftId
+               ⊎ 𝟘         -- src of rightId
+               ⊎ X × X × 𝟘 -- src of assoc
+               ⊎ 𝟘)        -- the “End {ℓ}”
+-}
+
+-- Pattern synonyms for more compact presentation
+pattern emptyM      = μ (inj₁ tt)                      -- : 𝕄
+pattern branchM l r = μ (inj₂ (inj₁ (l , r , tt)))     -- : 𝕄 → 𝕄 → 𝕄
+pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a))))  -- absurd values of 𝟘
+
+data TreeSkeleton : Set where
+  empty  : TreeSkeleton
+  branch : TreeSkeleton → TreeSkeleton → TreeSkeleton
+
+𝕄→Tree : 𝕄 → TreeSkeleton
+𝕄→Tree emptyM = empty
+𝕄→Tree (branchM l r) = branch (𝕄→Tree l) (𝕄→Tree r)
+𝕄→Tree (absurdM (inj₁ ()))
+𝕄→Tree (absurdM (inj₂ ()))
+
+𝕄←Tree : TreeSkeleton → 𝕄
+𝕄←Tree empty = emptyM
+𝕄←Tree (branch l r) = branchM (𝕄←Tree l) (𝕄←Tree r)
+
+𝕄←Tree∘𝕄→Tree : ∀ m → 𝕄←Tree (𝕄→Tree m) ≡ m
+𝕄←Tree∘𝕄→Tree emptyM = refl
+𝕄←Tree∘𝕄→Tree (branchM l r) = cong₂ branchM (𝕄←Tree∘𝕄→Tree l) (𝕄←Tree∘𝕄→Tree r)
+𝕄←Tree∘𝕄→Tree (absurdM (inj₁ ()))
+𝕄←Tree∘𝕄→Tree (absurdM (inj₂ ()))
+
+𝕄→Tree∘𝕄←Tree : ∀ t → 𝕄→Tree (𝕄←Tree t) ≡ t
+𝕄→Tree∘𝕄←Tree empty = refl
+𝕄→Tree∘𝕄←Tree (branch l r) = cong₂ branch (𝕄→Tree∘𝕄←Tree l) (𝕄→Tree∘𝕄←Tree r)
+
+-- “a pointed set that contains Ξ” ─c.f., “a group over Ξ”
+#+end_src
+
+** ~:kind~
+#+begin_src agda :tangle Context.agda
+data Kind : Set where
+  ‵record    : Kind
+  ‵typeclass : Kind
+  ‵data      : Kind
+
+{- Nope: Since :waist may return type constructors, not sets!
+_:kind_ : ∀ {ℓ} → Context ℓ → Kind → Set ℓ
+𝒞 :kind ‵record    = 𝒞 :waist 0
+𝒞 :kind ‵typeclass = 𝒞 :waist 1
+𝒞 :kind ‵data      = termtype (𝒞 :waist 1)
+-}
+macro
+  _:kind_ : Term → Term → Term → TC Unit.⊤
+  _:kind_ t (con (quote ‵record) _)    goal = normalise (t app (quoteTerm 0))
+                      >>=ₘ λ t′ → unify (waist-helper 0 t′) goal
+  _:kind_ t (con (quote ‵typeclass) _) goal = normalise (t app (quoteTerm 1))
+                      >>=ₘ λ t′ → unify (waist-helper 1 t′) goal
+  _:kind_ t (con (quote ‵data) _) goal = normalise (t app (quoteTerm 1))
+                      >>=ₘ λ t′ → normalise (waist-helper 1 t′)
+                      >>=ₘ λ t″ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ t″))) ∷ []))
+  _:kind_ t _ goal = unify t goal
+
+-- _⟴_ : ∀ {a b} {A : Set a} {B : Set b} → A → (A → B) → B
+-- x ⟴ f = f x
+#+end_src
+
+** COMMENT Other experiments
+#+begin_src agda :tangle Context.agda
+--------------------------------------------------------------------------------
+
+-- termtype (PointedSet) ≅ ⊤ !
+One  : Context (ℓsuc ℓ₀)
+One      = do Carrier ← Set ℓ₀
+              point  ← Carrier
+              End {ℓ₀}
+
+𝕆𝕟𝕖 : Set
+𝕆𝕟𝕖 = termtype (One :waist 1)
+
+case₁ : 𝕆𝕟𝕖 → Set
+case₁ emptyM = 𝟙
+
+-- Note: “termtype : UnaryFunctor → Type”
+
+--------------------------------------------------------------------------------
+
+-- From simple graphs (relations) to a syntax about them:
+-- One describes a simple graph by presenting edges as pairs of vertices!
+
+PointedOver₂  : Set → Context (ℓsuc ℓ₀)
+PointedOver₂ Ξ    = do Carrier ← Set ℓ₀
+                       relation ← (Ξ → Ξ → Carrier)
+                       End {ℓ₀}
+
+ℙ₂ : Set → Set
+ℙ₂ X = termtype (PointedOver₂ X :waist 1)
+
+
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+case₂ : ∀ {X} → ℙ₂ X → Set₁
+case₂ (x ⇌ y) = Set
+
+--------------------------------------------------------------------------------
+
+-- No ‘constants’, whence a type of inifinitely branching terms.
+PointedOver₃  : Set → Context (ℓ₀)
+PointedOver₃ Ξ    = do relation ← (Ξ → Ξ → Ξ)
+                       End {ℓ₀}
+
+ℙ₃ : Set
+ℙ₃ = termtype (λ X → PointedOver₃ X 0)
+
+-- case₃ : ℙ₃ → Set₁
+-- case₃ (px ⇌ py) = {!!}
+
+--------------------------------------------------------------------------------
+
+PointedOver₄  : Context (ℓsuc ℓ₀)
+PointedOver₄       = do Ξ ← Set
+                        Carrier ← Set ℓ₀
+                        relation ← (Ξ → Ξ → Carrier)
+                        End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₄ : Set → Set
+ℙ₄ X = termtype ((PointedOver₄ :waist 2) X)
+
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+case₄ : ∀ {X} → ℙ₄ X → Set₁
+case₄ (x ⇌ y) = Set
+
+-- Claim: Mention in paper.
+--
+--    P₁ : Set → Context = λ Ξ → do ⋯ End
+-- ≅  P₂ :waist 1
+-- where P₂ : Context = do Ξ ← Set; ⋯ End
+
+--------------------------------------------------------------------------------
+
+{- Yellow:
+
+PointedOver₅  : Context (ℓsuc ℓ₀)
+PointedOver₅   = do One ← Set
+                    Two ← Set
+                    Three ← (One → Two → Set)
+                    End {ℓ₀}
+
+ℙ₅ : Set → Set₁
+ℙ₅ X = termtype ((PointedOver₅ :waist 2) X)
+-- Fix (λ Two → One × Two)
+
+pattern _∷₅_ x y = μ (inj₁ (x , y , tt))
+
+case₅ : ∀ {X} → ℙ₅ X → Set₁
+case₅ (x ∷₅ xs) = Set
+
+-}
+
+--------------------------------------------------------------------------------
+
+{-- Dependent sums
+
+PointedOver₆  : Context ℓ₁
+PointedOver₆ = do Sort ← Set
+                  Carrier ← (Sort → Set)
+                  End {ℓ₀}
+
+ℙ₆ : Set₁
+ℙ₆ = termtype ((PointedOver₆ :waist 1) )
+-- Fix (λ X → X)
+
+-}
+
+--------------------------------------------------------------------------------
+
+-- Distinuighed subset algebra
+
+open import Data.Bool renaming (Bool to 𝔹)
+
+{-
+PointedOver₇  : Context (ℓsuc ℓ₀)
+PointedOver₇       = do Index ← Set
+                        Is    ← (Index → 𝔹)
+                        End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₇ : Set → Set
+ℙ₇ X = termtype (λ (_ : Set) → (PointedOver₇ :waist 1) X)
+-- ℙ₁ X ≅ X
+
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+case₇ : ∀ {X} → ℙ₇ X → Set
+case₇ {X} (μ (inj₁ x)) = X
+
+-}
+
+--------------------------------------------------------------------------------
+
+-- Add to paper: Another PF primitive is :level, which we have via type inference xD
+
+--------------------------------------------------------------------------------
+
+-- indexed unary algebras; i.e., “actions”
+
+PointedOver₈  : Context (ℓsuc ℓ₀)
+PointedOver₈       = do Index     ← Set
+                        Carrier   ← Set
+                        Operation ← (Index → Carrier → Carrier)
+                        End {ℓ₀}
+
+ℙ₈ : Set → Set
+ℙ₈ X = termtype ((PointedOver₈ :waist 2) X)
+
+pattern _·_ x y = μ (inj₁ (x , y , tt))
+
+case₈ : ∀ {I} → ℙ₈ I → Set₁
+case₈ (i · e) = Set
+
+-- This is just ℙ₄ again lol!
+
+--------------------------------------------------------------------------------
+
+{-
+PointedOver₉  : Context ℓ₁
+PointedOver₉       = do Carrier ← Set
+                        End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₉ : Set
+ℙ₉ = termtype (λ (X : Set) → (PointedOver₉ :waist 1) X)
+-- ≅ 𝟘 ≅ Fix (λ X → 𝟘)
+-}
+
+--------------------------------------------------------------------------------
+
+PointedOver₁₀  : Context ℓ₁
+PointedOver₁₀       = do Carrier ← Set
+                         next    ← (Carrier → Carrier)
+                         End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+ℙ₁₀ : Set
+ℙ₁₀ = termtype (λ (X : Set) → (PointedOver₁₀ :waist 1) X)
+-- Fix (λ X → X), which does not exist.
+
+#+end_src
+
+* COMMENT APPENDIX: What about the meta-language's parameters? :Maybe_Delete:
 
 Besides ~:waist~, another way to introduce parameters into a context grouping
 mechanism is to use the language's existing utility of parameterising a context
