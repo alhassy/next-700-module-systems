@@ -595,7 +595,22 @@ moving from the /type/ ~Set₁~ to the /function type/ ~Π X ∶ Set • Set~ ge
 ~DynamicSystem₀~ to something resembling ~DynamicSystem₁~, which we arrive at if we
 can obtain a /type constructor/ ~λ X ∶ Set • ⋯~. We shall refer to the latter change
 as /reification/ since the result is more concrete, it can be applied; it will be
-denoted by ~Π→λ~.
+denoted by ~Π→λ~. To clarify this subtlety, consider the following forms of the
+polymorphic identity function. Notice that ~idᵢ~ /exposes/ 𝒾-many details at the
+type level to indicate the sort it consists of. However, notice that ~id₀~ is
+a type of functions whereas ~id₁~ is a function on types. Indeed, the latter
+two are derived from the first one: ~idᵢ₊₁ = Π→λ idᵢ~ ---this is proven by
+reflexivity in the appendices.
+#+begin_src agda :tangle no
+id₀ : Set₁
+id₀ = Π X ∶ Set • Π e ∶ X • X
+
+id₁ : Π X ∶ Set • Set
+id₁ = λ (X : Set) → Π e ∶ X • X
+
+id₂ : Π X ∶ Set • Π e ∶ X • Set
+id₂ = λ (X : Set) (e : X) → X
+#+end_src
 
 Of-course, there is also the need for descriptions of values, which leads to the
 following termtypes. We shall refer to the shift from record types to algebraic
@@ -868,6 +883,8 @@ data Fix (F : Set → Set) : Set where
 
  The problem is whether we can derive ~F~ from ~DynamicSystem~.
  Let us attempt a quick calculation.
+#+name: termtypes-guide
+#+caption: Guide to termtypes
 #+BEGIN_SRC agda :tangle no
   do X ← Set; z ← X; s ← (X → X); End
 ↝{- Use existing interpretation to obtain a record. -}
@@ -1104,7 +1121,11 @@ core combinators, leaving the Agda-specific details to the appendices, it is
 also straightforward to translate the library into other dependently-typed
 languages.
 
-* APPENDICES
+* Appendices
+#+latex_header: \usepackage[toc,page]{appendix}
+#+latex:   \appendix
+
+Below is the entirety of the Context library discussed in the paper proper.
 
 #+begin_src agda :tangle Context.agda
 module Context where
@@ -1159,23 +1180,6 @@ record ⊤ {ℓ} : Set ℓ where
 𝟘 = ⊥
 #+end_src
 
-** ⟨⟩ Notation
-
-As mentioned, grouping mechanisms are declared with ~do … End~, and instances of
-them are constructed using ~⟨ … ⟩~.
-#+begin_src agda :tangle Context.agda
--- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
-infixr 5 ⟨ _⟩
-⟨⟩ : ∀ {ℓ} → ⊤ {ℓ}
-⟨⟩ = tt
-
-⟨ : ∀ {ℓ} {S : Set ℓ} → S → S
-⟨ s = s
-
-_⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × ⊤ {ℓ}
-s ⟩ = s , tt
-#+end_src
-
 ** Reflection
 
 We form a few metaprogramming utilities we would have expected to be in the
@@ -1189,10 +1193,14 @@ open import Reflection hiding (name; Type) renaming (_>>=_ to _>>=ₘ_)
 *** Single argument application
 #+begin_src agda :tangle Context.agda
 _app_ : Term → Term → Term
-(def f args) app arg′ = def f (args ∷ʳ arg (arg-info visible relevant) arg′) -- keep existing arguments!
+(def f args) app arg′ = def f (args ∷ʳ arg (arg-info visible relevant) arg′)
+(con f args) app arg′ = con f (args ∷ʳ arg (arg-info visible relevant) arg′)
 {-# CATCHALL #-}
 tm app arg′ = tm
 #+end_src
+
+Notice that we maintain existing applications:
+| ~quoteTerm (f x) app quoteTerm y~ | ≈ | ~quoteTerm (f x y)~ |
 
 *** Reify ℕ term encodings as ℕ values
 #+begin_src agda :tangle Context.agda
@@ -1217,18 +1225,23 @@ lengthₜ (Π[ x ∶ A ] Bx)   = 1 + lengthₜ Bx
 {-# CATCHALL #-}
 -- sort, lit, meta, unknown
 lengthₜ t = 0
-
+#+end_src
+Here is an example use:
+#+begin_src agda :tangle Context.agda
 _ : lengthₜ (quoteTerm (Σ x ∶ ℕ • x ≡ x)) ≡ 10
 _ = refl
 #+end_src
 
 *** Decreasing Debrujin Indices
+Given a quantification ~(⊕ x ∶ τ • fx)~, its body ~fx~ may refer to a free variable
+~x~.  If we decrement all Debrujin indices ~fx~ contains, then there would be no
+reference to ~x~.
+
 #+begin_src agda :tangle Context.agda
 var-dec₀ : (fuel : ℕ) → Term → Term
 var-dec₀ zero t  = t
--- var-dec₀ (suc n) (var Fin.0F args) = var Fin.0F args
 -- Let's use an “impossible” term.
-var-dec₀ (suc n) (var zero args)    = def (quote ⊥) []
+var-dec₀ (suc n) (var zero args)      = def (quote ⊥) []
 var-dec₀ (suc n) (var (suc x) args)   = var x args
 var-dec₀ (suc n) (con c args)         = con c (map-Args (var-dec₀ n) args)
 var-dec₀ (suc n) (def f args)         = def f (map-Args (var-dec₀ n) args)
@@ -1238,16 +1251,20 @@ var-dec₀ (suc n) (Π[ s ∶ arg i A ] B) = Π[ s ∶ arg i (var-dec₀ n A) ] 
 {-# CATCHALL #-}
 -- sort, lit, meta, unknown
 var-dec₀ n t = t
-
+#+end_src
+In the paper proper, ~var-dec~ was mentioned once under the name ~⇊~.
+#+begin_src agda :tangle Context.agda
 var-dec : Term → Term
 var-dec t = var-dec₀ (lengthₜ t) t
-
-_ :   var-dec (quoteTerm ((X : Set) → X))
-    ≡ pi (vArg (sort (lit 0))) (abs "X" (def (quote ⊥) []))
-_ = refl
 #+end_src
 
-In the paper proper, ~var-dec~ was mentioned once under the name ~⇊~.
+Notice that we made the decision that ~x~, the body of ~(⊕ x • x)~, will reduce to ~𝟘~,
+the empty type. Indeed, in such a situation the only Debrujin index cannot be
+reduced further. Here is an example:
+#+begin_src agda :tangle Context.agda
+_ : ∀ {x : ℕ} → var-dec (quoteTerm x) ≡ quoteTerm ⊥
+_ = refl
+#+end_src
 
 ** Context Monad
 #+begin_src agda :tangle Context.agda
@@ -1268,6 +1285,23 @@ _>>=_ : ∀ {a b}
       → Context (a ⊍ b)
 (Γ >>= f) ℕ.zero  = Σ γ ∶ Γ • f γ 0
 (Γ >>= f) (suc n) = (γ : Γ) → f γ n
+#+end_src
+
+** ⟨⟩ Notation
+
+As mentioned, grouping mechanisms are declared with ~do … End~, and instances of
+them are constructed using ~⟨ … ⟩~.
+#+begin_src agda :tangle Context.agda
+-- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
+infixr 5 ⟨ _⟩
+⟨⟩ : ∀ {ℓ} → ⊤ {ℓ}
+⟨⟩ = tt
+
+⟨ : ∀ {ℓ} {S : Set ℓ} → S → S
+⟨ s = s
+
+_⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × ⊤ {ℓ}
+s ⟩ = s , tt
 #+end_src
 
 ** DynamicSystem Context
@@ -1308,18 +1342,9 @@ B-on-ℕ = let X = ℕ in Σ z ∶ X  • Σ s ∶ (X → X)  • ⊤
 
 ex : B-on-ℕ
 ex = ⟨ 0 , suc ⟩
-
-idτ : Set₁
-idτ = ∀ (X : Set) (e : X) → X
-
-id₁ : ∀ (X : Set) → Set
-id₁ = λ (X : Set) → ((e : X) → X)
-
-id₂ : ∀ (X : Set) (e : X) → Set
-id₂ = λ (X : Set) (e : X) → X
 #+end_src
 
-** Π→λ and :waist
+** Π→λ
 #+begin_src agda :tangle Context.agda
 Π→λ-helper : Term → Term
 Π→λ-helper (pi  a b)         = lam visible b
@@ -1330,30 +1355,27 @@ id₂ = λ (X : Set) (e : X) → X
 macro
   Π→λ : Term → Term → TC Unit.⊤
   Π→λ tm goal = normalise tm >>=ₘ λ tm′ → unify (Π→λ-helper tm′) goal
+#+end_src
 
+** COMMENT ~idᵢ₊₁ ≈ Π→λ idᵢ~
+#+begin_src agda :tangle Context.agda
 _ : Π→λ idτ ≡ id₁
 _ = refl
-
--- Too much yellow, sort constraints cannot be solved. It's okay.
--- _ : Π→λ (Π→λ idτ) ≡ id₂
--- _ = refl
-
-_ : Π→λ (DynamicSystem 1) ≡ λ γ → Σ γ (λ _ → Σ ((x : γ) → γ) (λ _ → ⊤))
-_ = refl
-
-CC : ∀ (X : Set) (x : X) → Set
-CC = Π→λ (Π→λ (DynamicSystem 2))   -- c.f., C above and C′ below.
-
+#+end_src
+** ~_:waist_~
+#+begin_src agda :tangle Context.agda
 waist-helper : ℕ → Term → Term
 waist-helper zero t    = t
--- waist-helper (suc n) t = waist-helper n (Π→λ t)
 waist-helper (suc n) t = waist-helper n (Π→λ-helper t)
 
 macro
   _:waist_ : Term → Term → Term → TC Unit.⊤
   _:waist_ t 𝓃 goal =      normalise (t app 𝓃)
                       >>=ₘ λ t′ → unify (waist-helper (toℕ 𝓃) t′) goal
+#+end_src
 
+** DynamicSystem :waist 𝒾
+#+begin_src agda :tangle Context.agda
 A′ : Set₁
 B′ : ∀ (X : Set) → Set
 C′ : ∀ (X : Set) (x : X) → Set
@@ -1363,12 +1385,6 @@ A′ = DynamicSystem :waist 0
 B′ = DynamicSystem :waist 1
 C′ = DynamicSystem :waist 2
 D′ = DynamicSystem :waist 3
-
-_ : DynamicSystem 0 ≡ DynamicSystem :waist 0
-_ = refl
-
--- _ : ∀ {ℓ} {Γ : Context (ℓsuc ℓ)} → Γ 0 ≡ {! Γ :waist 0 !}
--- _ = refl
 
 𝒩⁰ : A′
 𝒩⁰ = ⟨ ℕ , 0 , suc ⟩
@@ -1381,6 +1397,12 @@ _ = refl
 
 𝒩³ : D′ ℕ 0 suc
 𝒩³ = ⟨⟩
+#+end_src
+
+It may be the case that ~Γ 0 ≡ Γ :waist 0~ for every context Γ.
+#+begin_src agda :tangle Context.agda
+_ : DynamicSystem 0 ≡ DynamicSystem :waist 0
+_ = refl
 #+end_src
 
 ** COMMENT Collection Context
@@ -1458,35 +1480,43 @@ insert₂′ = λ C → Field 0 C
 #+end_src
 
 ** Termtypes
-#+begin_src agda :tangle Context.agda
-{-# NO_POSITIVITY_CHECK #-}
-data Fix {ℓ} (F : Set ℓ → Set ℓ) : Set ℓ where
-  μ : F (Fix F) → Fix F
 
+Using the guide, ref:termtypes-guide, outlined in the paper proper
+we shall form ~Dᵢ~ for each stage in the calculation.
+*** Stage 1: Records
+#+begin_src agda :tangle Context.agda
 D₁ = DynamicSystem 0
 
 1-records : D₁ ≡ (Σ X ∶ Set • Σ z ∶ X • Σ s ∶ (X → X) • ⊤)
 1-records = refl
-
+#+end_src
+*** Stage 2: Parameterised Records
+#+begin_src agda :tangle Context.agda
 D₂ = DynamicSystem :waist 1
 
 2-funcs : D₂ ≡ (λ (X : Set) → Σ z ∶ X • Σ s ∶ (X → X) • ⊤)
 2-funcs = refl
+#+end_src
 
--- useful to motivate defn of sources₀
+*** Stage 3: Sources
+Let's begin with an example to motivate the definition of ~sources~.
+    #+begin_src agda :tangle Context.agda
 _ :   quoteTerm (∀ {x : ℕ} → ℕ)
     ≡ pi (arg (arg-info hidden relevant) (quoteTerm ℕ)) (abs "x" (quoteTerm ℕ))
 _ = refl
+#+end_src
 
+We now form two sources-helper utilities, although we suspect they could be
+combined into one function.
+#+begin_src agda :tangle Context.agda
 sources₀ : Term → Term
 -- Otherwise:
-sources₀ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) = def (quote _×_) (vArg A ∷
-  vArg (def (quote _×_) (vArg (var-dec Ba) ∷ vArg (var-dec (var-dec (sources₀ Cab))) ∷ [])) ∷ [])
-  -- sources₀ (Π[ a ∶ arg i A ] (Π[ b ∶ Ba ] Cab)) = Π[ a ∶ arg i A ] Π[ b ∶ Ba ] sources₀ Cab
--- Design descision: Types starting with implicit arguments are ‘invariants’, not ‘constructors’ ⇐ Couldn't do this.
+sources₀ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) =
+    def (quote _×_) (vArg A
+                    ∷ vArg (def (quote _×_)
+                                (vArg (var-dec Ba) ∷ vArg (var-dec (var-dec (sources₀ Cab))) ∷ []))
+                    ∷ [])
 sources₀ (Π[ a ∶ arg (arg-info hidden _) A ] Ba) = quoteTerm 𝟘
--- Another attempt: If it has a “≡” then an invariant.
--- sources₀ (Π[ a ∶ arg i A ] (def (quote _≡_) args)) = quoteTerm 𝟘
 sources₀ (Π[ x ∶ arg i A ] Bx) = A
 {-# CATCHALL #-}
 -- sort, lit, meta, unknown
@@ -1497,10 +1527,11 @@ sources₁ : Term → Term
 sources₁ (Π[ a ∶ arg (arg-info hidden _) A ] Ba) = quoteTerm 𝟘
 sources₁ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) = def (quote _×_) (vArg A ∷
   vArg (def (quote _×_) (vArg (var-dec Ba) ∷ vArg (var-dec (var-dec (sources₀ Cab))) ∷ [])) ∷ [])
--- sources₁ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) = def (quote _×_) (vArg A ∷ vArg Ba ∷ [])
 sources₁ (Π[ x ∶ arg i A ] Bx) = A
-sources₁ (def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ τ ∷ body)) = def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ map-Arg sources₀ τ ∷ List.map (map-Arg sources₁) body)
-sources₁ (def (quote ⊤) _) = def (quote 𝟘) [] -- This function introduces 𝟙s, so let's drop any old occurances a la 𝟘.
+sources₁ (def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ τ ∷ body))
+    = def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ map-Arg sources₀ τ ∷ List.map (map-Arg sources₁) body)
+-- This function introduces 𝟙s, so let's drop any old occurances a la 𝟘.
+sources₁ (def (quote ⊤) _) = def (quote 𝟘) []
 sources₁ (lam v (abs s x))     = lam v (abs s (sources₁ x))
 sources₁ (var x args) = var x (List.map (map-Arg sources₁) args)
 sources₁ (con c args) = con c (List.map (map-Arg sources₁) args)
@@ -1509,37 +1540,62 @@ sources₁ (pat-lam cs args) = pat-lam cs (List.map (map-Arg sources₁) args)
 {-# CATCHALL #-}
 -- sort, lit, meta, unknown
 sources₁ t = t
-
+#+end_src
+We now form the macro and some unit tests.
+#+begin_src agda :tangle Context.agda
 macro
   sources : Term → Term → TC Unit.⊤
   sources tm goal = normalise tm >>=ₘ λ tm′ → unify (sources₁ tm′) goal
 
-_ : sources (ℕ → Set) ≡ ℕ ; _ = refl
--- _ : sources (λ (x : (ℕ → Fin 3)) → ℕ) ≡ λ (x : ℕ) → ℕ ; _ = refl
-_ : sources (Σ x ∶ (ℕ → Fin 3) • ℕ) ≡ (Σ x ∶ ℕ • ℕ) ; _ = refl
-_ : ∀ {ℓ : Level} {A B C : Set} → sources (Σ x ∶ (A → B) • C) ≡ (Σ x ∶ A • C) ; _ = refl
--- MA: Heterogenous levels wont work; e.g., A ≔ ℕ crashes.
-_ : sources (Fin 1 → Fin 2 → Fin 3) ≡ (Σ _ ∶ Fin 1 • Fin 2 × 𝟙) ; _ = refl
-_ : sources (Σ f ∶ (Fin 1 → Fin 2 → Fin 3 → Fin 4) • Fin 5) ≡ (Σ f ∶ (Fin 1 × Fin 2 × Fin 3) • Fin 5) ; _ = refl
-_ : ∀ {A B C : Set} → sources (A → B → C) ≡ (A × B × 𝟙) ; _ = refl
-_ : ∀ {A B C D E : Set} → sources (A → B → C → D → E) ≡ Σ A (λ _ → Σ B (λ _ → Σ C (λ _ → Σ D (λ _ → ⊤)))) ; _ = refl
--- Not desirable:
--- _ : sources (∀ {x : ℕ} → x ≡ x) ≡ ℕ ; _ = refl
--- Design descision: Types starting with implicit arguments are ‘invariants’, not ‘constructors’
-_ : sources (∀ {x : ℕ} → x ≡ x) ≡ 𝟘 ; _ = refl -- one implicit
-_ : sources (∀ {x y z : ℕ} → x ≡ y) ≡ 𝟘 ; _ = refl   -- multiple implicits
+_ : sources (ℕ → Set) ≡ ℕ
+_ = refl
 
+_ : sources (Σ x ∶ (ℕ → Fin 3) • ℕ) ≡ (Σ x ∶ ℕ • ℕ)
+_ = refl
+
+_ : ∀ {ℓ : Level} {A B C : Set}
+  → sources (Σ x ∶ (A → B) • C) ≡ (Σ x ∶ A • C)
+_ = refl
+
+_ : sources (Fin 1 → Fin 2 → Fin 3) ≡ (Σ _ ∶ Fin 1 • Fin 2 × 𝟙)
+_ = refl
+
+_ : sources (Σ f ∶ (Fin 1 → Fin 2 → Fin 3 → Fin 4) • Fin 5)
+  ≡ (Σ f ∶ (Fin 1 × Fin 2 × Fin 3) • Fin 5)
+_ = refl
+
+_ : ∀ {A B C : Set} → sources (A → B → C) ≡ (A × B × 𝟙)
+_ = refl
+
+_ : ∀ {A B C D E : Set} → sources (A → B → C → D → E)
+                        ≡ Σ A (λ _ → Σ B (λ _ → Σ C (λ _ → Σ D (λ _ → ⊤))))
+_ = refl
+#+end_src
+Design descision: Types starting with implicit arguments are /invariants/, not /constructors/.
+#+begin_src agda :tangle Context.agda
+-- one implicit
+_ : sources (∀ {x : ℕ} → x ≡ x) ≡ 𝟘
+_ = refl
+
+-- multiple implicits
+_ : sources (∀ {x y z : ℕ} → x ≡ y) ≡ 𝟘
+_ = refl
+#+end_src
+The third stage can now be formed.
+#+begin_src agda :tangle Context.agda
 D₃ = sources D₂
 
 3-sources : D₃ ≡ λ (X : Set) → Σ z ∶ 𝟙 • Σ s ∶ X • 𝟘
 3-sources = refl
-
+#+end_src
+*** Stage 4: ~Σ→⊎~ --Replacing Products with Sums
+#+begin_src agda :tangle Context.agda
 {-# TERMINATING #-}
 Σ→⊎₀ : Term → Term
 Σ→⊎₀ (def (quote Σ) (𝒽₁ ∷ 𝒽₀ ∷ arg i A ∷ arg i₁ (lam v (abs s x)) ∷ []))
   =  def (quote _⊎_) (𝒽₁ ∷ 𝒽₀ ∷ arg i A ∷ vArg (Σ→⊎₀ (var-dec x)) ∷ [])
-  -- def (quote _⊎_) (𝒽₁ ∷ 𝒽₀ ∷ arg i (var-dec A) ∷ vArg (Σ→⊎₀ (var-dec x)) ∷ [])
-Σ→⊎₀ (def (quote ⊤) _) = def (quote ⊥) [] -- Interpret “End” in do-notation to be an empty, impossible, constructor.
+-- Interpret “End” in do-notation to be an empty, impossible, constructor.
+Σ→⊎₀ (def (quote ⊤) _) = def (quote ⊥) []
  -- Walk under λ's and Π's.
 Σ→⊎₀ (lam v (abs s x)) = lam v (abs s (Σ→⊎₀ x))
 Σ→⊎₀ (Π[ x ∶ A ] Bx) = Π[ x ∶ A ] Σ→⊎₀ Bx
@@ -1549,15 +1605,6 @@ D₃ = sources D₂
 macro
   Σ→⊎ : Term → Term → TC Unit.⊤
   Σ→⊎ tm goal = normalise tm >>=ₘ λ tm′ → unify (Σ→⊎₀ tm′) goal
-
--- _ :   Σ→⊎ (Σ x ∶ ℕ • ⊤ {ℓ₀})
---     ≡ (ℕ ⊎ ⊥)
--- _ = refl
-
--- Fails due to the ⊥-choice above.
--- _ :   ∀ {C : Set} → Σ→⊎ (Σ x ∶ C • Σ y ∶ C • ⊤ {ℓ₀})
---                   ≡ (C ⊎ C ⊎ ⊤)
--- _ = refl
 
 -- Unit tests
 _ : Σ→⊎ (Π X ∶ Set • (X → X))     ≡ (Π X ∶ Set • (X → X)); _ = refl
@@ -1569,6 +1616,12 @@ D₄ = Σ→⊎ D₃
 
 4-unions : D₄ ≡ λ X → 𝟙 ⊎ X ⊎ 𝟘
 4-unions = refl
+#+end_src
+*** Stage 5: Fixpoint and proof that ~𝔻 ≅ ℕ~
+#+begin_src agda :tangle Context.agda
+{-# NO_POSITIVITY_CHECK #-}
+data Fix {ℓ} (F : Set ℓ → Set ℓ) : Set ℓ where
+  μ : F (Fix F) → Fix F
 
 𝔻 = Fix D₄
 
@@ -1576,26 +1629,37 @@ D₄ = Σ→⊎ D₃
 pattern zeroD  = μ (inj₁ tt)       -- : 𝔻
 pattern sucD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
 
-oh : 𝔻 → ℕ
-oh zeroD    = 0
-oh (sucD x) = suc (oh x)
+to : 𝔻 → ℕ
+to zeroD    = 0
+to (sucD x) = suc (to x)
 
-ho : ℕ → 𝔻
-ho zero    = zeroD
-ho (suc n) = sucD (ho n)
+from : ℕ → 𝔻
+from zero    = zeroD
+from (suc n) = sucD (from n)
 
-oh∘ho : ∀ n → oh (ho n) ≡ n
-oh∘ho zero    = refl
-oh∘ho (suc n) = cong suc (oh∘ho n)
+to∘from : ∀ n → to (from n) ≡ n
+to∘from zero    = refl
+to∘from (suc n) = cong suc (to∘from n)
 
-ho∘oh : ∀ d → ho (oh d) ≡ d
-ho∘oh zeroD    = refl
-ho∘oh (sucD x) = cong sucD (ho∘oh x)
+from∘to : ∀ d → from (to d) ≡ d
+from∘to zeroD    = refl
+from∘to (sucD x) = cong sucD (from∘to x)
 #+end_src
 
-** ~termtype~
-#+begin_src agda :tangle Context.agda
+*** ~termtype~ and ~Inj~ macros
 
+We summarise the stages together into one macro.
+#+begin_src agda :tangle Context.agda
+macro
+  termtype : Term → Term → TC Unit.⊤
+  termtype tm goal =
+                normalise tm
+           >>=ₘ λ tm′ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ tm′))) ∷ []))
+ #+end_src
+
+It is interesting to note that in place of ~pattern~ clauses, say for languages
+that do not support them, we would resort to “fancy injections”.
+#+begin_src agda :tangle Context.agda
 Inj₀ : ℕ → Term → Term
 Inj₀ zero c    = con (quote inj₁) (arg (arg-info visible relevant) c ∷ [])
 Inj₀ (suc n) c = con (quote inj₂) (vArg (Inj₀ n c) ∷ [])
@@ -1606,16 +1670,19 @@ Inj₀ (suc n) c = con (quote inj₂) (vArg (Inj₀ n c) ∷ [])
 
 macro
   Inj : ℕ → Term → Term → TC Unit.⊤
-  Inj n t goal = unify goal (Inj₀ n t)
-
-macro
-  termtype : Term → Term → TC Unit.⊤
-  termtype tm goal =
-                normalise tm
-           >>=ₘ λ tm′ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ tm′))) ∷ []))
+  Inj n t goal = unify goal ((con (quote μ) []) app (Inj₀ n t))
 #+end_src
+With this alternative, we regain the “user chosen constructor names” for ~𝔻~:
+#+begin_src agda :tangle Context.agda
+startD : 𝔻
+startD = Inj 0 (tt {ℓ₀})
+
+nextD′ : 𝔻 → 𝔻
+nextD′ d = Inj 1 d
+ #+end_src
 
 ** Monoids
+*** Context
 #+begin_src agda :tangle Context.agda
 Monoid : ∀ ℓ → Context (ℓsuc ℓ)
 Monoid ℓ = do Carrier ← Set ℓ
@@ -1626,8 +1693,7 @@ Monoid ℓ = do Carrier ← Set ℓ
               assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
               End {ℓ}
 #+end_src
-
-
+*** Termtypes
 #+begin_src agda :tangle Context.agda
 𝕄 : Set
 𝕄 = termtype (Monoid ℓ₀ :waist 1)
@@ -1647,7 +1713,9 @@ pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a))))  -- absurd values
 data TreeSkeleton : Set where
   empty  : TreeSkeleton
   branch : TreeSkeleton → TreeSkeleton → TreeSkeleton
-
+#+end_src
+*** ~𝕄 ≅ TreeSkeleton~
+#+begin_src agda :tangle Context.agda
 𝕄→Tree : 𝕄 → TreeSkeleton
 𝕄→Tree emptyM = empty
 𝕄→Tree (branchM l r) = branch (𝕄→Tree l) (𝕄→Tree r)
@@ -1667,8 +1735,6 @@ data TreeSkeleton : Set where
 𝕄→Tree∘𝕄←Tree : ∀ t → 𝕄→Tree (𝕄←Tree t) ≡ t
 𝕄→Tree∘𝕄←Tree empty = refl
 𝕄→Tree∘𝕄←Tree (branch l r) = cong₂ branch (𝕄→Tree∘𝕄←Tree l) (𝕄→Tree∘𝕄←Tree r)
-
--- “a pointed set that contains Ξ” ─c.f., “a group over Ξ”
 #+end_src
 
 ** ~:kind~

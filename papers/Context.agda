@@ -61,7 +61,8 @@ open import Reflection hiding (name; Type) renaming (_>>=_ to _>>=ₘ_)
 
 -- Single argument application
 _app_ : Term → Term → Term
-(def f args) app arg′ = def f (args ∷ʳ arg (arg-info visible relevant) arg′) -- keep existing arguments!
+(def f args) app arg′ = def f (args ∷ʳ arg (arg-info visible relevant) arg′)
+(con f args) app arg′ = con f (args ∷ʳ arg (arg-info visible relevant) arg′)
 {-# CATCHALL #-}
 tm app arg′ = tm
 
@@ -411,7 +412,16 @@ Inj₀ (suc n) c = con (quote inj₂) (vArg (Inj₀ n c) ∷ [])
 
 macro
   Inj : ℕ → Term → Term → TC Unit.⊤
-  Inj n t goal = unify goal (Inj₀ n t)
+  Inj n t goal = unify goal ((con (quote μ) []) app (Inj₀ n t))
+
+baseD : 𝔻
+baseD = Inj 0 (tt {ℓ₀})
+
+nextD′ : 𝔻 → 𝔻
+nextD′ d = Inj 1 d
+
+_ : zeroD ≡ baseD
+_ = refl
 
 macro
   termtype : Term → Term → TC Unit.⊤
