@@ -539,7 +539,7 @@ pattern ⟨_,_⟩ x y = x , y , tt
   use Agda~citet:Norell-2007 for our examples.
 
   Concretely, suppose we have two monoids ~(M₁, _⨾₁_, Id₁)~ and ~(M₂, _⨾₂_, Id₂)~,
-  if we know @@latex:\footnote{ The propositional equality $M_1 \equiv M_2$ means the $Mᵢ$ are convertible with each
+  if we know @@latex:\!\!\footnote{ The propositional equality $M_1 \equiv M_2$ means the $Mᵢ$ are convertible with each
  other when all free variables occurring in the $Mᵢ$ are instantiated,
  and otherwise are not necessarily identical.
  A stronger equality operator cannot be expressed in Agda.} @@
@@ -962,13 +962,15 @@ thereby resulting in duplication of existing types via the universe
 encoding. This is  neither practical nor pragmatic.
 
 As such, we are left with pattern matching on the language's type formation
-primitives as the only reasonable approach. The method ~Π→λ~ is thus a macro
-@@latex: \footnote{A \emph{macro} is a function that manipulates the abstract
-syntax trees of the host language. In particular, it may take an arbitrary term,
-shuffle its syntax to provide possibly meaningless terms or terms that could not
-be formed without pattern matching on the possible syntactic constructions.}@@
-that acts on the syntactic term representations of types.  Below is main
-transformation ---the details can be found in Appendix [[sec:pi-to-lambda]].
+primitives as the only reasonable approach. The method ~Π→λ~ is thus a
+macro @@latex: \!\!\footnote{A \emph{macro} is a function that manipulates the
+abstract syntax trees of the host language. In particular, it may take an
+arbitrary term, shuffle its syntax to provide possibly meaningless terms or
+terms that could not be formed without pattern matching on the possible
+syntactic constructions.  An up to date and gentle introduction to reflection in
+Agda can be found at \citep{gentle-intro-to-reflection} }@@ that acts on the
+syntactic term representations of types.  Below is main transformation ---the
+details can be found in Appendix [[sec:pi-to-lambda]].
 #+begin_center
 #+begin_export latex
 \dbox{\texttt{Π→λ (Π a ∶ A • τ) = (λ a ∶ A • τ)}}
@@ -1161,10 +1163,10 @@ pattern startD  = μ (inj₁ tt)       -- : 𝔻
 pattern nextD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
 #+end_src
 #+latex: \noindent
-With the ~pattern~ declarations, we can actually use these more meaningful names,
-when pattern matching, instead of the seemingly daunting μ-~inj~-ections.
-For instance, we can immediately see that the natural numbers act as
-the description language for dynamical systems:
+With these ~pattern~ declarations, we can actually use the more meaningful names
+~startD~ and ~nextD~ when pattern matching, instead of the seemingly daunting
+μ-~inj~-ections.  For instance, we can immediately see that the natural numbers
+act as the description language for dynamical systems:
 #+begin_src agda :tangle no
 to : 𝔻 → ℕ
 to startD    = 0
@@ -1177,8 +1179,11 @@ from (suc n) = nextD (from n)
 
 #+latex: \noindent
 Readers whose language does not have src_agda[:exports code]{pattern} clauses
-need not despair.  With the macro @@latex:\newline \dbox{\texttt{Inj n x = μ (inj₂ ⁿ
-(inj₁ x))}}@@, we may define src_agda[:exports code]{startD = Inj 0 tt} and
+need not despair.  With the macro
+#+begin_center latex
+@@latex:\dbox{\texttt{Inj n x = μ (inj₂ ⁿ (inj₁ x))}}@@
+#+end_center
+we may define src_agda[:exports code]{startD = Inj 0 tt} and
 src_agda[:exports code]{nextD e = Inj 1 e} ---that is, constructors of termtypes
 are particular injections into the possible summands that the termtype consists
 of.  Details on this macro may be found in appendix [[sec:inj-macro]].
@@ -1192,7 +1197,7 @@ of.  Details on this macro may be found in appendix [[sec:inj-macro]].
   The PackageFormer cite:DBLP:conf/gpce/Al-hassyCK19,alhassy_thesis_proposal
   editor extension reads contexts ---in nearly the same notation as ours---
   enclosed in dedicated comments, then generates and imports Agda code from them
-  seamlessly in the background whenever typechecking transpires. The framework
+  seamlessly in the background whenever typechecking happens. The framework
   provides a fixed number of meta-primitives for producing arbitrary notions of
   grouping mechanisms, and allows arbitrary Emacs Lisp cite:10.5555/229872 to be
   invoked in the construction of complex grouping mechanisms.
@@ -1209,12 +1214,12 @@ of.  Details on this macro may be found in appendix [[sec:inj-macro]].
   | Usability Barrier        | None               | None                 |
   | Extensibility Barrier    | Lisp               | Weak Metaprogramming |
 
-  The original PackageFormer paper provided the syntax necessary to form useful
-  grouping mechanisms but was shy on the semantics of such constructs.  We have
-  chosen the names of our combinators to closely match those of PackageFormer's
-  with an aim of furnishing the mechanism with semantics by construing the
-  syntax as semantics-functions; i.e., we have a shallow embedding of
-  PackageFormer's constructs as Agda entities:
+  The PackageFormer paper cite:DBLP:conf/gpce/Al-hassyCK19 provided the syntax
+  necessary to form useful grouping mechanisms but was shy on the semantics of
+  such constructs.  We have chosen the names of our combinators to closely match
+  those of PackageFormer's with an aim of furnishing the mechanism with
+  semantics by construing the syntax as semantics-functions; i.e., we have a
+  shallow embedding of PackageFormer's constructs as Agda entities:
 
 #+caption: Contexts as a semantics for PackageFormer constructs
 | Syntax          | Semantics                    |
@@ -1232,26 +1237,34 @@ of.  Details on this macro may be found in appendix [[sec:inj-macro]].
 PackageFormer's ~_:kind_~ meta-primitive dictates how an abstract grouping
 mechanism should be viewed in terms of existing Agda syntax.  However, unlike
 PackageFormer, all of our syntax consists of legitimate Agda terms.
-Since language syntax is being manipulated, we are forced to define it as a macro:
-
+Since language syntax is being manipulated,
+we are forced to implement the ~_:kind_~ meta-primitive as a macro:
 #+begin_src agda :tangle no
 data Kind : Set where
   ‵record    : Kind
   ‵typeclass : Kind
   ‵data      : Kind
-
-𝒞 :kind ‵record    = 𝒞 0
-𝒞 :kind ‵typeclass = 𝒞 :waist 1
-𝒞 :kind ‵data      = termtype (𝒞 :waist 1)
 #+end_src
-# +latex: \noindent
-We did not expect to be able to assign a full semantics to PackageFormer's
-syntactic constructs due to Agda's substantially weak metaprogramming mechanism.
+#+latex: \vspace{1em}
+#+begin_center latex
+#+begin_export latex
+\dashbox[35em]{\texttt{𝒞 :kind ‵record    = 𝒞 0}}
+
+\dashbox[35em]{\texttt{𝒞 :kind ‵typeclass = 𝒞 :waist 1}}
+
+\dashbox[35em]{\texttt{𝒞 :kind ‵data      = termtype (𝒞 :waist 1)}}
+#+end_export
+#+end_center
+
+#+latex: \medbreak\noindent
+We did not expect to be able to define a full Agda implementation of the semantics of
+PackageFormer's
+syntactic constructs due to Agda's rather constrained metaprogramming mechanism.
 However, it is important to note that PackageFormer's Lisp extensibility
 expedites the process of trying out arbitrary grouping mechanisms ---such as
 partial-choices of pushouts and pullbacks along user-provided assignment
 functions--- since it is all either string or symbolic list manipulation. On the
-Agda side, using contexts, it would require exponentially more effort due to the
+Agda side, using contexts, it would require substantially more effort due to the
 limited reflection mechanism and the intrusion of the stringent type system.
 
 :Ignore:
