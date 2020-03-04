@@ -1250,7 +1250,6 @@ pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
 # bijective pair of functions between =𝕄= and =TreeSkeleton=.
 
 #+latex: \noindent
-
 The final entry in Table 2 is a well known correspondence that we
 can now not only formally express, but also prove to be true.
 #+begin_src agda :tangle no
@@ -1273,6 +1272,7 @@ data TreeSkeleton : Set where
   empty  : TreeSkeleton
   branch : TreeSkeleton → TreeSkeleton → TreeSkeleton
 #+end_src
+#+latex: \noindent
 Using Agda's Emacs interface, we may interactively
 case-split on values of =𝕄= until the declared patterns appear, then we associate them
 with the constructors of ~TreeSkeleton~.
@@ -1327,8 +1327,26 @@ pattern  ∅        = μ (inj₂ (inj₁ tt))
 
 to : ∀ {E} → ℂ E → List E
 to (e :: es) = e ∷ to es
-to ∅ = []
+to ∅         = []
 #+end_src
+
+It is then little trouble to show that ~to~ is invertible.  We invite the readers
+to join in on the fun and try it out themselves!
+:Hide:
+#+begin_src agda :tangle Context.agda
+from : ∀ {E} → List E → ℂ E
+from []       = ∅
+from (x ∷ xs) = x :: from xs
+
+to∘from : ∀ {E} (xs : List E) → to (from xs) ≡ xs
+to∘from []       = refl
+to∘from (x ∷ xs) = cong (x ∷_) (to∘from xs)
+
+from∘to : ∀ {E} (e : ℂ E) → from (to e) ≡ e
+from∘to (e :: es) = cong (e ::_) (from∘to es)
+from∘to ∅         = refl
+#+end_src
+:End:
 
 * COMMENT More on Collection
 #+begin_src agda :tangle Context.agda

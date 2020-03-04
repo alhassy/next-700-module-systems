@@ -568,3 +568,15 @@ pattern  ∅        = μ (inj₂ (inj₁ tt))
 to : ∀ {E} → ℂ E → List E
 to (e :: es) = e ∷ to es
 to ∅ = []
+
+from : ∀ {E} → List E → ℂ E
+from [] = ∅
+from (x ∷ xs) = x :: from xs
+
+to∘from : ∀ {E} (xs : List E) → to (from xs) ≡ xs
+to∘from []       = refl
+to∘from (x ∷ xs) = cong (x ∷_) (to∘from xs)
+
+from∘to : ∀ {E} (e : ℂ E) → from (to e) ≡ e
+from∘to (e :: es) = cong (e ::_) (from∘to es)
+from∘to ∅         = refl
