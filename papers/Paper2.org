@@ -535,7 +535,8 @@ pattern ⟨_,_⟩ x y = x , y , tt
   ~x : M₁~. However, as written, this does not type-check.  This is because
   ~_⨾₂_~ expects elements of ~M₂~ but has been given an element of ~M₁~.
   Because we have ~ceq~ in hand, we can use ~subst~ to transport things around.
-  The resulting formula then typechecks, but is hideous.
+  The resulting formula, showns as the type of ~claim~ below,
+then typechecks, but is hideous.
   ``$\mathsf{subst}$ hell'' only gets worse.  Below, we use pointed magmas for brevity,
   as the problem is the same.
 :Header:
@@ -552,7 +553,7 @@ record Magma₀ : Set₁ where
     _⨾_     : Carrier → Carrier → Carrier
     Id     : Carrier
 
-module Akward-Formulation (A B : Magma₀)
+module Awkward-Formulation (A B : Magma₀)
     (ceq : Magma₀.Carrier A ≡ Magma₀.Carrier B)
     where
       open Magma₀ A renaming (Id to Id₁; _⨾_ to _⨾₁_)
@@ -560,6 +561,8 @@ module Akward-Formulation (A B : Magma₀)
 
       claim : ∀ x → Id₂ ⨾₂ subst id ceq (x ⨾₁ Id₁) ≡ subst id ceq x
       claim = {!!}
+      {- “{!!}” stands for a “hole” in Agda,
+         needing replacement by an expression -}
 #+end_src
 It should not be this difficult to state a trivial fact.  We could make
 things artifically prettier by defining ~coe~ to be ~subst id ceq~
