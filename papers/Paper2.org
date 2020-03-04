@@ -1303,21 +1303,30 @@ Without the src_agda[:exports code]{pattern} declarations the result would
 remain true, but it would be quite difficult to believe in the correspondence
 without a machine-checked proof.
 
-To obtain trees over some ‘value type’ Ξ, one must start at the theory of
-“monoids containing a given set Ξ”.
-
-** COMMENT Collection Context
+To obtain a data structure over some ‘value type’ Ξ, one must start with
+“theories containing a given set Ξ”. For example, we could begin with the
+theory of abstract collections, then obtain lists as the associated termtype.
 #+begin_src agda :tangle Context.agda
 Collection : ∀ ℓ → Context (ℓsuc ℓ)
-Collection ℓ = do
-  Elem    ← Set ℓ
-  Carrier ← Set ℓ
-  insert  ← (Elem → Carrier → Carrier)
-  ∅       ← Carrier
-  isEmpty ← (Carrier → Bool)
-  insert-nonEmpty ← ∀ {e : Elem} {x : Carrier} → isEmpty (insert e x) ≡ false
-  End {ℓ}
+Collection ℓ = do Elem    ← Set ℓ
+                  Carrier ← Set ℓ
+                  insert  ← (Elem → Carrier → Carrier)
+                  ∅       ← Carrier
+                  End {ℓ}
 
+ℂ : Set → Set
+ℂ Elem = termtype ((Collection ℓ₀ :waist 2) Elem)
+
+pattern _::_ x xs = μ (inj₁ (x , xs , tt))
+pattern  ∅        = μ (inj₂ (inj₁ tt))
+
+to : ∀ {E} → ℂ E → List E
+to (e :: es) = e ∷ to es
+to ∅ = []
+#+end_src
+
+* COMMENT More on Collection
+#+begin_src agda :tangle Context.agda
 ListColl : {ℓ : Level} → Collection ℓ 1
 ListColl E = ⟨ List E
              , _∷_

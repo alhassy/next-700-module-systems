@@ -549,3 +549,22 @@ view (x +ₛ y) = plusₛ x y
 view 𝟘ᵥ = zeroᵥ
 view (x *ᵥ xs) = prod x (view xs)
 view (xs ·ᵥ ys) = dot (view xs) (view ys)
+
+--------------------------------------------------------------------------------
+
+Collection : ∀ ℓ → Context (ℓsuc ℓ)
+Collection ℓ = do Elem    ← Set ℓ
+                  Carrier ← Set ℓ
+                  insert  ← (Elem → Carrier → Carrier)
+                  ∅       ← Carrier
+                  End {ℓ}
+
+ℂ : Set → Set
+ℂ Elem = termtype ((Collection ℓ₀ :waist 2) Elem)
+
+pattern _::_ x xs = μ (inj₁ (x , xs , tt))
+pattern  ∅        = μ (inj₂ (inj₁ tt))
+
+to : ∀ {E} → ℂ E → List E
+to (e :: es) = e ∷ to es
+to ∅ = []
