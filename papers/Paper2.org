@@ -1199,6 +1199,167 @@ src_agda[:exports code]{nextD e = Inj 1 e} ---that is, constructors of termtypes
 are particular injections into the possible summands that the termtype consists
 of.  Details on this macro may be found in appendix [[sec:inj-macro]].
 
+* Free Datatypes from Theories
+  <<sec:free-datatypes>>
+
+Astonishingly, useful programming datatypes arise from termtypes of theories
+(contexts). That is, if src_agda[:exports code]{𝒞 : Set → Context ℓ₀} then
+src_agda[:exports code]{ℂ′ = λ X → termtype (𝒞 X :waist 1)} can be used to form
+‘free, lawless, 𝒞-instances’. For instance, earlier we witnessed that
+the termtype of dynamical systems is essentially the natural numbers.
+#+label: theories-data-structures
+#+caption: Data structures as free theories
+| Theory             | Termtype     |
+|--------------------+--------------|
+| Dynamical Systems  | ℕ            |
+| Pointed Structures | Maybe        |
+| Monoids            | Binary Trees |
+
+To obtain trees over some ‘value type’ Ξ, one must start at the theory of
+“monoids containing a given set Ξ”. Similarly, by starting at “theories of
+pointed sets over a given set Ξ”, the resulting termtype is the ~Maybe~
+type constructor ---another instructive exercise to the reader: Show that ~ℙ ≅ Maybe~.
+#+begin_src agda :tangle no
+PointedOver  : Set → Context (ℓsuc ℓ₀)
+PointedOver Ξ    = do Carrier ← Set ℓ₀
+                      point   ← Carrier
+                      embed   ← (Ξ → Carrier)
+                      End
+
+ℙ : Set → Set
+ℙ X = termtype (PointedOver X :waist 1)
+
+-- Pattern synonyms for more compact presentation
+pattern nothingP = μ (inj₁ tt)       -- : ℙ
+pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
+#+end_src
+
+ # In addition, the contents of these grouping mechanisms
+  #    may be function symbols as well as propositional invariants ---an example
+   #   is shown at the end of [[sec:monadic-notation]].
+
+
+# We present the setup
+# and leave it as an instructive exercise to the reader to present a
+# bijective pair of functions between =𝕄= and =TreeSkeleton=.
+
+#+latex: \noindent
+The final entry in the table is a well known correspondence, that we
+can, not only formally express, but also prove to be true.
+#+begin_src agda :tangle no
+𝕄 : Set
+𝕄 = termtype (Monoid ℓ₀ :waist 1)
+{- ie Fix (λ X → 𝟙         -- Id, nil leaf
+               ⊎ X × X × 𝟙 -- _⊕_, branch
+               ⊎ 𝟘         -- invariant leftId
+               ⊎ 𝟘         -- invariant rightId
+               ⊎ X × X × 𝟘 -- invariant assoc
+               ⊎ 𝟘)        -- the “End {ℓ}”
+-}
+
+-- Pattern synonyms for more compact presentation
+pattern emptyM      = μ (inj₁ tt)                      -- : 𝕄
+pattern branchM l r = μ (inj₂ (inj₁ (l , r , tt)))     -- : 𝕄 → 𝕄 → 𝕄
+pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a))))  -- absurd values of 𝟘
+
+data TreeSkeleton : Set where
+  empty  : TreeSkeleton
+  branch : TreeSkeleton → TreeSkeleton → TreeSkeleton
+#+end_src
+Using Agda's Emacs interface, we may interactively
+case-split on values of =𝕄= until the declared patterns appear, then we associate them
+with the constructors of ~TreeSkeleton~.
+#+begin_src agda :tangle Context.agda
+𝕄→Tree : 𝕄 → TreeSkeleton
+𝕄→Tree emptyM = empty
+𝕄→Tree (branchM l r) = branch (𝕄→Tree l) (𝕄→Tree r)
+𝕄→Tree (absurdM (inj₁ ()))
+𝕄→Tree (absurdM (inj₂ ()))
+
+𝕄←Tree : TreeSkeleton → 𝕄
+𝕄←Tree empty = emptyM
+𝕄←Tree (branch l r) = branchM (𝕄←Tree l) (𝕄←Tree r)
+#+end_src
+That these two operations are inverses is easily demonstrated.
+#+begin_src agda :tangle Context.agda
+𝕄←Tree∘𝕄→Tree : ∀ m → 𝕄←Tree (𝕄→Tree m) ≡ m
+𝕄←Tree∘𝕄→Tree emptyM = refl
+𝕄←Tree∘𝕄→Tree (branchM l r) = cong₂ branchM (𝕄←Tree∘𝕄→Tree l) (𝕄←Tree∘𝕄→Tree r)
+𝕄←Tree∘𝕄→Tree (absurdM (inj₁ ()))
+𝕄←Tree∘𝕄→Tree (absurdM (inj₂ ()))
+
+𝕄→Tree∘𝕄←Tree : ∀ t → 𝕄→Tree (𝕄←Tree t) ≡ t
+𝕄→Tree∘𝕄←Tree empty = refl
+𝕄→Tree∘𝕄←Tree (branch l r) = cong₂ branch (𝕄→Tree∘𝕄←Tree l) (𝕄→Tree∘𝕄←Tree r)
+#+end_src
+
+Without the src_agda[:exports code]{pattern} declarations the result would
+remain true, but it would be quite difficult to believe in the correspondence
+without a machine-checked proof.
+
+** COMMENT Collection Context
+#+begin_src agda :tangle Context.agda
+Collection : ∀ ℓ → Context (ℓsuc ℓ)
+Collection ℓ = do
+  Elem    ← Set ℓ
+  Carrier ← Set ℓ
+  insert  ← (Elem → Carrier → Carrier)
+  ∅       ← Carrier
+  isEmpty ← (Carrier → Bool)
+  insert-nonEmpty ← ∀ {e : Elem} {x : Carrier} → isEmpty (insert e x) ≡ false
+  End {ℓ}
+
+ListColl : {ℓ : Level} → Collection ℓ 1
+ListColl E = ⟨ List E
+             , _∷_
+             , []
+             , (λ { [] → true; _ → false})
+             , (λ {x} {x = x₁} → refl)
+             ⟩
+
+ℕCollection = (Collection ℓ₀ :waist 2)
+                ("Elem"    ≔ Digit)
+                ("Carrier" ≔ ℕ)
+--
+-- i.e., (Collection ℓ₀ :waist 2) Digit ℕ
+
+stack : ℕCollection
+stack = ⟨ "insert"      ≔ (λ d s → suc (10 * s + #→ℕ d))
+        , "empty stack" ≔ 0
+        , "is-empty"    ≔ (λ { 0 → true; _ → false})
+        -- Properties --
+        , (λ {d : Digit} {s : ℕ} → refl {x = false})
+        ⟩
+#+end_src
+
+** COMMENT Elem, Carrier, insert projections
+#+begin_src agda :tangle Context.agda
+Elem      : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
+Elem      = λ C   → Field 0 C
+
+Carrier   : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
+Carrier₁  : ∀ {ℓ} → Collection ℓ 1 → (γ : Set ℓ) → Set ℓ
+Carrier₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → Set ℓ
+
+Carrier   = λ C   → Field 1 C
+Carrier₁  = λ C γ → Field 0 (C γ)
+Carrier₁′ = λ C   → Field 0 C
+
+insert   : ∀ {ℓ} (C : Collection ℓ 0) → (Elem C → Carrier C → Carrier C)
+insert₁  : ∀ {ℓ} (C : Collection ℓ 1) (γ : Set ℓ) →  γ → Carrier₁ C γ → Carrier₁ C γ
+insert₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → γ → Carrier₁′ C → Carrier₁′ C
+
+insert    = λ C   → Field 2 C
+insert₁   = λ C γ → Field 1 (C γ)
+insert₁′  = λ C   → Field 1 C
+
+insert₂  : ∀ {ℓ} (C : Collection ℓ 2) (El Cr : Set ℓ) → El → Cr → Cr
+insert₂′ : ∀ {ℓ} {El Cr : Set ℓ} (C : (Collection ℓ :waist 2) El Cr) → El → Cr → Cr
+
+insert₂ = λ C El Cr → Field 0 (C El Cr)
+insert₂′ = λ C → Field 0 C
+#+end_src
+
 * Related Works
   <<sec:related-works>>
 
@@ -1293,180 +1454,6 @@ power of Emacs Lisp ---which includes a large portion of Common Lisp.  We have
 currently presented a partial semantics of PackageFormer's syntactic entities by
 presenting them here as semantic functions on contexts.
 :End:
-
-* Free Datatypes from Theories
-  <<sec:free-datatypes>>
-
-Astonishingly, useful programming datatypes arise from termtypes of theories
-(contexts). That is, if src_agda[:exports code]{𝒞 : Set → Context ℓ₀} then
-src_agda[:exports code]{ℂ′ = λ X → termtype (𝒞 X :waist 1)} can be used to form
-‘free, lawless, 𝒞-instances’. For instance, earlier we witnessed that
-the termtype of dynamical systems is essentially the natural numbers.
-#+label: theories-data-structures
-#+caption: Data structures as free theories
-| Theory             | Termtype     |
-|--------------------+--------------|
-| Dynamical Systems  | ℕ            |
-| Pointed Structures | Maybe        |
-| Monoids            | Binary Trees |
-
-To obtain trees over some ‘value type’ Ξ, one must start at the theory of
-“monoids containing a given set Ξ”. Similarly, by starting at “theories of
-pointed sets over a given set Ξ”, the resulting termtype is the ~Maybe~
-type constructor ---another instructive exercise to the reader: Show that ~ℙ ≅ Maybe~.
-#+begin_src agda :tangle no
-PointedOver  : Set → Context (ℓsuc ℓ₀)
-PointedOver Ξ    = do Carrier ← Set ℓ₀
-                      point   ← Carrier
-                      embed   ← (Ξ → Carrier)
-                      End
-
-ℙ : Set → Set
-ℙ X = termtype (PointedOver X :waist 1)
-
--- Pattern synonyms for more compact presentation
-pattern nothingP = μ (inj₁ tt)       -- : ℙ
-pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
-#+end_src
-
-#+latex: \noindent
-The final entry in the table is a well known correspondence, that we
-can, not only formally express, but also prove to be true. We present the setup
-and leave it as an instructive exercise to the reader to present a
-bijective pair of functions between =𝕄= and =TreeSkeleton=. Hint: Interactively
-case-split on values of =𝕄= until the declared patterns appear, then associate them
-with the constructors of ~TreeSkeleton~.
-#+begin_src agda :tangle no
-𝕄 : Set
-𝕄 = termtype (Monoid ℓ₀ :waist 1)
-
--- Pattern synonyms for more compact presentation
-pattern emptyM      = μ (inj₁ tt)                      -- : 𝕄
-pattern branchM l r = μ (inj₂ (inj₁ (l , r , tt)))     -- : 𝕄 → 𝕄 → 𝕄
-pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a))))  -- absurd values of 𝟘
-
-data TreeSkeleton : Set where
-  empty  : TreeSkeleton
-  branch : TreeSkeleton → TreeSkeleton → TreeSkeleton
-#+end_src
-
-** Monoids
-*** Context
-#+begin_src agda :tangle Context.agda
-Monoid : ∀ ℓ → Context (ℓsuc ℓ)
-Monoid ℓ = do Carrier ← Set ℓ
-              Id      ← Carrier
-              _⊕_     ← (Carrier → Carrier → Carrier)
-              leftId  ← ∀ {x : Carrier} → x ⊕ Id ≡ x
-              rightId ← ∀ {x : Carrier} → Id ⊕ x ≡ x
-              assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
-              End {ℓ}
-#+end_src
-*** Termtypes
-#+begin_src agda :tangle Context.agda
-𝕄 : Set
-𝕄 = termtype (Monoid ℓ₀ :waist 1)
-{- ie Fix (λ X → 𝟙         -- Id, nil leaf
-               ⊎ X × X × 𝟙 -- _⊕_, branch
-               ⊎ 𝟘         -- src of leftId
-               ⊎ 𝟘         -- src of rightId
-               ⊎ X × X × 𝟘 -- src of assoc
-               ⊎ 𝟘)        -- the “End {ℓ}”
--}
-
--- Pattern synonyms for more compact presentation
-pattern emptyM      = μ (inj₁ tt)                      -- : 𝕄
-pattern branchM l r = μ (inj₂ (inj₁ (l , r , tt)))     -- : 𝕄 → 𝕄 → 𝕄
-pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a))))  -- absurd values of 𝟘
-
-data TreeSkeleton : Set where
-  empty  : TreeSkeleton
-  branch : TreeSkeleton → TreeSkeleton → TreeSkeleton
-#+end_src
-*** ~𝕄 ≅ TreeSkeleton~
-#+begin_src agda :tangle Context.agda
-𝕄→Tree : 𝕄 → TreeSkeleton
-𝕄→Tree emptyM = empty
-𝕄→Tree (branchM l r) = branch (𝕄→Tree l) (𝕄→Tree r)
-𝕄→Tree (absurdM (inj₁ ()))
-𝕄→Tree (absurdM (inj₂ ()))
-
-𝕄←Tree : TreeSkeleton → 𝕄
-𝕄←Tree empty = emptyM
-𝕄←Tree (branch l r) = branchM (𝕄←Tree l) (𝕄←Tree r)
-
-𝕄←Tree∘𝕄→Tree : ∀ m → 𝕄←Tree (𝕄→Tree m) ≡ m
-𝕄←Tree∘𝕄→Tree emptyM = refl
-𝕄←Tree∘𝕄→Tree (branchM l r) = cong₂ branchM (𝕄←Tree∘𝕄→Tree l) (𝕄←Tree∘𝕄→Tree r)
-𝕄←Tree∘𝕄→Tree (absurdM (inj₁ ()))
-𝕄←Tree∘𝕄→Tree (absurdM (inj₂ ()))
-
-𝕄→Tree∘𝕄←Tree : ∀ t → 𝕄→Tree (𝕄←Tree t) ≡ t
-𝕄→Tree∘𝕄←Tree empty = refl
-𝕄→Tree∘𝕄←Tree (branch l r) = cong₂ branch (𝕄→Tree∘𝕄←Tree l) (𝕄→Tree∘𝕄←Tree r)
-#+end_src
-** COMMENT Collection Context
-#+begin_src agda :tangle Context.agda
-Collection : ∀ ℓ → Context (ℓsuc ℓ)
-Collection ℓ = do
-  Elem    ← Set ℓ
-  Carrier ← Set ℓ
-  insert  ← (Elem → Carrier → Carrier)
-  ∅       ← Carrier
-  isEmpty ← (Carrier → Bool)
-  insert-nonEmpty ← ∀ {e : Elem} {x : Carrier} → isEmpty (insert e x) ≡ false
-  End {ℓ}
-
-ListColl : {ℓ : Level} → Collection ℓ 1
-ListColl E = ⟨ List E
-             , _∷_
-             , []
-             , (λ { [] → true; _ → false})
-             , (λ {x} {x = x₁} → refl)
-             ⟩
-
-ℕCollection = (Collection ℓ₀ :waist 2)
-                ("Elem"    ≔ Digit)
-                ("Carrier" ≔ ℕ)
---
--- i.e., (Collection ℓ₀ :waist 2) Digit ℕ
-
-stack : ℕCollection
-stack = ⟨ "insert"      ≔ (λ d s → suc (10 * s + #→ℕ d))
-        , "empty stack" ≔ 0
-        , "is-empty"    ≔ (λ { 0 → true; _ → false})
-        -- Properties --
-        , (λ {d : Digit} {s : ℕ} → refl {x = false})
-        ⟩
-#+end_src
-
-** COMMENT Elem, Carrier, insert projections
-#+begin_src agda :tangle Context.agda
-Elem      : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
-Elem      = λ C   → Field 0 C
-
-Carrier   : ∀ {ℓ} → Collection ℓ 0 → Set ℓ
-Carrier₁  : ∀ {ℓ} → Collection ℓ 1 → (γ : Set ℓ) → Set ℓ
-Carrier₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → Set ℓ
-
-Carrier   = λ C   → Field 1 C
-Carrier₁  = λ C γ → Field 0 (C γ)
-Carrier₁′ = λ C   → Field 0 C
-
-insert   : ∀ {ℓ} (C : Collection ℓ 0) → (Elem C → Carrier C → Carrier C)
-insert₁  : ∀ {ℓ} (C : Collection ℓ 1) (γ : Set ℓ) →  γ → Carrier₁ C γ → Carrier₁ C γ
-insert₁′ : ∀ {ℓ} {γ : Set ℓ} (C : (Collection ℓ :waist 1) γ) → γ → Carrier₁′ C → Carrier₁′ C
-
-insert    = λ C   → Field 2 C
-insert₁   = λ C γ → Field 1 (C γ)
-insert₁′  = λ C   → Field 1 C
-
-insert₂  : ∀ {ℓ} (C : Collection ℓ 2) (El Cr : Set ℓ) → El → Cr → Cr
-insert₂′ : ∀ {ℓ} {El Cr : Set ℓ} (C : (Collection ℓ :waist 2) El Cr) → El → Cr → Cr
-
-insert₂ = λ C El Cr → Field 0 (C El Cr)
-insert₂′ = λ C → Field 0 C
-#+end_src
 
 * Conclusion
 
