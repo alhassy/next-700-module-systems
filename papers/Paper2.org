@@ -988,7 +988,7 @@ That is, we walk along the term tree replacing occurrences of ~Π~ with ~λ~. Fo
   λ X ∶ Set • λ s ∶ X  • Σ n ∶ X → X  • 𝟙
 #+end_src
 
-For practicality, ~_:waist_~ is a macro acting on contexts that repeats ~Π→λ~ a number of
+For practicality, ~_:waist_~ is a macro (defined in Appendix [[sec:waist]]) acting on contexts that repeats ~Π→λ~ a number of
 times in order to lift a number of field components to the parameter level.
 #+begin_center
 #+begin_export latex
@@ -1072,8 +1072,8 @@ polymorphism.
   declare concrete representations of the least fixed-point of a functor; see
   cite:DBLP:journals/jfp/Swierstra08 for more on this idea.  for more on this
   idea.  In particular, the description language ~𝔻~ for dynamical systems, below,
-  declares concrete constructors for a certain fixpoint ~F~; i.e., ~𝔻 ≅ Fix F~
-  where:
+  declares concrete constructors for a fixpoint of a certain functor ~F~; i.e., ~𝔻
+  ≅ Fix F~ where:
   #+begin_src agda :tangle no
 data 𝔻 : Set where
     startD : 𝔻
@@ -1087,18 +1087,23 @@ data Fix (F : Set → Set) : Set where
 #+end_src
 #+latex: \noindent
  The problem is whether we can derive ~F~ from ~DynamicSystem~.
- Let us attempt a quick calculation.
+ Let us attempt a quick calculation
+ sketching the necessary transformation steps (informally expressed via ``$\Rightarrow$''):
+# Avoid overfull \hboxes. E.g., \scalebox{0.9}[1]{The whole comments}
 # +name: termtypes-guide
 # +caption: Guide to termtypes
 #+BEGIN_SRC agda :tangle no
   do X ← Set; z ← X; s ← (X → X); End
 ⇒{- Use existing interpretation to obtain a record. -}
   Σ X : Set • Σ z : X • Σ s : (X → X) • 𝟙
-⇒{- Pull out the carrier, “:waist 1”, to obtain a type constructor using “Π→λ”. -}
+⇒{- Pull out the carrier, “:waist 1”,
+    to obtain a type constructor using “Π→λ”. -}
   λ X : Set • Σ z : X • Σ s : (X → X) • 𝟙
-⇒{- Termtype constructors target the declared type, so only their sources matter.
-   E.g., ‘z : X’ is a nullary constructor targeting the carrier ‘X’.
-   This introduces 𝟙 types, so any existing occurances are dropped via 𝟘. -}
+⇒{- Termtype constructors target the declared type,
+    so only their sources matter. E.g., ‘z : X’ is a
+    nullary constructor targeting the carrier ‘X’.
+    This introduces 𝟙 types, so any existing
+    occurances are dropped via 𝟘. -}
   λ X : Set • Σ z : 𝟙 • Σ s : X • 𝟘
 ⇒{- Termtypes are sums of products. -}
   λ X : Set •       𝟙   ⊎     X  ⊎ 𝟘
@@ -1136,7 +1141,7 @@ data Fix (F : Set → Set) : Set where
 #+end_export
 #+end_center
 
-#+latex: \noindent
+#+latex: \vspace{1em}\noindent
 It is instructive to visually see how ~𝔻~ is obtained from ~termtype~
 in order to demonstrate that this approach to algebraic data types
 is practical.
@@ -1804,29 +1809,28 @@ power x (suc n) = x ⊕ power x n
 * Vector Spaces
 
 #+begin_src agda
+VecSpcSig : Context ℓ₁
+VecSpcSig = do F   ← Set
+               V   ← Set
+               𝟘   ← F
+               𝟙   ← F
+               _+_ ← (F → F → F)
+               o   ← V
+               _*_ ← (F → V → V)
+               _·_ ← (V → V → F)
+               End₀
 
-VecSpc : Set → Context ℓ₁
-VecSpc F = do V   ← Set
-              𝟘   ← F
-              𝟙   ← F
-              _+_ ← (F → F → F)
-              o   ← V
-              _*_ ← (F → V → V)
-              _·_ ← (V → V → F)
-              End₀
+VSInterface : (Field Vectors : Set) → Set
+VSInterface F V = (VecSpcSig :waist 2) F V
 
-AA : Set → Set → Set
-AA F V = (VecSpc F :waist 1) V
-
-BB : Set → Set
-BB = λ X → termtype (VecSpc X :waist 1)
-{-
-Fix
-    (λ γ →
-       ⊤ ⊎
-       ⊤ ⊎
-       Σ X (λ x → Σ X (λ x₁ → ⊤)) ⊎
-       ⊤ ⊎ Σ X (λ x → Σ γ (λ x₁ → ⊤)) ⊎ Σ γ (λ x → Σ γ (λ x₁ → ⊤)) ⊎ ⊥)
+VSTerm : (Field : Set) → Set
+VSTerm = λ F → termtype ((VecSpcSig :waist 2) F)
+{- ≅  Fix (λ X → 𝟙     -- Representation of additive unit, zero
+               ⊎ 𝟙     -- Representation of multiplicative unit, one
+               ⊎ F × F -- Pair of scalars to be summed
+               ⊎ 𝟙     -- Representation of the zero vector
+               ⊎ F × X -- Pair of arguments to be scalar-producted
+               ⊎ X × X -- Pair of vectors to be dot-producted
 -}
 
 pattern 𝟘ₛ = μ (inj₁ tt)
@@ -1844,7 +1848,7 @@ data ℝ𝕚𝕟𝕘 (Scalar : Set) : Set where
   prod  : Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
   dot   : ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
 
-view : ∀ {X} → BB X → ℝ𝕚𝕟𝕘 X
+view : ∀ {F} → VSTerm F → ℝ𝕚𝕟𝕘 F
 view 𝟘ₛ = zeroₛ
 view 𝟙ₛ = oneₛ
 view (x +ₛ y) = plusₛ x y
@@ -1852,7 +1856,6 @@ view 𝟘ᵥ = zeroᵥ
 view (x *ᵥ xs) = prod x (view xs)
 view (xs ·ᵥ ys) = dot (view xs) (view ys)
 #+end_src
-
 
 * OLD Why syntax :Maybe_Delete:
   The archetype for records and termtypes ---algebraic data types--- are
@@ -2420,7 +2423,8 @@ _ : Π→λ idτ ≡ id₁
 _ = refl
 #+end_src
 ** ~_:waist_~
-#+begin_src agda :tangle Context.agda
+<<sec:waist>>
+   #+begin_src agda :tangle Context.agda
 waist-helper : ℕ → Term → Term
 waist-helper zero t    = t
 waist-helper (suc n) t = waist-helper n (Π→λ-helper t)

@@ -503,28 +503,28 @@ macro
 
 --------------------------------------------------------------------------------
 
-VecSpc : Set → Context ℓ₁
-VecSpc F = do V   ← Set
-              𝟘   ← F
-              𝟙   ← F
-              _+_ ← (F → F → F)
-              o   ← V
-              _*_ ← (F → V → V)
-              _·_ ← (V → V → F)
-              End₀
+VecSpcSig : Context ℓ₁
+VecSpcSig = do F   ← Set
+               V   ← Set
+               𝟘   ← F
+               𝟙   ← F
+               _+_ ← (F → F → F)
+               o   ← V
+               _*_ ← (F → V → V)
+               _·_ ← (V → V → F)
+               End₀
 
-AA : Set → Set → Set
-AA F V = (VecSpc F :waist 1) V
+VSInterface : (Field Vectors : Set) → Set
+VSInterface F V = (VecSpcSig :waist 2) F V
 
-BB : Set → Set
-BB = λ X → termtype (VecSpc X :waist 1)
-{-
-Fix
-    (λ γ →
-       ⊤ ⊎
-       ⊤ ⊎
-       Σ X (λ x → Σ X (λ x₁ → ⊤)) ⊎
-       ⊤ ⊎ Σ X (λ x → Σ γ (λ x₁ → ⊤)) ⊎ Σ γ (λ x → Σ γ (λ x₁ → ⊤)) ⊎ ⊥)
+VSTerm : (Field : Set) → Set
+VSTerm = λ F → termtype ((VecSpcSig :waist 2) F)
+{- ≅  Fix (λ X → 𝟙     -- Representation of additive unit, zero
+               ⊎ 𝟙     -- Representation of multiplicative unit, one
+               ⊎ F × F -- Pair of scalars to be summed
+               ⊎ 𝟙     -- Representation of the zero vector
+               ⊎ F × X -- Pair of arguments to be scalar-producted
+               ⊎ X × X -- Pair of vectors to be dot-producted
 -}
 
 pattern 𝟘ₛ = μ (inj₁ tt)
@@ -542,7 +542,7 @@ data ℝ𝕚𝕟𝕘 (Scalar : Set) : Set where
   prod  : Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
   dot   : ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
 
-view : ∀ {X} → BB X → ℝ𝕚𝕟𝕘 X
+view : ∀ {F} → VSTerm F → ℝ𝕚𝕟𝕘 F
 view 𝟘ₛ = zeroₛ
 view 𝟙ₛ = oneₛ
 view (x +ₛ y) = plusₛ x y
