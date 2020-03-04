@@ -1238,7 +1238,8 @@ PackageFormer's ~_:kind_~ meta-primitive dictates how an abstract grouping
 mechanism should be viewed in terms of existing Agda syntax.  However, unlike
 PackageFormer, all of our syntax consists of legitimate Agda terms.
 Since language syntax is being manipulated,
-we are forced to implement the ~_:kind_~ meta-primitive as a macro:
+we are forced to implement the ~_:kind_~ meta-primitive as a macro
+---further details can be found in Appendix [[sec:kind]].
 #+begin_src agda :tangle no
 data Kind : Set where
   ‵record    : Kind
@@ -1284,7 +1285,6 @@ presenting them here as semantic functions on contexts.
  #    may be function symbols as well as propositional invariants ---an example
   #   is shown at the end of [[sec:monadic-notation]].
 
-
 Starting from the insight that related grouping mechanisms could be unified, we
 showed how related structures can be obtained from a single declaration using a
 practical interface. The resulting framework, based on contexts, still captures
@@ -1301,7 +1301,8 @@ termtypes.  In addition, to obtain parameterised variants, we needed to
 explicitly form “contexts whose contents are over a given ambient context”
 ---e.g., contexts of vector spaces are usually discussed with the understanding
 that there is a context of fields that can be referenced--- which we did using
-monads. These relationships are summarised in the following table.
+the name binding machanism of ~do~-notation. These relationships are summarised in
+the following table.
 
 #+caption: Contexts embody all kinds of grouping mechanisms
 | Concept            | Concrete Syntax                       | Description            |
@@ -1312,6 +1313,9 @@ monads. These relationships are summarised in the following table.
 | Function Type      | =Π S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a type of functions”  |
 | Type constructor   | =λ S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a function on types”  |
 | Algebraic datatype | ~data 𝔻 : Set where s : 𝔻; n : 𝔻 → 𝔻~   | “a descriptive syntax” |
+#+latex: \FloatBarrier
+# The FloatBarrier stops floats (figures are floats) from jumping over them. I
+# will need to look into passing [tbh] options to figures from org mode further.
 
 To those interested in exotic ways to group data together ---such as,
 mechanically deriving product types and homomorphism types of theories---
@@ -1871,22 +1875,22 @@ VSTerm = λ F → termtype ((VecSpcSig :waist 2) F)
 -}
 
 -- Convenience synonyms for more compact presentation & meaningful names
-pattern 𝟘ₛ = μ (inj₁ tt)
-pattern 𝟙ₛ = μ (inj₂ (inj₁ tt))
-pattern _+ₛ_ x y = μ (inj₂ (inj₂ (inj₁ (x , (y , tt)))))
-pattern 𝟘ᵥ = μ (inj₂ (inj₂ (inj₂ (inj₁ tt))))
-pattern _*ᵥ_ x xs = μ (inj₂ (inj₂ (inj₂ (inj₂ (inj₁ (x , (xs , tt)))))))
+pattern 𝟘ₛ         = μ (inj₁ tt)
+pattern 𝟙ₛ         = μ (inj₂ (inj₁ tt))
+pattern _+ₛ_ x y   = μ (inj₂ (inj₂ (inj₁ (x , (y , tt)))))
+pattern 𝟘ᵥ         = μ (inj₂ (inj₂ (inj₂ (inj₁ tt))))
+pattern _*ᵥ_ x xs  = μ (inj₂ (inj₂ (inj₂ (inj₂ (inj₁ (x , (xs , tt)))))))
 pattern _·ᵥ_ xs ys = μ (inj₂ (inj₂ (inj₂ (inj₂ (inj₂ (inj₁ (xs , (ys , tt))))))))
 #+end_src
 
 Now the view: It simply associated constructors of the same shape, recursively.
 #+begin_src agda
 view : ∀ {F} → VSTerm F → ℝ𝕚𝕟𝕘 F
-view 𝟘ₛ = zeroₛ
-view 𝟙ₛ = oneₛ
-view (x +ₛ y) = plusₛ x y
-view 𝟘ᵥ = zeroᵥ
-view (x *ᵥ xs) = prod x (view xs)
+view 𝟘ₛ         = zeroₛ
+view 𝟙ₛ         = oneₛ
+view (x +ₛ y)   = plusₛ x y
+view 𝟘ᵥ         = zeroᵥ
+view (x *ᵥ xs)  = prod x (view xs)
 view (xs ·ᵥ ys) = dot (view xs) (view ys)
 #+end_src
 
@@ -1898,7 +1902,7 @@ Neato.
  # latex: \bibliographystyle{plainnat}
  # latex: \bibliographystyle{ACM-Reference-Format}
 
-* OLD Why syntax :Maybe_Delete:
+* OLD COMMENT Why syntax :Maybe_Delete:
   The archetype for records and termtypes ---algebraic data types--- are
   monoids. They describe untyped compositional structures, such as programs in
   dynamically type-checked language. In turn, their termtype is linked lists
@@ -1906,7 +1910,7 @@ Neato.
   ---i.e., a list of language instructions--- which ‘evaluate’ to the original
   value. The shift to syntax gives rise to evaluators, optimisers, and  constrained
   recursion-induction principles.
-* OLD Graph ideas :MAYBE_DELETE:
+* OLD COMMENT Graph ideas :MAYBE_DELETE:
 
 ** From the old introduction section
     For example, there are two ways to implement the type of graphs in the
@@ -1976,7 +1980,7 @@ comap₁ f ⟨ edges ⟩₁ = ⟨ (λ x y → edges (f x) (f y)) ⟩₁
     familiarity with quantifier laws such as the one-point rule and quantifier
     distributivity.
 
-* OLD Free Datatypes from Theories :MAYBE_DELETE:
+* OLD COMMENT Free Datatypes from Theories :MAYBE_DELETE:
   <<sec:free-datatypes>>
 
 Astonishingly, useful programming datatypes arise from termtypes of theories
@@ -2095,7 +2099,7 @@ insert₂ = λ C El Cr → Field 0 (C El Cr)
 insert₂′ = λ C → Field 0 C
 #+end_src
 
-* OLD What about the meta-language's parameters?               :Maybe_Delete:
+* OLD COMMENT What about the meta-language's parameters?               :Maybe_Delete:
 
 Besides ~:waist~, another way to introduce parameters into a context grouping
 mechanism is to use the language's existing utility of parameterising a context
@@ -2179,7 +2183,7 @@ casingP nothingP  = inj₁ refl
 casingP (justP x) = inj₂ (x , refl)
 #+end_src
 
-* OLD Next Steps :Maybe_Delete:
+* OLD COMMENT Next Steps :Maybe_Delete:
 
   We have shown how a bit of reflection allows us to have a compact, yet
   practical, one-stop-shop notation for records, typeclasses, and algebraic
@@ -2792,7 +2796,8 @@ data TreeSkeleton : Set where
 #+end_src
 
 ** ~:kind~
-#+begin_src agda :tangle Context.agda
+<<sec:kind>>
+   #+begin_src agda :tangle Context.agda
 data Kind : Set where
   ‵record    : Kind
   ‵typeclass : Kind
