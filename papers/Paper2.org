@@ -76,6 +76,11 @@ For some reason “src agda2” crashes minted, but “src agda” works fine.
     do you have any ``bigger'' examples?
 :End:
 
+:Tilde_is_hbox:
+Section 3 --> Section~3
+  or \hbox{(Section 3).}
+:End:
+
 * README COMMENT Dependencies of this org file
 
 In the source blocks below, go into each one and press C-c C-c
@@ -535,7 +540,7 @@ pattern ⟨_,_⟩ x y = x , y , tt
 
   Concretely, suppose we have two monoids ~(M₁, _⨾₁_, Id₁)~ and ~(M₂, _⨾₂_, Id₂)~,
   if we know @@latex:\footnote{ The propositional equality $M_1 \equiv M_2$ means the $Mᵢ$ are convertible with each
- other when all free variables occurring in the Mi are instantiated,
+ other when all free variables occurring in the $Mᵢ$ are instantiated,
  and otherwise are not necessarily identical.
  A stronger equality operator cannot be expressed in Agda.} @@
   that src_agda[:exports code]{ceq : M₁ ≡ M₂} then it is “obvious” that
@@ -639,6 +644,7 @@ composition₁ : ∀ {M₁ M₂ M₃} {A : Magma₁ M₁} {B : Magma₁ M₂} {C
 composition₁ = {!!}
 #+end_src
 
+#+latex: \noindent
 So not only are there no general rules for when to bundle or not, it is
 in fact guaranteed that any given choice will be sub-optimal for certain
 applications.  Furthermore, these types are equivalent, as we can
@@ -668,7 +674,7 @@ Our contributions are to show:
      representations in Section [[sec:problems]].
 
   2. Parameterised records can be obtained on-demand from non-parameterised
-     records (Section [[sec:monadic-notation]]).
+     records @@latex:\hbox{@@(Section [[sec:monadic-notation]]) @@latex:}@@.
      - As with ~Magma₀~, the traditional approach cite:coq_cat_experiences to
        unbundling a record requires the use of transport along propositional
        equalities, with trivial ~refl~-exivity proofs. In Section
@@ -744,6 +750,7 @@ _ = DynamicSystem₂
 :End:
 
 # Below: (The \" here is a ``trema'', not an ``Umlaut''.)
+#+latex: \noindent
 We shall refer to the concern of moving from a record to a parameterised record
 as *the unbundling problem* cite:packaging_mathematical_structures. For example,
 moving from the /type/ ~Set₁~ to the /function type/ @@latex:\quad@@ src_agda[:exports code]{Π X ∶ Set • Set}
@@ -755,7 +762,7 @@ We shall refer to the latter change
 as @@latex: \emph{re\"{\i}fication}@@ since the result is more concrete: It can
 be applied. This transformation will be
 denoted by ~Π→λ~. To clarify this subtlety, consider the following forms of the
-polymorphic identity function. Notice that $\mathsf{id}ᵢ$ /exposes/ 𝒾-many details at the
+polymorphic identity function. Notice that $\mathsf{id}ᵢ$ /exposes/ =i=-many details at the
 type level to indicate the sort it consists of. However, notice that ~id₀~ is
 a type of functions whereas $\mathsf{id}₁$ is a function on types. Indeed, the latter
 two are derived from the first one: $\mathsf{id}_{i + 1} \,=\, Π\!\!→\!\!λ\, \mathsf{id}ᵢ$
@@ -887,8 +894,12 @@ _>>=_ : ∀ {a b}
 The definition here accounts for the current exposure index: If zero, we have
 /record types/, otherwise /function types/. Using this definition, the above
 dynamical system context would need to be expressed using the lifting quote operation.
-#+begin_src agda :tangle no
-‵ Set >>= λ State → ‵ State >>= λ start → ‵ (State → State) >>= λ next → End
+
+#+latex: \begin{quotation}\scalebox{0.92}[1]{
+src_agda[:exports code]{‵ Set >>= λ State → ‵ State >>= λ start → ‵ (State →
+State) >>= λ next → End}
+#+latex: }\end{quotation}
+ #+begin_src agda :tangle no
 {- or -}
 do State ← ‵ Set
    start ← ‵ State
@@ -901,6 +912,7 @@ Interestingly cite:Bird_2009,DBLP:conf/hopl/HudakHJW07, use of ~do~-notation in
 preference to bind, ~>>=~, was suggested by John Launchbury in 1993 and was first
 implemented by Mark Jones in Gofer.  Anyhow, with our goal of practicality in
 mind, we shall “build the lifting quote into the definition” of bind:
+#+ATTR_LaTeX: :placement [!htpb]
 #+caption: Semantics: Context do-syntax is interpreted as Π-Σ-types
 #+begin_src agda :tangle no
 _>>=_ : ∀ {a b}
@@ -910,6 +922,11 @@ _>>=_ : ∀ {a b}
 (Γ >>= f) zero    = Σ γ ∶ Γ • f γ 0
 (Γ >>= f) (suc n) = Π γ ∶ Γ • f γ n
 #+end_src
+#+LATEX_HEADER: \usepackage{placeins}
+#+latex: \FloatBarrier
+# The FloatBarrier stops floats (figures are floats) from jumping over them. I
+# will need to look into passing [tbh] options to figures from org mode further.
+
 :Ignore:
 Using the definition of bind, we can elaborate
 #+begin_center
@@ -919,13 +936,14 @@ State → State  • 𝟙}}
 #+end_export
 #+end_center
 :End:
+
 #+latex: \noindent
 With this definition, the above declaration ~DynamicSystem~ typechecks.  However,
 ~DynamicSystem 𝒾 ≇ DynamicSystemᵢ~, instead $\mathsf{DynamicSystem}\, 𝒾$ are “factories”: Given
-~𝒾~-many arguments, a product value is formed. What if we want to /instantiate/ some
+=i=-many arguments, a product value is formed. What if we want to /instantiate/ some
 of the factory arguments ahead of time?
 #+begin_src agda :tangle no
-𝒩₀ : DynamicSystem 0   {- See the elaborations table above -}
+𝒩₀ : DynamicSystem 0   {- See the elaborations in Table 1 -}
 𝒩₀ = ℕ , 0 , suc , tt
 
 𝒩₁ : DynamicSystem 1
@@ -941,13 +959,16 @@ into a ~λ~-expression.  One could use a universe, an algebraic type of codes
 denoting types, to define ~Π→λ~. However, one can no longer then easily use
 existing types since they are not formed from the universe's constructors,
 thereby resulting in duplication of existing types via the universe
-encoding. This is not practical nor pragmatic.
+encoding. This is  neither practical nor pragmatic.
 
 As such, we are left with pattern matching on the language's type formation
-primitives as the only reasonable approach. The method ~Π→λ~ is thus a macro that
-acts on the syntactic term representations of types.
-Below is main transformation ---the details can be found in Appendix
-[[sec:pi-to-lambda]].
+primitives as the only reasonable approach. The method ~Π→λ~ is thus a macro
+@@latex: \footnote{A \emph{macro} is a function that manipulates the abstract
+syntax trees of the host language. In particular, it may take an arbitrary term,
+shuffle its syntax to provide possibly meaningless terms or terms that could not
+be formed without pattern matching on the possible syntactic constructions.}@@
+that acts on the syntactic term representations of types.  Below is main
+transformation ---the details can be found in Appendix [[sec:pi-to-lambda]].
 #+begin_center
 #+begin_export latex
 \dbox{\texttt{Π→λ (Π a ∶ A • τ) = (λ a ∶ A • τ)}}
