@@ -474,20 +474,6 @@ See here for more: http://kitchingroup.cheme.cmu.edu/blog/2014/05/13/Using-org-r
  #
 ** COMMENT GPCE’19 Copyright                                                 :ignore:
 
- # The following is specific to GPCE '19 and the paper
- # 'A Language Feature to Unbundle Data at Will (Short Paper)'
- # by Musa Al-hassy, Wolfram Kahl, and Jacques Carette.
- #
- #+latex_header: \setcopyright{acmcopyright}
- #+latex_header: \acmPrice{15.00}
- #+latex_header: \acmDOI{10.1145/3357765.3359523}
- #+latex_header: \acmYear{2019}
- #+latex_header: \copyrightyear{2019}
- #+latex_header: \acmISBN{978-1-4503-6980-0/19/10}
- #+latex_header: \acmConference[GPCE '19]{Proceedings of the 18th ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences}{October 21--22, 2019}{Athens, Greece}
- #+latex_header: \acmBooktitle{Proceedings of the 18th ACM SIGPLAN International Conference on Generative Programming: Concepts and Experiences (GPCE '19), October 21--22, 2019, Athens, Greece}
- #+latex_header:
-
 * Abstract :ignore:
 
   #+begin_abstract org
@@ -535,28 +521,23 @@ pattern ⟨_,_⟩ x y = x , y , tt
 
 * Introduction
 
-  We routinely write algebraic datatypes to provide a first-class syntax for
-  record values. We work with semantic values, but need syntax to provide
-  serialisation and introspection capabilities.  A concept is thus rendered
-  twice, once at the semantic level using records and again at the syntactic
-  level using algebraic datatypes. Even worse, there is usually a need to expose
-  fields of a record at the type level and so yet another variation of the same
-  concept needs to be written.  Our idea is to unify the various type declarations
-  into one ---using monadic do-notation and in-language meta-programming
-  combinators to then extract possibly parameterised records and algebraic data
-  types.
+  All too often, when we program, we write the same information two or more
+  times in our code, in different guises.  For example, in Haskell, we
+  may write a class, a record to reify that class, and an algebraic type
+  to give us a syntax for programs written using that class.  In proof
+  assistants, this tends to get worse rather than better, as parametrized
+  records give us a means to ``stage'' information.  From here on, we will
+  use Agda~citet:Norell-2007 for our examples.
 
-  For example, suppose we have two monoids ~(M₁, _⨾₁_, Id₁)~ and ~(M₂, _⨾₂_, Id₂)~, then
-  if we know that the carriers are propositionally equal ---i.e., there is a
-  witness ~ceq : M₁ ≡ M₂~--- then it is “obvious” that ~Id₂ ⨾₂ (x ⨾₁ Id₁) ≡ x~ for all
-  ~x : M₁~. However, formally this is a challenge since ~_⨾₂_~ expects elements of
-  ~M₂~ but has been given an element of ~M₁~: Propositional equality means the ~Mᵢ~
-  are convertible with each other /only/ when all free variables occurring in the
-  ~Mᵢ~ are instantiated, and otherwise are not necessarily identical.  As such,
-  this gives rise to “subst hell”: The need to use substitutions to satisfy the
-  necessary typing requirements, but are otherwise generally a nuisance.  Below,
-  in Agda cite:Norell-2007,agda_overview, is how we would express the claim
-  ---using pointed magmas for brevity.
+  Concretely, suppose we have two monoids ~(M₁, _⨾₁_, Id₁)~ and ~(M₂, _⨾₂_, Id₂)~, 
+  if we know that ~ceq : M₁ ≡ M₂~ then it is “obvious” that 
+  ~Id₂ ⨾₂ (x ⨾₁ Id₁) ≡ x~ for all
+  ~x : M₁~. However, as written, this does not type-check.  This is because
+  ~_⨾₂_~ expects elements of ~M₂~ but has been given an element of ~M₁~. 
+  Because we have ~ceq~ in hand, we can use ~subst~ to transport things around.
+  The resulting formula then typechecks, but is hideous.
+  ``subst hell'' only gets worse.  Below, we use pointed magmas for brevity,
+  as the problem is the same.
 :Header:
   #+begin_src agda
 open import Relation.Binary.PropositionalEquality
@@ -571,23 +552,23 @@ record Magma₀ : Set₁ where
     _⨾_     : Carrier → Carrier → Carrier
     Id     : Carrier
 
-module Akward-Formulation
-    (A B : Magma₀)
+module Akward-Formulation (A B : Magma₀)
     (ceq : Magma₀.Carrier A ≡ Magma₀.Carrier B)
     where
-      open Magma₀ A renaming (Carrier to M₁; Id to Id₁; _⨾_ to _⨾₁_)
-      open Magma₀ B renaming (Carrier to M₂; Id to Id₂; _⨾_ to _⨾₂_)
+      open Magma₀ A renaming (Id to Id₁; _⨾_ to _⨾₁_)
+      open Magma₀ B renaming (Id to Id₂; _⨾_ to _⨾₂_)
 
-      coe : M₁ → M₂
-      coe = subst id ceq
-
-      claim : ∀ x → Id₂ ⨾₂ coe (x ⨾₁ Id₁) ≡ coe x
+      claim : ∀ x → Id₂ ⨾₂ subst id ceq (x ⨾₁ Id₁) ≡ subst id ceq x
       claim = {!!}
 #+end_src
-It should not be this difficult to prove a trivial fact.  If a library designer
-used this definition, then, as the library's users, we are stuck with it.
-Instead, we would ideally prefer to express shared carriers “on the nose”,
-rather than up-to propositional equality, as in the following snippet.
+It should not be this difficult to state a trivial fact.  We could make
+things artifically prettier by defining ~coe~ to be ~subst id ceq~
+without changing the heart of the matter.  But if
+~Magma₀~ is the definition used in the library we are using, we are
+stuck with it, if we want to be compatible with other work.
+
+Ideally, we would prefer to be able to express that the carriers are
+shared “on the nose”, which can be done as follows:
 #  69 words
 #+begin_src agda
 record Magma₁ (Carrier : Set) : Set where
@@ -595,7 +576,7 @@ record Magma₁ (Carrier : Set) : Set where
     _⨾_     : Carrier → Carrier → Carrier
     Id     : Carrier
 
-module Easily-Formulated
+module Nicer
     (M : Set)    {- The shared carrier -}
     (A B : Magma₁ M)
     where
@@ -605,15 +586,14 @@ module Easily-Formulated
       claim : ∀ x → Id₂ ⨾₂ (x ⨾₁ Id₁) ≡ x
       claim = {!!}
   #+end_src
-  Besides being a 79% reduction in size, this formulation is exactly the
-  informal formula we began with at the start of the discussion.  It thus seems
-  that it would be better to expose the carrier.  However, it does not take long
-  following such an exposed approach before we wish we remained modestly bundled-up.
-  For instance, to define homomorphisms ---structure preserving functions--- on
-  the unbundled approach requires a lot of up-front declarations to “fill in the
-  exposed hole”, which must be laboriously repeated each time the unbundled form
-  is used, as below for the type of homomorphism composition.
+  This is the formaluation we expected, without noise. Thus it seems that it
+  would be better to expose the carrier. But, before long, we'd find a different
+  concept, such as homomorphism, which are awkward in this way, and cleaner
+  using the first approach.  These two approaches are called
+  \emph{bundled} and \emph{unbundled} respectively citet:typeclasses_for_math.
 
+  The definitions of homomorphism themselves (see below) is not so different,
+  but the definition of composition already starts to be quite unwieldly.
 :Homᵢ:
 #+begin_src agda
 -- 63 words
@@ -647,22 +627,21 @@ composition₁ : ∀ {M₁ M₂ M₃} {A : Magma₁ M₁} {B : Magma₁ M₂} {C
              → Hom₁ A B → Hom₁ B C → Hom₁ A C
 composition₁ = {!!}
 #+end_src
-The typing of composition for unbundled magma homomorphisms is stonewalled by
-tedious but unavoidable administrivia. That is, the core idea is prefaced by a
-wall of noise. In stark contrast, for the unbundled form, the type of
-composition literally could not be expressed any simpler ---already being 68%
-smaller in size.
 
-As the above discussion shows, there are no general rules for when to expose
-verses when to bundle components of a record. Since exposed pieces can always be
-packed away ---e.g., src_agda[:exports code]{Monoid₀ ≅ Σ M ∶ Set • Monoid₁ M}---
-most library designers tend to expose as many functional symbols as possible,
-leaving only proof obligations bundled up, then provide the fully bundled form
-as a wrapper on that. Indeed, this is the expected idiom in Agda's standard
-library cite:agda_std_lib, in Lean cite:Hales-blog-post, and in Coq
+So not only are there no general rules for when the bundle or not, it is
+in fact guaranteed that any given choice will be sub-optimal for certain
+applications.  Furthermore, these types are equivalent, as we can
+``pack away'' an exposed piece, 
+e.g., src_agda[:exports code]{Monoid₀ ≅ Σ M ∶ Set • Monoid₁ M}.
+The developers of the Agda standard library citet:agda_std_lib have chosen to
+expose all types and function symbols while bundling up the proof obligations
+at one level, and also provide a fully bundled form as a wrapper.
+This is also the method chosen in Lean cite:Hales-blog-post, and in Coq
 cite:typeclasses_for_maths.
 
-It is bewildering that such a simple problem has not found a solution.
+While such a choice is workable, it is still not optimal. There are
+bundling variants that are unavailable, and would be more convenient for
+certain application.
 
   #+latex: \noindent
 
