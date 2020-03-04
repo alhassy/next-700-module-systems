@@ -837,10 +837,12 @@ DynamicSystem = do State ← Set
  #+latex: \noindent
  Here ~Context, End~, and the underlying monadic bind operator are unknown.  Since
  we want to be able to /expose/ a number of fields at will, we may take ~Context~ to
- be types indexed by a number denoting exposure.  Moreover, since records are a
- product type, we expect there to be a recursive definition whose base case will
- be the essential identity of products, the unit type ~𝟙~.
+ be types indexed by a number denoting exposure.  Moreover, since records are
+ product types, we expect there to be a recursive definition whose base case
+ will be the identity of products, the unit type ~𝟙~ ---which corresponds to ~⊤~ in
+ the Agda standard library and to ~()~ in Haskell.
 
+ #+latex: {\renewcommand{\arraystretch}{1.3}
  #+name: elaborations
  #+caption: Elaborations of DynamicSystem at various exposure levels
 | Exposure |   | Elaboration                                                 |
@@ -849,6 +851,7 @@ DynamicSystem = do State ← Set
 |        1 |   | =Π State ∶ Set  • Σ start ∶ X  • Σ next ∶ State → State  • 𝟙= |
 |        2 |   | =Π State ∶ Set  • Π start ∶ X  • Σ next ∶ State → State  • 𝟙= |
 |        3 |   | =Π State ∶ Set  • Π start ∶ X  • Π next ∶ State → State  • 𝟙= |
+#+latex: }
 
 #+latex: \noindent
 With these elaborations of ~DynamicSystem~ to guide the way, we resolve
@@ -857,7 +860,7 @@ two of our unknowns.
 {- “Contexts” are exposure-indexed types -}
 Context = λ ℓ → ℕ → Set ℓ
 
-{- Every type is a context -}
+{- Every type can be used as a context -}
 ‵_ : ∀ {ℓ} → Set ℓ → Context ℓ
 ‵ S = λ _ → S
 
@@ -868,7 +871,7 @@ End = ‵ 𝟙
 
 #+latex: \noindent
 It remains to identify the definition of the underlying bind operation ~>>=~.
-Classically, for a type constructor ~m~, bind is typed ~∀ {X Y : Set} → m X → (X →
+Usually, for a type constructor ~m~, bind is typed ~∀ {X Y : Set} → m X → (X →
 m Y) → m Y~. It allows one to “extract an ~X~-value for later use” in the ~m Y~
 context. Since our ~m = Context~ is from levels to types, we need to slightly
 alter bind's typing.
@@ -877,7 +880,7 @@ _>>=_ : ∀ {a b}
       → (Γ : Context a)
       → (∀ {n} → Γ n → Context b)
       → Context (a ⊍ b)
-(Γ >>= f) zero     = Σ γ ∶ Γ 0 • f γ 0
+(Γ >>= f) zero    = Σ γ ∶ Γ 0 • f γ 0
 (Γ >>= f) (suc n) = Π γ ∶ Γ n • f γ n
 #+end_src
 #+latex: \noindent
@@ -904,7 +907,7 @@ _>>=_ : ∀ {a b}
       → (Γ : Set a)  -- Main difference
       → (Γ → Context b)
       → Context (a ⊍ b)
-(Γ >>= f) zero     = Σ γ ∶ Γ • f γ 0
+(Γ >>= f) zero    = Σ γ ∶ Γ • f γ 0
 (Γ >>= f) (suc n) = Π γ ∶ Γ • f γ n
 #+end_src
 :Ignore:
