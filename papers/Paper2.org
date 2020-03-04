@@ -1215,8 +1215,8 @@ the termtype of dynamical systems is essentially the natural numbers.
 | Pointed Structures | Maybe        |
 | Monoids            | Binary Trees |
 
-To obtain trees over some ‘value type’ Ξ, one must start at the theory of
-“monoids containing a given set Ξ”. Similarly, by starting at “theories of
+:Ignore:
+Similarly, by starting at “theories of
 pointed sets over a given set Ξ”, the resulting termtype is the ~Maybe~
 type constructor ---another instructive exercise to the reader: Show that ~ℙ ≅ Maybe~.
 #+begin_src agda :tangle no
@@ -1233,6 +1233,7 @@ PointedOver Ξ    = do Carrier ← Set ℓ₀
 pattern nothingP = μ (inj₁ tt)       -- : ℙ
 pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
 #+end_src
+:End:
 
  # In addition, the contents of these grouping mechanisms
   #    may be function symbols as well as propositional invariants ---an example
@@ -1244,8 +1245,9 @@ pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
 # bijective pair of functions between =𝕄= and =TreeSkeleton=.
 
 #+latex: \noindent
-The final entry in the table is a well known correspondence, that we
-can, not only formally express, but also prove to be true.
+
+The final entry in Table 2 is a well known correspondence that we
+can now not only formally express, but also prove to be true.
 #+begin_src agda :tangle no
 𝕄 : Set
 𝕄 = termtype (Monoid ℓ₀ :waist 1)
@@ -1280,22 +1282,29 @@ with the constructors of ~TreeSkeleton~.
 𝕄←Tree empty = emptyM
 𝕄←Tree (branch l r) = branchM (𝕄←Tree l) (𝕄←Tree r)
 #+end_src
+#+latex: \noindent
 That these two operations are inverses is easily demonstrated.
 #+begin_src agda :tangle Context.agda
 𝕄←Tree∘𝕄→Tree : ∀ m → 𝕄←Tree (𝕄→Tree m) ≡ m
 𝕄←Tree∘𝕄→Tree emptyM = refl
-𝕄←Tree∘𝕄→Tree (branchM l r) = cong₂ branchM (𝕄←Tree∘𝕄→Tree l) (𝕄←Tree∘𝕄→Tree r)
+𝕄←Tree∘𝕄→Tree (branchM l r) = cong₂ branchM (𝕄←Tree∘𝕄→Tree l)
+                                              (𝕄←Tree∘𝕄→Tree r)
 𝕄←Tree∘𝕄→Tree (absurdM (inj₁ ()))
 𝕄←Tree∘𝕄→Tree (absurdM (inj₂ ()))
 
 𝕄→Tree∘𝕄←Tree : ∀ t → 𝕄→Tree (𝕄←Tree t) ≡ t
 𝕄→Tree∘𝕄←Tree empty = refl
-𝕄→Tree∘𝕄←Tree (branch l r) = cong₂ branch (𝕄→Tree∘𝕄←Tree l) (𝕄→Tree∘𝕄←Tree r)
+𝕄→Tree∘𝕄←Tree (branch l r) = cong₂ branch (𝕄→Tree∘𝕄←Tree l)
+                                            (𝕄→Tree∘𝕄←Tree r)
 #+end_src
 
+#+latex: \noindent
 Without the src_agda[:exports code]{pattern} declarations the result would
 remain true, but it would be quite difficult to believe in the correspondence
 without a machine-checked proof.
+
+To obtain trees over some ‘value type’ Ξ, one must start at the theory of
+“monoids containing a given set Ξ”.
 
 ** COMMENT Collection Context
 #+begin_src agda :tangle Context.agda
