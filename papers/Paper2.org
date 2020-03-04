@@ -339,6 +339,10 @@ See here for more: http://kitchingroup.cheme.cmu.edu/blog/2014/05/13/Using-org-r
   #+LATEX_HEADER: \newunicodechar{Ξ}{\ensuremath{\Xi}}
   #+LATEX_HEADER: \newunicodechar{ξ}{\ensuremath{\xi}}
 
+  #+LATEX_HEADER: \newunicodechar{ℝ}{\ensuremath{\mathbb{R}}}
+  #+LATEX_HEADER: \newunicodechar{𝕚}{\ensuremath{\mathbb{i}}}
+  #+LATEX_HEADER: \newunicodechar{𝕘}{\ensuremath{\mathbb{g}}}
+
   #+LATEX_HEADER: \newunicodechar{𝕆}{\ensuremath{\mathbb{O}}}
   #+LATEX_HEADER: \newunicodechar{𝕟}{\ensuremath{\mathbb{n}}}
   #+LATEX_HEADER: \newunicodechar{𝕖}{\ensuremath{\mathbb{e}}}
@@ -530,12 +534,16 @@ pattern ⟨_,_⟩ x y = x , y , tt
   use Agda~citet:Norell-2007 for our examples.
 
   Concretely, suppose we have two monoids ~(M₁, _⨾₁_, Id₁)~ and ~(M₂, _⨾₂_, Id₂)~,
-  if we know that src_agda[:exports code]{ceq : M₁ ≡ M₂} then it is “obvious” that
+  if we know @@latex:\footnote{ The propositional equality $M_1 \equiv M_2$ means the $Mᵢ$ are convertible with each
+ other when all free variables occurring in the Mi are instantiated,
+ and otherwise are not necessarily identical.
+ A stronger equality operator cannot be expressed in Agda.} @@
+  that src_agda[:exports code]{ceq : M₁ ≡ M₂} then it is “obvious” that
   src_agda[:exports code]{Id₂ ⨾₂ (x ⨾₁ Id₁) ≡ x} for all
   ~x : M₁~. However, as written, this does not type-check.  This is because
   ~_⨾₂_~ expects elements of ~M₂~ but has been given an element of ~M₁~.
   Because we have ~ceq~ in hand, we can use ~subst~ to transport things around.
-  The resulting formula, showns as the type of ~claim~ below,
+  The resulting formula, shown as the type of ~claim~ below,
 then typechecks, but is hideous.
   ``$\mathsf{subst}$ hell'' only gets worse.  Below, we use pointed magmas for brevity,
   as the problem is the same.
@@ -591,7 +599,7 @@ module Nicer
   #+end_src
   This is the formaluation we expected, without noise. Thus it seems that it
   would be better to expose the carrier. But, before long, we'd find a different
-  concept, such as homomorphism, which are awkward in this way, and cleaner
+  concept, such as homomorphism, which is awkward in this way, and cleaner
   using the first approach.  These two approaches are called
   \emph{bundled} and \emph{unbundled} respectively citet:typeclasses_for_math.
 
@@ -631,12 +639,12 @@ composition₁ : ∀ {M₁ M₂ M₃} {A : Magma₁ M₁} {B : Magma₁ M₂} {C
 composition₁ = {!!}
 #+end_src
 
-So not only are there no general rules for when the bundle or not, it is
+So not only are there no general rules for when to bundle or not, it is
 in fact guaranteed that any given choice will be sub-optimal for certain
 applications.  Furthermore, these types are equivalent, as we can
 ``pack away'' an exposed piece,
 e.g., src_agda[:exports code]{Monoid₀ ≅ Σ M ∶ Set • Monoid₁ M}.
-The developers of the Agda standard library citet:agda_std_lib have chosen to
+The developers of the Agda standard library citep:agda_std_lib have chosen to
 expose all types and function symbols while bundling up the proof obligations
 at one level, and also provide a fully bundled form as a wrapper.
 This is also the method chosen in Lean cite:Hales-blog-post, and in Coq
@@ -735,13 +743,17 @@ _ = DynamicSystem₂
 #+end_src
 :End:
 
+# Below: (The \" here is a ``trema'', not an ``Umlaut''.)
 We shall refer to the concern of moving from a record to a parameterised record
 as *the unbundling problem* cite:packaging_mathematical_structures. For example,
-moving from the /type/ ~Set₁~ to the /function type/ @@latex:\quad@@  ~Π X ∶ Set • Set~
+moving from the /type/ ~Set₁~ to the /function type/ @@latex:\quad@@ src_agda[:exports code]{Π X ∶ Set • Set}
 @@latex:\quad@@ gets us from
 ~DynamicSystem₀~ to something resembling ~DynamicSystem₁~, which we arrive at if we
-can obtain a /type constructor/ @@latex:\quad@@ ~λ X ∶ Set • ⋯~. We shall refer to the latter change
-as /reification/ since the result is more concrete, it can be applied; it will be
+can obtain a /type constructor/ @@latex:\quad@@ src_agda[:exports code]{λ X ∶ Set
+• ⋯}. @@latex:$\,$@@
+We shall refer to the latter change
+as @@latex: \emph{re\"{\i}fication}@@ since the result is more concrete: It can
+be applied. This transformation will be
 denoted by ~Π→λ~. To clarify this subtlety, consider the following forms of the
 polymorphic identity function. Notice that $\mathsf{id}ᵢ$ /exposes/ 𝒾-many details at the
 type level to indicate the sort it consists of. However, notice that ~id₀~ is
@@ -761,8 +773,7 @@ id₂ = λ (X : Set) (e : X) → X
 #+end_src
 
 #+latex: \noindent
-Of course, there is also the need for descriptions of values, which leads to the
-following term datatypes. We shall refer to the shift from record types to algebraic
+Of course, there is also the need for descriptions of values, which leads to term datatypes. We shall refer to the shift from record types to algebraic
 data types as *the termtype problem*.
 Our aim is to obtain all of these notions ---of ways to group data together---
 from a single user-friendly context declaration, using monadic notation.
@@ -1765,6 +1776,58 @@ power x (suc n) = x ⊕ power x n
  #+latex: \bibliography{References}
  # latex: \bibliographystyle{plainnat}
  # latex: \bibliographystyle{ACM-Reference-Format}
+
+* Vector Spaces
+
+#+begin_src agda
+
+VecSpc : Set → Context ℓ₁
+VecSpc F = do V   ← Set
+              𝟘   ← F
+              𝟙   ← F
+              _+_ ← (F → F → F)
+              o   ← V
+              _*_ ← (F → V → V)
+              _·_ ← (V → V → F)
+              End₀
+
+AA : Set → Set → Set
+AA F V = (VecSpc F :waist 1) V
+
+BB : Set → Set
+BB = λ X → termtype (VecSpc X :waist 1)
+{-
+Fix
+    (λ γ →
+       ⊤ ⊎
+       ⊤ ⊎
+       Σ X (λ x → Σ X (λ x₁ → ⊤)) ⊎
+       ⊤ ⊎ Σ X (λ x → Σ γ (λ x₁ → ⊤)) ⊎ Σ γ (λ x → Σ γ (λ x₁ → ⊤)) ⊎ ⊥)
+-}
+
+pattern 𝟘ₛ = μ (inj₁ tt)
+pattern 𝟙ₛ = μ (inj₂ (inj₁ tt))
+pattern _+ₛ_ x y = μ (inj₂ (inj₂ (inj₁ (x , (y , tt)))))
+pattern 𝟘ᵥ = μ (inj₂ (inj₂ (inj₂ (inj₁ tt))))
+pattern _*ᵥ_ x xs = μ (inj₂ (inj₂ (inj₂ (inj₂ (inj₁ (x , (xs , tt)))))))
+pattern _·ᵥ_ xs ys = μ (inj₂ (inj₂ (inj₂ (inj₂ (inj₂ (inj₁ (xs , (ys , tt))))))))
+
+data ℝ𝕚𝕟𝕘 (Scalar : Set) : Set where
+  zeroₛ : ℝ𝕚𝕟𝕘 Scalar
+  oneₛ  : ℝ𝕚𝕟𝕘 Scalar
+  plusₛ : Scalar → Scalar → ℝ𝕚𝕟𝕘 Scalar
+  zeroᵥ : ℝ𝕚𝕟𝕘 Scalar
+  prod  : Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
+  dot   : ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
+
+view : ∀ {X} → BB X → ℝ𝕚𝕟𝕘 X
+view 𝟘ₛ = zeroₛ
+view 𝟙ₛ = oneₛ
+view (x +ₛ y) = plusₛ x y
+view 𝟘ᵥ = zeroᵥ
+view (x *ᵥ xs) = prod x (view xs)
+view (xs ·ᵥ ys) = dot (view xs) (view ys)
+#+end_src
 
 
 * OLD Why syntax :Maybe_Delete:

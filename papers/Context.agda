@@ -499,3 +499,53 @@ macro
 -- _⟴_ : ∀ {a b} {A : Set a} {B : Set b} → A → (A → B) → B
 -- x ⟴ f = f x
 -- ~:kind~:1 ends here
+
+
+--------------------------------------------------------------------------------
+
+VecSpc : Set → Context ℓ₁
+VecSpc F = do V   ← Set
+              𝟘   ← F
+              𝟙   ← F
+              _+_ ← (F → F → F)
+              o   ← V
+              _*_ ← (F → V → V)
+              _·_ ← (V → V → F)
+              End₀
+
+AA : Set → Set → Set
+AA F V = (VecSpc F :waist 1) V
+
+BB : Set → Set
+BB = λ X → termtype (VecSpc X :waist 1)
+{-
+Fix
+    (λ γ →
+       ⊤ ⊎
+       ⊤ ⊎
+       Σ X (λ x → Σ X (λ x₁ → ⊤)) ⊎
+       ⊤ ⊎ Σ X (λ x → Σ γ (λ x₁ → ⊤)) ⊎ Σ γ (λ x → Σ γ (λ x₁ → ⊤)) ⊎ ⊥)
+-}
+
+pattern 𝟘ₛ = μ (inj₁ tt)
+pattern 𝟙ₛ = μ (inj₂ (inj₁ tt))
+pattern _+ₛ_ x y = μ (inj₂ (inj₂ (inj₁ (x , (y , tt)))))
+pattern 𝟘ᵥ = μ (inj₂ (inj₂ (inj₂ (inj₁ tt))))
+pattern _*ᵥ_ x xs = μ (inj₂ (inj₂ (inj₂ (inj₂ (inj₁ (x , (xs , tt)))))))
+pattern _·ᵥ_ xs ys = μ (inj₂ (inj₂ (inj₂ (inj₂ (inj₂ (inj₁ (xs , (ys , tt))))))))
+
+data ℝ𝕚𝕟𝕘 (Scalar : Set) : Set where
+  zeroₛ : ℝ𝕚𝕟𝕘 Scalar
+  oneₛ  : ℝ𝕚𝕟𝕘 Scalar
+  plusₛ : Scalar → Scalar → ℝ𝕚𝕟𝕘 Scalar
+  zeroᵥ : ℝ𝕚𝕟𝕘 Scalar
+  prod  : Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
+  dot   : ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
+
+view : ∀ {X} → BB X → ℝ𝕚𝕟𝕘 X
+view 𝟘ₛ = zeroₛ
+view 𝟙ₛ = oneₛ
+view (x +ₛ y) = plusₛ x y
+view 𝟘ᵥ = zeroᵥ
+view (x *ᵥ xs) = prod x (view xs)
+view (xs ·ᵥ ys) = dot (view xs) (view ys)
