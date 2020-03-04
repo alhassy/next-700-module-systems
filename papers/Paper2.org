@@ -975,7 +975,9 @@ transformation ---the details can be found in Appendix [[sec:pi-to-lambda]].
 #+end_export
 #+end_center
 #+latex: \noindent
-That is, we walk along the term tree replacing occurrences of ~Π~ with ~λ~. For example,
+That is, we walk along the term tree replacing occurrences of ~Π~ with ~λ~. For
+example,
+ #+latex: {\renewcommand{\arraystretch}{1.3}
 #+begin_src agda :tangle no
   Π→λ (Π→λ (DynamicSystem 2))
 ≡{- Definition of DynamicSystem at exposure level 2 -}
@@ -987,7 +989,9 @@ That is, we walk along the term tree replacing occurrences of ~Π~ with ~λ~. Fo
 ≡{- Definition of Π→λ -}
   λ X ∶ Set • λ s ∶ X  • Σ n ∶ X → X  • 𝟙
 #+end_src
+#+latex: }
 
+#+latex: \noindent
 For practicality, ~_:waist_~ is a macro (defined in Appendix [[sec:waist]]) acting on contexts that repeats ~Π→λ~ a number of
 times in order to lift a number of field components to the parameter level.
 #+begin_center
@@ -1117,16 +1121,20 @@ data Fix (F : Set → Set) : Set where
   union them.  That is, since algebraic-datatype constructors necessarily target
   the declared type, they are determined by their sources.  For example,
   considered as a unary constructor ~op : A → B~ targets the type termtype ~B~ and
-  so its source is ~A~.  The details on the operations ~⇊, Σ→⊎, sources~ shown below
-  can be found in appendices [[sec:decreasing-de-brujin]], [[sec:sigma-to-sum]], and
-  [[sec:sources]], respectively.
+  so its source is ~A~.
+  The details on the operations ~⇊, Σ→⊎~, and ~sources~
+  characterised by the pseudocode below can be found in appendices
+  [[sec:decreasing-de-brujin]], [[sec:sigma-to-sum]], and [[sec:sources]], respectively.
+  It suffices to know that ~Σ→⊎~ rewrites dependent-sums into sums,
+  which requires the second argument to lose its reference to the first argument
+  which is accomplished by ~⇊~; further details can be found in the appendix.
 #+begin_center
 #+begin_export latex
 \dbox{\parbox{\textwidth}{%
 
-\texttt{⇊ τ = “reduce all de brujin indices within τ by 1”}
+\texttt{⇊ τ = “reduce all de Bruijn indices within τ by 1”}
 
-\vspace{0.5em}
+\vspace{1em}
 \texttt{Σ→⊎ (Σ a ∶ A • Ba) = A ⊎ Σ→⊎ (⇊ Ba)}
 
 \vspace{0.5em}
@@ -1142,7 +1150,7 @@ data Fix (F : Set → Set) : Set where
 #+end_center
 
 #+latex: \vspace{1em}\noindent
-It is instructive to visually see how ~𝔻~ is obtained from ~termtype~
+It is instructive to work through the process of how ~𝔻~ is obtained from ~termtype~
 in order to demonstrate that this approach to algebraic data types
 is practical.
 #+begin_src agda :tangle no
@@ -1800,14 +1808,9 @@ power x (suc n) = x ⊕ power x n
 
   \maketitle
 
-* Bib                                                        :ignore:
-
- #+latex: \bibliography{References}
- # latex: \bibliographystyle{plainnat}
- # latex: \bibliographystyle{ACM-Reference-Format}
-
 * Vector Spaces
 
+Consider the signature of vector spaces ~V~ over a field ~F~.
 #+begin_src agda
 VecSpcSig : Context ℓ₁
 VecSpcSig = do F   ← Set
@@ -1819,10 +1822,31 @@ VecSpcSig = do F   ← Set
                _*_ ← (F → V → V)
                _·_ ← (V → V → F)
                End₀
-
+#+end_src
+We can expose ~V~ and ~F~ so that they can be varied.
+#+begin_src agda
 VSInterface : (Field Vectors : Set) → Set
 VSInterface F V = (VecSpcSig :waist 2) F V
+#+end_src
 
+We conjecture that the terms over such vector space signatures
+are similar to lists (vectors) consisting of elements (field scalars),
+but we also have two additional nullary constructors, a pairing constructor,
+and a branching constructor. That is, we have a structure amalgamating
+both lists and binary trees.
+#+begin_src agda
+data ℝ𝕚𝕟𝕘 (Scalar : Set) : Set where
+  zeroₛ : ℝ𝕚𝕟𝕘 Scalar
+  oneₛ  : ℝ𝕚𝕟𝕘 Scalar
+  plusₛ : Scalar → Scalar → ℝ𝕚𝕟𝕘 Scalar
+  zeroᵥ : ℝ𝕚𝕟𝕘 Scalar
+  prod  : Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
+  dot   : ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
+#+end_src
+
+We confirm this claim by relying on the mechanical approach to forming term
+types, then witnessing a view between the two.
+#+begin_src agda
 VSTerm : (Field : Set) → Set
 VSTerm = λ F → termtype ((VecSpcSig :waist 2) F)
 {- ≅  Fix (λ X → 𝟙     -- Representation of additive unit, zero
@@ -1833,21 +1857,17 @@ VSTerm = λ F → termtype ((VecSpcSig :waist 2) F)
                ⊎ X × X -- Pair of vectors to be dot-producted
 -}
 
+-- Convenience synonyms for more compact presentation & meaningful names
 pattern 𝟘ₛ = μ (inj₁ tt)
 pattern 𝟙ₛ = μ (inj₂ (inj₁ tt))
 pattern _+ₛ_ x y = μ (inj₂ (inj₂ (inj₁ (x , (y , tt)))))
 pattern 𝟘ᵥ = μ (inj₂ (inj₂ (inj₂ (inj₁ tt))))
 pattern _*ᵥ_ x xs = μ (inj₂ (inj₂ (inj₂ (inj₂ (inj₁ (x , (xs , tt)))))))
 pattern _·ᵥ_ xs ys = μ (inj₂ (inj₂ (inj₂ (inj₂ (inj₂ (inj₁ (xs , (ys , tt))))))))
+#+end_src
 
-data ℝ𝕚𝕟𝕘 (Scalar : Set) : Set where
-  zeroₛ : ℝ𝕚𝕟𝕘 Scalar
-  oneₛ  : ℝ𝕚𝕟𝕘 Scalar
-  plusₛ : Scalar → Scalar → ℝ𝕚𝕟𝕘 Scalar
-  zeroᵥ : ℝ𝕚𝕟𝕘 Scalar
-  prod  : Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
-  dot   : ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar → ℝ𝕚𝕟𝕘 Scalar
-
+Now the view: It simply associated constructors of the same shape, recursively.
+#+begin_src agda
 view : ∀ {F} → VSTerm F → ℝ𝕚𝕟𝕘 F
 view 𝟘ₛ = zeroₛ
 view 𝟙ₛ = oneₛ
@@ -1856,6 +1876,14 @@ view 𝟘ᵥ = zeroᵥ
 view (x *ᵥ xs) = prod x (view xs)
 view (xs ·ᵥ ys) = dot (view xs) (view ys)
 #+end_src
+
+Neato.
+
+* Bib                                                        :ignore:
+
+ #+latex: \bibliography{References}
+ # latex: \bibliographystyle{plainnat}
+ # latex: \bibliographystyle{ACM-Reference-Format}
 
 * OLD Why syntax :Maybe_Delete:
   The archetype for records and termtypes ---algebraic data types--- are
@@ -2292,7 +2320,7 @@ _ = refl
 *** Decreasing de Brujin Indices
 <<sec:decreasing-de-brujin>>
 Given a quantification ~(⊕ x ∶ τ • fx)~, its body ~fx~ may refer to a free variable
-~x~.  If we decrement all de Brujin indices ~fx~ contains, then there would be no
+~x~.  If we decrement all de Bruijn indices ~fx~ contains, then there would be no
 reference to ~x~.
 
 #+begin_src agda :tangle Context.agda
@@ -2620,6 +2648,13 @@ D₄ = Σ→⊎ D₃
 4-unions : D₄ ≡ λ X → 𝟙 ⊎ X ⊎ 𝟘
 4-unions = refl
 #+end_src
+
+# See above regarding macro “var-dec”
+# #
+# What happens if a occurs in Ba? Point out that in the cases that work
+# or are relevant, a does not occur in Ba, and the elimination of one binder
+# makes one application of \downarrow\downarrow necessary.
+
 *** Stage 5: Fixpoint and proof that ~𝔻 ≅ ℕ~
 #+begin_src agda :tangle Context.agda
 {-# NO_POSITIVITY_CHECK #-}
