@@ -1,7 +1,7 @@
 #+title: Do-it-yourself Module Systems
 # subtitle: We can change things later, but can't change it if there's nothing to change!
 
-* Story
+* COMMENT Story
 
 1. There are a host of repeated module patterns since modules are not a first-class construct.
    - E.g., IsX and X in Agda's standard library.
@@ -22,7 +22,7 @@
 
 4. Shallow comparision of PF and Context.
 
-* Outline
+* COMMENT Outline
 
 1. Motivating the problem
    - Where has this problem been encountered in the wild?
@@ -75,10 +75,585 @@
    - What we have done
    - How it is useful to others, now.
 
-* TODO COMMENT Abstract [100%]
+* Table of Contents                                    :Github:TOC_4:
+- [[#examples-from-the-wild][Examples from the Wild]]
+  - [[#renaming][Renaming]]
+    - [[#renaming-problems-from-agdas-standard-library][Renaming Problems from Agda's Standard Library]]
+    - [[#renaming-problems-from-the-rath-agda-library][Renaming Problems from the RATH-Agda Library]]
+    - [[#renaming-problems-from-the-agda-categories-library][Renaming Problems from the Agda-categories Library]]
 
-* COMMENT Table of Contents                                    :Github:TOC_4:
-- [[#introduction][Introduction]]
+* Examples from the Wild
+
+Tedium is for machines; interesting problems are for people.
+
+In this section, we showcase a number of problems that occur in developing
+libraries of code, with an eye to dependently-typed languages. We will refer
+back to these real-world examples later on when developing our frameworks for
+reducing their tedium and size.
+
+** Renaming
+
+The use of an idea is generally accompanied with particular notation that is
+accepted by the community. Even though the choice of bound names it
+theoretically irrelevant, certain communities would consider it unacceptable to
+deviate from convention. Here are a few examples:
+
+- ~x(f)~ :: Using ~x~ as a /function/ and ~f~ as an /argument/.; likewise $\frac{\partial x}{\partial f}$.
+
+  With the exception of people familiar with the Yoneda Lemma, or continuations,
+  such a notation is simply “wrong”!
+
+- ~a × a ≈ a~ :: An idempotent operation denoted by multiplication; likewise for commutative operations.
+
+  It is more common to use addition or join, ~⊔~.
+    
+- ~0 × a ≈ a~ :: The identity of “multiplicative symbols” should never resemble
+  “0”; instead it should resemble “1” or, at least, ~“e”~ ---the standard
+  abbreviation of the influential algebraic works of German authors who used
+  “Einheit” which means “identity”.
+  
+- ~f + g~ :: Even if monoids are defined with the prototypical binary operation
+  denoted “+”, it would be “wrong” to continue using it to denote functional composition.
+  One would need to introduce the new name “∘” or, at least, “·”.
+
+From the few examples above, it is immediate that to even present a prototypical
+notation for an idea, one immediately needs auxiliary notation when specialising
+to a particular instance. For example, to use “additive symbols” such as ~+, ⊔,
+⊕~ to denote an arbitrary binary operation leads to trouble in the function
+composition instance above, whereas using “multiplicative symbols” such as ~×,
+·, *~ leads to trouble in the idempotent case above. 
+
+Regardless of prototypical choices, there will always be a need to rename.
+
+Let's now turn to examples of renaming from three libraries:
+1. Agda's standard library,
+2. The RATH-Agda library, and
+3. A recent categories library.
+
+Each will provide a workaround to the problem of renaming. In particular, the
+solutions are, respectively:
+
+1. Rename as needed.
+   - There is no systematic approach to account for the many common renamings.
+   - Users are encouraged to do the same, since the standard library does it this way.
+  
+2. Pack-up the /common/ renamings as modules, and invoke them when needed.
+   - Which renamings are provided is left at the discretion of the designer
+     ---even “expected” renamings may not be there since, say, there are too many
+     choices or not enough man power to produce them.
+   - The pattern to pack-up renamings leads nicely to consistent naming.
+
+3. Names don't matter.
+   - Users of the library need to be intimately connected with the definitions
+     are domain to use the library.
+   - Consequently, there are many inconsistencies in naming.     
+
+*** Renaming Problems from Agda's Standard Library
+
+[[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#2757][Here is an excerpt from Agda's standard library]], notice how the prototypical
+notation for monoids is rename repeatedly /as needed/. Sometimes it is
+relabelled with additive symbols, other times with multiplicative symbols.
+#+BEGIN_SRC agda2
+record IsNearSemiring {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+                      (+ * : Op₂ A) (0# : A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    +-isMonoid    : IsMonoid ≈ + 0#
+    *-isSemigroup : IsSemigroup ≈ *
+    distribʳ      : * DistributesOverʳ +
+    zeroˡ         : LeftZero 0# *
+
+  open IsMonoid +-isMonoid public
+         renaming ( assoc       to +-assoc
+                  ; ∙-cong      to +-cong
+                  ; isSemigroup to +-isSemigroup
+                  ; identity    to +-identity
+                  )
+
+  open IsSemigroup *-isSemigroup public
+         using ()
+         renaming ( assoc    to *-assoc
+                  ; ∙-cong   to *-cong
+                  )
+
+record IsSemiringWithoutOne {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+                            (+ * : Op₂ A) (0# : A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    +-isCommutativeMonoid : IsCommutativeMonoid ≈ + 0#
+    *-isSemigroup         : IsSemigroup ≈ *
+    distrib               : * DistributesOver +
+    zero                  : Zero 0# *
+
+  open IsCommutativeMonoid +-isCommutativeMonoid public
+         hiding (identityˡ)
+         renaming ( assoc       to +-assoc
+                  ; ∙-cong      to +-cong
+                  ; isSemigroup to +-isSemigroup
+                  ; identity    to +-identity
+                  ; isMonoid    to +-isMonoid
+                  ; comm        to +-comm
+                  )
+
+  open IsSemigroup *-isSemigroup public
+         using ()
+         renaming ( assoc       to *-assoc
+                  ; ∙-cong      to *-cong
+                  )
+
+record IsSemiringWithoutAnnihilatingZero
+         {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+         (+ * : Op₂ A) (0# 1# : A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    +-isCommutativeMonoid : IsCommutativeMonoid ≈ + 0#
+    *-isMonoid            : IsMonoid ≈ * 1#
+    distrib               : * DistributesOver +
+
+  open IsCommutativeMonoid +-isCommutativeMonoid public
+         hiding (identityˡ)
+         renaming ( assoc       to +-assoc
+                  ; ∙-cong      to +-cong
+                  ; isSemigroup to +-isSemigroup
+                  ; identity    to +-identity
+                  ; isMonoid    to +-isMonoid
+                  ; comm        to +-comm
+                  )
+
+  open IsMonoid *-isMonoid public
+         using ()
+         renaming ( assoc       to *-assoc
+                  ; ∙-cong      to *-cong
+                  ; isSemigroup to *-isSemigroup
+                  ; identity    to *-identity
+                  )
+
+record IsRing
+         {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+         (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    +-isAbelianGroup : IsAbelianGroup ≈ _+_ 0# -_
+    *-isMonoid       : IsMonoid ≈ _*_ 1#
+    distrib          : _*_ DistributesOver _+_
+
+  open IsAbelianGroup +-isAbelianGroup public
+         renaming ( assoc               to +-assoc
+                  ; ∙-cong              to +-cong
+                  ; isSemigroup         to +-isSemigroup
+                  ; identity            to +-identity
+                  ; isMonoid            to +-isMonoid
+                  ; inverse             to -‿inverse
+                  ; ⁻¹-cong             to -‿cong
+                  ; isGroup             to +-isGroup
+                  ; comm                to +-comm
+                  ; isCommutativeMonoid to +-isCommutativeMonoid
+                  )
+
+  open IsMonoid *-isMonoid public
+         using ()
+         renaming ( assoc       to *-assoc
+                  ; ∙-cong      to *-cong
+                  ; isSemigroup to *-isSemigroup
+                  ; identity    to *-identity
+                  )
+#+END_SRC
+
+At first glance, one solution would be to package up these renamings into helper modules:
+#+BEGIN_SRC agda2
+-- Orginal notations
+--------------------------------------------------------------------------------
+record IsMonoid {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+                (∙ : Op₂ A) (ε : A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    isSemigroup : IsSemigroup ≈ ∙
+    identity    : Identity ε ∙
+
+record IsCommutativeMonoid {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+                           (_∙_ : Op₂ A) (ε : A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    isSemigroup : IsSemigroup ≈ _∙_
+    identityˡ   : LeftIdentity ε _∙_
+    comm        : Commutative _∙_
+
+    ⋮
+  isMonoid : IsMonoid ≈ _∙_ ε
+  isMonoid = record { ⋯ }
+
+-- Renaming helpers
+--------------------------------------------------------------------------------
+module AdditiveIsMonoid {a ℓ} {A : Set a} {≈ : Rel A ℓ}
+               {_∙_ : Op₂ A} {ε : A} (+-isMonoid : IsMonoid ≈ _∙_ ε)  where
+
+   open IsMonoid +-isMonoid public
+         renaming ( assoc       to +-assoc
+                  ; ∙-cong      to +-cong
+                  ; isSemigroup to +-isSemigroup
+                  ; identity    to +-identity
+                  )              
+
+module AdditiveIsCommutativeMonoid {a ℓ} {A : Set a} {≈ : Rel A ℓ}
+               {_∙_ : Op₂ A} {ε : A} (+-isCommutativeMonoid : IsMonoid ≈ _∙_ ε)  where
+
+   open AdditiveIsMonoid (CommutativeMonoid.isMonoid +-isCommutativeMonoid) public
+   open IsCommutativeMonoid +-isCommutativeMonoid public using () 
+      renaming ( comm to +-comm
+               ; isMonoid to +-isMonoid)
+#+END_SRC
+However, one then needs to make similar modules for /additive notation/ for
+~IsAbelianGroup, IsRing, IsCommutativeRing, …~. Moreover, this still invites
+repetition: Additional notations, as used in ~IsSemiring~, would require
+additional helper modules.
+#+BEGIN_SRC agda2
+module MultiplicativeIsMonoid {a ℓ} {A : Set a} {≈ : Rel A ℓ}
+               {_∙_ : Op₂ A} {ε : A} (*-isMonoid : IsMonoid ≈ _∙_ ε)  where
+
+   open IsMonoid *-isMonoid public
+         renaming ( assoc       to *-assoc
+                  ; ∙-cong      to *-cong
+                  ; isSemigroup to *-isSemigroup
+                  ; identity    to *-identity
+                  )              
+#+END_SRC
+
+Unless carefully organised, such notational modules would bloat the standard
+library, resulting in difficulty when navigating the library. As it stands
+however, the new algebraic structures appear large and complex due to the
+“renaming hell” encountered to provide the expected conventional notation.
+
+*** Renaming Problems from the RATH-Agda Library
+
+The impressive [[http://relmics.mcmaster.ca/RATH-Agda/RATH-Agda-2.2.pdf][Relational Algebraic Theories in Agda]] library takes a disciplined
+approach: Copy-paste notational modules, possibly using a find-replace mechanism
+to vary the notation. The use of a find-replace mechanism leads to consistent naming
+across different notations.
+
+#+caption: Relation.Binary.Setoid.Utils
+#+begin_quote
+For contexts where calculation in different setoids is necessary, we provide
+“decorated” versions of the ~Setoid′~ and ~SetoidCalc~ interfaces:
+#+end_quote
+#+BEGIN_SRC agda2
+module SetoidA {i j : Level} (S : Setoid i j) = Setoid′ S renaming
+    ( ℓ to ℓA ; Carrier to A₀ ; _≈_ to _≈A_ ; ≈-isEquivalence to ≈A-isEquivalence
+    ; ≈-isPreorder to ≈A-isPreorder ; ≈-preorder to ≈A-preorder
+    ; ≈-indexedSetoid to ≈A-indexedSetoid
+    ; ≈-refl to ≈A-refl ; ≈-reflexive to ≈A-reflexive ; ≈-sym to ≈A-sym
+    ; ≈-trans to ≈A-trans ; ≈-trans₁ to ≈A-trans₁ ; ≈-trans₂ to ≈A-trans₂
+    ; _⟨≈≈⟩_ to _⟨≈A≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈A≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈A˘≈⟩_ ; _⟨≈˘≈˘⟩_ to _⟨≈A˘≈˘⟩_
+    ; _⟨≡≈⟩_ to _⟨≡≈A⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈A˘⟩_ ; _⟨≡˘≈⟩_ to _⟨≡˘≈A⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈A˘⟩_
+    ; _⟨≈≡⟩_ to _⟨≈A≡⟩_ ; _⟨≈≡˘⟩_ to _⟨≈A≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈A˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈A˘≡˘⟩_
+    )
+
+module SetoidB {i j : Level} (S : Setoid i j) = Setoid′ S renaming
+    ( ℓ to ℓB ; Carrier to B₀ ; _≈_ to _≈B_ ; ≈-isEquivalence to ≈B-isEquivalence
+    ; ≈-isPreorder to ≈B-isPreorder ; ≈-preorder to ≈B-preorder
+    ; ≈-indexedSetoid to ≈B-indexedSetoid
+    ; ≈-refl to ≈B-refl ; ≈-reflexive to ≈B-reflexive ; ≈-sym to ≈B-sym
+    ; ≈-trans to ≈B-trans ; ≈-trans₁ to ≈B-trans₁ ; ≈-trans₂ to ≈B-trans₂
+    ; _⟨≈≈⟩_ to _⟨≈B≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈B≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈B˘≈⟩_ ; _⟨≈˘≈˘⟩_ to _⟨≈B˘≈˘⟩_
+    ; _⟨≡≈⟩_ to _⟨≡≈B⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈B˘⟩_ ; _⟨≡˘≈⟩_ to _⟨≡˘≈B⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈B˘⟩_
+    ; _⟨≈≡⟩_ to _⟨≈B≡⟩_ ; _⟨≈≡˘⟩_ to _⟨≈B≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈B˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈B˘≡˘⟩_
+    )
+
+module SetoidC {i j : Level} (S : Setoid i j) = Setoid′ S renaming
+    ( ℓ to ℓC ; Carrier to C₀ ; _≈_ to _≈C_ ; ≈-isEquivalence to ≈C-isEquivalence
+    ; ≈-isPreorder to ≈C-isPreorder ; ≈-preorder to ≈C-preorder
+    ; ≈-indexedSetoid to ≈C-indexedSetoid
+    ; ≈-refl to ≈C-refl ; ≈-reflexive to ≈C-reflexive ; ≈-sym to ≈C-sym
+    ; ≈-trans to ≈C-trans ; ≈-trans₁ to ≈C-trans₁ ; ≈-trans₂ to ≈C-trans₂
+    ; _⟨≈≈⟩_ to _⟨≈C≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈C≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈C˘≈⟩_ ; _⟨≈˘≈˘⟩_ to _⟨≈C˘≈˘⟩_
+    ; _⟨≡≈⟩_ to _⟨≡≈C⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈C˘⟩_ ; _⟨≡˘≈⟩_ to _⟨≡˘≈C⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈C˘⟩_
+    ; _⟨≈≡⟩_ to _⟨≈C≡⟩_ ; _⟨≈≡˘⟩_ to _⟨≈C≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈C˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈C˘≡˘⟩_
+    )
+#+END_SRC
+
+This keeps going to cover the alphabet ~SetoidD, SetoidE, SetoidF, …, SetoidZ~
+then we shift to subscripted versions ~Setoid₀, Setoid₁, …, Setoid₄~. 
+
+Next, RATH-Agda shifts to the need to calculate with setoids:
+#+BEGIN_SRC agda2
+module SetoidCalcA {i j : Level} (S : Setoid i j) where
+  open SetoidA S public
+  open SetoidCalc S public renaming
+    ( _□ to _□A
+    ; _≈⟨_⟩_ to _≈A⟨_⟩_
+    ; _≈˘⟨_⟩_ to _≈A˘⟨_⟩_
+    ; _≈≡⟨_⟩_ to _≈A≡⟨_⟩_
+    ; _≈⟨⟩_ to _≈A⟨⟩_
+    ; _≈≡˘⟨_⟩_ to _≈A≡˘⟨_⟩_
+    ; ≈-begin_ to ≈A-begin_
+    )
+module SetoidCalcB {i j : Level} (S : Setoid i j) where
+  open SetoidB S public
+  open SetoidCalc S public renaming
+    ( _□ to _□B
+    ; _≈⟨_⟩_ to _≈B⟨_⟩_
+    ; _≈˘⟨_⟩_ to _≈B˘⟨_⟩_
+    ; _≈≡⟨_⟩_ to _≈B≡⟨_⟩_
+    ; _≈⟨⟩_ to _≈B⟨⟩_
+    ; _≈≡˘⟨_⟩_ to _≈B≡˘⟨_⟩_
+    ; ≈-begin_ to ≈B-begin_
+    )
+module SetoidCalcC {i j : Level} (S : Setoid i j) where
+  open SetoidC S public
+  open SetoidCalc S public renaming
+    ( _□ to _□C
+    ; _≈⟨_⟩_ to _≈C⟨_⟩_
+    ; _≈˘⟨_⟩_ to _≈C˘⟨_⟩_
+    ; _≈≡⟨_⟩_ to _≈C≡⟨_⟩_
+    ; _≈⟨⟩_ to _≈C⟨⟩_
+    ; _≈≡˘⟨_⟩_ to _≈C≡˘⟨_⟩_
+    ; ≈-begin_ to ≈C-begin_
+    )
+#+END_SRC
+This keeps going to cover the alphabet ~SetoidCalcD, SetoidCalcE, SetoidCalcF, …, SetoidCalcZ~
+then we shift to subscripted versions ~SetoidCalc₀, SetoidCalc₁, …, SetoidCalc₄~.
+If we ever have more than 4 setoids in hand, or prefer other decorations, then
+we would need to produce similar helper modules.
+| Each ~Setoid𝒳𝒳𝒳~ takes 10 lines, for a total of at-least 600 lines! |
+
+Indeed, such renamings bloat the library, but, unlike the Standard Library, they
+allow new records to be declared easily ---“renaming hell” has been deferred
+from the user to the library designer. However, later on, in ~Categoric.CompOp~,
+we see the variations ~LocalEdgeSetoid𝒟~ and ~LocalSetoidCalc𝒟~ where decoration
+~𝒟~ ranges over ~₀, ₁, ₂, ₃, ₄, R~. The inconsistency in not providing the other
+decorations used for ~Setoid𝓓~ earlier is understandable: These take time to
+write and maintain.
+
+Various similar decorations can be found in RATH, such as for ~Semigroupoid𝒟~ in
+~Categoric.Semigroupoid~.
+
+*** Renaming Problems from the Agda-categories Library
+
+With RATH-Agda's focus on notational modules at one end of the spectrum, and the
+Standard Library's casual do-as-needed in the middle, it is inevitable that
+there are other equally popular libraries but at the other end of the spectrum.
+The [[https://github.com/agda/agda-categories][Agda-categories]] library seemingly ignored the need for meaningful names
+altogether! Below are a few notable instances.
+
++ Functors have fields named ~F₀, F₁, F-resp-≈, …~.
+  - This could be considered reasonable even if one has a functor named ~G~.
+  - This [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Product.agda][leads to expressions]] such as ~< F.F₀ , G.F₀ >~.
+  - Incidentally, and somewhat inconsistently, a ~Pseudofunctor~ has fields ~P₀,
+    P₁, P-homomophism~ ---where the latter is documented /P preserves ≃/.
+
+  On the opposite extreme, RATH-Agda's importance on naming has it functor record
+  having fields named ~obj, mor, mor-cong~ instead of ~F₀, F₁, F-resp-≈~
+  ---which refer to a functor's “obj”ect map, “mor”phism map, and the fact that the
+  “mor”phism map is a “cong”ruence.
+
++ Such lack of concern for naming might be acceptable for well-known concepts
+  such as functors, where some communities use ~Fᵢ~ to denote the object/0 or
+  morphism/1 operations. However, considering [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/SubCategory.agda][subcategories]] one is sees field
+  names ~U, R, Rid, _∘R_~ which are wholly unhelpful. Instead, more meaningful
+  names such as ~embed, keep, id-kept, keep-resp-∘~ could have been used.
+
++ The ~Iso, Inverse,~ and ~NaturalIsomorphism~ records have fields ~to / from, f
+  / f⁻¹,~ and ~~F⇒G / F⇐G~, respectively.
+
+  #  ( ~Categories.Category~ )
+
+  Even though some of these build on one another, with Agda's namespacing
+  features, all “forward” and “backward” morphism fields could have been named,
+  say, ~to~ and ~from~. The naming may not have propagated from ~Iso~ to other
+  records possibly due to the low priority for names.
+
+  From a usability perspective, projections like ~f~ are reminiscent of the OCaml
+  community and may be more acceptable there. Since Agda is more likely to attract
+  Haskell programmers than OCaml ones, such a particular projection seems completely
+  our of place. Likewise, the field name ~F⇒G~ seems only appropriate if the
+  functors involved happen to be named ~F~ and ~G~.
+
+  These unexpected deviations are not too surprising since the Agda-categories
+  library seems to give names no priority at all. Field projections are treated
+  little more than classic array indexing with numbers.
+
+
+By largely avoiding renaming, Agda-categories has no “renaming hell” anywhere at
+the heavy price of being difficult to read: Any attempt to read code requires
+one to “squint away” the numerous projections to “see” the concepts of
+relevance. Consider the [[https://github.com/agda/agda-categories/blob/master/src/Categories/Yoneda.agda][following excerpt]].
+#+BEGIN_SRC agda
+helper : ∀ {F : Functor (Category.op C) (Setoids ℓ e)}
+                     {A B : Obj} (f : B ⇒ A)
+                     (β γ : NaturalTransformation Hom[ C ][-, A ] F) →
+                   Setoid._≈_ (F₀ Nat[Hom[C][-,c],F] (F , A)) β γ →
+                   Setoid._≈_ (F₀ F B) (η β B ⟨$⟩ f ∘ id) (F₁ F f ⟨$⟩ (η γ A ⟨$⟩ id))
+          helper {F} {A} {B} f β γ β≈γ = S.begin
+            η β B ⟨$⟩ f ∘ id          S.≈⟨ cong (η β B) (id-comm ○ (⟺ identityˡ)) ⟩
+            η β B ⟨$⟩ id ∘ id ∘ f     S.≈⟨ commute β f CE.refl ⟩
+            F₁ F f ⟨$⟩ (η β A ⟨$⟩ id) S.≈⟨ cong (F₁ F f) (β≈γ CE.refl) ⟩
+            F₁ F f ⟨$⟩ (η γ A ⟨$⟩ id) S.∎
+            where module S where
+                    open Setoid (F₀ F B) public
+                    open SetoidR (F₀ F B) public
+#+END_SRC
+
+Here are a few downsides of not renaming:
+
+1. The type of the function is difficult to comprehend; though it need not be.
+   - Take ~_≈₀_ = Setoid._≈_ (F₀ Nat[Hom[C][-,c],F] (F , A))~, and
+   - Take ~_≈₁_ = Setoid._≈_ (F₀ F B)~,
+   - Then the type says: If ~β ≈₀ γ~ then 
+     ~η β B ⟨$⟩ f ∘ id ≈₁ F₁ F f ⟨$⟩ (η γ A ⟨$⟩ id)~
+     ---a naturality condition!
+
+2. The short proof is difficult to read!
+   - The repeated terms such as ~η β B~ and ~η β A~ could have been renamed with
+     mnemoic-names such as ~η₁, η₂~ or ~ηₛ, ηₜ~ for ‘s’ource/1 and ‘t’arget/2.
+
+Recall that functors ~F~ have projections ~Fᵢ~, so the “mor”phism map on a given
+morphism ~f~ becomes ~F₁ F f~, as in the excerpt above; however, using
+RATH-Agda's naming it would have been ~mor F f~.
+
+Since names are given a lower priority, one no longer needs to perform renaming.
+Instead, one is content with projections. The downside is now there are too many
+projections, leaving code difficult to comprehend. Moreover, this leads to
+inconsistent renaming.
+
+* COMMENT More pointers
+*** TODO From IsX to X ---Packing away components
+
+Agda's standard library explicitly documents two forms to common structures:
+1. /Some algebraic structures (not packed up with sets, operations, etc./
+   - http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#1
+2. /Definitions of algebraic structures like monoids and rings (packed in
+   records together with sets, operations, etc.)/
+   - http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#1
+
+#+BEGIN_SRC agda2
+record IsSemigroup {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+                   (∙ : Op₂ A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    isEquivalence : IsEquivalence ≈
+    assoc         : Associative ∙
+    ∙-cong        : ∙ Preserves₂ ≈ ⟶ ≈ ⟶ ≈
+
+record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
+  infixl 7 _∙_
+  infix  4 _≈_
+  field
+    Carrier     : Set c
+    _≈_         : Rel Carrier ℓ
+    _∙_         : Op₂ Carrier
+    isSemigroup : IsSemigroup _≈_ _∙_
+#+END_SRC
+
+Similarly for ~X~ being: ~Monoid, Group, AbelianGroup, CommutativeMonoid,~
+~SemigroupWithoutOne, NearSemiring, Semiring, CommutativeSemiringWithoutOne,
+CommutativeSemiring, CommutativeRing~.
+
+It thus seems that to present an idea ~X~, we require the same amount of space
+to present it unpacked or packed, and so doing both duplicates the process
+and only hints at the underlying principle: From ~IsX~ we pack away the carriers
+and function symbols to ~X~.
+
+These examples are from the standard library: http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#601
+
+*** TODO Design Patterns as Library Methods
+
+The homomorphism construction
+-- See http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Morphism.html#1
+which only presents ~An example showing how a morphism type can be defined~!
++ Why?
++ The procedure is essentially the same for other algebraic structures.
++ It takes time to do form these explicitly, even for the common structures.
++ An example, rather than a library method, is rather unreasonable.
+
+This is Agda's ~Algebra.Morphism~ “library”!
+** TODO One
+
+Think of a language that does not support currying and you need to have a
+function of 10 arguments that needs to support accepting any number of arguments
+less than 10, say for partial application. In such languages, one must utilise
+the builder design pattern, or quickly copy-paste the function 10 times,
+altering it slightly each time. In general, if such a function definition
+requires N lines and M forms of the function are needed, then nearly N × M lines
+of code are written manually.
+
+** TODO Two
+Design patterns for theories become library methods! An interesting side-effect
+of having meta-primitives for packages is that traditional patterns for theories
+—e.g., homomorphisms, syntax, interpretation functions— can now be codified as
+general re-usable methods.
+
+** TODO Four
+
+What is the definition of a monoid? ---See GPCE19 paper
+
+** TODO Five :PF:
+
+The extension problem: Monoid to CommutativeMonoid
+
+- Even JavaScript provides { ...obj, newkey: value } to extend items
+- Or inheritance in Python
+- or subclassing in Haskell
+
+** TODO Six  :PF:
+
+- Unions
+- Duality
+- Extracting Little Theories
+- See §3.10
+
+** TODO Seven
+
+The exclusion problem: Dropping fields from too rich/experssive settings
+---interface segresgation principle. The former may make certain things easier, but
+one could have a more minimal form being the latter.
+
+E.g., In Agda's standard categories library one can find ~𝒳Helper~, for some notions
+~𝒳~, which provides a minimised version since ~𝒳~ has derivable fields.
+- E.g., category comes this way
+  - https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Core.agda
+  #+begin_quote
+  Since we add extra proofs in the definition of `Category` (i.e. `sym-assoc` and
+  `identity²`), we might still want to construct a `Category` in its originally
+  easier manner. Thus, this redundant definition is here to ease the construction.
+  #+end_quote
+- E.g., natural isomorphism comes this way
+  - https://github.com/agda/agda-categories/blob/master/src/Categories/NaturalTransformation/NaturalIsomorphism.agda
+  #+begin_quote
+  This helper definition lets us specify only one of the commuting
+  squares and have the other one derived.
+  #+end_quote
+
+  Incidentally, since this is not a library method, inconsitencies are bound to arise.
+
+  The orginal is named ~NaturalIsomorphism~ and we would expect to see
+  ~NaturalIsomorphismHelper~, but instead it is ~NIHelper~.
+
+  Such issues could be reduced, if not avoided, if we used library methods.
+
+- E.g., symmetric monoidal categories ---with inconsistent naming
+  ~Symmetric′~ for the larger and ~Symmetric~ for the helper!
+  #+begin_quote
+  it requires again a redundant hexagon proof which allows achieves definitional
+equality of the opposite.
+  #+end_quote
+
+  ( Since names are given a low priority, the brading operation is simply called
+  ~B~! A symbol closer to the standard model, inverses ~_⁻¹~, such as ~_˘~ may
+  have been more suggestive. )
+
+  - https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Monoidal/Symmetric.agda
+
+** COMMENT Misc
+
+The user manual, among other things, shows how we can avoid the open ⋯ public ⋯
+renaming ⋯ pattern which plagues Agda's standard library —and is much more
+pronounced in the RATH-Agda, which devotes p27-39 for simple setoid renaming and
+does much more elsewhere—, as well as showing how to avoid laborious, yet
+tedious, definitions of homomorphisms in Agda's library. Moreover, the
+motivating factor of this work is to avoid the pattern of defining a predicate
+IsX c₀ ⋯ cₙ on constituents cᵢ then packaging the constituents along with a
+proof of this predicate as a record X.
+
+* TODO COMMENT Abstract [100%]
 
 * COMMENT Introduction
 
