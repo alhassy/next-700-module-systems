@@ -1268,6 +1268,7 @@ record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
  #+end_quote
 
 ** Redundancy, Derived Features, and Feature Exclusion
+<<<sec:redundancy_derived_features_feature_exclusion>>>
 
  A tenet of software development is not to over-engineer solutions; e.g., we need
  a notion of untyped composition, and so use ~Monoid~. However, at a later stage,
@@ -1581,94 +1582,129 @@ possibly producing awkward or unusual uses of linguistic phrases of the ambient
 language.
 
 We may use the term ‘module’ below due to its familiarity, however some of the
-issues addressed also apply to other instances of grouping mechanisms
----such as records, code blocks, methods, files, families of files, and namespaces.
+issues addressed also apply to other instances of grouping mechanisms ---such as
+records, code blocks, methods, files, families of files, and namespaces.
 
-In section 2.1 we define modularisation; in section 2.2 we discuss how to
-simulate it, and in section 2.3 we review what current systems can and cannot do;
-then in section 2.4 we provide legitimate examples of the interdefinability of
-different grouping mechanisms within Agda. We conclude in section 2.5 by
-taking a look at an implementation-agnostic representation of grouping mechanisms
-that is sufficiently abstract to ignore any differences between a record and
-an interface but is otherwise sufficiently useful to encapsulate what is expected of
-module systems.
-Moreover, besides looking at the current solutions, we also briefly discuss their flaws.
+In section ref:sec:module_expectations we define modularisation; in section
+ref:sec:module_ad_hoc we discuss how to simulate it, and in section
+ref:sec:module_existing we review what current systems can and cannot do; then
+in section ref:sec:module_agda we provide legitimate examples of the
+interdefinability of different grouping mechanisms within Agda. We conclude in
+section ref:sec:module_theory by taking a look at an implementation-agnostic
+representation of grouping mechanisms that is sufficiently abstract to ignore
+any differences between a record and an interface but is otherwise sufficiently
+useful to encapsulate what is expected of module systems. Moreover, besides
+looking at the current solutions, we also briefly discuss their shortcomings.
+
+#+begin_quote
+The /purpose/ of this section is to establish a working definition of “grouping
+mechanism”, how it can be simulated when it is not a primitive construct, how
+Agda handles them, and a brief theory of their foundations.
+#+end_quote
 
 ** Expectations of Module Systems
+<<<sec:module_expectations>>>
 
-# JC: 2.1 is wonderful.  For your thesis, I will want this expanded (references, table of where the feature exists, etc), but this is enough for the proposal.
+# JC: 2.1 is wonderful. For your thesis, I will want this expanded (references,
+# table of where the feature exists, etc), but this is enough for the proposal.
 
-Packaging systems are not so esoteric that we need to dwell on their uses;
-yet we recall primary use cases to set the stage for the rest of our discussions.
+Packaging systems are not so esoteric that we need to dwell on their uses; yet
+we recall primary use cases to set the stage for the rest of our discussions.
 
-+ Namespacing :: Modules provide new unique local scopes for identifiers thereby permitting de-coupling.
++ Namespacing :: Modules provide new unique local scopes for identifiers thereby
+  permitting de-coupling.
 
-         The ability to have multiple files contribute to the same namespace is also desirable
-         for de-coupled developments. This necessitates an independence of module names from
-         the names of physical files ---such de-conflation permits recursive modules.
+  The ability to have multiple files contribute to the same namespace is also
+  desirable for de-coupled developments. This necessitates an independence of
+  module names from the names of physical files ---such de-conflation permits
+  recursive modules.
 
-+ Information Hiding :: Modules ought to provide the ability to enforce content /not/ to be accessible,
-    or alterable, from outside of the module to enforce that users cannot depend on implementation design decisions.
++ Information Hiding :: Modules ought to provide the ability to enforce content
+  /not/ to be accessible, or alterable, from outside of the module to enforce that
+  users cannot depend on implementation design decisions.
 
-+ Citizenship :: Grouping mechanisms need not be treated any more special than record types.
-         As such, one ought to be able to operate on them and manipulate them
-         like any first-class citizen.
++ Citizenship :: Grouping mechanisms need not be treated any more special than
+  record types. As such, one ought to be able to operate on them and manipulate
+  them like any first-class citizen.
 
-         In particular, packages themselves have types which happen to be packages.
-         This is the case with universal algebra, and OCaml, where
-         ‘structures’ are typed by ‘signatures’
-         ---note that OCaml's approach is within the same language, whereas, for example,
-         Haskell's recent retrofitting cite:haskell_backpack,
-         of its weak module system to allow such interfacing, is not
-         entirely in the core language since, for example, instantiating happens
-         by the package manager rather than by a core language declaration.
+  In particular, packages themselves have types which happen to be packages.
+  Besides being the JavaScript approach, this is also the case with universal
+  algebra, and Ocaml, where ‘structures’ are typed by ‘signatures’.
+  Incidentally, Ocaml and JavaScript use the same language for modules and for
+  their /types/, whereas, for example, Haskell's recent retrofitting
+  cite:haskell_backpack, of its weak module system to allow such interfacing, is
+  not entirely in the core language since, for example, instantiating happens by
+  the package manager rather than by a core language declaration.
 
 + Polymorphism :: Grouping mechanisms should group all kinds of things without prejudice.
 
-          This includes ‘nested datatypes’: Local types introduced for implementation
-          purposes, where only certain functionality is exposed. E.g., in an Agda record
-          declaration, it may be nice to declare a local type where the record fields refer to it.
-          This approach naturally leads into hierarchical modules as well.
+  This includes ‘nested datatypes’: Local types introduced for implementation
+  purposes, where only certain functionality is exposed. E.g., in an Agda record
+  declaration, it may be nice to declare a local type where the record fields
+  refer to it. This approach naturally leads into hierarchical modules as well.
 
-          Interestingly, such nesting is expressible in [[http://fsl.cs.illinois.edu/images/5/5e/Cayenne.pdf][Cayenne]], a long-gone predecessor
-          of Agda. The language lived for about 7 years and it is unclear why it is no longer
-          maintained. Speculation would be that dependent types were poorly understood by
-          the academics let alone the coders ---moreover, it had essentially one maintainer
-          who has since moved on to other projects.
+  Interestingly, such nesting is expressible in [[http://fsl.cs.illinois.edu/images/5/5e/Cayenne.pdf][Cayenne]], a long-gone predecessor
+  of Agda. The language lived for about 7 years and it is unclear why it is no longer
+  maintained. Speculation would be that dependent types were poorly understood by
+  the academics let alone the coders ---moreover, it had essentially one maintainer
+  who has since moved on to other projects.
 
-          With the metaprogramming inspired approach we are proposing, it is only reasonable that, for example,
-          one be able to mechanically transform a package with a local type declaration into
-          a package with the local declaration removed and a new component added to abstract it.
-          That is, a particular implementation is no longer static, but dynamic.
+  With the metaprogramming inspired approach we are proposing, it is only
+  reasonable that, for example, one be able to mechanically transform a package
+  with a local type declaration into a package with the local declaration
+  removed and a new component added to abstract it. That is, a particular
+  implementation is no longer static, but dynamic. Real world uses cases of this
+  idea can be found in the earlier section
+  ref:sec:redundancy_derived_features_feature_exclusion.
 
 It would not be unreasonable to consider adding to this enumeration:
-+ Sharing :: The computation performed for a module parameter should be
-         shared across its constituents, rather than inefficiently being recomputed
-         for each constituent ---as is the case in the current implementation of Agda.
+
++ Sharing :: The computation performed for a module parameter should be shared
+  across its constituents, rather than inefficiently being recomputed for each
+  constituent ---as is the case in the current implementation of Agda.
 
 It is however debatable whether the following is the ‘right’ way to incorporate
 object-oriented notions of encapsulation.
-+ Generative modules :: A module, rather than being pure like a function, may have
-     some local state or initial setup that is unique to each ‘instantiation’ of
-     the module ---rather than being purely applying a module to parameters.
 
-     #  As I remember Leroy-1995, the point was that SML's generative system is replaced in OCaml with an applicative system.
-     SML supports such features.
-     Whereas Haskell, for example,
-     has its typeclass system essentially behave like an implicitly type-indexed record
-     for the ‘unnamed instance record’ declarations; thereby rendering useless
-     the interfaces supporting, say, only an integer constant.
-+ Subtyping :: This gives rise to ‘heterogeneous equality’ where altering type annotations can suddenly
-        make a well-typed expression ill-typed. E.g., any two record values are equal /at/ the
-        subtype of the empty record, but may be unequal at any other type annotation.
++ Generative modules :: A module, rather than being pure like a function, may
+  have some local state or initial setup that is unique to each ‘instantiation’
+  of the module ---rather than being purely applying a module to parameters.
 
-        Since a package could contain anything, such as notational declarations,
-        it is unclear how even homogeneous equality should be defined
-        ---assuming notations are not part of a package's type.
+  #  As I remember Leroy-1995, the point was that SML's generative system is
+  #  replaced in OCaml with an applicative system.
+  SML supports such features. Whereas Haskell, for example, has its typeclass
+  system essentially behave like an implicitly type-indexed record for the
+  ‘unnamed instance record’ declarations; thereby rendering useless the
+  interfaces supporting, say, only an integer constant.
 
-There are many other concerns regarding packages ---such as deriving excerpts, decoration with
-higher-order utilities, literate programming support, and matters of compilation along altered constituents---
-but they serve to distract from our core discussions and are thus omitted.
++ Subtyping :: This gives rise to ‘heterogeneous equality’ where altering type
+  annotations can suddenly make a well-typed expression ill-typed. E.g., any two
+  record values are equal /at/ the subtype of the empty record, but may be unequal
+  at any other type annotation.
+
+  Since a package could contain anything, such as notational declarations, it is
+  unclear how even homogeneous equality should be defined ---assuming notations
+  are not part of a package's type.
+
+Below is a table briefly summarising the above module features for popular
+languages like C and JavaScript, and less popular languages Agda and Ocaml.
+
+#+caption: How languages support module uses
+| Concept / Language  | C                    | JavaScript                     | Agda                   | Ocaml                      |
+|---------------------+----------------------+--------------------------------+------------------------+----------------------------|
+| Namespacing         | file dependent       | functions and ~class~            | ~module~ and ~record~      | Signatures                 |
+| Encapsulation       | No                   | Yes                            | Yes                    | Yes                        |
+| First-class modules | No                   | Yes: JSON prototype objects    | No                     | Yes: Functors              |
+| Polymorphism        | Yes: Void Pointers   | Yes: Dynamically checked       | Yes: Dependently typed | Yes: Strongly typed        |
+|---------------------+----------------------+--------------------------------+------------------------+----------------------------|
+| Sharing             | Yes with ~#define~     | Yes, as function arguments     | No                     | Yes, as function arguments |
+| Generative modules  | ~struct, malloc, free~ | Constructors and ~new~           | No                     | Yes                        |
+| Subtyping           | No                   | Yes with prototype inheritance | No                     | Yes                        |
+
+There are many other concerns regarding packages ---such as deriving excerpts,
+decoration with higher-order utilities, literate programming support, and
+matters of compilation along altered constituents--- but they serve to distract
+from our core discussions and are thus omitted.
 
 *** COMMENT ⟪ Originally lengthy & messy version ⟫ What's Expected of Module Systems?
 
@@ -2066,117 +2102,444 @@ fmap f s | null s    = s
    One potential solution would be to deconflate the unit of namespacing from the
 unit of compilation (from the unit of filesystem organization).)
 ** Ad hoc Grouping Mechanisms
+<<<sec:module_ad_hoc>>>
 
 # ad hoc ∷ created or done for a “particular” purpose as necessary.
 # Synonyms:	impromptu, improvised, rough and ready, makeshift, make-do, cobbled together, thrown together.
 
-Many popular coding languages do not provide top-level modularisation mechanisms,
-yet users have found ways to emulate some or all of their /requirements/.
-We shall emphasise a record-like embedding in this section, then illustrate it in
-Agda in the next section.
+Many popular coding languages do not provide top-level modularisation
+mechanisms, yet users have found ways to emulate some or all of their
+/requirements/. We shall emphasise a record-like embedding in this section, then
+illustrate it in Agda in the next section. We shall number the required features
+then illustrate their simulation in JavaScript.
 
-*Namespacing:* Ubiquitous languages, such as C, Shell, and JavaScript, that do not
-have built-in support for namespaces mimic it by a consistent naming
-discipline as in {{{newline}}} ~theModule_theComponent~. This way, it is clear where ~theComponent~
-comes from; namely, the `module' ~theModule~ which may have its interface expressed as a
-C header file or as a JSON literal. This is a variation of
-Hungarian Notation cite{hungarian_notation}.
+[0] *Namespacing:* Ubiquitous languages, such as C, Shell, and JavaScript, that do not
+have built-in support for namespaces mimic it by a consistent naming discipline
+as in {{{newline}}} ~theModule_theComponent~. This way, it is clear where
+~theComponent~ comes from; namely, the ‘module’ ~theModule~ which may have its
+interface expressed as a C header file or as a JSON literal. This is a variation
+of Hungarian Notation cite:hungarian_notation.
 
 # https://docs.racket-lang.org/guide/macro-module.html
-Incidentally, a Racket source file, module, and `language' declaration
-are precisely the same.
-Consequently, Racket modules, like OCaml's, may contain top-level
-effectful expressions.
-In a similar fashion, Python packages
-are directories containing an  ~__init__.py~ file which is used for the the same
+Incidentally, a Racket source file, module, and ‘language’ declaration are
+precisely the same. Consequently, Racket modules, like Ocaml's, may contain
+top-level effectful expressions. In a similar fashion, Python packages are
+directories containing an ~__init__.py~ file which is used for the the same
 purpose as Scala's ~package object~'s ---for package-wide definitions.
 
-*Objects:* An object can be simulated by having a record structure
-contain the properties of the class which are then instantiated
-by record instances. Public class methods are then normal
-methods whose first argument is a reference to the structure
-that contains the properties.
+[1] *Objects:* An object can be simulated by having a record structure contain the
+properties of the class which are then instantiated by record instances. Public
+class methods are then normal methods whose first argument is a reference to the
+structure that contains the properties. The relationship between an object
+instance and its class prototype can be viewed across a number of domains, as
+illustrated in the following table.
 
 # Records, Prefixes, & Record Consuming Operations
 
 #+LaTeX: \begin{tcolorbox}[title=\hfill Muliple Forms of the Template-Instantiation Duality]
 #+BEGIN_CENTER
-| *Template*            | $\qquad\text{has a}\qquad$ | *Instance*           |
-| ≈ class             |                            | ≈ object           |
-| ≈ type              |                            | ≈ value            |
-| ≈ theorem statement |                            | ≈ witnessing proof |
-| ≈ specification     |                            | ≈ implementation   |
-| ≈ interface         |                            | ≈ implementation   |
-| ≈ signature         |                            | ≈ algebra          |
-| ≈ logic             |                            | ≈ theory           |
+| *Template*            | $\qquad\text{\emph{has a}}\qquad$ | *Instance*           |
+| ≈ class             |                                   | ≈ object           |
+| ≈ type              |                                   | ≈ value            |
+| ≈ theorem statement |                                   | ≈ witnessing proof |
+| ≈ specification     |                                   | ≈ implementation   |
+| ≈ interface         |                                   | ≈ implementation   |
+| ≈ signature         |                                   | ≈ algebra          |
+| ≈ logic             |                                   | ≈ theory           |
+| ≈ metamodel         |                                   | ≈ model            |
 #+END_CENTER
 #+LaTeX: \end{tcolorbox}
 
-*Modules:* Languages that do not support a module may mimic it
-by placing ``module contents'' within a record.
-Keeping all contents within one massive record also solves the
-namespacing issue.
+[2] *Modules:* Languages that do not support a module may mimic it by placing “module
+contents” within a record. Keeping all contents within one massive record also
+solves the namespacing issue.
 
-In JavaScript, for example, a module is a JSON literal
----i.e., a comma separated list of key-value pairs.
-Moreover, encapsulation is simulated by having the module be encoded
-as a function that yields a record which acts as the public contents
-of the module, while the non-returned matter is considered private.
-Due to JavaScript's dynamic nature we can easily adjoin functionality to such `modules'
-at any later point; however, we cannot access any private members of the module.
-This inflexibility of private data is a heavy burden in an Object Oriented
-Paradigm.
+In older versions of JavaScript, for example, a module is a JSON literal
+---i.e., a comma separated list of key-value pairs. Moreover, encapsulation is
+simulated by having the module be encoded as a function that yields a record
+which acts as the public contents of the module, while the non-returned matter
+is considered private. Due to JavaScript's dynamic nature we can easily adjoin
+functionality to such ‘modules’ at any later point; however, we cannot access
+any private members of the module. This inflexibility of private data is both a
+heavy burden as well as a championed merit of the Object Oriented Paradigm.
 
-*Sub-Modules:* If a module is encoded as a record, then a sub-module is a
-field in the record which itself happens to be a module encoding.
+[3] *Sub-Modules:* If a module is encoded as a record, then a sub-module is a field in
+the record which itself happens to be a module encoding.
 
-*Parameterised Modules:* If a module can be considered as encoded as the returned record from
-a function, then the arguments to such a function are the parameters to the module.
+[4] *Parameterised Modules:* If a module can be considered as encoded as the returned
+record from a function, then the arguments to such a function are the parameters
+to the module.
 
-*Mixins:* A /mixin/ is the ability to extend a datatype /X/ with functionality /Y/
-long after, and far from, its definition.
-Mixins ‘mix in’ new functionality by permitting /X obtains traits Y/
----unlike inheritance which declares /X is a Y/. Examples of this
-include Scala's traits, Java's inheritance, Haskell's typeclasses, and C#'s extension methods.
+[5] *Mixins:* A /mixin/ is the ability to extend a datatype /X/ with functionality /Y/ long
+after, and far from, its definition. Mixins ‘mix in’ new functionality by
+permitting /X obtains traits Y/ ---unlike inheritance which declares /X is a Y/.
+Examples of this include Scala's traits, Java's inheritance, Haskell's
+typeclasses, and C#'s extension methods.
 
-Typescript cite:understanding_typescript
-occupies an interesting position with regards to mixins: It is one of the few
-languages to provide union and intersection combinators for its ~interface~ grouping mechanism,
-thereby most easily supporting the little theories cite:little_theories
-method and making theories a true lattice. Interestingly intersection of interfaces
-results in a type that contains the declarations of its arguments and if a field
-name has conflicting types then it is, recursively, assigned the intersection of the distinct types
----the base cases of this recursive definition are primitive types, for which distinct types yield an empty intersection.
-In contrast, its union types are disjoint sums.
+Let us see a concrete realisation of such a simulation of module features in JavaScript.
+#+BEGIN_SRC js :results output
+// [2] A simple unparamterised module with no private information.
+// [0] The field “name” is not global, but lives in a dedicated namespace.
+function Person (nom, age) { this.name = nom; this.age = age; }
+
+// [1] An object instance; i.e., the dictionary literal {name: "Gödel", age: 12}
+gödel = new Person("Gödel", 12)
+
+// [5] Let's mixin new functionality, say, a new method
+gödel.prove = () => console.log("I have an incomplete proof...")
+
+// [2, 4] A module parameterised by another module that is a “submodule” of “Person”.
+// [3] The non-Person parts of the parameter are in module “P”.
+function alter_module({name, age, ...P}) {
+
+    // “Private” fields
+    information = `I am ${name}! I am ${age} years of age!`
+    function speak() { console.log(information) }
+
+    // The return value; fields that are promoted to “public”
+    return {name, speak}
+}
+
+// Invoking the function-on-modules “alter_module”
+// which mixes-in the “speak” method but drops the “age” field
+kurt  = alter_module(gödel)
+kurt.speak() // ⇒ I am Gödel! I am 12 years of age!
+
+// [0] Notice that the “gödel” module ‘lost’ the “age” field
+// when it was transformed into the “kurt” module.
+console.log(kurt) // ⇒ { name: 'Gödel', speak: [Function: speak] }
+#+END_SRC
+
+Typescript cite:understanding_typescript occupies an interesting position with
+regards to mixins: It is one of the few languages to provide union and
+intersection combinators for its ~interface~ grouping mechanism, thereby most
+easily supporting the little theories cite:little_theories method and making
+theories a true lattice. Interestingly, intersection of interfaces results in a
+type that contains the declarations of its arguments and if a field name has
+conflicting types then it is, recursively, assigned the intersection of the
+distinct types ---the base cases of this recursive definition are primitive
+types, for which distinct types yield an empty intersection. In contrast, its
+union types are disjoint sums.
 #
 # https://codingblast.com/typescript-intersection-types/
 
-In the dependently-typed setting, one also obtains so-called ‘canonical structures’ cite:coq_canonical,
-which not only generalise the previously mentioned mixins but also facilitate a flexible
-style of logic programming by having user-defined algorithms executed during unification;
-thereby permitting one to omit many details cite:coq_canonical_tutorial and have them inferred.
-As mentioned earlier regarding objects, we could simulate mixins by encoding a class
-as a record and a mixin as a record-consuming method.
-Incidentally languages admitting mixins give rise to an alternate method
-of module encoding:
-A ‘module /of type M’ is encoded as an instantiation
-of the mixin trait M./
+In the dependently-typed setting, one also obtains so-called ‘canonical
+structures’ cite:coq_canonical, which not only generalise the previously
+mentioned mixins but also facilitate a flexible style of logic programming by
+having user-defined algorithms executed during unification; thereby permitting
+one to /omit many details cite:coq_canonical_tutorial and have them inferred/. As
+mentioned earlier regarding objects, we could simulate mixins by encoding a
+class as a record and a mixin as a record-consuming method. Incidentally
+languages admitting mixins give rise to an alternate method of module encoding:
+A ‘module /of type M’ is encoded as an instantiation of the mixin trait M./
 
 # In the sequel,
 # when we discuss modules as contexts, it can be seen that the simplest form of
 # mixins is context prepending.
 
-These natural encodings only reinforce our idea that there is no real essential difference
-between grouping mechanisms: Whether one uses a closure, record, or module
-is a matter of preference the usage of which communicates particular intent.
+These natural encodings only reinforce our idea that there is no real essential
+difference between grouping mechanisms: Whether one uses a closure, record, or
+module is a matter of preference the usage of which communicates particular
+intent, as summarised briefly in the table below.
+
+#+caption: Choice of grouping mechansims communicate intent
+| Concept               | Possible Intent                                                                |
+|-----------------------+--------------------------------------------------------------------------------|
+| module                | Namespacing; organise related utilities under the same name                    |
+| record                | Bundle up related features into one ‘coherent’ unit                            |
+| tuple                 | Quickly return multiple items from a function                                  |
+|-----------------------+--------------------------------------------------------------------------------|
+| function              | An indexed value                                                               |
+|-----------------------+--------------------------------------------------------------------------------|
+| parameterised modules | Namespaced utilities abstracted over other utilities; e.g., ~sort~ indexed by ~<~. |
+| parameterised record  | A semantic unit that ‘build upon’ another coherent unit                        |
+
+** Modules in Coq then in Agda
+
+Module systems parameterise proofs and tactics over structures.
+
+#+BEGIN_SRC coq
+(**
+
+1. A ~Module Type~ contains the signature of the abstract structure to work from;
+   it lists the ~Parameter~'s and ~Axiom~'s we want to use, possibly along
+   with notation declaration to make the syntax easier.
+,**)
+(**
+
+|      || Signature     | Structure      |
+| Coq  || ≈ module type | ≈ module       |
+| Agda || ≈ record type | ≈ record value |
+| JavaScript || ≈ prototype | ≈ JSON object |
+
+It is perhaps seen most easily in the last entry in the table, that
+modules and modules types are essentially the same thing: They are just
+partially defined record types. Again there is a difference in the usage intent:
+
+| Concept | Intent |
+|---------|--------|
+| Module types | Any name may be opaque, undefined. |
+| Modules | All names must be fully defined. |
+
+,**)
+
+Module Type Graph.
+  Parameter Vertex : Type.
+  Parameter Edges : Vertex -> Vertex -> Prop.
+  Infix "<=" := Edges : order_scope.
+  Open Scope order_scope.
+  Axiom loops : forall e, e <= e.
+  Parameter decidable : forall x y, {x <= y} + {not (x <= y)}.
+  Parameter connected : forall x y, {x <= y} + {y <= x}.
+End Graph.
+
+(* To form an instance of the graph module type, we define a module *)
+(* that satisfies the module type signature: The ~<:~ declaration requires *)
+(* us to have definitions and theorems with the same names and types *)
+(* as those listed in the module type's signature. *)
+
+Require Import Bool.
+
+Module BoolGraph <: Graph.
+  Definition Vertex := bool.
+  Definition Edges  := fun x => fun y => leb x y.
+  Infix "<=" := Edges : order_scope.
+  Open Scope order_scope.
+  Theorem loops: forall x : Vertex, x <= x.
+    Proof.
+    intros; unfold Edges, leb; destruct x; tauto.
+    Qed.
+  Theorem decidable: forall x y, {Edges x y} + {not (Edges x y)}.
+    Proof.
+      intros; unfold Edges, leb; destruct x, y.
+      all: (right; discriminate) || (left; trivial).
+  Qed.
+  Theorem connected: forall x y, {Edges x y} + {Edges y x}.
+    Proof.
+      intros; unfold Edges, leb. destruct x, y.
+      all: (right; trivial; fail) || left; trivial.
+  Qed.
+End BoolGraph.
+
+(*
+Now we can write a “module functor”: A module that takes some ~Module Type~ parameters. E.g., here is a module that define a minimum function.
+
+Min is a function-on-modules; the input type is Graph
+and the output module type is “Sig Definition min : ⋯. Parameter case_analysis: ⋯. End”. This is similar to JavaScript's approach.
+,*)
+Module Min (G : Graph).
+  Import G. (* I.e., open it so we can use names in unquantifed form. *)
+  Definition min a b : Vertex := if (decidable a b) then a else b.
+  Theorem case_analysis: forall P : Vertex -> Type, forall x y,        (x <= y -> P x) -> (y <= x -> P y) -> P (min x y).
+  Proof.
+    intros. (* P, x, y, and hypothesises H₀, H₁ now in scope*)
+    (* Goal: P (min x y) *)
+    unfold min. (* Rewrite “min” according to its definition. *)
+    (* Goal: P (if decidable x y then x else y) *)
+    destruct (decidable x y). (* Pattern match on the result of “decidable”. *)
+    (* Subgoal 1: P x  ---along with new hypothesis H₃ : x ≤ y *)
+    tauto. (* i.e., modus ponens using H₁ and H₃ *)
+    (* Subgoal 2: P y  ---along with new hypothesis H₃ : ¬ x ≤ y *)
+    destruct (connected x y).
+    (* Subgoal 2.1: P y ---along with new hypothesis H₄ : x ≤ y *)
+    absurd (x <= y); assumption.
+    (* Subgoal 2.2: P y ---along with new hypothesis H₄ : y ≤ x *
+    )
+    tauto. (* i.e., modus ponens using H₂ and H₄ *)
+  Qed.
+End Min.
+
+(* We may now apply the module functor. *)
+
+Module Conjunction := Min BoolGraph.
+Export Conjunction.
+Print min.
+(*
+min =
+fun a b : BoolGraph.Vertex => if BoolGraph.decidable a b then a else b
+     : BoolGraph.Vertex -> BoolGraph.Vertex -> BoolGraph.Vertex
+ ,*)
+
+(*
+Unlike the previous functor, which had its return type inferred, we may
+explicitly declare a return type. E.g., the following functor is
+a Graph → Graph function.
+,*)
+Module Dual (G : Graph) <: Graph.
+  Definition Vertex := G.Vertex.
+  Definition Edges  x y : Prop := G.Edges y x.
+  Definition loops := G.loops.
+  Infix "<=" := Edges : order_scope.
+  Open Scope order_scope.
+  Theorem decidable: forall x y, {x <= y} + {not (x <= y)}.
+    Proof.
+      unfold Edges. pose (H := G.decidable). auto.
+  Qed.
+  Theorem connected: forall x y, {Edges x y} + {Edges y x}.
+    Proof.
+      unfold Edges.  pose (H := G.connected). auto.
+  Qed.
+End Dual.
+
+(* Example use, with renaming “min ↦ max” *)
+Module Max (G : Graph).
+  (* Module applications cannot be chained; intermediate modules must be named. *)
+  Module DualG   := Dual G.
+  Module Flipped := Min DualG.
+  Import G.
+  Definition max := Flipped.min.
+  Definition max_case_analysis:
+        forall P : Vertex -> Type, forall x y,
+        (y <= x -> P x) -> (x <= y -> P y) -> P (max x y)
+        := Flipped.case_analysis.
+End Max.
+
+(*
+See the ModuleSystemTutorial in Github coq/coq:
+https://github.com/coq/coq/wiki/ModuleSystemTutorial
+,*)
+
+
+(* ---------------------------------------------------------------------------- *)
+
+(* Coq has generative modules: Each application produces a new datatype instance. *)
+Module Type Unit. End Unit. (* Empty signature. *)
+Module TT <: Unit. End TT.  (* Empty structure. *)
+Module F (X : Unit).
+  Inductive t : Type := MakeT.
+End F.
+
+Module A := F TT.
+Module B := F TT.
+Fail Check eq_refl : A.t = B.t.
+Print A.t.
+
+Module Type Carrier. Parameter t : Type. End Carrier.
+Module Nat <: Carrier. Definition t := nat. End Nat.
+
+Module Type Morphism (X : Carrier) <: Carrier. Parameter t : Type. End Morphism.
+Module Identity (X : Carrier) <: Morphism X. Definition t := X.t. End Identity.
+
+Module Alias  (X : Carrier). Module M := X. End Alias.
+Module AtNat  (F : Morphism). Module M := F Nat. End AtNat.
+
+Module N := Alias Nat.
+Print N.M.t.
+(* N.M.t = Nat.t
+     : Type
+
+Modules η-expand and so aliasing does nothing.
+ ,*)
+
+Module O := AtNat Identity.
+Print O.M.t.
+(*
+[ O.M.t : Type ] ; i.e., an opaque type
+
+Type of functors do not η-reduce, and as such one cannot expect them to be applicative, and so are generative ^_^
+
+See coq/coq OpenIssuesWithModules: https://github.com/coq/coq/wiki/OpenIssuesWithModules
+ ,*)
+#+END_SRC
+
+Now the Agda equivalent.
+#+BEGIN_SRC agda2
+open import Relation.Nullary {- Decidablity! -}
+open import Data.Empty
+open import Data.Sum
+open import Data.Bool renaming (_≤_ to leb)
+open import Data.Bool.Properties
+--
+--  f≤t : false ≤ true
+--  b≤b : ∀ {b} → b ≤ b
+
+record Graph : Set₁ where
+  field
+    Vertex : Set
+    _⟶_  : Vertex → Vertex → Set
+    loops  : ∀ {e} → e ⟶ e
+    decidable : ∀ x y → Dec (x ⟶ y)
+    connected : ∀ x y → (x ⟶ y) ⊎ (y ⟶ x)
+
+BoolGraph : Graph
+BoolGraph = record
+              { Vertex = Bool
+              ; _⟶_ = leb
+              ; loops = b≤b
+              {- I only did the case analysis, the rest was “auto”. -}
+              ; decidable = λ{ true  true  → yes b≤b
+                             ; true  false → no (λ ())
+                             ; false true  → yes f≤t
+                             ; false false → yes b≤b }
+              {- I only did the case analysis, the rest was “auto”. -}
+              ; connected = λ{ true true   → inj₁ b≤b
+                             ; true false  → inj₂ f≤t
+                             ; false true  → inj₁ f≤t
+                             ; false false → inj₁ b≤b }
+              }
+
+record Min (G : Graph) : Set where
+  open Graph G
+
+  min : Vertex → Vertex → Vertex
+  min x y with decidable x y
+  ...| yes _  = x
+  ...| no  _  = y
+
+  case-analysis : ∀ {P : Vertex → Set} {x y}
+                → (x ⟶ y  →  P x)
+                → (y ⟶ x  →  P y)
+                → P (min x y)
+  case-analysis {P} {x} {y} H₀ H₁ with decidable x y | connected x y
+  ... | yes x⟶y | _          = H₀ x⟶y
+  ... | no ¬x⟶y | inj₁ x⟶y = ⊥-elim (¬x⟶y x⟶y)
+  ... | no ¬x⟶y | inj₂ y⟶x = H₁ y⟶x
+
+open Min
+
+open import Relation.Binary.PropositionalEquality
+
+Conjunction = Min BoolGraph
+
+uip : ∀ (p q : Conjunction) → p ≡ q
+uip record {} record {} = refl
+
+_ : Bool → Bool → Bool
+_ = min I where I : Conjunction; I = record {}
+
+Dual : Graph → Graph
+Dual G = let open Graph G in record
+           { Vertex    = Vertex
+           ; _⟶_       = λ x y →  y ⟶ x
+           ; loops     = loops
+           ; decidable = λ x y → decidable y x
+           ; connected = λ x y → connected y x
+           }
+
+record Max (G : Graph) : Set where
+  open Graph G
+  private
+    Flipped = Min (Dual G)
+    I : Flipped
+    I = record {}
+
+  max : Vertex → Vertex → Vertex
+  max = min I
+
+  max-case-analysis : ∀ {P : Vertex → Set} {x y}
+                → (y ⟶ x  →  P x)
+                → (x ⟶ y  →  P y)
+                → P (max x y)
+  max-case-analysis = case-analysis I
+#+END_SRC
 
 ** Existing Systems
-
+<<<sec:module_existing>>>
 :OldIntro:
-Is there any actual /need/ for the proposed research?
-Are the goals easily adaptable from the simply-typed settings?
-Is the declared arena of dependently-typed languages
-sufficiently intricate to warrant this much attention?
+Is there any actual /need/ for the proposed research? Are the goals easily
+adaptable from the simply-typed settings? Is the declared arena of
+dependently-typed languages sufficiently intricate to warrant this much
+attention?
 
 In this section, we shall outline that DTLs constitute a difficult
 and poorly understood domain in comparison to conventional programming
@@ -2185,76 +2548,74 @@ Then we outline the merits of including dependent types.
 Finally, we close with a comparison of some of the most popular DTLs.
 :End:
 
-We want to implement solutions in a dependently typed
-language. Let us discuss which are active and their capabilities.
+We want to implement solutions in a dependently typed language. Let us discuss
+which are active and their capabilities.
 
-Dependent-types provide an immense level of expressivity thereby
-allowing varying degrees of precision to be embedded, or omitted,
-from the type of a declaration. This overwhelming degree of freedom
-comes at the cost of common albeit non-orthogonal styles of coding
-and compilation, which remain as open problems that are only mitigated
-by awkward workarounds such as Coq's distinction of types and
-propositions for compilation efficiency.
-The difficulties presented by DTLs are outweighed by
-the opportunities they provide cite{dtl_why} ---of central importance is that they blur distinctions between
+Dependent-types provide an immense level of expressivity thereby allowing
+varying degrees of precision to be embedded, or omitted, from the type of a
+declaration. This overwhelming degree of freedom comes at the cost of common
+albeit non-orthogonal styles of coding and compilation, which remain as open
+problems that are only mitigated by awkward workarounds such as Coq's
+distinction of types and propositions for compilation efficiency. The
+difficulties presented by DTLs are outweighed by the opportunities they provide
+cite:dtl_why ---of central importance is that they blur distinctions between
 usual programming constructs, which is in alignment with our thesis.
 
-To the best of our knowledge, as confirmed by Wikipedia in cite:wiki_proof_assistants, wiki_proof_assistants_dependent, there are currently less than 15 /actively
-developed/ dependently-typed languages in-use /that are also used/ as
-proof-assistants ---which are intersting to us since we aim to
-mechanise all of our results: Algorithms as well as theorems.
+To the best of our knowledge, as confirmed by Wikipedia in
+cite:wiki_proof_assistants,wiki_proof_assistants_dependent, there are currently
+less than 15 /actively developed/ dependently-typed languages in-use /that are also
+used/ as proof-assistants ---which are intersting to us since we aim to mechanise
+all of our results: Algorithms as well as theorems.
 
-*Agda cite:agda_overview, agda_thesis*: One of the more popular proof assistants around; possibly due to its syntactic
-inheritance from Haskell ---as is the case with Idris. Its Unicode mixfix
-lexemes permit somewhat faithful renditions of informal mathematics; e.g.,
-calculational proofs can be encoded to be read by those unfamiliar with the system.
-It also allows traditional functional programming with the ability to
-`escape under the hood' and write Haskell code. The language has not been
-designed solely with theorem proving in mind, as is the case for Coq, but rather
-has been designed with dependently-typed programming in mind
-cite:agda_web, agda_plf.
+*Agda cite:agda_overview,agda_thesis*: One of the more popular proof assistants
+around; possibly due to its syntactic inheritance from Haskell ---as is the case
+with Idris. Its Unicode mixfix lexemes permit somewhat faithful renditions of
+informal mathematics; e.g., calculational proofs can be encoded to be read by
+those unfamiliar with the system. It also allows traditional functional
+programming with the ability to ‘escape under the hood’ and write Haskell code.
+The language has not been designed solely with theorem proving in mind, as is
+the case for Coq, but rather has been designed with dependently-typed
+programming in mind cite:agda_web,agda_plf.
 
-The current implementation of the Agda language has a notion of second-class modules which
-may contain sub-modules along with declarations and definitions of first-class citizens.
-The intimate relationship between records and modules is perhaps best exemplified here
-since the current implementation provides a declaration to construe a record as if it were
-a module. This change in perspective allows Agda records to act as Haskell typeclasses.
-However, the relationship with Haskell is only superficial: Agda's current implementation does
-not support sharing. In particular, a parameterised module is only syntactic sugar such that
-each member of the module actually obtains a new functional parameter; as such, a computationally
-expensive parameter provided to a module invocation may be intended to be computed only once,
-but is actually computed at each call site.
+The current implementation of the Agda language has a notion of second-class
+modules which may contain sub-modules along with declarations and definitions of
+first-class citizens. The intimate relationship between records and modules is
+perhaps best exemplified here since the current implementation provides a
+declaration to construe a record as if it were a module. This change in
+perspective allows Agda records to act as Haskell typeclasses. However, the
+relationship with Haskell is only superficial: Agda's current implementation
+does not support sharing. In particular, a parameterised module is only
+syntactic sugar such that each member of the module actually obtains a new
+functional parameter; as such, a computationally expensive parameter provided to
+a module invocation may be intended to be computed only once, but is actually
+computed at each call site.
 
-*Coq cite:coq_implementation, coq_cat_experiences:* Unquestionably one of, if not, the most popular proof assistant around.
-It has been used to produce mechanised proofs of the infamous Four Colour Theorem
-cite:coq_four_colour}, the Feit-Thompson Theorem \parencite{coq_feit,
-and an optimising compiler for the C language: CompCert cite:coq_compcert, compcert_paper.
+*Coq cite:coq_implementation,coq_cat_experiences:* Unquestionably one of, if not,
+the most popular proof assistant around. It has been used to produce mechanised
+proofs of the infamous Four Colour Theorem cite:coq_four_colour, the
+Feit-Thompson Theorem cite:coq_feit, and an optimising compiler for the C
+language: CompCert cite:coq_compcert,compcert_paper.
 
-Unlike Agda, Coq supports tactics cite:tacticstype -a brute force approach
-that renders (hundredfold) case analysis as child's play:
-Just refine your tactics till all the subgoals are achieved.
-Ultimately the cost of utilising tactics is that a tactical proof
-can only be understood with the aid of the system, and may otherwise be
-un-insightful and so failing to meet most of the purposes of proof cite:purposes_of_proof
----which may well be a large barrier for mathematicians who value insightful proofs.
+Unlike Agda, Coq supports tactics cite:tacticstype ---a brute force approach
+that renders (hundredfold) case analysis as child's play: Just refine your
+tactics till all the subgoals are achieved. Ultimately the cost of utilising
+tactics is that a tactical proof can only be understood with the aid of the
+system, and may otherwise be un-insightful and so failing to meet most of the
+purposes of proof cite:purposes_of_proof ---which may well be a large barrier
+for mathematicians who value insightful proofs.
 
-The current implementation of Coq provides the base features expected of any module system.
-A notable difference from Agda is that it allows “copy and paste”
-contents of modules using the include keyword. Consequently it provides a number
+The current implementation of Coq provides the base features expected of any
+module system. A notable difference from Agda is that it allows “copy and paste”
+contents of modules using the ~include~ keyword. Consequently it provides a number
 of module combinators, such as ~<+~ which is the infix form of module inclusion
-cite:coq_manual. Since Coq module types are essentially contexts,
-the module type ~X <+ Y <+ Z~ is really the catenation of contexts, where later
-items may depend on former items. The Maude cite:maude, maude_module_algebra framework
-contains a similar yet more comprehensive algebra of modules and how they
-work with Maude theories. An important aspect of the thesis work will be to
-actually investigate Maude further and attempt to reproduce and generalise
-some of the use cases in ‘the Maude book’ cite:maude using a core
-set of packaging primitives for DTLs ---we will return to what such primitives may be
-in a later section, on preliminary research.
-The Common Algebraic Specification Language
-cite:casl_overview, casl_user_manual, casl_reference_manual
-will also be investigated with the aim of extracting, and generalising, useful module combinators
-and their properties.
+cite:coq_manual. Since Coq module types are essentially contexts, the module
+type ~X <+ Y <+ Z~ is really the catenation of contexts, where later items may
+depend on former items. The Maude cite:maude,maude_module_algebra framework
+contains a similar yet more comprehensive algebra of modules and how they work
+with Maude theories. The Common Algebraic Specification Language
+cite:casl_overview,casl_user_manual,casl_reference_manual will also be
+investigated with the aim of extracting, and generalising, useful module
+combinators and their properties.
 #
 # Casl in general: http://www.cofi.info
 # Casl tools: http://hets.dfki.de
@@ -2278,21 +2639,21 @@ Theories (and functional modules fmod) can only
 contain equations.
 :End:
 
-Incidentally, Coq modules are essentially
-Agda records ---which is unsurprising since our thesis states packaging containers
-are all essentially the same. In more detail, both notions coincide with
-that of a signature ---a sequence of pairs of name-type declarations.
-Where Agda users would speak of a record instance, Coq users would speak of
-a module implementation. To make matters worse, Coq has a notion of records
-which are far weaker than Agda's; e.g., by default all record
-field names are globally exposed and records are non-recursive.
+Incidentally, Coq modules are essentially Agda records ---which is unsurprising
+since our thesis states packaging containers are all essentially the same. In
+more detail, both notions coincide with that of a signature ---a sequence of
+pairs of name-type declarations. Where Agda users would speak of a /record
+instance/, Coq users would speak of a /module implementation/. To make matters
+worse, Coq has a notion of records which are far weaker than Agda's; e.g., by
+default all record field names are globally exposed and records are
+non-recursive.
 
-Coq's module system extends that of OCaml; a notable divergence is that Coq
+Coq's module system extends that of Ocaml; a notable divergence is that Coq
 permits parameterised module types ---i.e., parameterised record types, in Agda
-parlance. Such module types are also known as ‘functors’ by Coq and OCaml users; which
-are “generative”: Invocations generate new datatypes. Perhaps an example will
-make this rather strange concept more apparent.
-{{{code(Example of Generative Functors)}}}
+parlance. Such module types are also known as ‘functors’ by Coq and Ocaml users;
+which are “generative”: Invocations generate new datatypes. Perhaps an example
+will make this rather strange concept more apparent. {{{code(Example of
+Generative Functors)}}}
 #+begin_src haskell
 -- Coq                        -- Corresponding Agda
 
@@ -2311,6 +2672,9 @@ As seen, in Coq the inductive types are different yet in Agda they are the same.
 This is because Agda treats such parameterised records, or functors, as
 ‘applicative’: They can only be applied, like functions.
 
+:Coq_code:
+MA: TODO: Where does the ~t~ come from on the Coq side?
+:End:
 :Agda_code:
 record Unit : Set where
 
@@ -2552,7 +2916,7 @@ Dependent types are mostly visible within the functional community, however
    :PROPERTIES:
    :header-args: :tangle monoid_renditions.agda :comments link
    :END:
-
+<<<sec:module_agda>>>
 # JC: - 2.4 really helps situate things, and is in the proper place in the proposal
 # - ditto for 2.5
 
@@ -2860,6 +3224,7 @@ duplication by coding against a particular ‘package former’ rather than a
 particular variation thereof --this is akin to a type former.
 
 ** Theory Presentations: A Structuring Mechanism
+<<<sec:module_theory>>>
 
 What of the most closely related theoretical work?
 
