@@ -143,15 +143,13 @@
 #+end_export
 
 * Table of Contents                                    :Github:TOC_4ish:
-- [[#abstract][Abstract]]
+- TODO [[#abstract][Abstract]]
 - [[#introduction----the-thesis-story][Introduction ---The Thesis’ “Story”]]
-  - [[#intro][Intro]]
   - [[#a-language-has-many-tongues][A Language Has Many Tongues]]
   - [[#needless-distinctions-for-containers][Needless Distinctions for Containers]]
   - [[#novel-contributions][Novel Contributions]]
   - [[#overview-of-the-remaining-chapters][Overview of the Remaining Chapters]]
 - [[#motivating-the-problem----examples-from-the-wild][Motivating the problem ---Examples from the Wild]]
-  - [[#introduction][Introduction]]
   - [[#adding-zero-then-multiplying-by-one-results-in-a-type-error][Adding Zero then Multiplying by One Results in a Type Error]]
   - [[#renaming][Renaming]]
     - [[#renaming-problems-from-agdas-standard-library][Renaming Problems from Agda's Standard Library]]
@@ -161,13 +159,40 @@
   - [[#redundancy-derived-features-and-feature-exclusion][Redundancy, Derived Features, and Feature Exclusion]]
   - [[#extensions][Extensions]]
   - [[#summary-of-some-design-patterns-in-dependently-typed-programming][Summary of Some Design Patterns in Dependently-Typed Programming]]
-- TODO [[#current-approaches][Current Approaches]]
-  - [[#intro-1][Intro]]
+- [[#current-approaches][Current Approaches]]
   - [[#expectations-of-module-systems][Expectations of Module Systems]]
   - [[#ad-hoc-grouping-mechanisms][Ad hoc Grouping Mechanisms]]
-  - [[#existing-systems][Existing Systems]]
-  - [[#facets-of-structuring-mechanisms-an-agda-rendition][Facets of Structuring Mechanisms: An Agda Rendition]]
   - [[#theory-presentations-a-structuring-mechanism][Theory Presentations: A Structuring Mechanism]]
+  - [[#json-is-foundational-from-prototypes-to-classes][“JSON is Foundational”: From Prototypes to Classes]]
+    - [[#prototypical-concepts][Prototypical Concepts]]
+    - [[#1-prototype-example][⟨1⟩ Prototype Example]]
+    - [[#2-manual-constructor-functions][⟨2⟩ Manual Constructor Functions]]
+    - [[#3-constructor-functions-with-new][⟨3⟩ Constructor Functions with ~new~]]
+    - [[#4-class-notation][⟨4⟩ ~class~ Notation]]
+    - [[#conclusion][Conclusion]]
+- [[#the-first-choice-what-is-the-target-setting][The First Choice: What is the target setting?]]
+  - [[#what-setting-are-we-targeting-why][What setting are we targeting, why?]]
+  - [[#existing-systems][Existing Systems]]
+    - [[#agda---haskell-on-steroids][Agda --“Haskell on steroids”]]
+    - [[#coq----the-standard-proof-assistant][Coq ---“The standard proof assistant”]]
+    - [[#idris----agda-with-tactics][Idris ---“Agda with tactics”]]
+    - [[#lean----proofs-for-metaprogramming][Lean ---“Proofs for metaprogramming”]]
+    - [[#ats----dependent-types-for-systems-programming][ATS ---“Dependent types for systems programming”]]
+    - [[#f----the-immature-adult][F^* ---“the immature adult”]]
+    - [[#beluga][Beluga]]
+    - [[#notable-mentions][Notable Mentions*]]
+    - [[#modules-in-coq-then-in-agda][Modules in Coq then in Agda]]
+  - TODO [[#a-whirlwind-tour-of-agda][A Whirlwind Tour of Agda]]
+    - [[#intro-2][Intro]]
+    - [[#dependent-functions][Dependent Functions]]
+    - [[#dependent-datatypes][Dependent Datatypes]]
+    - [[#the-curry-howard-correspondence----propositions-as-types][The Curry-Howard Correspondence ---“Propositions as Types”]]
+    - [[#propositional-equality][Propositional Equality]]
+    - [[#modules----namespace-management][Modules ---Namespace Management]]
+      - [[#module-keywords][Module Keywords]]
+    - [[#records][Records]]
+    - [[#interacting-with-the-real-world----compilation-haskell-and-io][Interacting with the real world ---Compilation, Haskell, and IO]]
+  - TODO [[#facets-of-structuring-mechanisms-an-agda-rendition][Facets of Structuring Mechanisms: An Agda Rendition]]
 - TODO [[#solution-requirements][Solution Requirements]]
     - [[#missing-features][Missing Features]]
     - [[#desirable-features][Desirable Features]]
@@ -176,24 +201,8 @@
       - [[#first-observation-syntactic-similarity-for-containers][First Observation: Syntactic Similarity for Containers]]
       - [[#second-observation-computing-similarity-for-containers][Second Observation: Computing Similarity for Containers]]
       - [[#next-steps][Next Steps]]
-- TODO [[#packageformer][PackageFormer]]
-  - [[#syntax][Syntax]]
-  - [[#extension][Extension]]
-  - [[#defining-a-concept-only-once][Defining a Concept Only Once]]
-  - [[#renaming-1][Renaming]]
-  - [[#union-and-intersection][Union (and intersection)]]
-  - [[#duality][Duality]]
-  - [[#extracting-little-theories][Extracting Little Theories]]
-  - [[#200-theories----one-line-for-each][200+ theories -- one line for each]]
-  - [[#summary-of-sample-variationals-provided-with-the-system][Summary of Sample Variationals Provided With The System]]
-- TODO [[#contexts][Contexts]]
-  - [[#introduction-1][Introduction]]
-  - [[#the-problems][The Problems]]
-  - [[#monadic-notation][Monadic Notation]]
-  - [[#termtypes-as-fixed-points][Termtypes as Fixed-points]]
-  - [[#free-datatypes-from-theories][Free Datatypes from Theories]]
-  - [[#related-works][Related Works]]
-  - [[#conclusion][Conclusion]]
+- TODO [[#the-second-choice-packageformer][The Second Choice: PackageFormer]]
+- TODO [[#the-third-choice-contexts][The Third Choice: Contexts]]
 - [[#bib][Bib]]
 
 * Introduction ---The Thesis’ “Story”
@@ -1559,7 +1568,7 @@ end
 
    Maybe tackle this "as needed", rather than upfront.
 
-* TODO Current Approaches
+* Current Approaches
    :PROPERTIES:
    :CUSTOM_ID: current_approaches
    :END:
@@ -1598,9 +1607,13 @@ looking at the current solutions, we also briefly discuss their shortcomings.
 
 #+begin_quote
 The /purpose/ of this section is to establish a working definition of “grouping
-mechanism”, how it can be simulated when it is not a primitive construct, how
-Agda handles them, and a brief theory of their foundations.
+mechanism”, how it can be simulated when it is not a primitive construct, and a
+brief theory of their foundations which are exemplified using JavaScript.
 #+end_quote
+
+JavaScript will be the language of choice to demonstrate these ideas since it
+has a primitive notion of module: Every notion of grouping mechanism boils down
+to begin a list of “key:value” pairs, a so-called <<<JSON object>>>.
 
 ** Expectations of Module Systems
 <<<sec:module_expectations>>>
@@ -2163,20 +2176,21 @@ functionality to such ‘modules’ at any later point; however, we cannot acces
 any private members of the module. This inflexibility of private data is both a
 heavy burden as well as a championed merit of the Object Oriented Paradigm.
 
-[3] *Sub-Modules:* If a module is encoded as a record, then a sub-module is a field in
-the record which itself happens to be a module encoding.
+[3] *Sub-Modules:* If a module is encoded as a record, then a sub-module is a
+field in the record which itself happens to be a module encoding.
 
-[4] *Parameterised Modules:* If a module can be considered as encoded as the returned
-record from a function, then the arguments to such a function are the parameters
-to the module.
+[4] *Parameterised Modules:* If a module can be considered as encoded as the
+returned record from a function, then the arguments to such a function are the
+parameters to the module.
 
-[5] *Mixins:* A /mixin/ is the ability to extend a datatype /X/ with functionality /Y/ long
-after, and far from, its definition. Mixins ‘mix in’ new functionality by
+[5] *Mixins:* A /mixin/ is the ability to extend a datatype /X/ with functionality /Y/
+long after, and far from, its definition. Mixins ‘mix in’ new functionality by
 permitting /X obtains traits Y/ ---unlike inheritance which declares /X is a Y/.
 Examples of this include Scala's traits, Java's inheritance, Haskell's
 typeclasses, and C#'s extension methods.
 
-Let us see a concrete realisation of such a simulation of module features in JavaScript.
+Let us see a concrete realisation of such a simulation of module features in
+JavaScript.
 #+BEGIN_SRC js :results output
 // [2] A simple unparamterised module with no private information.
 // [0] The field “name” is not global, but lives in a dedicated namespace.
@@ -2254,11 +2268,938 @@ intent, as summarised briefly in the table below.
 | parameterised modules | Namespaced utilities abstracted over other utilities; e.g., ~sort~ indexed by ~<~. |
 | parameterised record  | A semantic unit that ‘build upon’ another coherent unit                        |
 
-** Modules in Coq then in Agda
+** Theory Presentations: A Structuring Mechanism
+ <<<sec:module_theory>>>
 
-Module systems parameterise proofs and tactics over structures.
+ What of the most closely related theoretical work?
 
-#+BEGIN_SRC coq
+ Our envisioned effort would support a “write one, obtain many” approach to
+ package formation. In order to get there, we must first understand what is
+ currently possible. As such, we investigate package formers are currently
+ treated formally under the name of ‘theory presentations’. It is the aim of
+ this section to attest that the introduction's story is not completely on shaky
+ foundations, thereby asserting that the aforementioned goals of the
+ introduction are not unachievable ---and the problems that will be posed in
+ ref:old_sec:three are not trivial.
+
+ As discussed, languages are usually designed with a bit more thought given to a
+ first-class citizen notion of grouping than is given to second-class notions of
+ packaging-up defined content. Object-oriented languages, for example, comprise
+ features of both views by treating classes as external structuring mechanisms
+ even though they are normal types of the type system. This internalising of
+ external grouping features has not received much attention with the notable
+ mentions being cite:theories_as_types,focalize. It is unclear whether there is
+ any real distinction between these ‘internal, integrated’ and ‘external,
+ stratified’ forms of grouping, besides intended use. The two approaches have
+ different advantages. Both approaches permit separation of concerns: The
+ external point of view provides a high-level structuring of a development, the
+ internal point of view provides essentially another type which can be the
+ subject of the language's operations ---e.g., quantification or tactics---
+ thereby being more amicable to computing transformations. Essentially it comes
+ down to whether we want a ‘module parameter’ or a ‘record field’ ---why not
+ write it the way you like and get the other form for free.
+
+ #+caption: Parameters ≈ Projections
+ For example, a function ~f ∶ X → Y × Z~ is externally /an indexed value/, a way to
+ structure data ---~Y × Z~ pairs--- according to some *parameters* ---~X~. By a slight
+ change of perspective, the /type/ ~X → Y × Z~ treated internally consists of /values/
+ that have *field projections* ~evalₓ~: For any ~x ∶ X~ and ~f ∶ X → Y × Z~, we have
+ ~evalₓ f ∶ Y × Z~.
+
+ Since external grouping mechanisms tend to allow for intra-language features
+ ---e.g., imports, definitions, notation, extra-logical declarations such as
+ pragmas--- their systematic internalisation necessitates expressive record
+ types. As such, a labelled product type or <<</context/>>> ---being a list of
+ name-type declarations with optional definitions--- is a sufficiently generic
+ rendition of what it means to group matter together.
+
+ Below is a grammar, from cite:theories_as_types, for a simple yet powerful
+ module system based on theory (presentations) and theory morphisms ---which are
+ merely named contexts and named substitutions between contexts, respectively.
+ Both may be formed modularly by using includes to copy over declarations of
+ previously named objects. Unlike theories which may include arbitrary
+ declarations, theory morphisms ~(V ∶ P → Q) ≔ δ~ are well-defined if for every
+ ~P~-declaration ~x ∶ T~, ~δ~ contains a declaration ~x ≔ t~ where ~t~ may refer to all
+ names declared in ~Q~.
+
+ {{{code(Syntax for Dependently Typed λ-calculus with Theories)}}}
+ #+BEGIN_SRC haskell
+-- Contexts
+Γ  ::= ∅                       -- empty context
+     | x : τ [:= τ′], Γ         -- context with declaration, optional definition
+     | Includes X, Γ           -- theory inclusion
+
+-- Terms
+τ ::= x | τ₁ τ₂ | λ x : τ′ • τ -- variables, application, lambdas
+    | Π x : τ′ • τ             -- dependent product
+    | [Γ] | ⟨Γ⟩ | τ.x          -- record “[type]” and “⟨element⟩” formers, projections
+    | Mod X                    -- contravariant “theory to record” internalisation
+
+-- Theory, external grouping, level
+Θ ::= ∅                        -- empty theory
+    | X := Γ, Θ                -- a theory can contain named contexts
+    | (X : (X₁ → X₂)) := Γ     -- a theory can be a first-class theory morphism
+
+-- Proviso: In record formers, Γ must be flat; i.e., does not contain includes.
+ #+END_SRC
+
+ #+LaTeX: \def\Mod{\mathsf{Mod}\,}
+
+This concept of packaging indeed captures much of what's expected of grouping
+mechanisms; e.g.,
+
+ + Grouping mechanism should group all kinds of things and indeed there is no
+   constraint on what a theory presentation may contain.
+
+ + Namespacing: Every module context can be construed as a record whose contents
+   can then be accessed by record field projection.
+
+   /Theories as Types/ cite:theories_as_types presents the first formal approach
+   that systematically internalises theories into record types. Their central
+   idea is to introduce a new operator ~Mod~ ---read “models of”--- that turns a
+   theory $T$ into a type =Mod T= which /behaves/ like a record type.
+
+ + Operations on grouping mechanisms cite:tpc.
+
+Observe that a context is, up to syntactical differences, essentially a
+JavaScript object notation literal. Consequently, the notion of a mixin as
+described for JSON literals is here rendered as a theory morphism.
+# ?
+# ?
+#+caption: Theory presentations in practice
+| Theory Presentations | JavaScript                                              |
+|----------------------+---------------------------------------------------------|
+| Context / Record     | JSON object: ~{key₀: value₀, …, keyₙ: valueₙ}~            |
+| Empty context        | Empty dictionary: ~{}~                                    |
+| Inclusion            | In-place syntactic unpacking: ~{...Γ, k₀:v₀, …, kₙ: vₙ}~  |
+| Theory               | A file or a JSON object or an object-returning function |
+| Translation          | Function from JSON objects to JSON objects              |
+| View                 | Specification preserving translation                     |
+
+For example, with the abbreviation =(Π x : A • B) = (A → B)=, we may form a small
+/theory/ hierarchy of signatures ---which is a just list of /named/ contexts.
+#+BEGIN_SRC haskell
+  MagmaSig ≔ Carrier ∶ Set, _⨾_ ∶ Carrier → Carrier → Carrier, ∅
+, MonSig   ≔ Includes MagmaSig, Id ∶ Carrier, ∅
+, Forget ∶ MagmaSig → MonSig ≔ (Carrier ≔ Carrier, Id ≔ Id, ∅)
+, ∅
+#+END_SRC
+This theory is then realised as follows in JavaScript ---ignoring the types.
+#+BEGIN_SRC js :results output
+let MagmaSig = {Carrier: undefined, op: undefined}
+let MonSig   = {...MagmaSig, id: undefined}
+let Forget   = (Mon) => ({Carrier: Mon.Carrier, op: Mon.op})
+#+END_SRC
+
+In practice, an object's features behave, to some degree, in a /known/ fashion;
+e.g., what operators may be applied or how the object's features interact with
+one another. For instance, a <<</monoid/>>> is an object consisting of a set
+~Carrier~, a value ~Id~ of that set, and a binary operation ~_⨾_~ on the set;
+moreover, the interaction of the latter two is specified by requesting that the
+operation is associative and ~Id~ is the identity element for the binary
+operation. In contrast, a <<</magma/>>> is simply a set along with a binary
+operation. As such, the translation ~Forget~, above, not only gives us a
+translation of features, but it also satisfies all zero coherence laws of a
+magma.
+
+ As mentioned earlier, a theory morphism, also known as a <<</view/>>>, is a map
+ between contexts that implements the interface of the source using utilities of
+ the target; whence results about specific structures can be constructed by
+ transport along views cite:little_theories: A view =V ∶ 𝒮 → 𝒯= gives rise to a
+ term homomorphism ~𝒱~ from ~P~-terms to ~Q~-terms that is type-preserving in that
+ whenever =Θ, 𝒮 ⊢ e ∶ τ= then =Θ, 𝒯 ⊢ 𝒱 e : 𝒱 τ=. Thus, views preserve judgements
+ and, via the propositions-as-types representations, also preserve truth.
+
+ # Theory interpretations are also called translations, theory morphisms, immersions, and realisations.
+ More concretely, a view =V = (U, β) ∶ 𝒮 → 𝒯= is essentially a predicate $U$, of
+ the target theory, denoting a /universe of discourse/ along with an
+ arity-preserving mapping =β= of 𝒮-symbols, or declarations, to 𝒯-expressions
+ ---by itself, =β= is called a <<</translation/>>>. It is lifted to terms as
+ follows ---notice that the translated variable-binders are relativised to the
+ new domain.
+ #+latex:  \begin{tcolorbox}[title=\hfill 𝒱 Extended to Terms]
+ | ~𝒱 x ≈ x~                              | Provided ~x~ is an 𝒮-variable symbol       |
+ | ~𝒱(f e₁ … eₙ) ≈ (β f) (𝒱 e₁) … (𝒱 eₙ)~ | Provided ~f~ is an ~n~-ary 𝒮-function symbol |
+ | ~𝒱(𝒬 x • P) ≈ (𝒬 x ∣ U x • 𝒱 P)~       | Provided ~𝒬~ is a variable-binder ~∀, ∃, λ~  |
+#+latex:  \end{tcolorbox}
+:Alternate_LaTeX_Form:
+ #+BEGIN_EXPORT latex
+ \begin{tcolorbox}[title=\hfill $\Phi$ Extended to Terms]
+ \vspace{-1em}
+ \begin{align*}
+ \Phi(x) &= x  & & \text{ Provided $x$ is an $\mathcal{S}$-variable symbol }
+ \\
+ \Phi\left( f(t_1, \ldots, t_n) \right)
+ &= \beta(f) \left(\Phi\, t_1, \ldots, \Phi\, t_n\right)
+ & & \text{ Provided $f$ is a $n$-ary $\mathcal{S}$-function symbol}
+ \\
+ \Phi\left(\mathcal{Q}\, x \;\bullet\; P\right)
+ &= \left(\mathcal{Q}\, x \;❙\; U\, \;x \bullet\; \Phi(P) \right)
+ & & \text{ Provided $\mathcal{Q}$ is a variable-binder $\forall, \exists, \lambda$ }
+ \end{align*}
+ \end{tcolorbox}
+ #+END_EXPORT
+:End:
+
+ The /Standard Interpretation Theorem/ cite:theory_interpretations_farmer provides
+ sufficient conditions for a translation to be an ‘interpretation’ which
+ transports results between formalisations. It states: A translation is an
+ interpretation provided 𝒮-axioms =P= are lifted to theorems =𝒱 P=, the universe of
+ discourse is non-empty =∃ x • U x=, and the interpretation of the universe
+ contains the interpretations of the symbols; i.e., for each 𝒮-symbol =f= of arity
+ =n=, {{{newline}}} ~𝒱(∀ x₁, …, xₙ • ∃ y • f x₁ … xₙ = y)~ holds.
+
+ # Standard interpreations are used to compare the strength of theories: 𝒯 is at
+ # least as strong as 𝒮 provided 𝓢 is interpretable in 𝒯 --indeed, that's why
+ # every model of the latter gives rise to a model of the former! Also, standard
+ # interpretations have long been used in logic to prove meta-mathematical
+ # properties baout first-order theories, mainly rel;atoive consisitency,
+ # decidiabilkity, and undecidiability.
+
+ By virtue of being a validity preserving homomorphism, a standard
+ interpretation syntactically and semantically embeds its source theory in its
+ target theory. The most important consequence of interpretability is the
+ /Standard Relative Satisfiability/ cite:theory_interpretations_farmer which says
+ that a theory which is interpretable in a satisfiable theory is itself
+ satisfiable; in programming terms this amount to: /If $X$ is an implementation/
+ /of *interface* 𝒯 and 𝒮 is interpretable in 𝒯 then $X$ can be transformed into an
+ implementation of 𝒮./ Interestingly such ‘subtyping’ can be derived in a
+ mechanical fashion, but it can force the subtype relation to be cyclic.
+ However, it is unclear under which conditions translations automatically give
+ rise to interpretations: Can the issue be relegated to syntactic manipulation
+ only?
+
+ Theory interpretation has been studied for first-order predicate logic then
+ extended to higher-order logic cite:theory_interpretations_farmer. The advent
+ of dependent-types, in particular the blurring of operations and formulae
+ cite:wiki_curry_howard, means that propositions of a language can be encoded
+ into it as other sorts, dependent on existing sorts, thereby questioning /what
+ it means to have a validity-preserving morphism/ when the axioms can be encoded
+ as operations? As far as we can tell, it seems very little work regarding
+ theory interpretations has been conducted in dependently-typed settings
+ cite:mlt_partial,higher_order_interpretations,institution_interpretations,dtl_interpretations.
+
+ #  {{{remark(WK: Then you should discuss it in more detail.)}}}
+
+ In subsequent sections, ref:sec:prototype:morphisms, we shall identify a number
+ of views that are formed /syntactically/ and the fact that they are indeed views
+ then becomes the need to mechanically provide certain values ---which by the
+ propositions-as-types view means we mechanically provide certain “proofs of
+ propositions”. Incidentally, moving forward, we shall consider an essentially
+ untyped setting in which to perform such syntax shuffling ---that is, even
+ though we are tackling DTLs, we shall follow a JavaScript-like approach with
+ essentially /one/ notion of grouping rather than a theory presentation approach
+ with two notions.
+
+ :Irrelevant:
+ Notice that records play dual roles. They not only serve as an internal form of grouping
+ mechanisms, but inspired by the previous Agda renditions, also serve the purpose of
+ forming dependent sum types.
+
+ What about the presence of non-termination or inheritance
+ ---i.e., partial functions and subtypes?
+ The subject is only beginning to
+ be seriously explored in higher-order logic and type theory.
+ cite{theory_interpretations_farmer}.
+ Views associating base types with subtypes get complicated since functions must now
+ deal with restricted domains, consequently necessitating that all predicates on functions
+ also be relativised.
+ :End:
+** “JSON is Foundational”: From Prototypes to Classes
+
+   In the previous section, we indicated that going forward, we will be taking a
+   JSON-like approach to working with modules. JavaScript has the reputation of
+   being non-academic, along with its dynamically type-checked nature it is not
+   surprising that the reader may take pause to consider whether our inclination
+   is, plainly put, ‘wrong’. To reassure the reader, we will show how JSON
+   objects are a foundational way to group data by deriving the notion of a
+   ~class~ from object-oriented programming. In fact, recent implementations of
+   JavaScript have a ~class~ keyword which, for the most part, is syntactic sugar
+   for JSON objects.
+
+   We shall arrive at the ~class~ keyword as a means of moving away from design
+   patterns and going to mechanical constructs.
+
+*** Prototypical Concepts
+
+ In English, /prototype/ means a preliminary model of something from which
+ other forms are developed or /copied/. As such, a /prototypical/ object
+ is an object denoting the original or typical form of something.
+
+ In addition to their properties, JavaScript objects also have a prototype
+ ---i.e., another object that is used as a source of additional properties. When
+ an object gets a request for a property that it does not have, its prototype
+ will be searched for the property, then the prototype’s prototype, and so on.
+
+ | A <<</prototype/>>> is another object that is used as a fallback source of properties. |
+
+ Adding new features or overriding methods are another primary use for
+ prototypes. E.g., to attach a new property to a ‘kind’ of object, we simply
+ need to attach it to the prototype ---since all those ‘kinds’ of objects use
+ the prototype's properties. In this way, we overload a method by attaching it
+ to prototypes. If, instead, we add the property to an object, rather than to
+ its prototype, then the property is attached directly to the object and
+ possibly shadowing the property of the same name that the prototype has, whence
+ overriding.
+
+*** ⟨1⟩ Prototype Example
+
+ Prototypes let us define properties that are the same for all instances, but
+ properties that differ per instance are stored directly in the objects
+ themselves. E.g., the prototypical person acts as a container for the
+ properties that are shared by all people. An individual person object, like
+ ~kathy~ below, contains properties that apply only to itself, such as its name,
+ and derives shared properties from its prototype.
+
+ #+BEGIN_SRC js
+// An example object prototype
+let prototypicalPerson    = {};
+prototypicalPerson._world = 0;
+prototypicalPerson.speak  = function () {
+  console.log(`I am ${this.name}, a ${this.job}, in a world of `
+               + `${prototypicalPerson._world} people.`) }
+prototypicalPerson.job = `farmer`;
+
+// Example use: Manually ensure the necessary properties are setup
+// and then manually increment the number of people in the world.
+let person = Object.create(prototypicalPerson);
+person.name = `jasim`;
+prototypicalPerson._world++;
+person.speak() // ⇒ I am jasim, a farmer, in a world of 1 people.
+
+// Another person requires just as much setup
+let kathy = { ...prototypicalPerson }; // Same as “Object.create(⋯)”
+kathy.name = `kathy`;
+prototypicalPerson._world++;
+kathy.speak() // ⇒ I am kathy, a farmer, in a world of 2 people.
+ #+END_SRC
+
+ You can use ~Object.create~ to create an object with a specific prototype. The
+ default prototype is ~Object.prototype~. For the most part,
+ ~Object.create(someObject) ≈ { ...someObject }~; i.e., we /copy/ the properties of
+ ~someObject~ into an empty object, thereby treating ~someObject~ as a prototype
+ from which we will build more sophisticated objects.
+
+*** ⟨2⟩ Manual Constructor Functions
+
+ | /Classes are prototypes along with constructor functions!/ |
+
+ A /class/ defines the shape of a kind of object; i.e., what properties it has;
+ e.g., a Person can ~speak~, as all people can, but should have its own ~name~
+ property to speak of. This idea is realised as a prototype along with a
+ /constructor/ function that ensures an instance object not only derives from the
+ proper prototype but also ensures it, itself, has the properties that instances
+ of the class are supposed to have.
+
+ #+BEGIN_SRC js
+let prototypicalPerson    = {};
+prototypicalPerson._world = 0;
+prototypicalPerson.speak  = function () {
+  console.log(`I am ${this.name}, a ${this.job}, in a world of `
+               + `${prototypicalPerson._world} people.`) }
+
+function makePerson(name, job = `farmer`) {
+  let person  = Object.create(prototypicalPerson);
+  person.name = name;
+  person.job  = job;
+  prototypicalPerson._world++;
+  return person;
+}
+
+// Example use
+let jasim = makePerson(`jasim`);
+jasim.speak() // ⇒ I am jasim, a farmer, in a world of 1 people.
+makePerson(`kathy`).speak() // ⇒ I am kathy, a farmer, in a world of 2 people.
+ #+END_SRC
+
+*** ⟨3⟩ Constructor Functions with ~new~                            :classes:
+ We can fuse these under one name by making the prototype a part of the constructor.
+ - By convention, the names of constructors are capitalised so that they can
+   easily be distinguished from other functions.
+
+ #+BEGIN_SRC js
+function Person(name, job = `farmer`) {
+ this.name = name;
+ this.job  = job;
+ Person.prototype._world++;
+}
+
+Person.prototype._world = 0;
+Person.prototype.speak = function () {
+  console.log(`I am ${this.name}, a ${this.job}, in a world of `
+               + `${Person.prototype._world} people.`) }
+
+// Example use
+let jasim = Object.create(Person.prototype)
+Person.call(jasim, `jasim`)
+jasim.speak() // ⇒ I am jasim, a farmer, in a world of 1 people.
+
+// Example using shorthand
+let kasim = new Person (`kathy`)
+kasim.speak()  // ⇒ I am kathy, a farmer, in a world of 2 people.
+ #+END_SRC
+
+ If you put the keyword ~new~ in front of a function call, the function is
+ treated as a constructor. This means that an object with the right prototype is
+ automatically created, bound to ~this~ in the function, and returned at the end
+ of the function.
+
+ #+BEGIN_SRC js
+  new f(args)
+≈ (_ => let THIS = Object.create(f.prototype);
+        f.call(THIS, args); return THIS;) ()
+ #+END_SRC
+
+ All functions automatically get a property named ~prototype~, which by default
+ holds a plain, empty object that derives from ~Object.prototype~. You can
+ overwrite it with a new object if you want. Or you can add properties to the
+ existing object, as the example does.
+
+ Notice that the ~Person~ object /derives/ from ~Function.prototype~,
+ but also has a /property/ named ~prototype~ which is used for instances
+ created through it.
+ #+BEGIN_SRC js
+console.log( Object.getPrototypeOf(Person) == Function.prototype
+           , Person instanceof Function
+           , jasim  instanceof Person
+           , Object.getPrototypeOf(jasim) == Person.prototype)
+ #+END_SRC
+
+ Hence, we can update our motto:
+ | /Classes are constructor functions with a prototype property!/ |
+
+*** ⟨4⟩ ~class~ Notation
+ Rather than declaring a constructor, /then/ attaching properties to its prototype,
+ we may perform both steps together using ~class~ notation shorthand.
+
+ #+BEGIN_SRC js
+class Person {
+  static #world = 0
+  constructor(name, job = `farmer`) {
+    this.name = name;
+    this.job  = job;
+    Person.#world++;
+  }
+  speak() {
+    console.log(`I am ${this.name}, a ${this.job}, in a world of `
+               + `${Person.#world} people.`)
+  }
+}
+
+// Example use
+
+let jasim = new Person(`jasim`)
+jasim.speak()
+// ⇒ I am jasim, a farmer, in a world of 1 people.
+
+new Person(`kathy`).speak()
+// ⇒ I am kathy, a farmer, in a world of 2 people.
+ #+END_SRC
+
+ :Hide:
+ #+BEGIN_SRC js
+// “class” is just a shorthand
+console.log( Object.getPrototypeOf(Person) == Function.prototype
+           , Person instanceof Function
+           , jasim  instanceof Person
+           , Object.getPrototypeOf(jasim) == Person.prototype)
+ #+END_SRC
+ :End:
+
+ Notice that there is a special function named ~constructor~ which is
+ bound to the class name, ~Person~, outside the class. The remainder of the
+ class declarations are bound to the constructor's prototype.
+ Thus, the earlier class declaration is equivalent to the constructor
+ definition from the previous section. It just looks nicer.
+ - Actually, this is even better: The ~static #world = 0~ declaration makes the
+   property ~world~ /private/, completely inaccessible from the outside the
+   class. The ~static~ keyword attaches the name not to particular instances
+   (~this~) but rather to the constructor/class name (~Person~).
+ - Indeed, in the previous examples we could have accidentally messed-up our world count.
+   Now, we get an error if we write ~Person.#world~ outside of the class.
+
+*** Conclusion
+
+   Historically, physicists believed that matter was build of indivisible build
+   blocks called /atoms/, then some hundred years later it was discovered that
+   atoms are in-fact not atomic but are built from /neutrons, protons/, and
+   /electrons/, then some fifty years later it was discovered that neutrons and
+   protons are built from so called /quarks/. Similarly, albeit ironically, early
+   versions of JavaScript were considered incomplete from an object-oriented
+   perspective since they did not have a primitive, atomic, ~class~ construct.
+   Akin to physicists, we have seen how JavaScript indeed has classes and is
+   thus a full-fledged object-oriented language, only unlike other languages,
+   they are not a primitive but a derived construct.
+
+   Unsurprisingly, other features of object-oriented programming can also be
+   derived ---and possibly more flexibly than their counterparts in languages
+   that take them as primitive. For example, it can be useful to know whether an
+   object 𝔁 was derived from a specific class 𝓎 and so there is the
+   abbreviation: ~𝓍 instanceof 𝓎 ≈ Object.getPrototypeOf(𝓍) == 𝓎.prototype~.
+   Inheritance is then an abbreviation for using the previously discussed
+   ~Object.create(parentPrototype)~ method. Finally, It can be pragmatic to have a
+   few technical methods show up in all objects, such as ~toString~, which
+   converts an object to a string representation. To accomplish this,
+   JavaScript's /standard library/ objects have ~Object.prototype~ as their great
+   ancestral prototype. In languages were classes are primitive, ~Object~ is the
+   top of the class hierarchy.
+   #+BEGIN_SRC js
+// “Object” is maximal
+console.log(Object.getPrototypeOf(Object.prototype)); // ⇒ null
+
+// Empty object that *does* derive from “Object”
+let basic = {}
+console.log( basic instanceof Object // ⇒ true
+           , "toString" in basic)    // ⇒ true
+
+// Empty object that does not derive from “Object”
+let maximal = Object.create(null);
+console.log( maximal instanceof Object // ⇒ false
+           , "toString" in maximal)    // ⇒ false
+ #+END_SRC
+ However, since JavaScript's classes are a derived concept, ~Object~ is not the
+ /maximum/ class but rather a /maximal/ class: It has no parent class, but is not
+ necessarily the parent of all other classes. Indeed, a declaration ~let basic =
+ {}~, by default, creates an empty object whose parent is ~Object~ ---so as to have
+ the aforementioned useful technical methods. If you pass ~null~ to ~Object.create~,
+ as show above, the resulting object will not derive from ~Object~.
+ This is exhilarating.
+
+  So objects do more than just hold their own properties. They have prototypes,
+  which are other objects. They’ll act as if they have properties they don’t have
+  as long as their prototype has that property.
+
+* TODO The First Choice: What is the target setting?
+
+** What setting are we targeting, why? :ignore:
+
+Programming language communities whose language has an impressive type system,
+such as Haskell's, have proverbs such as “if it typechecks, ship it!” Such a
+mostly in praise of the language's impressive type system. However, the motto is
+not flawless; e.g., consider
+cite:epigram_practical_programming_with_dependent_types the Haskell term ~if null
+xs then tail xs else xs~ ---it typechecks, but crashes at run time since empty
+lists have no (strictly smaller) tail. Dependently typed languages (DTLs)
+provide a static means of expressing the significance of particular values in
+legitimising some computations rather than others.
+
+Dependent-types provide an immense level of expressivity thereby allowing
+varying degrees of precision to be embedded, or omitted, from the type of a
+declaration. This overwhelming degree of freedom comes at the cost of common
+albeit non-orthogonal styles of coding and compilation, which remain as open
+problems that are only mitigated by awkward workarounds such as Coq's
+distinction of types and propositions for compilation efficiency. The
+difficulties presented by DTLs are outweighed by the opportunities they provide
+cite:dtl_why ---of central importance is that they blur distinctions between
+usual programming constructs cite:dtls_give_modules, which is in alignment with
+our thesis.
+
+#+begin_quote
+The /purpose/ of this section is to establish the necessary foundational aspects
+of dependently-typed languages (DTLs) by reviewing the existing DTLs and
+narrowing on Agda in particular.
+#+end_quote
+
+** TODO Existing Systems
+ <<<sec:module_existing>>>
+ :OldIntro:
+ Is there any actual /need/ for the proposed research? Are the goals easily
+ adaptable from the simply-typed settings? Is the declared arena of
+ dependently-typed languages sufficiently intricate to warrant this much
+ attention?
+
+ In this section, we shall outline that DTLs constitute a difficult
+ and poorly understood domain in comparison to conventional programming
+ languages, such as the purely functional Haskell or the imperative Java.
+ Then we outline the merits of including dependent types.
+ Finally, we close with a comparison of some of the most popular DTLs.
+ :End:
+
+ We want to implement solutions in a dependently typed language. Let us discuss
+ which are active and their capabilities.
+
+ To the best of our knowledge, as confirmed by Wikipedia in
+ cite:wiki_proof_assistants,wiki_proof_assistants_dependent, there are currently
+ less than 15 /actively developed/ dependently-typed languages in-use /that are
+ also used/ as proof-assistants ---which are intersting to us since we aim to
+ mechanise all of our results: Algorithms as well as theorems.
+
+ # *Matita*
+ # last publication was 2012
+ # website hasn't been updated since 2016
+ # http://matita.cs.unibo.it/index.shtml
+
+
+ # *NuPRL*
+ # https://github.com/jonsterling/JonPRL
+ # last touched 2-3 years ago!
+
+ # *PVS*
+ # not modified since 2014
+ # http://pvs.csl.sri.com/
+
+ # *Twelf* This is a logic programming language, similar to Prolog; it has been
+ # used to formalise safety proofs for ‘real world’ programming languages such
+ # as Standard ML. Seems like that
+ # Website hasn't been updated since 2009!
+ # http://twelf.org/wiki/Main_Page
+
+*** Agda --“Haskell on steroids”
+  Agda cite:agda_overview,agda_thesis is one of the more popular proof assistants
+  around; possibly due to its syntactic inheritance from Haskell ---as is the case
+  with Idris. Its Unicode mixfix lexemes permit somewhat faithful renditions of
+  informal mathematics; e.g., calculational proofs can be encoded to be read by
+  those unfamiliar with the system. It also allows traditional functional
+  programming with the ability to ‘escape under the hood’ and write Haskell code.
+  The language has not been designed solely with theorem proving in mind, as is
+  the case for Coq, but rather has been designed with dependently-typed
+  programming in mind cite:agda_web,agda_plf.
+
+  The current implementation of the Agda language has a notion of second-class
+  modules which may contain sub-modules along with declarations and definitions
+  of first-class citizens. The intimate relationship between records and modules
+  is perhaps best exemplified here since the current implementation provides a
+  declaration to construe a record as if it were a module. This change in
+  perspective allows Agda records to act as Haskell typeclasses. However, the
+  relationship with Haskell is only superficial: Agda's current implementation
+  does not support sharing. In particular, a parameterised module is only
+  syntactic sugar such that each member of the module actually obtains a new
+  functional parameter; as such, a computationally expensive parameter provided
+  to a module invocation may be intended to be computed only once, but is
+  actually computed at each call site.
+
+*** Coq ---“The standard proof assistant”
+
+  *Coq cite:coq_implementation,coq_cat_experiences:* Unquestionably one of, if not,
+  the most popular proof assistant around. It has been used to produce mechanised
+  proofs of the infamous Four Colour Theorem cite:coq_four_colour, the
+  Feit-Thompson Theorem cite:coq_feit, and an optimising compiler for the C
+  language: CompCert cite:coq_compcert,compcert_paper.
+
+  Unlike Agda, Coq supports tactics cite:tacticstype ---a brute force approach
+  that renders (hundredfold) case analysis as child's play: Just refine your
+  tactics till all the subgoals are achieved. Ultimately the cost of utilising
+  tactics is that a tactical proof can only be understood with the aid of the
+  system, and may otherwise be un-insightful and so failing to meet most of the
+  purposes of proof cite:purposes_of_proof ---which may well be a large barrier
+  for mathematicians who value insightful proofs.
+
+  The current implementation of Coq provides the base features expected of any
+  module system. A notable difference from Agda is that it allows to “copy and
+  paste” contents of modules using the ~include~ keyword. Consequently it provides
+  a number of module combinators, such as ~<+~ which is the infix form of module
+  inclusion cite:coq_manual. Since Coq module types are essentially contexts, the
+  module type ~X <+ Y <+ Z~ is really the catenation of contexts, where later items
+  may depend on former items. The Maude cite:maude,maude_module_algebra framework
+  contains a similar yet more comprehensive algebra of modules and how they work
+  with Maude theories.
+
+  As the oldest proof assistant, in a later section we shall compare and contrast
+  its module system with Agda's to some depth.
+
+*** Idris ---“Agda with tactics”
+  Idris cite:idris_main is a general purpose, functional, programming language
+  with dependent types; alongside ATS, below, it is perhaps the only language in
+  this list that can truthfully boast to being general purpose and to have
+  dependent types. It supports both equational and tactic based proof styles,
+  like Agda and Coq respectively; unlike these two however, Idris erases unused
+  proof-terms automatically rather than forcing the user to declare this far in
+  advance as is the case with Agda and Coq. The only (negligible) downside, for
+  us, is that the use of tactics creates a sort of distinction between the
+  activities of proving and programming, which is mostly fictitious.
+  #
+  # Can tactics in Idris be used for programming?
+  # They can in Coq, but this is for good reasons strongly discouraged.
+
+  :Irrelevant:
+  Moreover, Idris compiles to C whereas Agda compiles to Haskell thereby opening
+  the possibility to use GHC's many optimisations without too much translation
+  from the source: In contrast, Idris programs must be first transformed to their
+  imperative counterparts cite:idris_website,idris_tdd.
+  :End:
+
+  Intended to be a more accessible and practical version of Agda, Idris
+  implements the base module system features and includes interesting new ones.
+  Until [[https://agda.readthedocs.io/en/v2.6.0/language/generalization-of-declared-variables.html][recently]], in Agda, one would write ~module _ (x : ℕ) where ⋯~ to
+  parameterise every declaration in the block “⋯” by the name ~x~; whereas in
+  Idris, one writes ~parameters (x : ℕ) ⋯~ to obtain the [[http://docs.idris-lang.org/en/latest/tutorial/modules.html][same behaviour]] ---which
+  Agda has since improved upon it via ‘generalisation’: A declaration's type gets
+  only the variables it actually uses, not every declared parameter.
+
+  # http://docs.idris-lang.org/en/latest/tutorial/modules.html
+
+  Other than such pleasantries, Idris does not add anything of note. However, it
+  does provide new constraints. As noted earlier, the current implementation of
+  Idris attempts to erase implicits aggressively therefore providing speedup over
+  Agda. In particular, Idris modules and records can be parameterised but not
+  indexed ---a limitation not in Agda.
+
+  Unlike Coq, Idris has been designed to “emphasise general purpose programming
+  rather than theorem proving” cite:idris_faq,idris_tdd. However, like Coq, Idris
+  provides a Haskell-looking typeclasses mechanism; but unlike Coq, it allows
+  named instances. In contrast to Agda's record-instances, typeclasses result in
+  backtracking to resolve operator overloading thereby having a slower type
+  checker.
+
+  # http://docs.idris-lang.org/en/latest/tutorial/interfaces.html
+
+  # https://github.com/idris-lang/Idris-dev/wiki/Egg-%234:-Agda-style-records-and-modules
+
+*** Lean ---“Proofs for metaprogramming”
+  # Lean: lean_website,
+
+  Lean cite:lean_system_desc,lean_formalizing_math is both a theorem prover and
+  programming language; moreover it permits quotient types and so the
+  usually-desired notion of extensional equality. It is primarily tactics-based,
+  also permitting a ~calc~-ulational proof format not too dissimilar with the
+  standard equational proof format utilised in Agda.
+
+  # In our opinion, it is a nice language but we will remain with Agda since it
+  # is a bit older, whence more stable, and it is also more syntactically pleasant.
+  # cite:lean_website
+
+  Lean is based on a version of the Calculus of Inductive Constructions, like
+  Coq. Lean is heavily aimed at metaprogramming for formal verification, thereby
+  bridging the gap between interactive and automated theorem proving.
+  Unfortunately, inspecting the language shows that its rapid development is not
+  backwards-compatible ---Lean 2 standard libraries have yet to be ported to Lean
+  3---, and unlike, for example, Coq and Isabelle which are backed by other
+  complete languages, Lean is backed by Lean, which is unfortunately too young to
+  program various tactics, for example.
+
+  :Other_remarks_on_Lean:
+  The lean prover [[https://leanprover.github.io/introduction_to_lean/][tutorial]] is not even complete!
+
+  It does not seem to be well docmented; only 1 file in the docs!
+  It's been difficult finding anything superficially; I may need to install and try things out?
+  :End:
+
+*** ATS ---“Dependent types for systems programming”
+
+  ATS, the Applied Type System cite:ats_website,ats_combining, is a language that
+  combines programming and proving, but is aimed at unifying programming with
+  formal specification. With the focus being more on programming than on proving.
+
+  ATS is intended as an approach to practical programming with theorem proving.
+  Its module system is largely influenced by that of Modula-3, providing what
+  would today be considered the bare bones of a module system. Advocating a
+  programmer-centric approach to program verification that syntactically
+  intertwines programming and theorem proving, ATS is a more mature relative of
+  Idris ---whereas Idris is Haskell-based, ATS is OCaml-based.
+
+  # Unfortunately, ATS proofs are separate from implementation: One writes
+  # a function /then/ writes a proof that it meets is specification.
+
+  ATS is remarkable in that its performance is comparable to that of the C
+  language, and it supports secure memory management by permitting type safe
+  pointer arithmetic. In some regard, ATS is the fusions of Ocaml, C, and
+  dependent types. Its module system has less to offer than Coq's.
+
+ # A (Not So Gentle) Introduction To Systems Programming In ATS
+ # https://www.youtube.com/watch?v=zt0OQb1DBko
+
+*** F^* ---“the immature adult”
+  The F^* cite:fstar_website language supports dependent types, refinement types,
+  and a weakest precondition calculus. However it is primarily aimed at program
+  verification rather than general proof. Even though this language is roughly
+  nine years in the making, it is not mature ---one encounters great difficult in
+  doing anything past the initial language tutorial.
+  # Language age ~ 9 years
+
+  F^*'s module system is rather uninteresting, predominately acting as namespace
+  management. It has very little to offer in comparison to Agda; e.g., within the
+  last three years, it obtained a typeclass mechanism ---regardless, typeclasses
+  can be simulated as dependent records.
+
+  # The offical tutorial, https://rise4fun.com/fstar/tutorial,
+  # gives only one syntactic item to deal with modules:
+  # Module       m ::= module M tl1 ... tln ;; e [end]
+
+  # http://complogic.cs.mcgill.ca/beluga/index.html
+  #
+*** TODO Beluga
+
+  The distinctive feature and sole reason that we mention this language
+  is its direct support for first-class contexts cite:beluga.
+  A term ~t(x)~ may have free
+  variables and so whether it is well-formed or what its type could be depend on the
+  types of its free variables, necessitating one to either declare them before hand
+  or to write, in Beluga, {{{newline}}} ~[ x : T  |-  t(x) ]~ for example.
+  As we have mentioned, and will
+  reiterate a few times, contexts are behaviourally indistinguishable from
+  dependent sums.
+
+  # Unlike the previously mentioned languages, Beluga provides a
+  # dependently-typed language that supports specfiying formal systems in the
+  # logical framework LF.
+
+  A displeasure of Beluga is that, while embracing the Curry-Howard Correspondence,
+  it insists on two syntactic categories: Data and computation.
+  This is similar to Coq's distinction of ~Prop~ and ~Type~.
+  Another issue is that to a large degree the terms one uses in their type
+  declarations are closed and so have an empty context therefore one sees
+  expressions of the form ~[ |- t ]~ since ~t~ is a closed term needing only the empty
+  context. At a first glance, this is only a minor aesthetic concern; yet after
+  inspection of the language's webpage, tutorials, and publication matter, it is
+  concerning that nearly all code makes use of empty contexts ---which are easily
+  spotted visually. The tremendous amount of empty contexts suggests that the language
+  is not actually making substantial use of the concept, or it is yet unclear what
+  pragmatic utility is provided by contexts, and, in either way,
+  they might as well be relegated to a less intrusive notation.
+  Finally, the language lacks any substantial standard libraries
+  thereby rendering it more as a proof of concept rather than a serious system
+  for considerable work.
+
+  :Mizar_remarks:
+  *Mizar*: Unlike the rest, it is based on (untyped) Tarski–Grothendieck set theory
+  which in some-sense has a ‘hierarchy of sets’. Being based on set theory, it is non-constructive. It has a large library of formalised mathematics; like Coq.
+  cite:mizar_website, mizar_overview, mizar_library.
+
+  Like Idris, it provide a ‘reservation’ mechanism to name parameters for a block
+  of code. Mizar ~environ~-ments are generally difficult to work with due to
+  multiple namespaces for articles and vocabularies.
+  There is otherwise nothing interesting to say regarding its module system.
+  :End:
+
+*** TODO Notable Mentions*
+   The following are not actively being developed, as far we can
+   tell from their websites or source repositories,
+   but are interesting or have made useful contributions.
+   In contrast to Beluga, Isabelle is a full-featured language and logical framework that also provides
+   support for named contexts in the form of ‘locales’ cite:locales, isabelle_locales;
+   unfortunately it is not a dependently-typed language --though DTLs can be implemented in it.
+   Mizar, unlike the above, is based on (untyped) Tarski–Grothendieck set theory
+   which in some-sense has a hierarchy of sets. Like Coq, it has a large library of formalised mathematics
+   cite:mizar_website, mizar_overview, mizar_library.
+   Developed in the early 1980s, Nuprl cite:prl_site is constructive with a
+   refinement-style logic; besides being a mature language, it has been used to provide
+   proofs of problems related to Girard's Paradox cite:girard_paradox.
+   PVS, Prototype Verification System cite:pvs_prover, differs from other DTLs
+   in its support for subset types; however, the language seems to be unmaintained as of 2014.
+   Twelf cite:twelf_site is a logic programming language
+   implementing Edinburgh's Logical Framework cite:lf_meta_mechanisation, lf_has_isabelle, lf_fast_proof_checking
+   and has been used to prove safety properties of ‘real languages’ such as SML.
+   A notable practical module system cite:lf_practical_modules for Twelf has been implemented using signatures and signature morphisms.
+   Matita cite:matita_main, matita_site} is a Coq-like system that is much lighter \parencite{matita_is_coq_light;
+   it is been used for the verification of a complexity-preserving C compiler.
+   # Matita home page last updated 2017! *Eek!*
+   # Twelf home page last updated 2015! *Eek!*
+
+   # https://github.com/jonsterling/JonPRL
+
+   Dependent types are mostly visible within the functional community, however
+      this is a matter of taste and culture as they can also be found in imperative
+      settings, cite:dtl_imperative, albeit less prominently.
+*** TODO Modules in Coq then in Agda
+
+   # The Common Algebraic Specification Language
+   # cite:casl_overview,casl_user_manual,casl_reference_manual will also be
+   # investigated with the aim of extracting, and generalising, useful module
+   # combinators and their properties.
+   # #
+   # Casl in general: http://www.cofi.info
+   # Casl tools: http://hets.dfki.de
+   # Casl libraries: http://www.cofi.info/Libraries
+   # #
+   # Coq <+ sutff: #
+   # See https://coq.inria.fr/distrib/V8.7.2/refman/gallina-ext.html#sec90
+
+   :WK_maude:
+   Maude is based on rewriting logic,
+   which uses term rewrite rules in two roles:
+   + as equations, for algebraic specification
+   + as (labelled) transitions.
+
+   In the resulting transition systems,
+   a ``state'' is an equivalence class of value terms
+   modulo the associated set of equations,
+   and transitions are rewrites using the second class of rules.
+
+   Theories (and functional modules fmod) can only
+   contain equations.
+   :End:
+
+   Incidentally, Coq modules are essentially Agda records ---which is unsurprising
+   since our thesis states packaging containers are all essentially the same. In
+   more detail, both notions coincide with that of a signature ---a sequence of
+   pairs of name-type declarations. Where Agda users would speak of a /record
+   instance/, Coq users would speak of a /module implementation/. To make matters
+   worse, Coq has a notion of records which are far weaker than Agda's; e.g., by
+   default all record field names are globally exposed and records are
+   non-recursive.
+
+   Coq's module system extends that of Ocaml; a notable divergence is that Coq
+   permits parameterised module types ---i.e., parameterised record types, in Agda
+   parlance. Such module types are also known as ‘functors’ by Coq and Ocaml users;
+   which are “generative”: Invocations generate new datatypes. Perhaps an example
+   will make this rather strange concept more apparent. {{{code(Example of
+   Generative Functors)}}}
+   #+begin_src haskell
+-- Coq                        -- Corresponding Agda
+
+Module Type Unit. End Unit.   -- record Unit : Set where
+Module TT <: Unit. End TT.    -- tt : Unit; tt = record {}
+
+Module F (X : Unit).          -- module F (X : Unit) where
+  End F.                      --     data t : Set where C : t
+
+Module A := F TT.             -- module A = F tt
+Module B := F TT.             -- module B = F tt
+
+Fail Check eq_refl : A.t = B.t. --  ≠   eq : A.t ≡ B.t ; eq = refl
+   #+end_src
+   As seen, in Coq the inductive types are different yet in Agda they are the same.
+   This is because Agda treats such parameterised records, or functors, as
+   ‘applicative’: They can only be applied, like functions.
+
+   :Coq_code:
+   MA: TODO: Where does the ~t~ come from on the Coq side?
+   :End:
+   :Agda_code:
+   record Unit : Set where
+
+   tt : Unit
+   tt = record {}
+
+   module F (X : Unit) where
+     data t : Set where C : t
+
+   module A = F tt
+
+   module B = F tt
+
+   open import Relation.Binary.PropositionalEquality
+
+   it : A.t ≡ B.t
+   it = refl
+   :End:
+
+   For simplicity, we may think of generative functor applications ~F X~ as actually
+   ~F X t~ where ~t~ is an implicit tag such as textual position or clock time.
+   From an object-oriented programming perspective,
+   ~F X~ for a generative functor ~F~ is like the
+   ~new~ keyword in Java/C#: A new instance is created
+   which is distinct from all other instances even though
+   the same class is utilised. So much for the esotericity of generative functors.
+
+   Unlike Agda, which uses records to provide traditional record types, Haskell-like
+   typeclasses, and even a module perspective of both, Coq utilises distinct
+   mechanisms for typeclasses and canonical structures. In contrast, Agda allows
+   named instances since all instances are named and can be provided where an
+   implicit failed to be found. Moreover, Coq's approach demands greater familiarity
+   with the unifer than Agda's approach.
+   # Coq typeclasses are nearly the same as Haskell's.
+   # https://softwarefoundations.cis.upenn.edu/qc-current/Typeclasses.html
+
+   # Nifty slides: “Why Applicative Functors Matter”
+   # https://www.cs.ox.ac.uk/ralf.hinze/WG2.8/24/slides/derek.pdf
+
+  --------------------------------------------------------------------------------
+
+
+   Module systems parameterise proofs and tactics over structures.
+
+   #+BEGIN_SRC coq
 (**
 
 1. A ~Module Type~ contains the signature of the abstract structure to work from;
@@ -2440,10 +3381,10 @@ Type of functors do not η-reduce, and as such one cannot expect them to be appl
 
 See coq/coq OpenIssuesWithModules: https://github.com/coq/coq/wiki/OpenIssuesWithModules
  ,*)
-#+END_SRC
+   #+END_SRC
 
-Now the Agda equivalent.
-#+BEGIN_SRC agda2
+   Now the Agda equivalent.
+   #+BEGIN_SRC agda2
 open import Relation.Nullary {- Decidablity! -}
 open import Data.Empty
 open import Data.Sum
@@ -2531,397 +3472,778 @@ record Max (G : Graph) : Set where
                 → (x ⟶ y  →  P y)
                 → P (max x y)
   max-case-analysis = case-analysis I
-#+END_SRC
+   #+END_SRC
 
-** Existing Systems
-<<<sec:module_existing>>>
-:OldIntro:
-Is there any actual /need/ for the proposed research? Are the goals easily
-adaptable from the simply-typed settings? Is the declared arena of
-dependently-typed languages sufficiently intricate to warrant this much
-attention?
+** TODO A Whirlwind Tour of Agda
+*** Intro :ignore:
 
-In this section, we shall outline that DTLs constitute a difficult
-and poorly understood domain in comparison to conventional programming
-languages, such as the purely functional Haskell or the imperative Java.
-Then we outline the merits of including dependent types.
-Finally, we close with a comparison of some of the most popular DTLs.
-:End:
+Agda
+cite:why_dependent_types_matter,dependent_matching_is_just_K,curry_howard,agda_plf
+is based on @@latex:Martin-L{\"o}f's@@ intuitionistic type theory. By
+identifying types with terms, the type of small types is a larger type; e.g., ~ℕ
+∶ Set₀~ and ~Setᵢ ∶ Setᵢ₊₁~ ---the indices ~i~ are called /levels/ and the small type
+~Set₀~ is abbreviated as ~Set~. In some regard, Agda adds /harmonious/ support for
+dependent types to Haskell.
 
-We want to implement solutions in a dependently typed language. Let us discuss
-which are active and their capabilities.
+Unlike most languages, Agda not only allows arbitrary mixfix Unicode lexemes,
+identifiers, but their use is encouraged by the community as a whole. Almost
+anything can be a valid name; e.g., ~[]~ and ~_∷_~ to denote list constructors
+---underscores are used to indicate argument positions. Hence it's important to
+be liberal with whitespace: ~e∶τ~ is a valid identifier whereas ~e ∶ τ~ declares ~e~
+to be of type ~τ~. Agda's Emacs interface allows entering Unicode symbols in
+traditional LaTeX-style; e.g., ~\_7, \McN, \to, ~\::~ are replaced by ~₇, 𝒩, →, ∷~.
+Moreover, the Emacs interface allows programming by gradual refinement of
+incomplete type-correct terms. One uses the “hole” marker ~?~ as a placeholder
+that is used to stepwise write a program.
 
-Dependent-types provide an immense level of expressivity thereby allowing
-varying degrees of precision to be embedded, or omitted, from the type of a
-declaration. This overwhelming degree of freedom comes at the cost of common
-albeit non-orthogonal styles of coding and compilation, which remain as open
-problems that are only mitigated by awkward workarounds such as Coq's
-distinction of types and propositions for compilation efficiency. The
-difficulties presented by DTLs are outweighed by the opportunities they provide
-cite:dtl_why ---of central importance is that they blur distinctions between
-usual programming constructs, which is in alignment with our thesis.
+*** Dependent Functions
 
-To the best of our knowledge, as confirmed by Wikipedia in
-cite:wiki_proof_assistants,wiki_proof_assistants_dependent, there are currently
-less than 15 /actively developed/ dependently-typed languages in-use /that are also
-used/ as proof-assistants ---which are intersting to us since we aim to mechanise
-all of our results: Algorithms as well as theorems.
+  A /dependent function type/ has those functions whose result /type/ depends on the
+  /value/ of the argument. If ~B~ is a type depending on a type ~A~, then ~(a ∶ A) → B a~
+  is the type of functions ~f~ mapping arguments ~a ∶ A~ to values ~f a ∶ B a~.
+  Vectors, matrices, sorted lists, and trees of a particular height are all
+  examples of dependent types. One also sees the notations ~∀ (a ∶ A) → B a~ and ~Π
+  a ∶ A • B a~ to denote dependent types.
 
-*Agda cite:agda_overview,agda_thesis*: One of the more popular proof assistants
-around; possibly due to its syntactic inheritance from Haskell ---as is the case
-with Idris. Its Unicode mixfix lexemes permit somewhat faithful renditions of
-informal mathematics; e.g., calculational proofs can be encoded to be read by
-those unfamiliar with the system. It also allows traditional functional
-programming with the ability to ‘escape under the hood’ and write Haskell code.
-The language has not been designed solely with theorem proving in mind, as is
-the case for Coq, but rather has been designed with dependently-typed
-programming in mind cite:agda_web,agda_plf.
+  For example, /the/ generic identity function takes as /input/ a type ~X~ and returns
+  as /output/ a function ~X → X~. Here are a number of ways to write it in Agda.
+  #+BEGIN_SRC agda :tangle AgdaReview.agda
+id₀ : (X : Set) → X → X
+id₀ X x = x
 
-The current implementation of the Agda language has a notion of second-class
-modules which may contain sub-modules along with declarations and definitions of
-first-class citizens. The intimate relationship between records and modules is
-perhaps best exemplified here since the current implementation provides a
-declaration to construe a record as if it were a module. This change in
-perspective allows Agda records to act as Haskell typeclasses. However, the
-relationship with Haskell is only superficial: Agda's current implementation
-does not support sharing. In particular, a parameterised module is only
-syntactic sugar such that each member of the module actually obtains a new
-functional parameter; as such, a computationally expensive parameter provided to
-a module invocation may be intended to be computed only once, but is actually
-computed at each call site.
+id₁ id₂ id₃ : (X : Set) → X → X
 
-*Coq cite:coq_implementation,coq_cat_experiences:* Unquestionably one of, if not,
-the most popular proof assistant around. It has been used to produce mechanised
-proofs of the infamous Four Colour Theorem cite:coq_four_colour, the
-Feit-Thompson Theorem cite:coq_feit, and an optimising compiler for the C
-language: CompCert cite:coq_compcert,compcert_paper.
+id₁ X = λ x → x
+id₂   = λ X x → x
+id₃   = λ (X : Set) (x : X) → x
+  #+END_SRC
 
-Unlike Agda, Coq supports tactics cite:tacticstype ---a brute force approach
-that renders (hundredfold) case analysis as child's play: Just refine your
-tactics till all the subgoals are achieved. Ultimately the cost of utilising
-tactics is that a tactical proof can only be understood with the aid of the
-system, and may otherwise be un-insightful and so failing to meet most of the
-purposes of proof cite:purposes_of_proof ---which may well be a large barrier
-for mathematicians who value insightful proofs.
+  All these functions explicitly require the type ~X~ when we use them, which is
+  silly since it can be inferred from the element ~x~. Curly braces make an
+  argument /implicitly inferred/ and so it may be omitted. E.g., the ~{X ∶ Set} → ⋯~
+  below lets us make a polymorphic function since ~X~ can be inferred by inspecting
+  the given arguments. This is akin to informally writing $\mathsf{id}_X$ versus
+  $\mathsf{id}$.
 
-The current implementation of Coq provides the base features expected of any
-module system. A notable difference from Agda is that it allows “copy and paste”
-contents of modules using the ~include~ keyword. Consequently it provides a number
-of module combinators, such as ~<+~ which is the infix form of module inclusion
-cite:coq_manual. Since Coq module types are essentially contexts, the module
-type ~X <+ Y <+ Z~ is really the catenation of contexts, where later items may
-depend on former items. The Maude cite:maude,maude_module_algebra framework
-contains a similar yet more comprehensive algebra of modules and how they work
-with Maude theories. The Common Algebraic Specification Language
-cite:casl_overview,casl_user_manual,casl_reference_manual will also be
-investigated with the aim of extracting, and generalising, useful module
-combinators and their properties.
-#
-# Casl in general: http://www.cofi.info
-# Casl tools: http://hets.dfki.de
-# Casl libraries: http://www.cofi.info/Libraries
-#
-# Coq <+ sutff:
-# See https://coq.inria.fr/distrib/V8.7.2/refman/gallina-ext.html#sec90
+  #+latex: \begin{parallel}
+  #+BEGIN_SRC agda
+id : {X : Set} → X → X
+id x = x
 
-:WK_maude:
-Maude is based on rewriting logic,
-which uses term rewrite rules in two roles:
-+ as equations, for algebraic specification
-+ as (labelled) transitions.
+sad : ℕ
+sad = id₀ ℕ 3
 
-In the resulting transition systems,
-a ``state'' is an equivalence class of value terms
-modulo the associated set of equations,
-and transitions are rewrites using the second class of rules.
+nice : ℕ
+nice = id 3
+  #+END_SRC
+  #+latex: \columnbreak
+  #+BEGIN_SRC agda
+explicit : ℕ
+explicit = id {ℕ} 3
 
-Theories (and functional modules fmod) can only
-contain equations.
-:End:
+explicit′ : ℕ
+explicit′ = id₀ _ 3
+  #+END_SRC
+  #+latex: \end{parallel}
 
-Incidentally, Coq modules are essentially Agda records ---which is unsurprising
-since our thesis states packaging containers are all essentially the same. In
-more detail, both notions coincide with that of a signature ---a sequence of
-pairs of name-type declarations. Where Agda users would speak of a /record
-instance/, Coq users would speak of a /module implementation/. To make matters
-worse, Coq has a notion of records which are far weaker than Agda's; e.g., by
-default all record field names are globally exposed and records are
-non-recursive.
+  #+latex: \vspace{-1em}
+  Notice that we may provide an implicit argument /explicitly/ by enclosing the
+  value in braces in its expected position. Values can also be inferred when the
+  ~_~ pattern is supplied in a value position. Essentially wherever the typechecker
+  can figure out a value ---or a type---, we may use ~_~. In type declarations, we
+  have a contracted form via ~∀~ ---which is *not* recommended since it slows down
+  typechecking and, more importantly, types /document/ our understanding and it's
+  useful to have them explicitly.
 
-Coq's module system extends that of Ocaml; a notable divergence is that Coq
-permits parameterised module types ---i.e., parameterised record types, in Agda
-parlance. Such module types are also known as ‘functors’ by Coq and Ocaml users;
-which are “generative”: Invocations generate new datatypes. Perhaps an example
-will make this rather strange concept more apparent. {{{code(Example of
-Generative Functors)}}}
-#+begin_src haskell
--- Coq                        -- Corresponding Agda
+  In a type, ~(a : A)~ is called a /telescope/ and they can be combined for convenience.
+  #
+  #+latex: \begin{parallel}
+  #+BEGIN_EXAMPLE agda
+   {x : _} {y : _} (z : _) → ⋯
+≈  ∀ {x y} z → ⋯
+  #+END_EXAMPLE
+  #+latex: \columnbreak
+  #+BEGIN_EXAMPLE agda
+   (a₁ : A) → (a₂ : A) → (b : B) → ⋯
+≈  (a₁ a₂ : A) (b : B) → ⋯
+  #+END_EXAMPLE
+  #+latex: \end{parallel} \vspace{-1.5em}
 
-Module Type Unit. End Unit.   -- record Unit : Set where
-Module TT <: Unit. End TT.    -- tt : Unit; tt = record {}
+*** Dependent Datatypes
 
-Module F (X : Unit).          -- module F (X : Unit) where
-  End F.                      --     data t : Set where C : t
+  Algebraic datatypes are introduced with a ~data~ declaration, giving the name,
+  arguments, and type of the datatype as well as the constructors and their
+  types. Below we define the datatype of lists of a particular length.
 
-Module A := F TT.             -- module A = F tt
-Module B := F TT.             -- module B = F tt
+  #+BEGIN_SRC agda
+data Vec {ℓ : Level} (A : Set ℓ) : ℕ → Set ℓ where
+  []  : Vec A 0
+  _∷_ : {n : ℕ} → A → Vec A n → Vec A (1 + n)
+  #+END_SRC
 
-Fail Check eq_refl : A.t = B.t. --  ≠   eq : A.t ≡ B.t ; eq = refl
-#+end_src
-As seen, in Coq the inductive types are different yet in Agda they are the same.
-This is because Agda treats such parameterised records, or functors, as
-‘applicative’: They can only be applied, like functions.
+ Notice that, for a given type ~A~, the type of ~Vec A~ is ~ℕ → Set~. This means that
+ ~Vec A~ is a family of types indexed by natural numbers: For each number ~n~, we
+ have a type ~Vec A n~. One says ~Vec~ is /parametrised/ by ~A~ (and ℓ), and /indexed/ by
+ ~n~. They have different roles: ~A~ is the type of elements in the vectors, whereas
+ ~n~ determines the ‘shape’ ---length--- of the vectors and so needs to be more
+ ‘flexible’ than a parameter.
 
-:Coq_code:
-MA: TODO: Where does the ~t~ come from on the Coq side?
-:End:
-:Agda_code:
-record Unit : Set where
+ Notice that the indices say that the only way to make an element of ~Vec A 0~ is to
+ use ~[]~ and the only way to make an element of ~Vec A (1 + n)~ is to use ~_∷_~.
+ Whence, we can write the following safe function since ~Vec A (1 + n)~ denotes
+ non-empty lists and so the pattern ~[]~ is impossible.
+ #+BEGIN_SRC agda
+head : {A : Set} {n : ℕ} → Vec A (1 + n) → A
+head (x ∷ xs) = x
+ #+END_SRC
 
-tt : Unit
-tt = record {}
+ The ~ℓ~ argument means the ~Vec~ type operator is /universe polymorphic/: We can make
+ vectors of, say, numbers but also vectors of types. Levels are essentially
+ natural numbers: We have ~lzero~ and ~lsuc~ for making them, and ~_⊔_~ for taking the
+ maximum of two levels. /There is no universe of all universes:/ ~Setₙ~ has type
+ ~Setₙ₊₁~ /for any n/, however the /type/ ~(n : Level) → Set n~ is /not/ itself typeable
+ ---i.e., is not in ~Setₗ~ for any ~l~--- and Agda errors saying it is a value of
+ ~Setω~.
 
-module F (X : Unit) where
-  data t : Set where C : t
+ Functions are defined by pattern matching, and must cover all possible cases.
+ Moreover, they must be terminating and so recursive calls must be made on
+ structurally smaller arguments; e.g., ~xs~ is a sub-term of ~x ∷ xs~ below and
+ catenation is defined recursively on the first argument. Firstly, we declare a
+ /precedence rule/ so we may omit parenthesis in seemingly ambiguous expressions.
+ #+BEGIN_SRC agda
+infixr 40 _++_
 
-module A = F tt
+_++_ : {A : Set} {n m : ℕ} → Vec A n → Vec A m → Vec A (n + m)
+[]       ++ ys  =  ys
+(x ∷ xs) ++ ys  =  x ∷ (xs ++ ys)
+ #+END_SRC
+ Notice that the *type encodes a useful property*: The length of the catenation is
+ the sum of the lengths of the arguments.
+*** The Curry-Howard Correspondence ---“Propositions as Types”
 
-module B = F tt
+     Agda is a programming language and a proof assistant. A proposition is
+     proved by writing a program of the corresponding type.
 
-open import Relation.Binary.PropositionalEquality
 
-it : A.t ≡ B.t
-it = refl
-:End:
+     #+macro: twolines @@latex:\begin{tabular}[l]{@{}l@{}}$1\\$2\end{tabular}@@
+     #+macro: hfill @@latex:\hfill@@
 
-For simplicity, we may think of generative functor applications ~F X~ as actually
-~F X t~ where ~t~ is an implicit tag such as textual position or clock time.
-From an object-oriented programming perspective,
-~F X~ for a generative functor ~F~ is like the
-~new~ keyword in Java/C#: A new instance is created
-which is distinct from all other instances even though
-the same class is utilised. So much for the esotericity of generative functors.
+     #+caption: Programming and proving are two sides of the same coin
+     # +latex: \vspace{-1em}
+     | *Logic*                  | *Programming*                           | Example Use in Programming                                                  |
+     |------------------------+---------------------------------------+-----------------------------------------------------------------------------|
+     | proof / proposition    | element / type                        | “$p$ is a proof of $P$” ≈ “$p$ is of type $P$”                              |
+     |------------------------+---------------------------------------+-----------------------------------------------------------------------------|
+     | $true$                 | singleton type                        | return type of side-effect only methods                                     |
+     | $false$                | empty type                            | return type for non-terminating methods                                     |
+     |------------------------+---------------------------------------+-----------------------------------------------------------------------------|
+     | ⇒                      | function type  {{{hfill}}}   →        | methods with an input and output type                                       |
+     | ∧                      | product type   {{{hfill}}}  ×         | simple records of data and methods                                          |
+     | ∨                      | sum type       {{{hfill}}} +          | enumerations or tagged unions                                               |
+     |------------------------+---------------------------------------+-----------------------------------------------------------------------------|
+     | ∀                      | dependent function type {{{hfill}}} Π | return type varies according to input /value/                           |
+     | ∃                      | dependent product type {{{hfill}}}  Σ | record fields depend on each other's /values/                               |
+     |------------------------+---------------------------------------+-----------------------------------------------------------------------------|
+     | natural deduction      | type system                           | ensuring only “meaningful” programs                                         |
+     | hypothesis             | free variable                         | global variables, closures                                                  |
+     |------------------------+---------------------------------------+-----------------------------------------------------------------------------|
+     | modus ponens           | function application                  | executing methods on arguments                                              |
+     | ⇒-introduction         | λ-abstraction                         | {{{twolines(parameters acting as local variables, to method definitions)}}} |
+     |------------------------+---------------------------------------+-----------------------------------------------------------------------------|
+     | {{{twolines(induction;, elimination rules)}}} | Structural recursion                  | ~for~-loops are precisely ℕ-induction |
 
-Unlike Agda, which uses records to provide traditional record types, Haskell-like
-typeclasses, and even a module perspective of both, Coq utilises distinct
-mechanisms for typeclasses and canonical structures. In contrast, Agda allows
-named instances since all instances are named and can be provided where an
-implicit failed to be found. Moreover, Coq's approach demands greater familiarity
-with the unifer than Agda's approach.
-# Coq typeclasses are nearly the same as Haskell's.
-# https://softwarefoundations.cis.upenn.edu/qc-current/Typeclasses.html
+     Let's augment the table a bit to relate concepts that we shall refer to in
+     later sections.
+     | *Logic*                   | *Programming*                                 |
+     | Signature, term         | Syntax; interface, record type, ~class~       |
+     | Algebra, Interpretation | Semantics; implementation, instance, object |
+     | Free Theory             | Data structure                              |
+     | Inference rule          | Algebraic datatype constructor              |
+     | Monoid                  | Untyped programming / composition           |
+     | Category                | Typed programming / composition             |
 
-# Nifty slides: “Why Applicative Functors Matter”
-# https://www.cs.ox.ac.uk/ralf.hinze/WG2.8/24/slides/derek.pdf
+*** Propositional Equality
 
-*Idris cite:idris_main*: This is a general purpose, functional, programming language with dependent types; alongside ATS, below,
-it is perhaps the only language in this list that can truthfully boast to being
-general purpose and to have dependent types. It supports both equational
-and tactic based proof styles, like Agda and Coq respectively; unlike these two
-however, Idris erases unused proof-terms automatically rather than forcing
-the user to declare this far in advance as is the case with Agda and Coq.
-The only (negligible) downside, for us, is that the use of tactics creates
-a sort of distinction between the activities of proving and programming, which
-is mostly fictitious.
-#
-# Can tactics in Idris be used for programming?
-# They can in Coq, but this is for good reasons strongly discouraged.
+    #+latex: \hspace{-1.3em}
+  An example of propositions-as-types is a definition of the identity relation
+  ---the least reflexive relation. For a type ~A~ and an element ~x~ of ~A~, we define
+  the family of proofs of “being equal to $x$” by declaring only one inhabitant
+  at index ~x~.
 
-:Irrelevant:
-Moreover, Idris compiles to C whereas Agda compiles
-to Haskell thereby opening the possibility to use GHC's many optimisations without
-too much translation from the source: In contrast, Idris programs must be first
-transformed to their imperative counterparts
-cite:idris_website, idris_tdd.
-:End:
+  #+latex: \begin{parallel}[2]
+  #+BEGIN_SRC agda
+data _≡_ {A : Set} : A → A → Set
+  where
+    refl : {x : A} → x ≡ x
+  #+END_SRC
+  #+latex: \columnbreak
 
-Intended to be a more accessible and practical version of Agda, Idris
-implements the base module system features and includes interesting new ones.
-Until [[https://agda.readthedocs.io/en/v2.6.0/language/generalization-of-declared-variables.html][recently]], in Agda, one would write ~module _ (x : ℕ) where ⋯~ to parameterise every
-declaration in the block “⋯” by the name ~x~; whereas in Idris, one writes
-~parameters (x : ℕ) ⋯~ to obtain the [[http://docs.idris-lang.org/en/latest/tutorial/modules.html][same behaviour]]
---which Agda has since improved upon it via ‘generalisation’:
-A declaration's type gets only the variables it actually uses, not
-every declared parameter.
+  This states that ~refl {x}~ is a proof of ~l ≡ r~ whenever ~l~ and ~r~ simplify, by
+  definition chasing only, to ~x~ ---i.e., both ~l~ and ~r~ have ~x~ as their normal
+  form.
+  #+latex: \end{parallel} \vspace{-1em}
 
-# http://docs.idris-lang.org/en/latest/tutorial/modules.html
+  This definition makes it easy to prove [[https://en.wikipedia.org/wiki/Identity_of_indiscernibles][Leibniz's substitutivity rule]], “equals
+  for equals”:
+  #+BEGIN_SRC agda
+subst : {A : Set} {P : A → Set} {l r : A}
+      → l ≡ r → P l → P r
+subst refl it = it
+  #+END_SRC
+  Why does this work? An element of ~l ≡ r~ must be of the form ~refl {x}~ for some
+  canonical form ~x~; but if ~l~ and ~r~ are both ~x~, then ~P l~ and ~P r~ are the /same
+  type/. Pattern matching on a proof of ~l ≡ r~ gave us information about the rest
+  of the program's type!
 
-Other than such pleasantries, Idris does not add anything of note.
-However, it does provide new constraints.
-As noted earlier, the current implementation of Idris attempts to erase implicits
-aggressively therefore providing speedup over Agda.
-In particular, Idris modules and records can be parameterised but not indexed
----a limitation not in Agda.
+**** COMMENT and Calculational Proofs
+  School math classes show calculations as follows.
+  :calc:
+  #+BEGIN_EXAMPLE agda
+  p
+≡⟨ reason why p ≡ q ⟩
+  q
+≡⟨ reason why q ≡ r ⟩
+  r
+∎
+  #+END_EXAMPLE
+  :End:
 
-Unlike Coq, Idris has been designed to “emphasise general purpose programming
-rather than theorem proving” cite:idris_faq, idris_tdd.
-However, like Coq, Idris provides a Haskell-looking typeclasses mechanism;
-but unlike Coq, it allows named instances.
-In contrast to Agda's record-instances, typeclasses result in backtracking to
-resolve operator overloading thereby having a slower type checker.
+  We can treat these pieces as Agda /mixfix/ identifiers and associate to the right
+  to obtain: ~p ≡⟨ reason₁ ⟩ (q ≡⟨ reason₂ ⟩ (r ∎))~. We can code this up!
 
-# http://docs.idris-lang.org/en/latest/tutorial/interfaces.html
+  #+latex: \begin{parallel}[2]
+  #+BEGIN_SRC agda
+infixr 5 _≡⟨_⟩_
+infix  6 _∎
 
-# https://github.com/idris-lang/Idris-dev/wiki/Egg-%234:-Agda-style-records-and-modules
+_∎ : {A : Set} (a : A) → a ≡ a
+_ ∎ = refl
 
-# *Matita*
-# last publication was 2012
-# website hasn't been updated since 2016
-# http://matita.cs.unibo.it/index.shtml
+_≡⟨_⟩_ : {A : Set} (p {q r} : A)
+       → p ≡ q → q ≡ r → p ≡ r
+_ ≡⟨ refl ⟩ refl = refl
+  #+END_SRC
+  #+latex: \end{parallel} \vspace{-1em}
 
-# Lean: lean_website,
-*Lean cite:lean_system_desc, lean_formalizing_math:* This is both a theorem prover and programming language; moreover it permits
-quotient types and so the usually-desired notion of extensional equality.
-It is primarily tactics-based, also permitting a ~calc~-ulational proof format
-not too dissimilar with the standard equational proof format utilised in Agda.
+*** Modules ---Namespace Management
 
-# In our opinion, it is a nice language but we will remain with Agda since it
-# is a bit older, whence more stable, and it is also more syntactically pleasant.
-# cite:lean_website
+    #+latex: \hspace{-1.3em}
+  Agda modules are not a first-class construct, yet.
+  + Within a module, we may have nested module declarations.
+  + All names in a module are public, unless declared ~private~.
+  #
+  #+latex: \begin{parallel}[4]
+  _A Simple Module_
+  #+latex: \vspace{0.5em}
+  #+BEGIN_SRC agda
+module M where
 
-Lean is based on a version of the Calculus of Inductive Constructions, like
-Coq. Lean is heavily aimed at metaprogramming for formal verification,
-thereby bridging the gap between interactive and automated theorem proving.
-Unfortunately, inspecting the language shows that its rapid development is
-not backwards-compatible
----Lean 2 standard libraries have yet to be ported to Lean 3---,
-and unlike, for example, Coq and Isabelle which are backed by other complete
-languages, Lean is backed by Lean, which is unfortunately too young to program
-various tactics, for example.
+  𝒩 : Set
+  𝒩 = ℕ
 
-:Other_remarks_on_Lean:
-The lean prover [[https://leanprover.github.io/introduction_to_lean/][tutorial]] is not even complete!
+  private
+    x : ℕ
+    x = 3
 
-It does not seem to be well docmented; only 1 file in the docs!
-It's been difficult finding anything superficially; I may need to install and try things out?
-:End:
+  y : 𝒩
+  y = x + 1
+  #+END_SRC
+  #+latex: \columnbreak
+  _Using It_
+  #+latex: \vspace{0.5em}
+  #+BEGIN_SRC agda
+use₀ : M.𝒩
+use₀ = M.y
 
-# *NuPRL*
-# https://github.com/jonsterling/JonPRL
-# last touched 2-3 years ago!
+use₁ : ℕ
+use₁ = y
+  where open M
+  #+END_SRC
 
-# *PVS*
-# not modified since 2014
-# http://pvs.csl.sri.com/
+  #+BEGIN_EXAMPLE agda
 
-# *Twelf* This is a logic programming language, similar to Prolog; it has been
-# used to formalise safety proofs for ‘real world’ programming languages such
-# as Standard ML. Seems like that
-# Website hasn't been updated since 2009!
-# http://twelf.org/wiki/Main_Page
+open M
 
-*ATS, Applied Type System*: This language combines programming and proving, but is aimed at
-unifying programming with formal specification. With the focus being more
-on programming than on proving.
-cite:ats_website, ats_combining
+use₂ : ℕ
+use₂ = y
+  #+END_EXAMPLE
+  #+latex: \columnbreak
+  _Parameterised Modules_
+  #+latex: \vspace{0.5em}
+  #+BEGIN_SRC agda
+module M′ (x : ℕ)
+  where
+    y : ℕ
+    y = x + 1
+  #+END_SRC
+  #+latex: \vfill
+  _Names are Functions_
+  #+latex: \vspace{0.2em}
+  #+BEGIN_SRC agda
+exposed : (x : ℕ)
+        → ℕ
+exposed = M′.y
+  #+END_SRC
+  #+latex: \columnbreak
 
-ATS is intended as an approach to practical programming with theorem proving.
-Its module system is largely influenced by that of Modula-3, providing what
-would today be considered the bare bones of a module system.
-Advocating a programmer-centric approach to program verification that
-syntactically intertwines programming and theorem proving, ATS is a more
-mature relative of Idris ---whereas Idris is Haskell-based, ATS is OCaml-based.
+  _Using Them_
+  #+latex: \vspace{0.5em}
+  #+BEGIN_SRC agda
+use′₀ : ℕ
+use′₀ = M′.y 3
 
-*F^**: This language supports dependent types, refinement types,
-and a weakest precondition calculus cite:fstar_website.
-However it is primarily aimed
-at program verification rather than general proof.
-Even though this language is roughly 8 years in the making,
-it is not mature ---one encounters great difficult in doing anything
-past the initial language tutorial.
-# Language age ~ 8 years
+module M″ = M′ 3
 
-F^*'s module system is rather uninteresting, predominately acting as namespace
-management. It has very little to offer in comparison to Agda; e.g., within
-the last two years, it obtained a typeclass mechanism
----regardless, typeclasses can be implemented as dependent records.
+use″ : ℕ
+use″ = M″.y
 
-# The offical tutorial, https://rise4fun.com/fstar/tutorial,
-# gives only one syntactic item to deal with modules:
-# Module       m ::= module M tl1 ... tln ;; e [end]
+use′₁ : ℕ
+use′₁ = y
+  where
+    open M′ 3
+  #+END_SRC
 
-# http://complogic.cs.mcgill.ca/beluga/index.html
-#
-*Beluga*: The distinctive feature and sole reason that we mention this language
-is its direct support for first-class contexts cite:beluga.
-A term ~t(x)~ may have free
-variables and so whether it is well-formed or what its type could be depend on the
-types of its free variables, necessitating one to either declare them before hand
-or to write, in Beluga, {{{newline}}} ~[ x : T  |-  t(x) ]~ for example.
-As we have mentioned, and will
-reiterate a few times, contexts are behaviourally indistinguishable from
-dependent sums.
+  #+latex: \end{parallel}
 
-# Unlike the previously mentioned languages, Beluga provides a
-# dependently-typed language that supports specfiying formal systems in the
-# logical framework LF.
+  + Public names may be accessed by qualification or by opening them locally or globally.
+  + Modules may be parameterised by arbitrarily many values and types ---but not by other modules.
 
-A displeasure of Beluga is that, while embracing the Curry-Howard Correspondence,
-it insists on two syntactic categories: Data and computation.
-This is similar to Coq's distinction of ~Prop~ and ~Type~.
-Another issue is that to a large degree the terms one uses in their type
-declarations are closed and so have an empty context therefore one sees
-expressions of the form ~[ |- t ]~ since ~t~ is a closed term needing only the empty
-context. At a first glance, this is only a minor aesthetic concern; yet after
-inspection of the language's webpage, tutorials, and publication matter, it is
-concerning that nearly all code makes use of empty contexts ---which are easily
-spotted visually. The tremendous amount of empty contexts suggests that the language
-is not actually making substantial use of the concept, or it is yet unclear what
-pragmatic utility is provided by contexts, and, in either way,
-they might as well be relegated to a less intrusive notation.
-Finally, the language lacks any substantial standard libraries
-thereby rendering it more as a proof of concept rather than a serious system
-for considerable work.
+  Modules are essentially implemented as syntactic sugar: Their declarations are treated
+  as top-level functions that takes the parameters of the module as extra arguments.
+  In particular, it may appear that module arguments are ‘shared’ among their declarations,
+  but this is not so.
 
-:Mizar_remarks:
-*Mizar*: Unlike the rest, it is based on (untyped) Tarski–Grothendieck set theory
-which in some-sense has a ‘hierarchy of sets’. Being based on set theory, it is non-constructive. It has a large library of formalised mathematics; like Coq.
-cite:mizar_website, mizar_overview, mizar_library.
+  “Using Them”:
+  + This explains how names in parameterised modules are used: They are treated as functions.
+  + We may prefer to instantiate some parameters and name the resulting module.
+  + However, we can still ~open~ them as usual.
 
-Like Idris, it provide a ‘reservation’ mechanism to name parameters for a block
-of code. Mizar ~environ~-ments are generally difficult to work with due to
-multiple namespaces for articles and vocabularies.
-There is otherwise nothing interesting to say regarding its module system.
-:End:
+**** COMMENT Anonymous Modules and Variables
 
-*Notable Mentions*: The following are not actively being developed, as far we can
-tell from their websites or source repositories,
-but are interesting or have made useful contributions.
-In contrast to Beluga, Isabelle is a full-featured language and logical framework that also provides
-support for named contexts in the form of ‘locales’ cite:locales, isabelle_locales;
-unfortunately it is not a dependently-typed language --though DTLs can be implemented in it.
-Mizar, unlike the above, is based on (untyped) Tarski–Grothendieck set theory
-which in some-sense has a hierarchy of sets. Like Coq, it has a large library of formalised mathematics
-cite:mizar_website, mizar_overview, mizar_library.
-Developed in the early 1980s, Nuprl cite:prl_site is constructive with a
-refinement-style logic; besides being a mature language, it has been used to provide
-proofs of problems related to Girard's Paradox cite:girard_paradox.
-PVS, Prototype Verification System cite:pvs_prover, differs from other DTLs
-in its support for subset types; however, the language seems to be unmaintained as of 2014.
-Twelf cite:twelf_site is a logic programming language
-implementing Edinburgh's Logical Framework cite:lf_meta_mechanisation, lf_has_isabelle, lf_fast_proof_checking
-and has been used to prove safety properties of ‘real languages’ such as SML.
-A notable practical module system cite:lf_practical_modules for Twelf has been implemented using signatures and signature morphisms.
-Matita cite:matita_main, matita_site} is a Coq-like system that is much lighter \parencite{matita_is_coq_light;
-it is been used for the verification of a complexity-preserving C compiler.
-# Matita home page last updated 2017! *Eek!*
-# Twelf home page last updated 2015! *Eek!*
+  Anonymous modules correspond to named-then-immediately-opened modules,
+  and serve to approximate the informal phrase “for any ~A ∶ Set~ and ~a ∶ A~, we have ⋯”.
+  This is so [[https://people.inf.elte.hu/divip/AIMXXVIII.pdf][common]] that the ~variable~ keyword was introduced and it's [[https://agda.readthedocs.io/en/v2.6.0.1/language/generalization-of-declared-variables.html][clever]]:
+  Names in ~⋯~ are functions of /only/ those ~variable~-s they actually mention.
 
-# https://github.com/jonsterling/JonPRL
+  #+latex: \begin{parallel}
+  #+BEGIN_EXAMPLE agda
+   module _ {A : Set} {a : A} ⋯
+≈
+   module T {A : Set} {a : A} ⋯
+   open T
+  #+END_EXAMPLE
+  #+latex: \columnbreak
+  #+BEGIN_EXAMPLE agda
+variable
+  A : Set
+  a : A
+⋯
+  #+END_EXAMPLE
+  #+latex: \end{parallel} \vspace{-1em}
 
-Dependent types are mostly visible within the functional community, however
-   this is a matter of taste and culture as they can also be found in imperative
-   settings, cite:dtl_imperative, albeit less prominently.
-** Facets of Structuring Mechanisms: An Agda Rendition
+**** Module Keywords                                                 :ignore:
+
+  When opening a module, we can control which names are brought into scope with
+  the ~using, hiding,~ and ~renaming~ keywords.
+  | ~open M hiding (𝓃₀; …; 𝓃ₖ)~               | Essentially treat ~𝓃ᵢ~ as private      |
+  | ~open M using  (𝓃₀; …; 𝓃ₖ)~               | Essentially treat /only/ ~𝓃ᵢ~ as public  |
+  | ~open M renaming (𝓃₀ to 𝓂₀; …; 𝓃ₖ to 𝓂ₖ)~ | Use names ~𝓂ᵢ~ instead of ~𝓃ᵢ~ |
+
+  Splitting a program over several files will improve type checking performance,
+  since when you are making changes the type checker only has to check the files
+  that are influenced by the change.
+  + ~import X.Y.Z~: Use the definitions of module ~Z~ which lives in file ~./X/Y/Z.agda~.
+  + ~open M public~: Treat the contents of ~M~ as if they were public contents of the current module.
+
+*** Records
+
+    A record type is declared much like a datatype where the fields are indicated
+    by the ~field~ keyword. The nature of records is summarised by the following
+    equation.
+
+    | ~record~ | ≈ | ~module~ +  ~data~ with one constructor |
+
+  #+latex: \begin{parallel}
+  #+BEGIN_SRC agda
+record PointedSet : Set₁ where
+  constructor MkIt  {- Optional -}
+  field
+    Carrier : Set
+    point   : Carrier
+
+  {- It's like a module,
+  we can add derived definitions -}
+  blind : {A : Set} → A → Carrier
+  blind = λ a → point
+  #+END_SRC
+  #+latex: \columnbreak
+  #+BEGIN_SRC agda
+ex₀ : PointedSet
+ex₀ = record {Carrier = ℕ; point = 3}
+
+ex₁ : PointedSet
+ex₁ = MkIt ℕ 3
+
+open PointedSet
+
+ex₂ : PointedSet
+Carrier ex₂ = ℕ
+point   ex₂ = 3
+  #+END_SRC
+  #+latex: \end{parallel} \vspace{-1em}
+
+  Start with ~ex₂ = ?~, then in the hole enter ~C-c C-c RET~ to obtain the /co-pattern/
+  setup. Two tuples are the same when they have the same components, likewise a
+  record is defined by its projections, whence /co-patterns/. If you're using many
+  local definitions, you likely want to use co-patterns!
+
+  To allow projection of the fields from a record, each record type comes with a
+  module of the same name. This module is parameterised by an element of the
+  record type and contains projection functions for the fields.
+
+  #+latex: \begin{parallel}
+  #+BEGIN_SRC agda
+use⁰ : ℕ
+use⁰ = PointedSet.point ex₀
+  #+END_SRC
+  #+BEGIN_EXAMPLE agda
+use¹ : ℕ
+use¹ = point where open PointedSet ex₀
+  #+END_EXAMPLE
+  # Spec since this clashes with the previous open.
+  #+BEGIN_SRC agda
+open PointedSet
+
+use² : ℕ
+use² = blind ex₀ true
+  #+END_SRC
+  #+latex: \columnbreak
+
+ #+macro: newline @@latex: \newline@@
+
+  You can even pattern match on records {{{newline}}} ---they're just ~data~ after
+  all!
+  #+latex: \vspace{1em}
+  #+BEGIN_SRC agda
+use³ : (P : PointedSet) → Carrier P
+use³ record {Carrier = C; point = x}
+  = x
+
+use⁴ : (P : PointedSet) → Carrier P
+use⁴ (MkIt C x)
+  = x
+  #+END_SRC
+  #+latex: \end{parallel} \vspace{-1em}
+
+ So much for records.
+
+*** Interacting with the real world ---Compilation, Haskell, and IO
+    :PROPERTIES:
+    :header-args: :tangle "CompilingAgda.agda" :comments org
+    :CUSTOM_ID: agda-interacting-with-the-real-world
+    :END:
+
+  # C-c C-v C-t tangles the following code into CompilingAgda.agda.
+  # Then we may compile the result using:
+  # (shell-command "NAME=CompilingAgda; time agda --compile $NAME.agda; ./$NAME")
+  #
+  # Btw: (find-file "./MAlonzo/Code/CompilingAgda.hs")
+
+  In order to be useful, a program must interact with the real world. Agda
+  relegates the work to Haskell. The only concept here that is used in later
+  sections will be Agda's ~do~-syntax, and so the purpose of this section is to
+  demonstrate how to use it in a real scenario.
+
+  An Agda program module containing a ~main~ function is compiled into a standalone
+  executable with ~agda --compile myfile.agda~. If the module has no main file, use
+  the flag ~--no-main~. If you only want the resulting Haskell, not necessarily an
+  executable program, then use the flag ~--ghc-dont-call-ghc~.
+
+  The type of ~main~ should be ~Agda.Builtin.IO.IO A~, for some ~A~; this is just a
+  proxy to Haskell's ~IO~. We may ~open import IO.Primitive~ to get /this/ ~IO~, but this
+  one works with costrings, which are a bit awkward. Instead, we use the standard
+  library's wrapper type, also named ~IO~. Then we use ~run~ to move from ~IO~ to
+  ~Primitive.IO~; conversely one uses ~lift~.
+
+  #+latex: \begin{minipage}[c]{0.55\linewidth}
+  #+latex: \begin{tiny}
+  #+BEGIN_SRC agda
+open import Data.Nat                 using (ℕ; suc)
+open import Data.Nat.Show            using (show)
+open import Data.Char                using (Char)
+open import Data.List as L           using (map; sum; upTo)
+open import Function                 using (_$_; const; _∘_)
+open import Data.String as S         using (String; _++_; fromList)
+open import Agda.Builtin.Unit        using (⊤)
+open import Codata.Musical.Colist    using (take)
+open import Codata.Musical.Costring  using (Costring)
+open import Data.BoundedVec.Inefficient as B using (toList)
+open import Agda.Builtin.Coinduction using (♯_)
+open import IO as IO                 using (run ; putStrLn ; IO)
+import IO.Primitive as Primitive
+  #+END_SRC
+  #+latex: \end{tiny}
+  #+latex: \end{minipage} % no space if you would like to put them side by side
+  #+latex: \begin{minipage}[c]{0.5\linewidth}
+  #+begin_quote org
+  /Agda has *no* primitives for side-effects, instead it allows arbitrary/
+  /Haskell functions to be imported as axioms, whose definitions are only/
+  /used at run-time./
+  #+end_quote
+  #+latex: \end{minipage}
+
+  Agda lets us use ~do~-notation as in Haskell. To do so, methods named ~_>>_~ and
+  ~_>>=_~ need to be in scope ---that is all. The type of ~IO._>>_~ takes two “lazy”
+  IO actions and yield a non-lazy IO action. The one below is a homogeneously
+  typed version.
+  #+BEGIN_SRC agda
+infixr 1 _>>=_ _>>_
+
+_>>=_ : ∀ {ℓ} {α β : Set ℓ} → IO α → (α → IO β) → IO β
+this >>= f = ♯ this IO.>>= λ x → ♯ f x
+
+_>>_ : ∀{ℓ} {α β : Set ℓ} → IO α → IO β → IO β
+x >> y = x >>= const y
+  #+END_SRC
+
+  Oddly, Agda's standard library comes with ~readFile~ and ~writeFile~, but the
+  symmetry ends there since it provides ~putStrLn~ but not [[https://hackage.haskell.org/package/base-4.12.0.0/docs/Prelude.html#v:getLine][~getLine~]]. Mimicking the
+  ~IO.Primitive~ module, we define /two/ versions ourselves as proxies for Haskell's
+  ~getLine~ ---the second one below is bounded by 100 characters, whereas the first
+  is not.
+  #+BEGIN_SRC agda
+postulate
+  getLine∞ : Primitive.IO Costring
+
+{-# FOREIGN GHC
+  toColist :: [a] -> MAlonzo.Code.Codata.Musical.Colist.AgdaColist a
+  toColist []       = MAlonzo.Code.Codata.Musical.Colist.Nil
+  toColist (x : xs) =
+    MAlonzo.Code.Codata.Musical.Colist.Cons x (MAlonzo.RTE.Sharp (toColist xs))
+#-}
+
+{- Haskell's prelude is implicitly available; this is for demonstration. -}
+{-# FOREIGN GHC import Prelude as Haskell #-}
+{-# COMPILE GHC getLine∞  = fmap toColist Haskell.getLine #-}
+
+-- (1)
+-- getLine : IO Costring
+-- getLine = IO.lift getLine∞
+
+getLine : IO String
+getLine = IO.lift
+  $ getLine∞ Primitive.>>= (Primitive.return ∘ S.fromList ∘ B.toList ∘ take 100)
+  #+END_SRC
+  We obtain ~MAlonzo~ strings, then convert those to colists, then eventually lift
+  those to the wrapper ~IO~ type.
+
+  Let's also give ourselves Haskell's ~read~ method.
+  #+BEGIN_SRC agda
+postulate readInt  : L.List Char → ℕ
+{-# COMPILE GHC readInt = \x -> read x :: Integer  #-}
+  #+END_SRC
+
+  Now we write our ~main~ method.
+  #+BEGIN_SRC agda
+main : Primitive.IO ⊤
+main = run do putStrLn "Hello, world! I'm a compiled Agda program!"
+
+              putStrLn "What is your name?"
+              name ← getLine
+
+              putStrLn "Please enter a number."
+              num ← getLine
+              let tri = show $ sum $ upTo $ suc $ readInt $ S.toList num
+              putStrLn $ "The triangle number of " ++ num ++ " is " ++ tri
+
+              putStrLn "Bye, "
+              -- IO.putStrLn∞ name  {- If we use approach (1) above. -}
+              putStrLn $ "\t" ++ name
+  #+END_SRC
+  For example, the 12ᵗʰ [[https://en.wikipedia.org/wiki/Triangular_number][triangle number]] is $\sum_{i=0}^{12} i = 78$.
+  Interestingly, when an integer parse fails, the program just crashes.
+
+  Calling this file ~CompilingAgda.agda~, we may compile then run it with:
+  #+BEGIN_SRC shell :tangle no
+NAME=CompilingAgda; time agda --compile $NAME.agda; ./$NAME
+  #+END_SRC
+
+  The very first time you compile may take ∼80 seconds since some prerequisites
+  need to be compiled, but future compilations are within ∼10 seconds. The
+  generated Haskell source lives under the newly created MAlonzo directory;
+  namely ~./MAlonzo/Code/CompilingAgda.hs~.
+
+  # *Debugging*
+  - When compiling you may see an error ~Could not find module ‘Numeric.IEEE’~.
+  - Simply open a terminal and install the necessary Haskell library:
+    #+BEGIN_SRC shell :tangle no
+cabal install ieee754
+  #+END_SRC
+
+*** COMMENT Other Agda features
+
+  #+latex: \begin{tiny}
+  #+BEGIN_SRC agda :tangle AgdaReview.agda
+module AgdaReview where
+
+open import Level using (Level)
+open import Data.Nat
+open import Data.Bool hiding (_<?_)
+open import Data.List using (List; []; _∷_; length)
+  #+END_SRC
+  #+latex: \end{tiny} \columnbreak
+
+  + Different types can have the same constructor names.
+
+  + Mixifx operators can be written prefix by having all underscores mentioned; e.g.,
+    ~x ∷ xs~ is the same as ~_∷_ x xs~.
+
+  + In a function definition, if you don't care about an argument
+    and don't want to bother naming it, use ~_~ with whitespace around it.
+    This is the “wildcard pattern”.
+
+**** Absurd Patterns
+
+   #+latex: \hspace{-1.3em}
+   When there are no possible constructor patterns, we may match on the pattern ~()~
+   and provide no right hand side ---since there is no way anyone could provide an argument
+   to the function.
+
+   For example, here we define the datatype family of numbers smaller than a given natural number:
+   ~fzero~ is smaller than ~suc n~ for any ~n~, and if ~i~ is smaller than ~n~ then ~fsuc i~ is smaller
+   than ~suc n~.
+
+   #+latex: \begin{parallel}
+   #+BEGIN_SRC agda
+{- Fin n  ≅  numbers i with i < n -}
+data Fin : ℕ → Set where
+  fzero : {n : ℕ} → Fin (suc n)
+  fsuc  : {n : ℕ}
+        → Fin n → Fin (suc n)
+   #+END_SRC
+   #+latex: \columnbreak
+
+   For each $n$, the type ~Fin n~ contains $n$ elements;
+   e.g., ~Fin 2~ has elements ~fsuc fzero~ and ~fzero~,
+   whereas ~Fin 0~ has no elements at all.
+
+   #+latex: \end{parallel} \vspace{-1em}
+
+   Using this type, we can write a safe indexing function that never “goes out of bounds”.
+   #+BEGIN_SRC agda
+
+_‼_ : {A : Set} {n : ℕ} → Vec A n → Fin n → A
+[] ‼ ()
+(x ∷ xs) ‼ fzero  = x
+(x ∷ xs) ‼ fsuc i = xs ‼ i
+   #+END_SRC
+
+   When we are given the empty list, ~[]~, then ~n~ is necessarily ~0~,
+   but there is no way to make an element of type ~Fin 0~ and so we have the absurd pattern.
+   That is, since the empty type ~Fin 0~ has no elements there is nothing to define
+   ---we have a definition by /no cases/.
+
+   Logically [[https://en.wikipedia.org/wiki/Principle_of_explosion][“anything follows from false”]] becomes the following program:
+   #+BEGIN_SRC agda
+data False : Set where
+
+magic : {Anything-you-want : Set} → False → Anything-you-want
+magic ()
+   #+END_SRC
+
+   Starting with ~magic x = ?~ then casing on ~x~ yields the program above
+   since there is no way to make an element of ~False~
+   ---we needn't bother with a result(ing right side), since there's no way to make
+   an element of an empty type.
+
+***** Preconditions as proof-object arguments
+
+   Sometimes it is not easy to capture a desired precondition in the types, and
+   an alternative is to use the following ~isTrue~-approach of passing around
+   explicit proof objects.
+
+   #+latex: \begin{parallel}
+   #+BEGIN_SRC agda
+{- An empty record has only
+   one value: record {} -}
+record True : Set where
+
+isTrue : Bool → Set
+isTrue true  = True
+isTrue false = False
+   #+END_SRC
+   #+latex: \columnbreak
+   #+BEGIN_SRC agda
+_<₀_ : ℕ → ℕ → Bool
+_ <₀ zero      = false
+zero <₀ suc y  = true
+suc x <₀ suc y = x <₀ y
+   #+END_SRC
+   #+latex: \end{parallel} \vspace{-1em}
+
+   #+BEGIN_SRC agda
+find : {A : Set} (xs : List A) (i : ℕ) → isTrue (i <₀ length xs) → A
+find [] i ()
+find (x ∷ xs) zero pf    = x
+find (x ∷ xs) (suc i) pf = find xs i pf
+
+head′ : {A : Set} (xs : List A) → isTrue (0 <₀ length xs) → A
+head′ [] ()
+head′ (x ∷ xs) _ = x
+   #+END_SRC
+
+   Unlike the ~_‼_~ definition, rather than there being no index into the empty list,
+   there is no proof that a natural number ~i~ is smaller than 0.
+
+**** Mechanically Moving from ~Bool~ to ~Set~ ---Avoiding “Boolean Blindness”
+
+     #+latex: \hspace{-1.3em}
+   In Agda we can represent a proposition as a type whose elements denote proofs
+   of that proposition. Why would you want this? Recall how awkward it was to request
+   an index be “in bounds” in the ~find~ method, but it's much easier to encode this
+   using ~Fin~ ---likewise, ~head′~ obtains a more elegant type when the non-empty precondition
+   is part of the datatype definition, as in ~head~.
+
+   Here is a simple recipe to go from Boolean functions to inductive datatype families.
+   0. Write the Boolean function.
+   1. Throw away all the cases with right side ~false~.
+   2. Every case that has right side ~true~ corresponds to a new nullary constructor.
+   3. Every case that has $n$ recursive calls corresponds to an ~n~-ary constructor.
+
+   Following these steps for ~_<₀_~, from the left side of the page, gives us:
+
+   #+BEGIN_SRC agda
+data _<₁_ : ℕ → ℕ → Set where
+  z< : {y : ℕ} → zero <₁ y
+  s< : {x y : ℕ} → x <₁ y → suc x <₁ suc y
+   #+END_SRC
+
+   To convince yourself you did this correctly, you can prove “soundness”
+   ---constructed values correspond to Boolean-true statements---
+   and “completeness” ---true things correspond to terms formed from constructors.
+   The former is ensured by the second step in our recipe!
+
+   #+BEGIN_SRC agda
+completeness : {x y : ℕ} → isTrue (x <₀ y) → x <₁ y
+completeness {x}     {zero}  ()
+completeness {zero}  {suc y} p = z<
+completeness {suc x} {suc y} p = s< (completeness p)
+   #+END_SRC
+
+   We began with ~completeness {x} {y} p = ?~, then we wanted to case on ~p~
+   but that requires evaluating ~x <₀ y~ which requires we know the shapes of ~x~ and ~y~.
+   /The shape of proofs usually mimics the shape of definitions they use/; e.g., ~_<₀_~ here.
+
+** TODO Facets of Structuring Mechanisms: An Agda Rendition
    :PROPERTIES:
    :header-args: :tangle monoid_renditions.agda :comments link
    :END:
-<<<sec:module_agda>>>
-# JC: - 2.4 really helps situate things, and is in the proper place in the proposal
-# - ditto for 2.5
+ <<<sec:module_agda>>>
+ # JC: - 2.4 really helps situate things, and is in the proper place in the proposal
+ # - ditto for 2.5
 
-:Setup:
-#+begin_src haskell
+ :Setup:
+ #+begin_src haskell
 open import Relation.Binary.PropositionalEquality
 open ≡-Reasoning
 
@@ -2935,42 +4257,42 @@ syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
 
 open import Data.Nat
 open import Data.Nat.Properties
-#+end_src
-:End:
+ #+end_src
+ :End:
 
-In this section we provide a demonstration that with dependent-types we can show records, direct dependent types, and
-contexts ---which in Agda may be thought of as parameters to a module---
-are interdefinable.
-Consequently, we observe that the structuring mechanisms provided by the current
-implementation of Agda --and other DTLs-- have no real differences aside from those imposed by the language
-and how they are generally utilised.
-More importantly, this demonstration indicates our proposed direction of identifying
-notions of packages is on the right track.
+ In this section we provide a demonstration that with dependent-types we can show records, direct dependent types, and
+ contexts ---which in Agda may be thought of as parameters to a module---
+ are interdefinable.
+ Consequently, we observe that the structuring mechanisms provided by the current
+ implementation of Agda --and other DTLs-- have no real differences aside from those imposed by the language
+ and how they are generally utilised.
+ More importantly, this demonstration indicates our proposed direction of identifying
+ notions of packages is on the right track.
 
-Our example will be implementing a monoidal interface in each format,
-then presenting /views/ between each format and that of the ~record~ format.
-Furthermore, we shall also construe each as a typeclass,
-thereby demonstrating that typeclasses are, essentially, not only a
-selected record but also a selected /value/ of a dependent type
----incidentally this follows from the previous claim that records
-and direct dependent types are essentially the same.
+ Our example will be implementing a monoidal interface in each format,
+ then presenting /views/ between each format and that of the ~record~ format.
+ Furthermore, we shall also construe each as a typeclass,
+ thereby demonstrating that typeclasses are, essentially, not only a
+ selected record but also a selected /value/ of a dependent type
+ ---incidentally this follows from the previous claim that records
+ and direct dependent types are essentially the same.
 
-Recall that the signature of a monoid consists of
-a type ~Carrier~ with a method ~_⨾_~ that composes values
-and an ~Id~-entity value.
-With Agda's lack of type-proof discrimination, i.e., its support for the
-Curry-Howard Correspondence, the “propositions as types” interpretation, we can encode the signature as well as the
-axioms of monoids to yield their theory presentation in the following two ways.
-Additionally, we have the derived result:
-~Id~-entity can be popped-in and out as desired.
+ Recall that the signature of a monoid consists of
+ a type ~Carrier~ with a method ~_⨾_~ that composes values
+ and an ~Id~-entity value.
+ With Agda's lack of type-proof discrimination, i.e., its support for the
+ Curry-Howard Correspondence, the “propositions as types” interpretation, we can encode the signature as well as the
+ axioms of monoids to yield their theory presentation in the following two ways.
+ Additionally, we have the derived result:
+ ~Id~-entity can be popped-in and out as desired.
 
-The following code blocks contain essentially the same content, but
-presented using different notions of packaging. Even though both
-use the ~record~ keyword, the latter is treated as a typeclass
-since the carrier of the monoid is given ‘statically’ and instance
-search is used to invoke such instances.
-{{{code(Monoids as Agda Records)}}}
-#+BEGIN_SRC haskell
+ The following code blocks contain essentially the same content, but
+ presented using different notions of packaging. Even though both
+ use the ~record~ keyword, the latter is treated as a typeclass
+ since the carrier of the monoid is given ‘statically’ and instance
+ search is used to invoke such instances.
+ {{{code(Monoids as Agda Records)}}}
+ #+BEGIN_SRC haskell
 record Monoid-Record : Set₁ where
   infixl 5 _⨾_
   field
@@ -2989,10 +4311,10 @@ record Monoid-Record : Set₁ where
   pop-Idᵣ x y = cong (_⨾ y) rid
 
 open Monoid-Record {{...}} using (pop-Idᵣ)
-#+END_SRC
+ #+END_SRC
 
-{{{code(Monoids as Typeclasses)}}}
-#+BEGIN_SRC haskell
+ {{{code(Monoids as Typeclasses)}}}
+ #+BEGIN_SRC haskell
 record HasMonoid (Carrier : Set) : Set₁ where
   infixl 5 _⨾_
   field
@@ -3006,25 +4328,25 @@ record HasMonoid (Carrier : Set) : Set₁ where
   pop-Id-tc x y = cong (_⨾ y) rid
 
 open HasMonoid {{...}} using (pop-Id-tc)
-#+END_SRC
+ #+END_SRC
 
-The double curly-braces ~{{...}}~ serve to indicate that
-the given argument is to be found by instance resolution:
-The results for ~Monoid-Record~ and ~HasMonoid~ can be invoked without having to mention a monoid on
-a particular carrier, provided there exists one unique record value
-having it as carrier ---otherwise one must use named instances cite:named_instances.
-Notice that the carrier argument in the typeclasses approach, “structure on a carrier”, is
-an (undeclared) implicit argument to the ~pop-Id-tc~ operation.
+ The double curly-braces ~{{...}}~ serve to indicate that
+ the given argument is to be found by instance resolution:
+ The results for ~Monoid-Record~ and ~HasMonoid~ can be invoked without having to mention a monoid on
+ a particular carrier, provided there exists one unique record value
+ having it as carrier ---otherwise one must use named instances cite:named_instances.
+ Notice that the carrier argument in the typeclasses approach, “structure on a carrier”, is
+ an (undeclared) implicit argument to the ~pop-Id-tc~ operation.
 
-Alternatively, in a DTL we may encode the monoidal interface using dependent products
-*directly* rather than use the syntactic sugar of records.
-The notation ~Σ x ∶ A • B x~ denotes the type of pairs ~(x , pf)~ where ~x ∶ A~ and ~pf ∶ B x~
----i.e., a record consisting of two fields.
-It may be thought of as a constructive analogue to the classical set comprehension {{{newline}}} ~{ x ∶ A❙B x}~.
+ Alternatively, in a DTL we may encode the monoidal interface using dependent products
+ *directly* rather than use the syntactic sugar of records.
+ The notation ~Σ x ∶ A • B x~ denotes the type of pairs ~(x , pf)~ where ~x ∶ A~ and ~pf ∶ B x~
+ ---i.e., a record consisting of two fields.
+ It may be thought of as a constructive analogue to the classical set comprehension {{{newline}}} ~{ x ∶ A❙B x}~.
 
-{{{code(Monoids as Dependent Sums)}}}
-# ATTR_LATEX: :options fontsize={\fontsize{10}{11}\selectfont}
-#+BEGIN_SRC haskell
+ {{{code(Monoids as Dependent Sums)}}}
+ # ATTR_LATEX: :options fontsize={\fontsize{10}{11}\selectfont}
+ #+BEGIN_SRC haskell
 -- Type alias
 Monoid-Σ  :  Set₁
 Monoid-Σ  =    Σ Carrier ∶ Set
@@ -3041,32 +4363,32 @@ pop-Id-Σ : ∀{{M : Monoid-Σ}}
 pop-Id-Σ {{M}} x y = cong (_⨾ y) (rid {x})
              where  _⨾_    = proj₁ (proj₂ (proj₂ M))
                 rid    = proj₁ (proj₂ (proj₂ (proj₂ (proj₂ M))))
-#+END_SRC
+ #+END_SRC
 
-Of the renditions thus far, the ~Σ~ rendering makes it clear that a monoid could have
-any subpart as a record with the rest being dependent upon said record.
-For example, if we had a semigroup type, we could have declared {{{newline}}}
-~Monoid-Σ = Σ S ∶ Semigroup • Σ Id ∶ Semigroup.Carrier S~.
-There are a large number of such hyper-graphs, we have only presented a stratified view
-for brevity. In particular, ~Monoid-Σ~ is the extreme unbundled version, whereas
-~Monoid-Record~ is the other extreme, and there is a large spectrum in between --all of which are
-somehow isomorphic; e.g., ~Monoid-Record ≅ Σ C ∶ Set • HasMonoid C~.
-Our envisioned system would be able to derive any such view at will cite:casl_overview
-and so programs may be written according to one view, but easily repurposed for other
-view with little human intervention.
+ Of the renditions thus far, the ~Σ~ rendering makes it clear that a monoid could have
+ any subpart as a record with the rest being dependent upon said record.
+ For example, if we had a semigroup type, we could have declared {{{newline}}}
+ ~Monoid-Σ = Σ S ∶ Semigroup • Σ Id ∶ Semigroup.Carrier S~.
+ There are a large number of such hyper-graphs, we have only presented a stratified view
+ for brevity. In particular, ~Monoid-Σ~ is the extreme unbundled version, whereas
+ ~Monoid-Record~ is the other extreme, and there is a large spectrum in between --all of which are
+ somehow isomorphic; e.g., ~Monoid-Record ≅ Σ C ∶ Set • HasMonoid C~.
+ Our envisioned system would be able to derive any such view at will cite:casl_overview
+ and so programs may be written according to one view, but easily repurposed for other
+ view with little human intervention.
 
-:Irrelevant:
-Like a Java ~class~, within the ~record~ we may include derived results
-that are then available to all values, `instances', of the record type.
-Outside the ~record~, further properties may be added, though they now
-require an actual value, instance, to be given.
-:End:
+ :Irrelevant:
+ Like a Java ~class~, within the ~record~ we may include derived results
+ that are then available to all values, `instances', of the record type.
+ Outside the ~record~, further properties may be added, though they now
+ require an actual value, instance, to be given.
+ :End:
 
-Instances and their use are as follows.
-One may realise that ~pop-0~ proofs as a form of polymorphism
----we will return to package former polymorphism when discussing preliminary research.
-{{{code(Instance Declarations)}}}
-#+BEGIN_SRC haskell
+ Instances and their use are as follows.
+ One may realise that ~pop-0~ proofs as a form of polymorphism
+ ---we will return to package former polymorphism when discussing preliminary research.
+ {{{code(Instance Declarations)}}}
+ #+BEGIN_SRC haskell
 instance
    ℕ-record = record { Carrier = ℕ ; Id = 0 ; _⨾_ = _+_
              ; lid =  +-identityˡ _  ; rid = +-identityʳ _ ; assoc = +-assoc }
@@ -3077,9 +4399,9 @@ instance
 
    ℕ-Σ : Monoid-Σ
    ℕ-Σ = ℕ , 0 , _+_ , +-identityˡ _ , +-identityʳ _ , +-assoc
-#+END_SRC
-{{{code(No Monoids Mentioned at Use Sites)}}}
-#+BEGIN_SRC haskell
+ #+END_SRC
+ {{{code(No Monoids Mentioned at Use Sites)}}}
+ #+BEGIN_SRC haskell
 ℕ-pop-0ᵣ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
 ℕ-pop-0ᵣ = pop-Idᵣ
 
@@ -3088,37 +4410,37 @@ instance
 
 ℕ-pop-0ₜ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
 ℕ-pop-0ₜ = pop-Id-Σ
-#+END_SRC
+ #+END_SRC
 
-Interestingly, notice that the grouping in ~ℕ-Σ~ is just an unlabelled (dependent) product,
-and so when it is used in ~pop-Id-Σ~ we project to the desired components.
-Whereas in the ~Monoid-Record~ case we could have projected the carrier by
-~Carrier M~, now we would write ~proj₁ M~.
+ Interestingly, notice that the grouping in ~ℕ-Σ~ is just an unlabelled (dependent) product,
+ and so when it is used in ~pop-Id-Σ~ we project to the desired components.
+ Whereas in the ~Monoid-Record~ case we could have projected the carrier by
+ ~Carrier M~, now we would write ~proj₁ M~.
 
-:Irrelevant:
-This is nearly identical to the previous implementation and possibly
-simpler due to the lack of the ~record { ⋯ }~ clutter required of /labelled products/.
-However, said clutter could have been removed by providing
-a ~constructor~ declaration in the definition of ~Monoid-Record~
-but we have decided not to do so, to make the labelling clear
-and distinct from the unlabelled product presentations.
-:End:
+ :Irrelevant:
+ This is nearly identical to the previous implementation and possibly
+ simpler due to the lack of the ~record { ⋯ }~ clutter required of /labelled products/.
+ However, said clutter could have been removed by providing
+ a ~constructor~ declaration in the definition of ~Monoid-Record~
+ but we have decided not to do so, to make the labelling clear
+ and distinct from the unlabelled product presentations.
+ :End:
 
-Observe the lack of informational
-difference between the presentations, yet there is a
-/Utility Difference: Records give us the power to name our projections _*directly*_ with possibly meaningful names./
-Of course this could be achieved indirectly by declaring extra functions; e.g.,
-#+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell :tangle no
+ Observe the lack of informational
+ difference between the presentations, yet there is a
+ /Utility Difference: Records give us the power to name our projections _*directly*_ with possibly meaningful names./
+ Of course this could be achieved indirectly by declaring extra functions; e.g.,
+ #+LaTeX: \def\mytitle{Agda}
+ #+BEGIN_SRC haskell :tangle no
 Carrierₜ : Monoid-Σ → Set
 Carrierₜ = proj₁
-#+END_SRC
-We will refrain from creating such boiler plate ---that is,
-/records allow us to omit such mechanical boilerplate./
+ #+END_SRC
+ We will refrain from creating such boiler plate ---that is,
+ /records allow us to omit such mechanical boilerplate./
 
-Finally, let us exhibit views between this form and the ~record~ form.
-#+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell
+ Finally, let us exhibit views between this form and the ~record~ form.
+ #+LaTeX: \def\mytitle{Agda}
+ #+BEGIN_SRC haskell
 -- Following proves: Monoid-Record  ≅  Σ Set HasMonoid.
 
 to-record-from-usual-type : Monoid-Σ → Monoid-Record
@@ -3134,18 +4456,18 @@ from-record-to-usual-type M =
   in Carrier , Id , _⨾_ , lid , rid , assoc
 
   {- Essentially moved from record{⋯} to product listing -}
-#+END_SRC
+ #+END_SRC
 
-Furthermore, by definition chasing, ~refl~-exivity, these operations are seen to be inverse of
-each other. Hence we have two faithful non-lossy protocols for reshaping our grouped data.
+ Furthermore, by definition chasing, ~refl~-exivity, these operations are seen to be inverse of
+ each other. Hence we have two faithful non-lossy protocols for reshaping our grouped data.
 
-In our final presentation, we construe the grouping of the monoidal interface
-as a sequence of “variable : type” declarations ---i.e., a ‘context’ or ‘telescope’.
-Since these are not top level items by themselves, in Agda, we take a purely syntactic route
-by positioning them in a ~module~ declaration as follows.
+ In our final presentation, we construe the grouping of the monoidal interface
+ as a sequence of “variable : type” declarations ---i.e., a ‘context’ or ‘telescope’.
+ Since these are not top level items by themselves, in Agda, we take a purely syntactic route
+ by positioning them in a ~module~ declaration as follows.
 
-#+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell
+ #+LaTeX: \def\mytitle{Agda}
+ #+BEGIN_SRC haskell
 module Monoid-Telescope-User
   (Carrier : Set) (Id : Carrier) (_⨾_ : Carrier → Carrier → Carrier)
   (lid   : ∀{x} → Id ⨾ x ≡ x) (rid : ∀{x} → x ⨾ Id ≡ x)
@@ -3154,27 +4476,27 @@ module Monoid-Telescope-User
 
   pop-Idₘ : ∀(x y : Carrier)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
   pop-Idₘ x y = cong (_⨾ y) (rid {x})
-#+END_SRC
+ #+END_SRC
 
-Notice that this is nothing more than the named fields of ~Monoid-Record~
-squished into six lines. Additionally, if we insert a Σ before each name
-we essentially regain the ~Monoid-Σ~ formulation.
-It seems contexts, at least superficially, are a nice middle ground between
-the previous two formulations.
+ Notice that this is nothing more than the named fields of ~Monoid-Record~
+ squished into six lines. Additionally, if we insert a Σ before each name
+ we essentially regain the ~Monoid-Σ~ formulation.
+ It seems contexts, at least superficially, are a nice middle ground between
+ the previous two formulations.
 
-As promised earlier, we can regard the above telescope as a record:
-#+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell
+ As promised earlier, we can regard the above telescope as a record:
+ #+LaTeX: \def\mytitle{Agda}
+ #+BEGIN_SRC haskell
   record-from-telescope : Monoid-Record
   record-from-telescope
     = record { Carrier = Carrier ; Id = Id ; _⨾_ = _⨾_
          ; lid = lid ; rid = rid ; assoc = assoc }
-#+END_SRC
+ #+END_SRC
 
-The structuring mechanism ~module~ is not a first class citizen in Agda.
-As such, to obtain the converse view, we work in a parameterised module.
-#+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell
+ The structuring mechanism ~module~ is not a first class citizen in Agda.
+ As such, to obtain the converse view, we work in a parameterised module.
+ #+LaTeX: \def\mytitle{Agda}
+ #+BEGIN_SRC haskell
 module record-to-telescope (M : Monoid-Record) where
 
   open Monoid-Record M
@@ -3182,220 +4504,47 @@ module record-to-telescope (M : Monoid-Record) where
   -- instantiated with M.
 
   open Monoid-Telescope-User Carrier Id _⨾_ lid rid assoc
-#+END_SRC
+ #+END_SRC
 
-Notice that we just listed the components out ---rather reminiscent of the formulation
-~Monoid-Σ~. This observation only increases confidence in our thesis that there is no
-real distinctions of packaging mechanisms in DTLs.
+ Notice that we just listed the components out ---rather reminiscent of the formulation
+ ~Monoid-Σ~. This observation only increases confidence in our thesis that there is no
+ real distinctions of packaging mechanisms in DTLs.
 
-Undeniably instantiating the telescope approach to monoids for the natural number
-is nothing more than listing the required components.
-#+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell
+ Undeniably instantiating the telescope approach to monoids for the natural number
+ is nothing more than listing the required components.
+ #+LaTeX: \def\mytitle{Agda}
+ #+BEGIN_SRC haskell
 open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
-#+END_SRC
+ #+END_SRC
 
-C.f., the definition of ~ℕ-Σ~: This is nearly the same instantiation with the primary
-syntactical difference being that this form had its arguments separated by spaces rather than commas!
-#+LaTeX: \def\mytitle{Agda}
-#+BEGIN_SRC haskell
+ C.f., the definition of ~ℕ-Σ~: This is nearly the same instantiation with the primary
+ syntactical difference being that this form had its arguments separated by spaces rather than commas!
+ #+LaTeX: \def\mytitle{Agda}
+ #+BEGIN_SRC haskell
 ℕ-popₘ  : ∀(x y : ℕ)  →  x + 0 + y  ≡  x + y
 ℕ-popₘ  =   pop-Idₘ
-#+END_SRC
+ #+END_SRC
 
-Notice how this presentation makes it explicitly clear why we cannot have multiple instances:
-There would be name clashes. Even if the data we used had distinct names, the derived result
-may utilise data having the same name thereby admitting name clashes elsewhere.
----This could be avoided in Agda by qualifying names and/or renaming.
+ Notice how this presentation makes it explicitly clear why we cannot have multiple instances:
+ There would be name clashes. Even if the data we used had distinct names, the derived result
+ may utilise data having the same name thereby admitting name clashes elsewhere.
+ ---This could be avoided in Agda by qualifying names and/or renaming.
 
-It is interesting to note that this presentation is akin to that of ~class~-es in C#/Java languages:
-The interface is declared in one place, monolithic-ly, as well as all
-derived operations there; if we want additional operations, we create
-another module that  takes that given module as an argument in the
-same way we create a class that inherits from that given class.
+ It is interesting to note that this presentation is akin to that of ~class~-es in C#/Java languages:
+ The interface is declared in one place, monolithic-ly, as well as all
+ derived operations there; if we want additional operations, we create
+ another module that  takes that given module as an argument in the
+ same way we create a class that inherits from that given class.
 
-Demonstrating the interdefinablity of different notions
-of packaging cements our thesis that it is essentially utility
-that distinguishes packages more than anything else.
-In particular, explicit distinctions have lead
-to a duplication of work where the same structure is formalised
-using different notions of packaging. In chapter 3 we will show how to avoid
-duplication by coding against a particular ‘package former’ rather than a
-particular variation thereof --this is akin to a type former.
+ Demonstrating the interdefinablity of different notions
+ of packaging cements our thesis that it is essentially utility
+ that distinguishes packages more than anything else.
+ In particular, explicit distinctions have lead
+ to a duplication of work where the same structure is formalised
+ using different notions of packaging. In chapter 3 we will show how to avoid
+ duplication by coding against a particular ‘package former’ rather than a
+ particular variation thereof --this is akin to a type former.
 
-** Theory Presentations: A Structuring Mechanism
-<<<sec:module_theory>>>
-
-What of the most closely related theoretical work?
-
-Our envisioned effort would support a “write one, obtain many” approach to package formation.
-We now turn to mentioning how package formers are currently treated
-formally under the name of ‘theory presentations’. It is the aim of this section
-to attest that the introduction's story is not completely on shaky foundations,
-thereby asserting that the aforementioned goals of the introduction are not
-unachievable ---and the problems that will be posed in chapter 3 are not trivial.
-
-As discussed, languages are usually designed with a bit more thought given to a first-class
-citizen notion of grouping than is given to second-class notions of
-packaging up defined content.
-Object-oriented languages, for example, comprise features of both views
-by treating classes as external structuring mechanisms even though they
-are normal types of the type system. This internalising of external grouping
-features has not received much attention with the notable mentions being
-cite:theories_as_types, focalize.
-It is unclear whether there is any real distinction
-between these `internal, integrated' and `external, stratified'
-forms of grouping, besides intended use.
-The two approaches have different advantages.
-Both approaches permit separation of concerns: The external point of view
-provides a high-level structuring of a development, the internal point of
-view provides essentially another type which can be the subject of the
-language's operations ---e.g., quantification or tactics--- thereby being
-more amicable to computing transformations.
-Essentially it comes down to whether we want a `module parameter' or a `record field'
----why not write it the way you like and get the other form for free.
-
-Since external grouping mechanisms tend to allow for intra-language features
----e.g., imports, definitions, notation, extra-logical declarations such as pragmas---
-their systematic internalisation necessitates expressive record types.
-As such, a labelled product type or /context/
----being a list of name-type declarations with optional definitions---
-is a sufficiently generic rendition of what it means to group matter together.
-
-Below is a grammar, from cite:theories_as_types, for a simple yet powerful
-module system based on theory (presentations) and theory morphisms --which are merely named contexts and named substitutions between contexts, respectively.
-Both may be formed modularly by using includes to copy over declarations of previously named objects.
-Unlike theories which may include arbitrary declarations, theory morphisms \texttt{(V : P → Q) := δ}
-are well-defined if for every ~P~-declaration ~x ∶ T~, ~δ~ contains a declaration ~x = t~ where ~t~ may refer to all names declared in ~Q~.
-Observe that a context is, up to syntactical differences,
-essentially JavaScript object notation literal.
-Consequently, the notion of a mixin as described for JSON literals is here
-rendered as a theory morphism.
-{{{code(Syntax for Dependently Typed λ-calculus with Theories)}}}
-#+BEGIN_SRC haskell
--- Contexts
-Γ  ::= ·                       -- empty context
-     | x : τ [:= τ′], Γ         -- context with declaration, optional definition
-     | includes X, Γ           -- theory inclusion
-
--- Terms
-τ ::= x | τ₁ τ₂ | λ x : τ′ • τ -- variables, application, lambdas
-    | Π x : τ′ • τ             -- dependent product
-    | [Γ] | ⟨Γ⟩ | τ.x          -- record “[type]” and “⟨element⟩” formers, projections
-    | Mod X                    -- contravariant “theory to record” internalisation
-
--- Theory, external grouping, level
-Θ ::= .                        -- empty theory
-    | X := Γ, Θ                -- a theory can contain named contexts
-    | (X : (X₁ → X₂)) := Γ     -- a theory can be a first-class theory morphism
-
--- Proviso: In record formers, Γ must be flat; i.e., does not contain includes.
-
--- Example theory hierarchy of signatures, abbrevating “(Π x : A • B) = (A → B)”.
-, MagmaSig := Carrier : Set,  _⨾_ : Carrier → Carrier → Carrier, .
-, MonSig   := includes MagmaSig, Id : Carrier, .
-, .
-#+END_SRC
-
-#+LaTeX: \def\Mod{\mathsf{Mod}\,}
-
-This concept of packaging indeed captures much of what's expected of grouping mechanisms; e.g.,
-
-+ Grouping mechanism should group all kinds of things and indeed there is no
-  constraint on what a theory presentation may contain.
-+ Namespacing: Every module context can be construed as a record whose contents
-  can then be accessed by record field projection.
-
-  /Theories as Types/ cite:theories_as_types presents the first formal
-  approach that systematically internalises theories into record types.
-  Their central idea is to introduce a new operator ~Mod~ –read “models of”—
-  that turns a theory $T$ into a type $\Mod T$ which /behaves/ like a record type.
-
-+ Operations on grouping mechanisms cite:tpc.
-
-As mentioned earlier, a theory morphism, also known as a ‘view’,
-is a map between contexts that implements the interface of the source
-using utilities of the target; whence results about specific structures can be
-constructed by transport along views cite:little_theories:
-A view \texttt{V : P → Q} gives rise to a term homomorphism ~𝒱~ from ~P~-terms to ~Q~-terms
-that is type-preserving in that whenever \texttt{Θ, P ⊢ t : T} then \texttt{Θ, Q ⊢ 𝒱 t : 𝒱 T}.
-Thus, views preserve judgements and, via the propositions-as-types representations,
-also preserve truth.
-
-# Theory interpretations are also called translations, theory morphisms, immersions, and realisations.
-For example, a view $\Phi = (U, \beta) : \mathcal{S} \to \mathcal{T}$
-is essentially a predicate $U$, of the target theory, denoting a /universe of discourse/
-along with an  arity-preserving mapping $\beta$ of 𝒮-symbols, or declarations, to 𝒯-expressions.
-It is lifted to terms as follows
---- notice translated variable-binders are relativised to the new domain.
-#+BEGIN_EXPORT latex
-\begin{tcolorbox}[title=\hfill $\Phi$ Extended to Terms]
-\vspace{-1em}
-\begin{align*}
-\Phi(x) &= x  & & \text{ Provided $x$ is an $\mathcal{S}$-variable symbol }
-\\
-\Phi\left( f(t_1, \ldots, t_n) \right)
-&= \beta(f) \left(\Phi\, t_1, \ldots, \Phi\, t_n\right)
-& & \text{ Provided $f$ is a $n$-ary $\mathcal{S}$-function symbol}
-\\
-\Phi\left(\mathcal{Q}\, x \;\bullet\; P\right)
-&= \left(\mathcal{Q}\, x \;❙\; U\, \;x \bullet\; \Phi(P) \right)
-& & \text{ Provided $\mathcal{Q}$ is a variable-binder $\forall, \exists, \lambda$ }
-\end{align*}
-\end{tcolorbox}
-#+END_EXPORT
-
-The /Standard Interpretation Theorem/ cite:theory_interpretations_farmer
-provides sufficient conditions for a translation to be an ‘interpretation’
-which transports results between formalisations. It states:
-A translation is an interpretation provided 𝒮-axioms $P$ are lifted to
-theorems $\Phi(P)$, the universe of discourse is non-empty
-$(\exists x \bullet U\, x)$, and the interpretation of the universe
-contains the interpretations of the symbols;
-i.e., for each 𝒮-symbol $f$ of arity $n$, {{{newline}}}
-$\Phi(∀ x₁, …, xₙ • ∃ y \,•\, f\, x₁\, …\, x\,ₙ = \,y)$.
-
-# Standard interpreations are used to compare tthe strength of theories: 𝒯 is at least as strong as 𝒮 provided 𝓢 is interpretable in 𝒯 --indeed, that's why every model of the latter gives rise to a model of the former!
-# Also, standard interpretations have long been used in logic to prove meta-mathematical properties baout first-order theories, mainly rel;atoive consisitency, decidiabilkity, and undecidiability.
-By virtue of being a validity preserving homomorphism,
-a standard interpretation syntactically and semantically
-embeds its source theory in its target theory.
-The most important consequence of interpretability is the
-/Standard Relative Satisfiability/ cite:theory_interpretations_farmer
-which says that a theory which is interpretable in a satisfiable theory is itself satisfiable;
-in programming terms this amount to: If $X$ is an implementation of `interface' 𝒯
-and 𝒮 is interpretable in 𝒯 then $X$ can be transformed into an implementation of 𝒮.
-Interestingly such ‘subtyping’ can be derived in a mechanical fashion, but it can leave
-the subtype relation to be cyclic.
-However, it is unclear under which conditions translations automatically
-give rise to interpretations: Can the issue be relegated to syntactic
-manipulation only?
-
-Theory interpretation has been studied for first-order predicate logic
-then extended to higher-order logic cite{theory_interpretations_farmer}.
-The advent of dependent-types, in particular the blurring of operations and formulae
-cite{wiki_curry_howard}, means that propositions of a language can be encoded into it as other
-sorts, dependent on existing sorts, thereby questioning
-/what it means to have a validity-preserving morphism/ when the axioms can be
-encoded as operations? As far as we can tell, it seems very little work
-regarding theory interpretations has been conducted in dependently-typed
-settings cite:mlt_partial, higher_order_interpretations, institution_interpretations, dtl_interpretations.
-# {{{remark(WK: Then you should discuss it in more detail.)}}}
-
-:Irrelevant:
-Notice that records play dual roles. They not only serve as an internal form of grouping
-mechanisms, but inspired by the previous Agda renditions, also serve the purpose of
-forming dependent sum types.
-
-What about the presence of non-termination or inheritance
----i.e., partial functions and subtypes?
-The subject is only beginning to
-be seriously explored in higher-order logic and type theory.
-cite{theory_interpretations_farmer}.
-Views associating base types with subtypes get complicated since functions must now
-deal with restricted domains, consequently necessitating that all predicates on functions
-also be relativised.
-:End:
 * TODO Solution Requirements
    :PROPERTIES:
    :CUSTOM_ID: solution_requirements
@@ -5056,7 +6205,7 @@ pk decorated f = record { Name         = bimap id f pk.Name
    ---i.e., a list of language instructions--- which ‘evaluate’ to the original
    value. The shift to syntax gives rise to evaluators, optimisers, and  constrained
    recursion-induction principles.
-* TODO PackageFormer
+* TODO The Second Choice: PackageFormer
 
    # I'm trying to do things with one language, in a DTL, and about being first-class.
    # What I currently have is to approximate what it could look like.
@@ -8895,7 +10044,7 @@ crazy-name-test2 = crazy-name-test map (λ e → (map-name (λ n → (concat n "
 -}
  #+END_SRC
     :End:
-* TODO Contexts
+* TODO The Third Choice: Contexts
 ** COMMENT Why PackageFormer is not enough.
 ** COMMENT Discuss Agda macros ---need to be self-contained.
 ** COMMENT Motivate the need for a practical syntax.
