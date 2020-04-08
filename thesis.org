@@ -3053,10 +3053,11 @@ Type of functors do not η-reduce, and as such one cannot expect them to be appl
   # Nifty slides: “Why Applicative Functors Matter”
   # https://www.cs.ox.ac.uk/ralf.hinze/WG2.8/24/slides/derek.pdf
 
-* TODO COMMENT Motivating the problem ---Examples from the Wild
+* Motivating the problem ---Examples from the Wild
 
 ** Introduction :ignore:
-Tedium is for machines; interesting problems are for people.
+
+   /Tedium is for machines; interesting problems are for people./
 
 In this section, we showcase a number of problems that occur in developing
 libraries of code, with an eye to dependently-typed languages. We will refer
@@ -3069,7 +3070,7 @@ algorithms yearning to be formalised. The power of the host language dictates
 whether design patterns remain as informal directions to be implemented in an
 ad-hoc basis then checked by other humans, or as a library methods that are
 written once and may be freely applied by users. For instance, [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Morphism.html#1][Agda's
-~Algebra.Morphism~ “library”]] presents an example(!) of the homomorphism design
+~Algebra.Morphism~ “library”]] presents /only/ an example(!) of the homomorphism design
 pattern ---which shows how to form operation-preserving functions for algebraic
 structures. The documentation reads: ~An example showing how a morphism type can
 be defined~. An example, rather than a library method, is all that can be done
@@ -3093,6 +3094,7 @@ least, not out of the box.
    type with the non-emptiness proviso expressed by requesting a positive
    length.
 
+{{{code(Exposing Information At the Type Level)}}}
 #+BEGIN_SRC agda :tangle list-is-not-vec.agda :prologue "module list-is-not-vec where \nopen import Notation \n"
 data List (A : Set) : Set where
   []  : List A
@@ -3117,13 +3119,16 @@ also to explicit features of a datatype. A common scenario is when two instances
 of an algebraic structure share the same carrier and thus it is reasonable to
 connect the two somehow by a coherence axiom. Perhaps the most popular instance
 of this scenario is in the setting of rings: There is an additive monoid ~(R, +,
-0)~ and a multiplicative monoid ~(R, ×, 0)~ on the same underlying set, and their
+1)~ and a multiplicative monoid ~(R, ×, 0)~ on the same underlying set ~R~, and their
 interaction is dictated by two distributivity axioms, such as ~a × (b + c) ≈ (a
 × b) + (a × c)~. As with ~head~ above, depending on which features of a monoid are
-exposed upfront, such axioms may be either difficult to express or relatively easy.
+exposed upfront, such axioms may be either difficult to express or relatively
+easy.
 
-For brevity, since our interest is in expressing the aforementioned distributivity axiom,
-we shall ignore all other features of a monoid, to obtain a magma.
+For brevity, since our interest is in expressing the aforementioned
+distributivity axiom, we shall ignore all other features of a monoid, to obtain
+a magma.
+{{{code(Distributivity is Difficult to Express)}}}
 #+BEGIN_SRC agda :tangle list-is-not-vec.agda
 record Magma₀ : Set₁ where
   field
@@ -3132,10 +3137,10 @@ record Magma₀ : Set₁ where
 
 module Distributivity₀
     (Additive Multiplicative : Magma₀)
-    (open Magma₀ Additive renaming (Carrier to R₊; _⨾_ to _+_))
+    (open Magma₀ Additive       renaming (Carrier to R₊; _⨾_ to _+_))
     (open Magma₀ Multiplicative renaming (Carrier to Rₓ; _⨾_ to _×_))
     (shared-carrier :  R₊ ≡ Rₓ)
-    where
+  where
 
   coeₓ : R₊ → Rₓ
   coeₓ = subst id shared-carrier
@@ -3148,32 +3153,36 @@ module Distributivity₀
                   ≡ coeₓ (coe₊(a × coeₓ b) + coe₊(a × coeₓ c))
   distribute₀ = {!!}
 #+END_SRC
-It is a bit of a challenge to understand the type of ~distribute₀~.
-Even though the carriers of the monoids are propositionally equal, ~R₊ ≡ Rₓ~,
-they are not the same by definition. As such, we are forced to “coe”rce back and forth;
-leaving the distributivity axiom as an exotic property of addition, multiplication, and coercions.
-Even worse, without the cleverness of declaring two coercion helpers, the typing of ~distribute₀~
-would have been so large and confusing that the concept would be rendered near useless.
+It is a bit of a challenge to understand the type of ~distribute₀~. Even though
+the carriers of the monoids are propositionally equal, ~R₊ ≡ Rₓ~, they are not the
+same by definition. As such, we are forced to “coe”rce back and forth; leaving
+the distributivity axiom as an exotic property of addition, multiplication, and
+coercions. Even worse, without the cleverness of declaring two coercion helpers,
+the typing of ~distribute₀~ would have been so large and confusing that the
+concept would be rendered near useless.
 
-Let's clarify what equality means. One says ~𝓁 ≡ 𝓇~ is <<</definitionally
-equal/>>> when both sides are indistinguishable after all possible definitions
-in the terms ~𝓁~ and ~𝓇~ have been used. In contrast, the equality is
-<<</propositionally equal/>>> when one must perform actual work, such as using
-inductive reasoning. In general, if there are no variables in ~𝓁 ≡ 𝓇~ then we have
-definitional equality ---i.e., simplify as much as possible then compare---
-otherwise we have propositional equality ---real work to do. Below is an example
-about the types of vectors.
+Let's recall what equality means. One says ~𝓁 ≡ 𝓇~ is <<</definitionally equal/>>>
+when both sides are indistinguishable after all possible definitions in the
+terms ~𝓁~ and ~𝓇~ have been used. In contrast, the equality is <<</propositionally
+equal/>>> when one must perform actual work, such as using inductive reasoning.
+In general, if there are no variables in ~𝓁 ≡ 𝓇~ then we have definitional
+equality ---i.e., simplify as much as possible then compare--- otherwise we have
+propositional equality ---real work to do. Below is an example about the types
+of vectors.
+{{{code(Examples of Propositional and Definitional Equality)}}}
 #+BEGIN_SRC agda :tangle list-is-not-vec.agda
 definitional : ∀ {A} → Vec A 5 ≡ Vec A (2 + 3)
 definitional = refl
 
-propoistional : ∀ {A m n} → Vec A (m + n) ≡ Vec A (n + m)
-propoistional = {!!}
+propositional : ∀ {A m n} → Vec A (m + n) ≡ Vec A (n + m)
+propositional = {!!}
 #+END_SRC
 
-In theory, parameterised structures are no different from their unparameterised, or “bundled”, counterparts.
-However, in practice, this is wholly untrue: Below we can phrase the distributivity axiom nearly as it was
-stated informally earlier since the shared carrier is declared upfront.
+In theory, parameterised structures are no different from their unparameterised,
+or “bundled”, counterparts. However, in practice, this is wholly untrue: Below
+we can phrase the distributivity axiom nearly as it was stated informally
+earlier since the shared carrier is declared upfront.
+{{{code(Distributivity is Expressed Easily with Unbundled Structures)}}}
 #+BEGIN_SRC agda :tangle list-is-not-vec.agda
 record Magma₁ (Carrier : Set) : Set₁ where
   field
@@ -3184,19 +3193,19 @@ module Distributivity₁
     (Additive Multiplicative : Magma₁ R)
     (open Magma₁ Additive       renaming (_⨾_ to _+_))
     (open Magma₁ Multiplicative renaming (_⨾_ to _×_))
-    where
+  where
 
-  distribute₁ : ∀ {a b c : R}
-                → a × (b + c) ≡ (a × b) + (a × c)
+  distribute₁ : ∀ {a b c : R} →  a × (b + c) ≡ (a × b) + (a × c)
   distribute₁ = {!!}
 #+END_SRC
 In contrast to the bundled definition of magmas, this form requires no cleverness to form coercion helpers,
 and is closer to the informal and usual distributivity statement.
 
-By the same arguments above, the simple statement relating the two units of a ring $1 × r + 0 ≈ r$
----or any units of monoids sharing the same carrier--- is easily phrased using an unbundled presentation
-and would require coercions otherwise. We invite the reader to pause at this moment to appreciate the difficulty
-in simply expressing this property.
+By the same arguments above, the simple statement relating the two units of a
+ring ~1 × r + 0 ≈ r~ ---or any units of monoids sharing the same carrier--- is
+easily phrased using an unbundled presentation and would require coercions
+otherwise. We invite the reader to pause at this moment to appreciate the
+difficulty in simply expressing this property.
 
 Computing is filled with exciting problems; machines should help us reduce if
 not eliminate boring tasks.
@@ -3223,9 +3232,8 @@ deviate from convention. Here are a few examples:
   With the exception of people familiar with the Yoneda Lemma, or continuations,
   such a notation is simply “wrong”!
 
-- ~a × a ≈ a~ :: An idempotent operation denoted by multiplication; likewise for commutative operations.
-
-  It is more common to use addition or join, ~⊔~.
+- ~a × a ≈ a~ :: An idempotent operation denoted by multiplication; likewise for
+  commutative operations. It is more common to use addition or join, ~⊔~.
 
 - ~0 × a ≈ a~ :: The identity of “multiplicative symbols” should never resemble
   “0”; instead it should resemble “1” or, at least, ~“e”~ ---the standard
@@ -3265,23 +3273,25 @@ solutions are, respectively:
 
 2. Pack-up the /common/ renamings as modules, and invoke them when needed.
    - Which renamings are provided is left at the discretion of the designer
-     ---even “expected” renamings may not be there since, say, there are too many
-     choices or not enough man power to produce them.
+     ---even “expected” renamings may not be there since, say, there are too
+     many choices or insufficient man power to produce them.
    - The pattern to pack-up renamings leads nicely to consistent naming.
 
 3. Names don't matter.
-   - Users of the library need to be intimately connected with the definitions
-     are domain to use the library.
+   - Users of the library need to be intimately connected with the Agda
+     definitions and domain to use the library.
    - Consequently, there are many inconsistencies in naming.
 
-  The ~open ⋯ public ⋯ renaming ⋯~ pattern shown below will be presented in a
-   future section as a library method.
+# #
+The ~open ⋯ public ⋯ renaming ⋯~ pattern shown below will be presented in a future
+section as a library method.
 
 *** Renaming Problems from Agda's Standard Library
 
-[[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#2757][Here is an excerpt from Agda's standard library]], notice how the prototypical
-notation for monoids is rename repeatedly /as needed/. Sometimes it is
-relabelled with additive symbols, other times with multiplicative symbols.
+[[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#2757][Here are four excerpts from Agda's standard library]], notice how the prototypical
+notation for monoids is renamed repeatedly /as needed/. Sometimes it is relabelled
+with additive symbols, other times with multiplicative symbols.
+{{{code(Additive Renaming ---IsNearSemiring)}}}
 #+BEGIN_SRC agda
 record IsNearSemiring {a ℓ} {A : Set a} (≈ : Rel A ℓ)
                       (+ * : Op₂ A) (0# : A) : Set (a ⊔ ℓ) where
@@ -3304,7 +3314,9 @@ record IsNearSemiring {a ℓ} {A : Set a} (≈ : Rel A ℓ)
          renaming ( assoc    to *-assoc
                   ; ∙-cong   to *-cong
                   )
-
+#+END_SRC
+{{{code(Additive Renaming Again ---IsSemiringWithoutOne)}}}
+#+BEGIN_SRC agda
 record IsSemiringWithoutOne {a ℓ} {A : Set a} (≈ : Rel A ℓ)
                             (+ * : Op₂ A) (0# : A) : Set (a ⊔ ℓ) where
   open FunctionProperties ≈
@@ -3329,7 +3341,9 @@ record IsSemiringWithoutOne {a ℓ} {A : Set a} (≈ : Rel A ℓ)
          renaming ( assoc       to *-assoc
                   ; ∙-cong      to *-cong
                   )
-
+#+END_SRC
+{{{code(Additive Renaming a 3ʳᵈ Time and Multiplicative Renaming ---IsSemiringWithoutAnnihilatingZero)}}}
+#+BEGIN_SRC agda
 record IsSemiringWithoutAnnihilatingZero
          {a ℓ} {A : Set a} (≈ : Rel A ℓ)
          (+ * : Op₂ A) (0# 1# : A) : Set (a ⊔ ℓ) where
@@ -3356,7 +3370,9 @@ record IsSemiringWithoutAnnihilatingZero
                   ; isSemigroup to *-isSemigroup
                   ; identity    to *-identity
                   )
-
+#+END_SRC
+{{{code(Additive Renaming a 4ᵗʰ Time and Second Multiplicative Renaming ---IsRing)}}}
+#+BEGIN_SRC agda
 record IsRing
          {a ℓ} {A : Set a} (≈ : Rel A ℓ)
          (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) : Set (a ⊔ ℓ) where
@@ -3388,10 +3404,11 @@ record IsRing
                   )
 #+END_SRC
 
-At first glance, one solution would be to package up these renamings into helper modules:
+At first glance, one solution would be to package up these renamings into helper modules.
+For example, consider the setting of monoids.
+
+{{{code(Orginal, Prototypical, Notations)}}}
 #+BEGIN_SRC agda
--- Orginal notations
---------------------------------------------------------------------------------
 record IsMonoid {a ℓ} {A : Set a} (≈ : Rel A ℓ)
                 (∙ : Op₂ A) (ε : A) : Set (a ⊔ ℓ) where
   open FunctionProperties ≈
@@ -3410,9 +3427,9 @@ record IsCommutativeMonoid {a ℓ} {A : Set a} (≈ : Rel A ℓ)
     ⋮
   isMonoid : IsMonoid ≈ _∙_ ε
   isMonoid = record { ⋯ }
-
--- Renaming helpers
---------------------------------------------------------------------------------
+#+END_SRC
+{{{code(Renaming Helper Modules)}}}
+#+BEGIN_SRC agda
 module AdditiveIsMonoid {a ℓ} {A : Set a} {≈ : Rel A ℓ}
                {_∙_ : Op₂ A} {ε : A} (+-isMonoid : IsMonoid ≈ _∙_ ε)  where
 
@@ -3435,6 +3452,7 @@ However, one then needs to make similar modules for /additive notation/ for
 ~IsAbelianGroup, IsRing, IsCommutativeRing, …~. Moreover, this still invites
 repetition: Additional notations, as used in ~IsSemiring~, would require
 additional helper modules.
+{{{code(More Necessary Renaming Helper Modules)}}}
 #+BEGIN_SRC agda
 module MultiplicativeIsMonoid {a ℓ} {A : Set a} {≈ : Rel A ℓ}
                {_∙_ : Op₂ A} {ε : A} (*-isMonoid : IsMonoid ≈ _∙_ ε)  where
@@ -3464,6 +3482,7 @@ across different notations.
 For contexts where calculation in different setoids is necessary, we provide
 “decorated” versions of the ~Setoid′~ and ~SetoidCalc~ interfaces:
 #+end_quote
+{{{code(Seotoid𝒟 Renamings ---𝒟decorated Synonyms)}}}
 #+BEGIN_SRC agda
 module SetoidA {i j : Level} (S : Setoid i j) = Setoid′ S renaming
     ( ℓ to ℓA ; Carrier to A₀ ; _≈_ to _≈A_ ; ≈-isEquivalence to ≈A-isEquivalence
@@ -3471,9 +3490,10 @@ module SetoidA {i j : Level} (S : Setoid i j) = Setoid′ S renaming
     ; ≈-indexedSetoid to ≈A-indexedSetoid
     ; ≈-refl to ≈A-refl ; ≈-reflexive to ≈A-reflexive ; ≈-sym to ≈A-sym
     ; ≈-trans to ≈A-trans ; ≈-trans₁ to ≈A-trans₁ ; ≈-trans₂ to ≈A-trans₂
-    ; _⟨≈≈⟩_ to _⟨≈A≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈A≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈A˘≈⟩_ ; _⟨≈˘≈˘⟩_ to _⟨≈A˘≈˘⟩_
-    ; _⟨≡≈⟩_ to _⟨≡≈A⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈A˘⟩_ ; _⟨≡˘≈⟩_ to _⟨≡˘≈A⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈A˘⟩_
-    ; _⟨≈≡⟩_ to _⟨≈A≡⟩_ ; _⟨≈≡˘⟩_ to _⟨≈A≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈A˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈A˘≡˘⟩_
+    ; _⟨≈≈⟩_ to _⟨≈A≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈A≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈A˘≈⟩_
+    ; _⟨≈˘≈˘⟩_ to _⟨≈A˘≈˘⟩_; _⟨≡≈⟩_ to _⟨≡≈A⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈A˘⟩_
+    ; _⟨≡˘≈⟩_ to _⟨≡˘≈A⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈A˘⟩_ ; _⟨≈≡⟩_ to _⟨≈A≡⟩_
+    ; _⟨≈≡˘⟩_ to _⟨≈A≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈A˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈A˘≡˘⟩_
     )
 
 module SetoidB {i j : Level} (S : Setoid i j) = Setoid′ S renaming
@@ -3482,9 +3502,10 @@ module SetoidB {i j : Level} (S : Setoid i j) = Setoid′ S renaming
     ; ≈-indexedSetoid to ≈B-indexedSetoid
     ; ≈-refl to ≈B-refl ; ≈-reflexive to ≈B-reflexive ; ≈-sym to ≈B-sym
     ; ≈-trans to ≈B-trans ; ≈-trans₁ to ≈B-trans₁ ; ≈-trans₂ to ≈B-trans₂
-    ; _⟨≈≈⟩_ to _⟨≈B≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈B≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈B˘≈⟩_ ; _⟨≈˘≈˘⟩_ to _⟨≈B˘≈˘⟩_
-    ; _⟨≡≈⟩_ to _⟨≡≈B⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈B˘⟩_ ; _⟨≡˘≈⟩_ to _⟨≡˘≈B⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈B˘⟩_
-    ; _⟨≈≡⟩_ to _⟨≈B≡⟩_ ; _⟨≈≡˘⟩_ to _⟨≈B≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈B˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈B˘≡˘⟩_
+    ; _⟨≈≈⟩_ to _⟨≈B≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈B≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈B˘≈⟩_
+    ; _⟨≈˘≈˘⟩_ to _⟨≈B˘≈˘⟩_ ; _⟨≡≈⟩_ to _⟨≡≈B⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈B˘⟩_
+    ; _⟨≡˘≈⟩_ to _⟨≡˘≈B⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈B˘⟩_ ; _⟨≈≡⟩_ to _⟨≈B≡⟩_
+    ; _⟨≈≡˘⟩_ to _⟨≈B≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈B˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈B˘≡˘⟩_
     )
 
 module SetoidC {i j : Level} (S : Setoid i j) = Setoid′ S renaming
@@ -3493,16 +3514,19 @@ module SetoidC {i j : Level} (S : Setoid i j) = Setoid′ S renaming
     ; ≈-indexedSetoid to ≈C-indexedSetoid
     ; ≈-refl to ≈C-refl ; ≈-reflexive to ≈C-reflexive ; ≈-sym to ≈C-sym
     ; ≈-trans to ≈C-trans ; ≈-trans₁ to ≈C-trans₁ ; ≈-trans₂ to ≈C-trans₂
-    ; _⟨≈≈⟩_ to _⟨≈C≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈C≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈C˘≈⟩_ ; _⟨≈˘≈˘⟩_ to _⟨≈C˘≈˘⟩_
-    ; _⟨≡≈⟩_ to _⟨≡≈C⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈C˘⟩_ ; _⟨≡˘≈⟩_ to _⟨≡˘≈C⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈C˘⟩_
-    ; _⟨≈≡⟩_ to _⟨≈C≡⟩_ ; _⟨≈≡˘⟩_ to _⟨≈C≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈C˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈C˘≡˘⟩_
+    ; _⟨≈≈⟩_ to _⟨≈C≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈C≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈C˘≈⟩_
+    ; _⟨≈˘≈˘⟩_ to _⟨≈C˘≈˘⟩_ ; _⟨≡≈⟩_ to _⟨≡≈C⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈C˘⟩_
+    ; _⟨≡˘≈⟩_ to _⟨≡˘≈C⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈C˘⟩_ ; _⟨≈≡⟩_ to _⟨≈C≡⟩_
+    ; _⟨≈≡˘⟩_ to _⟨≈C≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈C˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈C˘≡˘⟩_
     )
 #+END_SRC
 
+#+latex: \noindent
 This keeps going to cover the alphabet ~SetoidD, SetoidE, SetoidF, …, SetoidZ~
 then we shift to subscripted versions ~Setoid₀, Setoid₁, …, Setoid₄~.
 
 Next, RATH-Agda shifts to the need to calculate with setoids:
+{{{code(SeotoidCalc𝒟 Renamings ---𝒟decorated Synonyms)}}}
 #+BEGIN_SRC agda
 module SetoidCalcA {i j : Level} (S : Setoid i j) where
   open SetoidA S public
@@ -3538,6 +3562,8 @@ module SetoidCalcC {i j : Level} (S : Setoid i j) where
     ; ≈-begin_ to ≈C-begin_
     )
 #+END_SRC
+
+#+latex: \noindent
 This keeps going to cover the alphabet ~SetoidCalcD, SetoidCalcE, SetoidCalcF, …, SetoidCalcZ~
 then we shift to subscripted versions ~SetoidCalc₀, SetoidCalc₁, …, SetoidCalc₄~.
 If we ever have more than 4 setoids in hand, or prefer other decorations, then
@@ -3552,15 +3578,15 @@ we see the variations ~LocalEdgeSetoid𝒟~ and ~LocalSetoidCalc𝒟~ where deco
 decorations used for ~Setoid𝓓~ earlier is understandable: These take time to
 write and maintain.
 
-Various similar decorations can be found in RATH, such as for ~Semigroupoid𝒟~ in
-~Categoric.Semigroupoid~.
+# Various similar decorations can be found in RATH, such as for ~Semigroupoid𝒟~ in
+# ~Categoric.Semigroupoid~.
 
 *** Renaming Problems from the Agda-categories Library
 
 With RATH-Agda's focus on notational modules at one end of the spectrum, and the
 Standard Library's casual do-as-needed in the middle, it is inevitable that
-there are other equally popular libraries but at the other end of the spectrum.
-The [[https://github.com/agda/agda-categories][Agda-categories]] library seemingly ignored the need for meaningful names
+there are other equally popular libraries at the other end of the spectrum. The
+[[https://github.com/agda/agda-categories][Agda-categories]] library seemingly ignored the need for meaningful names
 altogether! Below are a few notable instances.
 
 + Functors have fields named ~F₀, F₁, F-resp-≈, …~.
@@ -3569,32 +3595,33 @@ altogether! Below are a few notable instances.
   - Incidentally, and somewhat inconsistently, a ~Pseudofunctor~ has fields ~P₀,
     P₁, P-homomophism~ ---where the latter is documented /P preserves ≃/.
 
-  On the opposite extreme, RATH-Agda's importance on naming has it functor record
-  having fields named ~obj, mor, mor-cong~ instead of ~F₀, F₁, F-resp-≈~
-  ---which refer to a functor's “obj”ect map, “mor”phism map, and the fact that the
-  “mor”phism map is a “cong”ruence.
+  On the opposite extreme, RATH-Agda's importance on naming has its functor
+  record having fields named ~obj, mor, mor-cong~ instead of ~F₀, F₁, F-resp-≈~
+  ---which refer to a functor's “obj”ect map, “mor”phism map, and the fact that
+  the “mor”phism map is a “cong”ruence.
 
 + Such lack of concern for naming might be acceptable for well-known concepts
-  such as functors, where some communities use ~Fᵢ~ to denote the object/0 or
-  morphism/1 operations. However, considering [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/SubCategory.agda][subcategories]] one is sees field
-  names ~U, R, Rid, _∘R_~ which are wholly unhelpful. Instead, more meaningful
-  names such as ~embed, keep, id-kept, keep-resp-∘~ could have been used.
+  such as functors, where some communities use ~Fᵢ~ to denote the object/0-cells
+  or morphism/1-cells operations. However, considering [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/SubCategory.agda][subcategories]] one sees
+  field names ~U, R, Rid, _∘R_~ which are wholly unhelpful. Instead, more
+  meaningful names such as ~embed, keep, id-kept, keep-resp-∘~ could have been
+  used.
 
 + The ~Iso, Inverse,~ and ~NaturalIsomorphism~ records have fields ~to / from, f
-  / f⁻¹,~ and ~~F⇒G / F⇐G~, respectively.
+  / f⁻¹,~ and ~F⇒G / F⇐G~, respectively.
 
   #  ( ~Categories.Category~ )
 
   Even though some of these build on one another, with Agda's namespacing
   features, all “forward” and “backward” morphism fields could have been named,
-  say, ~to~ and ~from~. The naming may not have propagated from ~Iso~ to other
-  records possibly due to the low priority for names.
+  say, ~to~ and ~from~. The naming may not have propagated from ~Iso~ to other records
+  possibly due to the low priority for names.
 
-  From a usability perspective, projections like ~f~ are reminiscent of the OCaml
-  community and may be more acceptable there. Since Agda is more likely to attract
-  Haskell programmers than OCaml ones, such a particular projection seems completely
-  our of place. Likewise, the field name ~F⇒G~ seems only appropriate if the
-  functors involved happen to be named ~F~ and ~G~.
+  From a usability perspective, projections like ~f~ are reminiscent of the Ocaml
+  community and may be more acceptable there. Since Agda is more likely to
+  attract Haskell programmers than Ocaml ones, such a particular projection
+  seems completely out of place. Likewise, the field name ~F⇒G~ seems only
+  appropriate if the functors involved happen to be named ~F~ and ~G~.
 
   These unexpected deviations are not too surprising since the Agda-categories
   library seems to give names no priority at all. Field projections are treated
@@ -3605,6 +3632,7 @@ By largely avoiding renaming, Agda-categories has no “renaming hell” anywher
 the heavy price of being difficult to read: Any attempt to read code requires
 one to “squint away” the numerous projections to “see” the concepts of
 relevance. Consider the [[https://github.com/agda/agda-categories/blob/master/src/Categories/Yoneda.agda][following excerpt]].
+{{{code(Symbol Soup)}}}
 #+BEGIN_SRC agda
 helper : ∀ {F : Functor (Category.op C) (Setoids ℓ e)}
                      {A B : Obj} (f : B ⇒ A)
@@ -3621,22 +3649,22 @@ helper : ∀ {F : Functor (Category.op C) (Setoids ℓ e)}
                     open SetoidR (F₀ F B) public
 #+END_SRC
 
+#+latex: \noindent
 Here are a few downsides of not renaming:
-
+#+latex: \vspace{-1em}
 1. The type of the function is difficult to comprehend; though it need not be.
    - Take ~_≈₀_ = Setoid._≈_ (F₀ Nat[Hom[C][-,c],F] (F , A))~, and
    - Take ~_≈₁_ = Setoid._≈_ (F₀ F B)~,
-   - Then the type says: If ~β ≈₀ γ~ then
+   - Then the type says: If ~β ≈₀ γ~ then {{{newline}}}
      ~η β B ⟨$⟩ f ∘ id ≈₁ F₁ F f ⟨$⟩ (η γ A ⟨$⟩ id)~
      ---a naturality condition!
 
 2. The short proof is difficult to read!
    - The repeated terms such as ~η β B~ and ~η β A~ could have been renamed with
      mnemoic-names such as ~η₁, η₂~ or ~ηₛ, ηₜ~ for ‘s’ource/1 and ‘t’arget/2.
-
-Recall that functors ~F~ have projections ~Fᵢ~, so the “mor”phism map on a given
-morphism ~f~ becomes ~F₁ F f~, as in the excerpt above; however, using
-RATH-Agda's naming it would have been ~mor F f~.
+   - Recall that functors ~F~ have projections ~Fᵢ~, so the “mor”phism map on a
+     given morphism ~f~ becomes ~F₁ F f~, as in the excerpt above; however, using
+     RATH-Agda's naming it would have been ~mor F f~.
 
 Since names are given a lower priority, one no longer needs to perform renaming.
 Instead, one is content with projections. The downside is now there are too many
@@ -3646,13 +3674,14 @@ inconsistent renaming.
 ** From ~Is𝓧~ to ~𝓧~ ---Packing away components
 
  The distributivity axiom from earlier required an unbundled structure /after/ a
- completely bundled structure was initially presented. Usual structure are rather
- large and have libraries built around them, so building and using an alternate form
- is not practical. However, multiple forms are usually desirable.
+ completely bundled structure was initially presented. Usually structures are
+ rather large and have libraries built around them, so building and using an
+ alternate form is not practical. However, multiple forms are usually desirable.
 
  To accommodate the need for both forms of structure, Agda's Standard Library
- begins with a [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#1][type-level predicate]] such as ~IsSemigroup~ below, then [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#1][packs that up
- into a record]]. Here is an instance, along with comments from the library.
+ begins with a [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#1][type-level predicate]] such as ~IsSemigroup~ below, then [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#1][packs that
+ up into a record]]. Here is an instance, along with comments from the library.
+ {{{code(From Is𝒳 to 𝒳 ---where 𝒳 is Semigroup)}}}
  #+caption: From the [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#601][Agda Standard Library on Algebra]]
  #+BEGIN_SRC agda
 -- Some algebraic structures (not packed up with sets, operations, etc.
@@ -3676,16 +3705,17 @@ record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
     isSemigroup : IsSemigroup _≈_ _∙_
  #+END_SRC
 
- If we refer to the former as ~IsX~ and the latter as ~X~, then we can see similar
- instances in the standard library for ~X~ being: ~Monoid, Group, AbelianGroup,
+ If we refer to the former as ~Is𝒳~ and the latter as ~𝒳~, then we can see similar
+ instances in the standard library for ~𝒳~ being: ~Monoid, Group, AbelianGroup,
  CommutativeMonoid,~ ~SemigroupWithoutOne, NearSemiring, Semiring,
- CommutativeSemiringWithoutOne, CommutativeSemiring, CommutativeRing~.
+ CommutativeSemiringWithoutOne,~ {{{newline}}} ~CommutativeSemiring,
+ CommutativeRing~.
 
- It thus seems that to present an idea ~X~, we require the same amount of space
- to present it unpacked or packed, and so doing both duplicates the process
- and only hints at the underlying principle: From ~IsX~ we pack away the carriers
- and function symbols to ~X~. The converse approach, starting from ~X~ and going to ~IsX~
- is not practical, as it leads to numerous unhelpful reflexivity proofs.
+ It thus seems that to present an idea ~𝒳~, we require the same amount of space to
+ present it unpacked or packed, and so doing both duplicates the process and
+ only hints at the underlying principle: From ~Is𝒳~ we pack away the carriers and
+ function symbols to obtain ~𝒳~. The converse approach, starting from =𝒳= and going
+ to ~Is𝒳~ is not practical, as it leads to numerous unhelpful reflexivity proofs.
 
  #+begin_quote
  *Predicate Design Pattern:* Present a concept 𝓧 first as a predicate ~Is𝓧~ on types
@@ -3693,10 +3723,10 @@ record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
  and a proof that together they satisfy the ~Is𝒳~ predicate.
 
  *Σ Padding Anti-Pattern*: Starting from a bundled up type ~𝒳~ consisting of types,
- function symbols, and how they interact, one may form the type ~Σ X ∶ 𝒳 • 𝒳.f X ≡
- 𝒇~ to specialise the feature ~𝒳.f~ to the particular choice ~𝒇~. However, nearly all
- uses of this type will be of the form ~(X , refl)~ where the proof is unhelpful
- noise.
+ function symbols, and how they interact, one may form the type {{{newline}}}
+ ~Σ X ∶ 𝒳 • 𝒳.f X ≡ 𝒇~ to specialise the feature ~𝒳.f~ to the particular choice ~𝒇~.
+ However, nearly all uses of this type will be of the form ~(X , refl)~ where the
+ proof is unhelpful noise.
  #+end_quote
 
  Since the standard library uses the predicate pattern, ~Is𝒳~, which requires all
@@ -3710,8 +3740,9 @@ record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
 
  Incidentally, the particular choice ~𝒳₁~, a predicate on one carrier, deserves
  special attention. In Haskell, instances of such a type are generally known as
- /typeclass instances/ and ~𝒳₁~ is known as a /typeclass/. In Agda, we may mark such
- implementations for instance search using the keyword ~instance~.
+ /typeclass instances/ and ~𝒳₁~ is known as a /typeclass/. As discussed earlier, in
+ Agda, we may mark such implementations for instance search using the keyword
+ ~instance~.
 
  #+begin_quote
  *Typeclass Design Pattern*: Present a concept 𝒳 as a unary predicate ~𝓧₁~ that
@@ -3724,12 +3755,12 @@ record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
  #+end_quote
 
 ** Redundancy, Derived Features, and Feature Exclusion
-<<<sec:redundancy_derived_features_feature_exclusion>>>
+<<sec:redundancy_derived_features_feature_exclusion>>
 
  A tenet of software development is not to over-engineer solutions; e.g., we need
  a notion of untyped composition, and so use ~Monoid~. However, at a later stage,
  we may realise that units are inappropriate and so we need to drop them to
- obtain the weaker notion of ~Semigroup~ ---for instance, if we wish to module
+ obtain the weaker notion of ~Semigroup~ ---for instance, if we wish to model
  finite functions as hashmaps, we need to omit the identity functions since they
  may have infinite domains; and we cannot simply enforce a convention, say, to
  treat empty hashmaps as the identities since then we would lose the empty
@@ -3745,11 +3776,12 @@ record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
  efficiency or to act as a “smart constructor” that takes the least amount of
  data to reconstruct the rich interface.
 
- For example, in the Agda-categories library one finds concepts expressive
- interfaces, with redundant features, named ~𝒳~, along with their minimal
- self-contained versions, named ~𝒳Helper~. In particular, the [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Core.agda][Category]] type and the
- [[https://github.com/agda/agda-categories/blob/master/src/Categories/NaturalTransformation/NaturalIsomorphism.agda][natural isomorphism]] type are instances of such a pattern. The redundant features
- are there to make the lives of users easier; e.g., Agda-categories states the following.
+ For example, in the Agda-categories library one finds concepts with expressive
+ interfaces, with redundant features, prototypically named ~𝒳~, along with their
+ minimal self-contained versions, prototypically named ~𝒳Helper~. In particular,
+ the [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Core.agda][Category]] type and the [[https://github.com/agda/agda-categories/blob/master/src/Categories/NaturalTransformation/NaturalIsomorphism.agda][natural isomorphism]] type are instances of such a
+ pattern. The redundant features are there to make the lives of users easier;
+ e.g., Agda-categories states the following.
  #+begin_quote
  We add a symmetric proof of associativity so that the opposite category of the
  opposite category is definitionally equal to the original category.
@@ -3761,6 +3793,7 @@ record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
  self-inverse on-the-nose; i.e., definitionally rather than propositionally.
  Definitionally equality does not need to be ‘invoked’, it is used silently when
  needed, thereby making the redundant setup worth it.
+ {{{code(Redundancy can lead to silently used equalities)}}}
  #+begin_src agda :tangle op-involutive-on-the-nose.agda :prologue module op-involutive-on-the-nose where \nopen import Notation\n
 record Semigroup : Set₁ where
   constructor 𝒮
@@ -3773,7 +3806,7 @@ record Semigroup : Set₁ where
     -- Notice:  assocˡ ≈ sym assocʳ
 
 _˘ : Semigroup → Semigroup
-(𝒮 Carrier _⨾_ assocʳ assocˡ) ˘ = 𝒮 Carrier (λ b a → a ⨾ b)  assocˡ assocʳ
+(𝒮 Carrier _⨾_ assocʳ assocˡ) ˘  =  𝒮 Carrier (λ b a → a ⨾ b)  assocˡ assocʳ
 
 ˘˘≈id : ∀ {S} → (S ˘) ˘ ≡ S
 ˘˘≈id = refl
@@ -3781,16 +3814,17 @@ _˘ : Semigroup → Semigroup
 
  #+begin_quote
  *On-the-nose Redundancy Design Pattern* [Agda-Categories]: Include redundant
- features if they allow certain common constructions to be definitional equal,
+ features if they allow certain common constructions to be definitionally equal,
  thereby requiring no overhead to use such an equality. Then, provide a smart
  constructor so users are not forced to produce the redundant features manually.
  #+end_quote
 
- Incidentally, since this is not a library method, inconsitencies are bound to
- arise; in particular, in the ~𝒳~ and ~𝒳Helper~ naming scheme: The ~NaturalIsomorphism~
- type has ~NIHelper~ as its minimised version, and the type of [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Monoidal/Symmetric.agda][symmetric monoidal
- categories]] is oddly called ~Symmetric′~ with its helper named ~Symmetric~. Such
- issues could be reduced, if not avoided, if library methods were used instead.
+ Incidentally, since this is not a library method, inconsistencies are bound to
+ arise; in particular, in the ~𝒳~ and ~𝒳Helper~ naming scheme: The
+ ~NaturalIsomorphism~ type has ~NIHelper~ as its minimised version, and the type of
+ [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Monoidal/Symmetric.agda][symmetric monoidal categories]] is oddly called ~Symmetric′~ with its helper named
+ ~Symmetric~. Such issues could be reduced, if not avoided, if library methods
+ could have been used instead.
 
  It is interesting to note that duality forming operators, such as ~_˘~ above, are
  a design pattern themselves. How? In the setting of algebraic structures, one
@@ -3804,18 +3838,19 @@ _˘ : Semigroup → Semigroup
 
  Another example of purposefully keeping redundant features is for the sake of
  efficiency.
+ #+latex: \vspace{-1em}
   #+begin_quote
  For division semi-allegories, even though right residuals, restricted residuals,
  and symmetric quotients all can be derived from left residuals, we still assume
  them all as primitive here, since this produces more readable goals, and also
  makes connecting to optimised implementations easier.
-
  ---RATH-Agda §15.13
   #+end_quote
 
  For instance, the above semigroup type could have been augmented with an
  ordering if we view ~_⨾_~ as a meet-operation. Instead, we lift such a derived
  operation as a primitive field, in case the user has a better implementation.
+ {{{code(Simulating Default Implementations with Smart Constructors)}}}
   #+begin_src agda :tangle op-involutive-on-the-nose.agda
 record Order (S : Semigroup) : Set₁ where
   open Semigroup S public
@@ -3881,15 +3916,10 @@ RightUnitalSemigroup --> Monoid
  #+RESULTS:
  [[file:semigroup-to-monoid.png]]
 
- #+begin_quote
- *Extension Design Pattern:* To extend a structure ~𝒳~ by new features ~f₀, …, fₙ~
- which may mention features of ~𝒳~, make a new structure ~𝒴~ with fields for ~𝒳, f₀,
- …, fₙ~. Then publicly open ~𝒳~ in this new structure so that the features of ~𝒳~ are
- visible directly from ~𝓨~ to all users.
- #+end_quote
-
- The libraries mentioned thus far generally implement extensions in this way.
- By way of example, here is how monoids could be built directly from semigroups in one step.
+ The libraries mentioned thus far generally implement extensions in this way. By
+ way of example, here is how monoids could be built directly from semigroups in
+ one step.
+ {{{code(Extending Semigroup to Obtain Monoid)}}}
  #+begin_src agda :tangle semigroups_to_monoids.agda :prologue module list-is-not-vec where \nopen import Notation\n
 record Semigroup : Set₁ where
   field
@@ -3914,13 +3944,29 @@ neato : ∀ {M} → Carrier M → Carrier M → Carrier M
 neato {M} = _⨾_ M    {- Possible due to (0) above -}
  #+end_src
 
+ #+begin_quote
+ *Extension Design Pattern:* To extend a structure ~𝒳~ by new features ~f₀, …, fₙ~
+ which may mention features of ~𝒳~, make a new structure ~𝒴~ with fields for ~𝒳, f₀,
+ …, fₙ~. Then publicly open ~𝒳~ in this new structure so that the features of ~𝒳~ are
+ visible directly from ~𝓨~ to all users.
+ #+end_quote
+
  Notice how we accessed the binary operation ~_⨾_~ feature from ~Semigroup~ as if it
  were a native feature of ~Monoid~. Unfortunately, ~_⨾_~ is only superficially native
  to ~Monoid~ ---any actual instance, such as ~woah~ below, needs to define the binary
  operation in a ~Semigroup~ instance first.
+
+{{{code(Extensions are not flattened inheritance)}}}
  #+begin_src agda :tangle semigroups_to_monoids.agda
 woah : Monoid
-woah = record { semigroup = {!!} ; Id = {!!} ; leftId = {!!} ; rightId = {!!} }
+woah = record { semigroup = record { Carrier = {!!}
+                                   ; _⨾_     = {!!}
+                                   ; assoc   = {!!}
+                                   }
+              ; Id      = {!!}
+              ; leftId  = {!!}
+              ; rightId = {!!}
+              }
  #+end_src
 
  While library designers may be content to build ~Monoid~ out of ~Semigroup~, users
@@ -3939,8 +3985,8 @@ woah = record { semigroup = {!!} ; Id = {!!} ; leftId = {!!} ; rightId = {!!} }
  prototypical structure. Some patterns we did not cover, as they will be covered
  in future sections.
 
+  # #+BEGIN_SRC mermaid  :file patterns.png :theme forest :background-color transparent
  #+caption: PL Research is about getting free stuff: From the left-most node, we can get a lot!
- # #+BEGIN_SRC mermaid  :file patterns.png :theme forest :background-color transparent
  #+BEGIN_SRC mermaid  :file patterns.png :theme forest :exports results
 graph TD %% LR and TD are both also good!
 
@@ -3988,8 +4034,9 @@ end
  #+RESULTS:
  [[file:patterns.png]]
 
+ #+latex: \noindent
  Remarks:
-
+#+latex: \vspace{-1em}
  0. It is important to note that the ~termtype~ constructions could also be
     co-inductive, thereby yielding possibly infinitely branching syntax-trees.
 
@@ -4024,7 +4071,6 @@ end
 ** COMMENT What are their shortcomings and advantages wrt to our approach?
 ** COMMENT Shortcomings of our approach.
 ** COMMENT Missing features and next steps.
-
 ** Intro                                                             :ignore:
 
 Structuring mechanisms for proof assistants are seen as tools providing
@@ -4062,7 +4108,7 @@ JavaScript will be the language of choice to demonstrate these ideas since it
 has a primitive notion of module: Every notion of grouping mechanism boils down
 to begin a list of “key:value” pairs, a so-called <<<JSON object>>>.
 
-** Expectations of Module Systems
+** COMMENT Expectations of Module Systems
 <<<sec:module_expectations>>>
 
 # JC: 2.1 is wonderful. For your thesis, I will want this expanded (references,
@@ -4561,7 +4607,7 @@ fmap f s | null s    = s
 
    One potential solution would be to deconflate the unit of namespacing from the
 unit of compilation (from the unit of filesystem organization).)
-** Ad hoc Grouping Mechanisms
+** COMMENT Ad hoc Grouping Mechanisms
 <<<sec:module_ad_hoc>>>
 
 # ad hoc ∷ created or done for a “particular” purpose as necessary.
@@ -4715,7 +4761,7 @@ intent, as summarised briefly in the table below.
 | parameterised modules | Namespaced utilities abstracted over other utilities; e.g., ~sort~ indexed by ~<~. |
 | parameterised record  | A semantic unit that ‘build upon’ another coherent unit                        |
 
-** Theory Presentations: A Structuring Mechanism
+** COMMENT Theory Presentations: A Structuring Mechanism
  <<<sec:module_theory>>>
 
  What of the most closely related theoretical work?
@@ -4952,7 +4998,7 @@ magma.
  deal with restricted domains, consequently necessitating that all predicates on functions
  also be relativised.
  :End:
-** “JSON is Foundational”: From Prototypes to Classes
+** COMMENT “JSON is Foundational”: From Prototypes to Classes
 
    In the previous section, we indicated that going forward, we will be taking a
    JSON-like approach to working with modules. JavaScript has the reputation of
