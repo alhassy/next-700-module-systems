@@ -199,7 +199,8 @@ E.g., sorting.
 # +LATEX_HEADER: \BeforeBeginEnvironment{listing}{ \let\oldcaption\caption \renewcommand{\caption}[1]{ \def\mytitle{#1} } }%
 # +LATEX_HEADER: \AfterEndEnvironment{listing}{ \let\caption\oldcaption }%
 # #
-# This doesn't work since org inserts \caption !after! the minted block, which needs the \mytitle.
+# This doesn't work since org inserts \caption !after! the minted block, which
+# needs the \mytitle.
 
 # Removing the red box that appears in "minted" when using unicode.
 # Src: https://tex.stackexchange.com/questions/343494/minted-red-box-around-greek-characters
@@ -268,6 +269,8 @@ chapters, rather than parts.
 (load-file "~/Dropbox/new-blocks.el")
 
 (setq org-latex-caption-above nil)
+
+  (add-to-list 'org-src-lang-modes '("agda" . haskell))
 
 (add-to-list
   'org-latex-classes
@@ -410,6 +413,23 @@ Please resolve references before you ship PDF...
 
 #+latex: \newpage
 
+
+** COMMENT Abstract                                                  :ignore:
+ #
+   #+begin_abstract org
+   Can parameterised records and algebraic datatypes be derived from one
+   pragmatic declaration?
+
+   Record types give a universe of discourse, parameterised record types fix
+   parts of that universe ahead of time, and algebraic datatypes give us
+   first-class syntax, whence evaluators and optimisers.
+
+   The answer is in the affirmative. Besides a practical
+   shared declaration interface, which is extensible in the language,
+   we also find that common data structures correspond to simple theories.
+ #+end_abstract
+
+  \maketitle
 * Introduction ---The Thesis’ “Story”
   :PROPERTIES:
   :CUSTOM_ID: introduction
@@ -5781,330 +5801,6 @@ Type of functors do not η-reduce, and as such one cannot expect them to be appl
 
     Maybe tackle this "as needed", rather than upfront.
 
-* COMMENT [!] section 4? curapr ← Solution Requirements
-   :PROPERTIES:
-   :CUSTOM_ID: solution_requirements
-   :END:
-
- From the outset we have proposed a particular approach to resolving the
- needless duplication present in current module systems that are utilised in
- non-dependently-typed languages. Up to this point, we have only discussed how
- our approach could mitigate certain troubles; such as a difference of
- perspectives of modules, or of equivalent operations acting on different
- perspectives of modules. We now turn to discussing, in the following
- subsections, what it is that is missing from existing module systems, what one
- actually wants to do with modules, and conclude with a checklist of features
- that a proposed system should meet in order to be considered a practical and
- pragmatic improvement over existing systems.
-
-** Missing Features
-  :PROPERTIES:
-  :header-args: :tangle translate_functions.agda :comments link
-  :END:
-
-# Our preliminary research, and personal use with dependently-typed systems,
-# has yielded three strongly desirable features of a module system for DTLs.
-
-Certain mechanically-derivable concepts, such as different perspectives, are
-needlessly delegated to the user by pedestrian packaging systems. Besides being
-tedious and error-prone, the inexpressibility of derivates obscures the
-corresponding general principles underlying them, thus foregoing any machine
-assistance in ensuring any correctness or safety-ness guarantees. The desire to
-pursue a more economical yet powerful packaging system follows from our
-research team's expedited efforts that could have been mechanised . We will
-only mention two such use cases.
-
-# [[https://www.google.com/search?ei=MeLSXLaTIuqN5wLSsaTwDw&q=derivate&oq=derivate&gs_l=psy-ab.3..0i67j0i10j0j0i10l7.27397.29434..29651...0.0..0.100.195.1j1......0....1..gws-wiz.......0i71j0i7i10i30.ZZBrC21FopE][define derivate]] :: something derived, especially a product obtained chemically from a raw material.
-# #
-#       derivates
-#  or   what could be considered as derived views
-
-** Expressivity
-# #+latex: \noindent
-# *Expressivity*
-#
-# #+latex: \noindent
- A common pattern that can be seen, for example, in the Agda standard library,
- is of a predicate ensuring desirable properties *of* its inputs, then of a record
- containing the inputs as fields along with a proof of said predicate ---c.f.,
- section ref:sec:examples:IsX. More concretely, suppose we have a binary predicate named
- ~IsSemi~ and the record is named ~Semi~; the predicate form allows us to quantify
- over inputs as in ~∀ x y → IsSemi x y → ⋯~, in contrast the latter approach is
- intrinsic in nature: ~∀ (s ∶ Semi) → ⋯~ ---contrast this with a mathematician
- naturally declaring /“let ~s~ be a semigroup”/, whereas almost never do
- mathematicians say /“let ~x~ be a set and ~y~ be an operation on it that together
- constitute a semigroup”/.
-
- At a first glance, it does not seem too troublesome to produce the record
- presentation from the predicate presentation: Simply /repeat all/ the inputs
- under a record declaration along with a proof obligation. However, the word
- ‘repeat’ already suggests a problem, and ‘all’ suggests another one. What if
- one desires to utilise the record associated to the predicate by only packaging
- certain inputs but not others? This is akin to the problem of constructors in
- object-oriented languages: In Java, for example, one uses overloading to
- provide a number of user-written constructors for only a few resonable input
- invocations to construct an object; in contrast, Common Lisp permits optional
- named arguments, and so in one fell swoop, with one user-written, constructor,
- provides all possible combinations of constructor invocations ---this is the
- ideal level of power and flexibility.
- #
- # WK: [OCaml] permits optional named arguments.
-
- Lest it's unclear, let's elaborate slightly on the idea.
- :Setup:
- #+begin_src haskell
-open import Relation.Binary.PropositionalEquality
-open ≡-Reasoning
-
--- Z-notation for sums
-open import Level
-open import Data.Product using (Σ ; proj₁ ; proj₂ ; _×_ ; _,_)
-Σ∶• : {a b : Level} (A : Set a) (B : A → Set b) → Set (a ⊔ b)
-Σ∶• = Σ
-infix -666 Σ∶•
-syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
- #+end_src
- :End:
-
- A semigroup is an algebraic structure that models (untyped) compositionality:
- It consists of a collection of objects of interest called the ~Carrier~ set, and
- an operation ~_⨾_~ to compose existing items to produce new items, and the
- operation is associative. Below is a spectrum of ways to bundle up such a
- structure ---starting from being completely bundled up all the way to being
- completely exposed.
-{{{code(A value of ‘Semigroup₀’ is an arbitrary semigroup)}}}
- #+begin_src haskell :tangle semigroup.agda :prologue "open import Notation"
--- One extreme: Completely bundled up
-record Semigroup₀ : Set₁ where
-  field
-    Carrier : Set
-    _⨾_     : Carrier → Carrier → Carrier
-    assoc   : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
- #+end_src
- {{{code(A value of ‘Semigroup₁ C’ is a semigroup “structure on” type ‘C’)}}}
- #+begin_src haskell :tangle semigroup.agda
--- ‘Typeclass’ on a given Carrier
--- Alternatively: Carrier is known as runtime.
-record Semigroup₁ (Carrier : Set): Set₁ where
-  field
-    _⨾_   : Carrier → Carrier → Carrier
-    assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
- #+end_src
- {{{code(A value of ‘Semigroup₂ C op’ is a “proof” that ‘C’ with ‘op’ forms a semigroup)}}}
- #+begin_src haskell :tangle semigroup.agda
--- Two items known at run time --c.f., “IsSemi” above.
-record Semigroup₂
- (Carrier : Set)
- (_⨾_     : Carrier → Carrier → Carrier) : Set where
-  field
-    assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
- #+end_src
- {{{code(The other extreme: Completely unbundled)}}}
- #+begin_src haskell :tangle semigroup.agda
--- A value of ‘Semigroup₃ C op pf’ is trivially the empty record, if any,
--- provided ‘pf’ is a proof that ‘C’ forms a semigroup with ‘op’.
--- This type is usualy written Σ C ∶ Set • Σ _⨾_ ∶ C → C → C • Σ assoc ∶ ⋯.
-record Semigroup₃
- (Carrier : Set)
- (_⨾_ : Carrier → Carrier → Carrier)
- (assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) : Set where
- {- no fields -}
- #+end_src
- Depending on the user's needs, it may be useful to have one form or another.
- Unfortunately they are enslaved to the choices of the library designer,
- or if they deviate then they must produce tedious conversion methods and use
- them to pad all the library methods for the structures.
- Even worse, such back and forth conversions will not only be representation
- shuffling but also wasteful of resources.
-
- For example, every bijective function $f : A \to B$ furnishes its target $B$
- with a semigroup structure provided its source $A$ has the structure to begin
- with. Since the statement mentions the carriers of semigroups, it is only
- natural to formulate it an prove it using presentation ~Semigroup₁~ where the
- carrier is exposed at the type level.
- {{{code(Elementary Properties of Functions)}}}
- #+begin_src haskell :tangle semigroup.agda
-Surjection : ∀{A B : Set} → (A → B) → Set
-Surjection {A} {B} f = ∀ (b : B) → Σ a ∶ A • b ≡ f a
--- (Σ a ∶ A • P a) ≈ { (a, proof) ❙ a ∈ A ∧ pf is a proof of P(a) }
-
-Injection : ∀{A B : Set} → (A → B) → Set
-Injection {A} {B} f = ∀ {x y} →  f x ≡ f y → x ≡ y
- #+end_src
- {{{code(An Involved Proof That We Would Like to Reuse)}}}
- #+begin_src haskell :tangle semigroup.agda
-translate₁ : ∀{A B} → (f : A → B) → Surjection f → Injection f
-       → Semigroup₁ A → Semigroup₁ B
-translate₁ f surj inj AS =
-  let
-    open ≡-Reasoning
-    open Semigroup₁ AS
-
-    -- x ⨾′ y is obtained by applying f to the ⨾-composition of the pre-images of x, y
-    infix 5 _⨾′_
-    _⨾′_ = λ x y → let a₀ = proj₁ (surj x); a₁ = proj₁ (surj y) in f (a₀ ⨾ a₁)
-
-    -- f distributes over ⨾ turning it into ⨾′
-    factor : ∀ {a a′} → f a ⨾′ f a′ ≡ f (a ⨾ a′)
-    factor {a} {a′} =
-           let 𝒶  , m  = surj (f a)
-               𝒶′ , w  = surj (f a′)
-           in
-           begin
-             f a ⨾′ f a′
-           ≡⟨ refl ⟩
-             f (𝒶 ⨾ 𝒶′)
-           ≡⟨ cong f (cong₂ _⨾_ (inj (sym m)) (inj (sym w)))  ⟩
-             f (a ⨾ a′)
-           ∎
-
-    distribute : ∀ {a a′} → f (a ⨾ a′) ≡ f a ⨾′ f a′
-    distribute {a} {a′} = sym (factor {a} {a′})
-
-  in {- Bundle up ⨾′ along with a proof of associativity -}
-    record { _⨾_ = _⨾′_; assoc = λ x y z →
-     let
-    -- Obtain f-pre-images
-    a₀ , x≈fa₀  =  surj x
-    a₁ , y≈fa₁  =  surj y
-    a₂ , z≈fa₂  =  surj z
-     in
-      {- Tersely: We rewrite along the pre-images,
-     factor f, perform the associativity of ⨾,
-     then distribute f and rewrite along the pre-images. -}
-       begin
-         (x ⨾′ y) ⨾′ z
-       ≡⟨ cong₂ _⨾′_ (cong₂ _⨾′_ x≈fa₀ y≈fa₁) z≈fa₂ ⟩
-         (f a₀ ⨾′ f a₁) ⨾′ f a₂
-       ≡⟨ cong (_⨾′ f a₂) factor ⟩
-         f (a₀ ⨾ a₁) ⨾′ f a₂
-       ≡⟨ factor ⟩
-         f ((a₀ ⨾ a₁) ⨾ a₂)
-       ≡⟨ cong f (assoc _ _ _)  ⟩
-         f (a₀ ⨾ (a₁ ⨾ a₂))
-       ≡⟨ distribute ⟩
-         f a₀ ⨾′ f (a₁ ⨾ a₂)
-       ≡⟨ cong (f a₀ ⨾′_) distribute ⟩
-         f a₀ ⨾′ (f a₁ ⨾′ f a₂)
-       ≡⟨ sym (cong₂ _⨾′_ x≈fa₀ (cong₂ _⨾′_ y≈fa₁ z≈fa₂))  ⟩
-         x ⨾′ (y ⨾′ z)
-       ∎ }
- #+end_src
- ~translate₁~ is a lengthy proof, we could repeat it, or invoke it. Since
- duplication with alteration is error-prone and non-generic, we perform the
- latter.
-{{{code(Conversions are a Nuisance)}}}
- #+begin_src haskell :tangle semigroup.agda
-translate₀ : ∀{B : Set} (AS : Semigroup₀) (f : Semigroup₀.Carrier AS → B)
-       → Surjection f → Injection f
-       → Semigroup₀
-translate₀ {B} AS f surj inj = record { Carrier = B ; _⨾_ = _⨾_ ; assoc = assoc }
-  where
-
-       -- Repackage ‘AS’ from a ‘Semigroup₀’ to a ‘Semigroup₁’
-       -- only to immediatley unpack it, so that its contents
-       -- are available to be repacked above as a ‘Semigroup₀’.
-
-       pack : Semigroup₁ (Semigroup₀.Carrier AS)
-       pack = let open Semigroup₀ AS in record {_⨾_ = _⨾_; assoc = assoc }
-
-       open Semigroup₁ (translate₁ f surj inj pack)
- #+end_src
- Observe that ~translate₀~ repackages ~AS~ via ~pack~, then passes that as an argument
- to ~translate₁~, which in turn unpacks it to form a new ~Semigroup₀~, which is then
- unpacked in the last line above. Regardless of any possible wasteful amount of
- packing and unpacking of records ---which may be mitigated via inlining--- the
- way ~translate₀~ is written is far from ideal; whereas ~translate₁~ is the
- appropriate level of abstraction to pose the problem. Instead, it would be
- ideal to write the method at a sufficient level of generality such that
- ~translate₀~ and ~translate₁~ are, say, polymorphic instances thereof. This is what
- we shall propose in a later section, section ref:sec:lost. More generally, notice that
- ~Semigroupᵢ~ is a type constructor consuming 𝒾-many arguments, which are also
- arguments to ~translateᵢ~. The ideal context to phrase the translation result is
- with ~𝒾 = 1~, but we also want to be able to apply it for the other possible
- values of ~𝒾 ∶ 0..3~.
-
- :Relocate_yoneda:
- Moreover, as a stylistic decision, implementers may prefer to view
- an object in either its predicate form ---with the constituents varying---
- or in its record form ---with the constituents fixed---, will all
- library utilities tied to a particular form.
- :End:
-
-** DONE COMMENT efficiency_remarks_incomplete
-    CLOSED: [2020-04-10 Fri 10:42]
-
- *Efficiency:*
-
- A hallmark of computing is to reduce new problems to ones already considered.
- One realisation of this principle is found in the sharing mechanisms of
- certain lazy languages: In the expression ~let y = f(x) in g(y, y)~,
- the term ~y~ is evaluated once and the result is shared among its multiple
- call sites. This idea comes under the name of /thunks/:
- When we encounter an instance of ~y~ and we need to ‘think’
- of its value, we realise we have already ‘thunk’ it.
-
- # :What:
- Memory is tremendously difficult to reason about {{{remark(reynolds calculus)}}},
- and lazy sharing only compounds to the troubles of garbage collection
- and complexity analysis {{{remark(Haskell)}}}.
- # :End:
-
- Dependently-typed languages are usually not only utilised for programming
- but generally also for proof; as such, their implementations adhere to
- a particular logic.
-
- To be completed …
-
-** Conclusion
-
- # One final benefit is exposition. It happens in academic literature, that an
- # audicance may not be familar with the rudiments of a hierarchy, nor should they
- # be forced to ...
-
- These features are considered ‘missing’ since they are reasonably achievable in
- a dependently-typed system ---e.g., the different forms of dependently-typed
- bundling suggest a form of polymorphism. Their absence may be due to logistic
- reasons, such as no effort expedited in their direction, or due to issues
- surrounding the logical frameworks of the systems.
-
- We posit that the problem lies in /typing/; e.g., it is not at all clear how to
- type a generic ~translate~ function that works for all possible ~Semigroupᵢ~. With
- the presence of metaprogramming, we could quote arguments to obtain abstract
- syntax, ~Term~, and so define the following.
-#+BEGIN_SRC haskell
- translate : (𝒾 : Fin 4)
-             {A B : Set} (f : A → B) (inj : Injection f) (surj : Surjection f)
-             → (args : Vec 𝒾 Term)
-             → Σ S ∶ Semigroupᵢ args • Carrierᵢ S ≡ A
-             → Σ T ∶ Semigroupᵢ args • Carrierᵢ S ≡ B
- translate = ⋯
-#+END_SRC
-
-Notice that unlike ~translate₀~, this form is more useful since it relates the
-output semigroup with the input semigroup via the function ~f~ ---in contrast,
-~semigroup₀~ could have simply returned the input semigroup and still typecheck.
-Even though the need to quote and unquote terms is not ideal, there is a more
-processing concern: With the exception of ~𝒾 = 0~, the Σ constraints will all be
-tedious =refl=-exivity proofs that will mention ~A~ before and after the bullet, ~•~.
-Instead, it would be preferable to declare the carrier ~A~ of the input semigroup
-as was done in ~translate₁~ ---namely, directly in the type application of
-~Semigroupᵢ~. That is, we would like an operation =_with-carrier_= so that ~translate~
-could drop the Σ's and instead conclude with ~Semigroupᵢ args with-carrier A →
-Semigroupᵢ args with-carrier B~. Such an infix operation would require decidable
-equality on syntax. It seems that metaprogramming is necessary ---at least from
-the library builder's perspective.
-
-Going forward, we will thus use metaprogramming /on the implementation side/,
-but try to hide it from the user as much as possible.
-
-** Con
-  These features are desirable for working with modules, yet raise a number of
-  immediate concerns. For example, uniformity may lead to ambiguous parsing,
-  genericity may lead to inefficient execution, and extensibility borders on
-  meta-programming thereby leaving the realm of types altogether.
-  Possible limitations on these features may result in the thesis efforts
-  to implement them in a dependently-typed system, such as Agda.
 * The Second Choice: =PackageFormer=
 
 #+macro: fold
@@ -10944,249 +10640,30 @@ pk decorated f = record { Name         = bimap id f pk.Name
 # 3. Provide a semantics to the existing syntax.
 # 4. Ensure the resulting semantics is consistent with that of Agda's.
 #
-* COMMENT Semantics Continued
+* The Third Choice: Contexts
 
-*Intuitively, the nature of the meta-primitives:*
-1. A ~PackageFormer~ is a context, a signature, an essentially algebraic theory of Freyd, or a generalised algebraic theory of Cartmell.
-   Moreover, it is tagged by some values for practical purposes; e.g., the kind of concrete realisation that is possible in Agda ---namely, ~record, data, module,~ or
-   the abstract ~PackageFormer~.
-2. A ‘variational’ is a morphism between PackageFormers ---taking signatures to signatures.
+  # Similar to \framebox and \fbox, we get \dbox and \dashbox[width][pos]{text}
+  # Also get \lbox[#layers]{text} for layered boxes and \dlbox[layers]{text} for
+  # dashed and layered boxes.
+  #+latex_header: \usepackage{dashbox}
 
-   Built up from the grammar:
-   #+BEGIN_SRC haskell :tangle no
-𝓋 ∷=                   -- empty, identity, variational
-   | 𝓋 ⟴ 𝓋            -- composition
-   | :kind  𝓀          -- 𝓀 ∈ {record, data, module, PackageFormer}
-   | :waist 𝓃          -- n ∈ ℕ, number of initial items to be considered as ‘parameters’
-   | :alter-elements 𝒻 -- f : List Elements → List Elements
-   #+END_SRC
+#+latex_header: \usepackage{newunicodechar}
+#+latex_header: \newunicodechar{‵}{\ensuremath{`}}
+#+latex_header: \newunicodechar{𝟘}{\ensuremath{\mathbf{0}}}
+#+latex_header: \newunicodechar{✓}{\ensuremath{\checkmark}}
+#+latex_header: \newunicodechar{←}{\ensuremath{\leftarrow}}
+#+latex_header: \newunicodechar{⇊}{\ensuremath{\downarrow\downarrow}}
 
-   ~:alter-elements~ is a sledgehammer that may result in ill-formed signatures, but we leave it in the system due to its power.
-   Instead, we recommend using the following derivied primitives for signature catenation, map, and filter:
-   #+BEGIN_SRC haskell :tangle no
-   | extended-by ds  -- Adjoin declarations ds, “name : type”, to a PackageFormer
-   | map         f   -- Alter each element by f : Element → Element
-   | generated   f   -- Keep the largest well-formed PackageFormer whose elements satisfy predicate f
-#+END_SRC
+# trash!
+#+latex_header: \newunicodechar{⟴}{\ensuremath{\oplus\!\!\to}}
 
-   Why are these sufficient? The first homomorphism theorem of lists ---i.e., the fact that lists are free monoids---
-   informs us that all well-behaved functions from a list monoid are determined as folds after maps. Since our signatures
-   are essentially free monoids and the target of our functions are again the same free monoids, the fold is determined and only
-   the map remains. We conjecture this is enough; we are not yet certain.
+** Introduction :ignore:
 
-   Interestingly, we are mostly generic over the underlying type theory.
-
-   #  Γ extended-by x₀:τ₀,…,xₙ:τₙ  -- where Γ,x₀:τ₀,…,xₖ₋₁:τₖ₋₁ ⊢ τₖ Type
-
-   Since a ~PackageFormer~ corresponds to a signature, then these variationals
-   ---at least the well-behaved ones--- correspond to signature morphisms.
-   Great difficulty lies in providing semantics for ~alter-elements~; if
-   we demand a well-typedness judgement, “⊢”, from our underlying type theory
-   then we could define ~(x₀ : τ₀, …, xₙ ∶ τₙ) = Γ :alter-elements f~ to be well-typed iff
-   ~f : List Elements → List Elements~ and ~x₀:τ₀,…,xₖ₋₁:τₖ₋₁ ⊢ τₖ Type~ for ~k : 0..n~;
-   likewise if we admit defined constants in our contexts.
-
-   :functorial_semantics:
-Object-level Semantics -- “functorial semantics”
-- ⟦_⟧ : PF ⟶ |ℂ|
-- ⟦Empty⟧ = ()  -- the empty context
-- ⟦Γ extended-by Δ⟧ = ⟦Γ⟧ ++ Δ
-- ⟦Γ :waist n⟧ = ???
-- ⟦Γ :kind k⟧  = ???
-- ⟦Γ :map f⟧   = map f ⟦Γ⟧
-- ⟦Γ :filter p⟧ = filter p ⟦Γ⟧
-- ⟦Γ A ⟴ B⟧ = ⟦ ⟦Γ A⟧ B ⟧ -- get a context, then apply B to that.
-:end:
-
-* TODO COMMENT The Third Choice: Contexts
-** COMMENT Why PackageFormer is not enough.
-** COMMENT Discuss Agda macros ---need to be self-contained.
-** COMMENT Motivate the need for a practical syntax.
-** COMMENT The reason it's a "do it yourself" system is that the semantics, >>=,
-     can be tweaked easily for other forms of grouping besides Pi/Sigma ;-)
-** COMMENT Current limitations; e.g., lack of termination/positivity of certain constructs;
-     or how termtype generation requires the ADT carrier to be the first element
-     of the sequence/context, whereas a DAG interpretation of Contexts would be better?
-** COMMENT How does this compare with PF?
-** COMMENT What are the benefits of Context?
-** COMMENT Concrete problems its usage can solve.
-
-** COMMENT Abstract                                                  :ignore:
-
-   #+begin_abstract org
-   Can parameterised records and algebraic datatypes be derived from one
-   pragmatic declaration?
-
-   Record types give a universe of discourse, parameterised record types fix
-   parts of that universe ahead of time, and algebraic datatypes give us
-   first-class syntax, whence evaluators and optimisers.
-
-   The answer is in the affirmative. Besides a practical
-   shared declaration interface, which is extensible in the language,
-   we also find that common data structures correspond to simple theories.
- #+end_abstract
-
-  \maketitle
-
-** COMMENT Context Examples Header                                 :noexport:
-
- #+begin_src agda  :tangle Context_examples.agda
--- Agda version 2.6.0.1
--- Standard library version 1.2
-
-module Context_Examples where
-
-open import Context
-
-open import Data.Product
-open import Level renaming (zero to ℓ₀; suc to ℓsuc)
-open import Relation.Binary.PropositionalEquality hiding ([_])
-open import Data.Empty
-open import Relation.Nullary
-open import Data.Nat
-open import Function using (id)
-open import Data.Bool renaming (Bool to 𝔹)
-open import Data.Sum
-
-open import Data.List
-import Data.Unit as Unit
-open import Reflection hiding (name; Type) renaming (_>>=_ to _>>=ₘ_)
-
- #+end_src
-
-** Introduction
-
-   All too often, when we program, we write the same information two or more
-   times in our code, in different guises.  For example, in Haskell, we
-   may write a class, a record to reify that class, and an algebraic type
-   to give us a syntax for programs written using that class.  In proof
-   assistants, this tends to get worse rather than better, as parametrized
-   records give us a means to ``stage'' information.  From here on, we will
-   use Agda citet:Norell-2007 for our examples.
-
-   Concretely, suppose we have two monoids ~(M₁, _⨾₁_, Id₁)~ and ~(M₂, _⨾₂_, Id₂)~,
-   if we know @@latex:\!\!\footnote{ The propositional equality $M_1 \equiv M_2$ means the $Mᵢ$ are convertible with each
-  other when all free variables occurring in the $Mᵢ$ are instantiated,
-  and otherwise are not necessarily identical.
-  A stronger equality operator cannot be expressed in Agda.} @@
-   that src_agda[:exports code]{ceq : M₁ ≡ M₂} then it is “obvious” that
-   src_agda[:exports code]{Id₂ ⨾₂ (x ⨾₁ Id₁) ≡ x} for all
-   ~x : M₁~. However, as written, this does not type-check.  This is because
-   ~_⨾₂_~ expects elements of ~M₂~ but has been given an element of ~M₁~.
-   Because we have ~ceq~ in hand, we can use ~subst~ to transport things around.
-   The resulting formula, shown as the type of ~claim~ below,
- then typechecks, but is hideous.
-   ``$\mathsf{subst}$ hell'' only gets worse.  Below, we use pointed magmas for brevity,
-   as the problem is the same.
- :Header:
-   #+begin_src agda
-open import Relation.Binary.PropositionalEquality
-open import Function
- #+end_src
- :End:
- # 87 words ;; M-x count-words
- #+begin_src agda
-record Magma₀ : Set₁ where
-  field
-    Carrier : Set
-    _⨾_     : Carrier → Carrier → Carrier
-    Id     : Carrier
-
-module Awkward-Formulation (A B : Magma₀)
-    (ceq : Magma₀.Carrier A ≡ Magma₀.Carrier B)
-    where
-      open Magma₀ A renaming (Id to Id₁; _⨾_ to _⨾₁_)
-      open Magma₀ B renaming (Id to Id₂; _⨾_ to _⨾₂_)
-
-      claim : ∀ x → Id₂ ⨾₂ subst id ceq (x ⨾₁ Id₁) ≡ subst id ceq x
-      claim = {!!}
-      {- “{!!}” stands for a “hole” in Agda,
-         needing replacement by an expression -}
- #+end_src
- It should not be this difficult to state a trivial fact.  We could make
- things artifically prettier by defining ~coe~ to be ~subst id ceq~
- without changing the heart of the matter.  But if
- ~Magma₀~ is the definition used in the library we are using, we are
- stuck with it, if we want to be compatible with other work.
-
- Ideally, we would prefer to be able to express that the carriers are
- shared “on the nose”, which can be done as follows:
- #  69 words
- #+begin_src agda
-record Magma₁ (Carrier : Set) : Set where
-  field
-    _⨾_     : Carrier → Carrier → Carrier
-    Id     : Carrier
-
-module Nicer
-    (M : Set)    {- The shared carrier -}
-    (A B : Magma₁ M)
-    where
-      open Magma₁ A renaming (Id to Id₁; _⨾_ to _⨾₁_)
-      open Magma₁ B renaming (Id to Id₂; _⨾_ to _⨾₂_)
-
-      claim : ∀ x → Id₂ ⨾₂ (x ⨾₁ Id₁) ≡ x
-      claim = {!!}
-   #+end_src
-   This is the formulation we expected, without noise. Thus it seems that it
-   would be better to expose the carrier. But, before long, we'd find a different
-   concept, such as homomorphism, which is awkward in this way, and cleaner
-   using the first approach.  These two approaches are called
-   \emph{bundled} and \emph{unbundled} respectively citet:typeclasses_for_maths.
-
-   The definitions of homomorphism themselves (see below) is not so different,
-   but the definition of composition already starts to be quite unwieldly.
- :Homᵢ:
- #+begin_src agda
--- 63 words
-record Hom₀ (A B : Magma₀) : Set where
-  open Magma₀ A renaming (Carrier to M₁; Id to Id₁; _⨾_ to _⨾₁_)
-  open Magma₀ B renaming (Carrier to M₂; Id to Id₂; _⨾_ to _⨾₂_)
-  field
-    mor   : M₁ → M₂
-    ⨾-cong : ∀ x y → mor (x ⨾₁ y) ≡ mor x ⨾₂ mor y
-    Id-cong : mor Id₁ ≡ Id₂
-
--- 65 words
-record Hom₁ {M₁ M₂ : Set} (A : Magma₁ M₁) (B : Magma₁ M₂) : Set where
-  open Magma₁ A renaming (Id to Id₁; _⨾_ to _⨾₁_)
-  open Magma₁ B renaming (Id to Id₂; _⨾_ to _⨾₂_)
-  field
-    mor    : M₁ → M₂
-    ⨾-cong : ∀ x y → mor (x ⨾₁ y) ≡ mor x ⨾₂ mor y
-    ⨾-id   : mor Id₁ ≡ Id₂
- #+end_src
- :End:
- # 32 words vs 22 words
- #+begin_src agda
-record Hom₀ (A B : Magma₀) : Set where ⋯
-record Hom₁ {M₁ M₂ : Set} (A : Magma₁ M₁) (B : Magma₁ M₂) : Set where ⋯
-
-composition₀ : ∀ {A B C} → Hom₀ A B → Hom₀ B C → Hom₀ A C
-composition₀ = {!!}
-
-composition₁ : ∀ {M₁ M₂ M₃} {A : Magma₁ M₁} {B : Magma₁ M₂} {C : Magma₁ M₃}
-             → Hom₁ A B → Hom₁ B C → Hom₁ A C
-composition₁ = {!!}
- #+end_src
-
- #+latex: \noindent
- So not only are there no general rules for when to bundle or not, it is
- in fact guaranteed that any given choice will be sub-optimal for certain
- applications.  Furthermore, these types are equivalent, as we can
- ``pack away'' an exposed piece,
- e.g., src_agda[:exports code]{Monoid₀ ≅ Σ M ∶ Set • Monoid₁ M}.
- The developers of the Agda standard library citet:agda_std_lib have chosen to
- expose all types and function symbols while bundling up the proof obligations
- at one level, and also provide a fully bundled form as a wrapper.
- This is also the method chosen in Lean citet:Hales-blog-post, and in Coq
- citet:typeclasses_for_maths.
-
- While such a choice is workable, it is still not optimal. There are
- bundling variants that are unavailable, and would be more convenient for
- certain applications.
-
-   #+latex: \noindent
+The =PackageFormer= framework is a useful tool to experiment with uncommon ways to
+package things together, but it contradicts our initial philosophy of having a
+singular lingua franca for a language and its tongues.  With the lessons learned
+from developing =PackageFormer=, we go on in this section to produce =Context=, an
+/extensible do-it-yourself module system for Agda *within* Agda/.
 
  We will show an automatic technique for unbundling data at will; thereby
  resulting in /bundling-independent representations/ and in /delayed unbundling/.
@@ -11218,17 +10695,61 @@ composition₁ = {!!}
 
    As an application, in Section [[sec:related-works]] we show that the resulting
    setup applies as a semantics for a declarative pre-processing tool that accomplishes the
-   above tasks.
+   above tasks, namely =PackageFormer=.
 
    For brevity, and accessibility, a number of definitions are elided and only
-   @@latex: \dbox{dashed pseudo-code}@@ is presented in the paper, with the
+   @@latex: \dbox{dashed pseudo-code}@@ is presented in this section, with the
    understanding that such functions need to be extended homomorphically over all
    possible term constructors of the host language.  Enough is shown to
    communicate the techniques and ideas, as well as to make the resulting library
    usable.  The details, which users do not need to bother with, can be found in
    the appendices.
+** COMMENT Why PackageFormer is not enough.
+** COMMENT Discuss Agda macros ---need to be self-contained.
+** COMMENT Motivate the need for a practical syntax.
+** COMMENT The reason it's a "do it yourself" system is that the semantics, >>=,
+     can be tweaked easily for other forms of grouping besides Pi/Sigma ;-)
+** COMMENT Current limitations; e.g., lack of termination/positivity of certain constructs;
+     or how termtype generation requires the ADT carrier to be the first element
+     of the sequence/context, whereas a DAG interpretation of Contexts would be better?
+** COMMENT How does this compare with PF?
+** COMMENT What are the benefits of Context?
+** COMMENT Concrete problems its usage can solve.
+
+--------------------------------------------------------------------------------
+
+** COMMENT ----------------------------------------
+** Context Examples Header                                 :Agda:noexport:
+
+ #+begin_src agda  :tangle Context_examples.agda
+-- Agda version 2.6.0.1
+-- Standard library version 1.2
+
+module Context_Examples where
+
+open import Context
+
+open import Data.Product
+open import Level renaming (zero to ℓ₀; suc to ℓsuc)
+open import Relation.Binary.PropositionalEquality hiding ([_])
+open import Data.Empty
+open import Relation.Nullary
+open import Data.Nat
+open import Function using (id)
+open import Data.Bool renaming (Bool to 𝔹)
+open import Data.Sum
+
+open import Data.List
+import Data.Unit as Unit
+open import Reflection hiding (name; Type) renaming (_>>=_ to _>>=ₘ_)
+
+ #+end_src
+
 ** The Problems
    <<sec:problems>>
+
+Let us begin anew by briefly reviewing the main problems, but this time directly
+using Agda as the language of discourse.
 
  There are a number of problems, with the number of parameters being exposed
  being the pivotal concern. To exemplify the distinctions at the type level as
@@ -11236,6 +10757,7 @@ composition₁ = {!!}
  dynamical system ---a collection of states, a designated start state, and a
  transition function.
 
+{{{code(Dynamical Systems)}}}
  #+begin_src agda  :tangle Context_examples.agda
 record DynamicSystem₀ : Set₁ where
   field
@@ -11263,7 +10785,8 @@ record DynamicSystem₂ (State : Set) (start : State) : Set where
  | =DynamicSystem₁= | =Π X ∶ Set • Set=           |
  | =DynamicSystem₂= | =Π X ∶ Set • Π x ∶ X • Set= |
  :AgdaCheckedEvidence:
-     #+begin_src agda  :tangle Context_examples.agda
+{{{code( ? )}}}
+#+begin_src agda  :tangle Context_examples.agda
 _ : Set₁
 _ = DynamicSystem₀
 
@@ -11293,6 +10816,7 @@ _ = DynamicSystem₂
  a type of functions whereas $\mathsf{id}₁$ is a function on types. Indeed, the latter
  two are derived from the first one: $\mathsf{id}_{i + 1} \,=\, Π\!\!→\!\!λ\, \mathsf{id}ᵢ$
  These identities are true by ~refl~-exivity ---see Appendix [[sec:identity-funcs]].
+{{{code( Polymorphic Identity Functions )}}}
  #+begin_src agda  :tangle Context_examples.agda
 id₀ : Set₁
 id₀ = Π X ∶ Set • Π e ∶ X • X
@@ -11312,6 +10836,7 @@ id₂ = λ (X : Set) (e : X) → X
 
  :Ignore:
  Mark: Maybe a note that State = DSTerms₀ in the first one? Whereas DSTermsᵢ ∈ State for i = 1,2.
+{{{code( ? )}}}
  #+begin_src agda  :tangle Context_examples.agda
 data DSTerms₀ : Set where
   start : DSTerms₀
@@ -11337,6 +10862,7 @@ data DSTerms₂ (State : Set) (start : State) : Set where
  The ~DSTermsᵢ~ share the same pattern of kind exposure as the ~DynamicSystemᵢ~ types.
 
  AgdaCheckedEvidence
+{{{code( ? )}}}
  #+begin_src agda  :tangle Context_examples.agda
 _ : Set
 _ = DSTerms₀
@@ -11350,7 +10876,6 @@ _ = DSTerms₂
  :End:
 
  # +latex: \noindent
-
 ** Monadic Notation
    <<sec:monadic-notation>>
 
@@ -11360,6 +10885,7 @@ _ = DSTerms₂
    syntax is monadic do-notation
    \cite{DBLP:journals/iandc/Moggi91,DBLP:conf/haskell/MarlowJKM16}:
 
+{{{code( ? )}}}
  #+begin_src agda :tangle no
 DynamicSystem : Context ℓ₁
 DynamicSystem = do State ← Set
@@ -11389,6 +10915,7 @@ DynamicSystem = do State ← Set
  #+latex: \noindent
  With these elaborations of ~DynamicSystem~ to guide the way, we resolve
  two of our unknowns.
+{{{code( Context and End )}}}
  #+begin_src agda :tangle no
 {- “Contexts” are exposure-indexed types -}
 Context = λ ℓ → ℕ → Set ℓ
@@ -11408,6 +10935,7 @@ End = ‵ 𝟙
  m Y) → m Y}. It allows one to “extract an ~X~-value for later use” in the ~m Y~
  context. Since our ~m = Context~ is from levels to types, we need to slightly
  alter bind's typing.
+{{{code( Defining Bind ---First Attempt )}}}
  #+begin_src agda :tangle no
 _>>=_ : ∀ {a b}
       → (Γ : Context a)
@@ -11419,14 +10947,24 @@ _>>=_ : ∀ {a b}
  #+latex: \noindent
  The definition here accounts for the current exposure index: If zero, we have
  /record types/, otherwise /function types/. Using this definition, the above
- dynamical system context would need to be expressed using the lifting quote operation.
+ dynamical system context would need to be expressed using the lifting quote
+ operation.  *The extensibility is provided by the definition of bind: Rather
+ than Σ and Π, users may use or augment the framework in other forms.*
 
- #+latex: \begin{quotation}\scalebox{0.92}⟨1⟩{
- src_agda[:exports code]{‵ Set >>= λ State → ‵ State >>= λ start → ‵ (State →
- State) >>= λ next → End}
- #+latex: }\end{quotation}
+#+LATEX_HEADER: \usepackage{placeins}
+ # +latex: \FloatBarrier
+ # The FloatBarrier stops floats (figures are floats) from jumping over them. I
+ # will need to look into passing [tbh] options to figures from org mode further.
+
+{{{code( Example Use )}}}
   #+begin_src agda :tangle no
+‵ Set >>= λ State
+       → ‵ State >>= λ start
+                 → ‵ (State → State) >>= λ next
+                                      → End
+
 {- or -}
+
 do State ← ‵ Set
    start ← ‵ State
    next  ← ‵ (State → State)
@@ -11440,6 +10978,7 @@ do State ← ‵ Set
  mind, we shall “build the lifting quote into the definition” of bind:
  #+ATTR_LaTeX: :placement [!htpb]
  #+caption: Semantics: Context do-syntax is interpreted as Π-Σ-types
+{{{code( The Definition of Bind )}}}
  #+begin_src agda :tangle no
 _>>=_ : ∀ {a b}
       → (Γ : Set a)  -- Main difference
@@ -11448,10 +10987,6 @@ _>>=_ : ∀ {a b}
 (Γ >>= f) zero    = Σ γ ∶ Γ • f γ 0
 (Γ >>= f) (suc n) = Π γ ∶ Γ • f γ n
  #+end_src
- #+LATEX_HEADER: \usepackage{placeins}
- #+latex: \FloatBarrier
- # The FloatBarrier stops floats (figures are floats) from jumping over them. I
- # will need to look into passing [tbh] options to figures from org mode further.
 
  :Ignore:
  Using the definition of bind, we can elaborate
@@ -11465,9 +11000,11 @@ _>>=_ : ∀ {a b}
 
  #+latex: \noindent
  With this definition, the above declaration ~DynamicSystem~ typechecks.  However,
+ {{{newline}}}
  ~DynamicSystem 𝒾 ≇ DynamicSystemᵢ~, instead $\mathsf{DynamicSystem}\, 𝒾$ are “factories”: Given
  =i=-many arguments, a product value is formed. What if we want to /instantiate/ some
  of the factory arguments ahead of time?
+{{{code( Factories and Instantiation )}}}
  #+begin_src agda :tangle no
 𝒩₀ : DynamicSystem 0   {- See the elaborations in Table 1 -}
 𝒩₀ = ℕ , 0 , suc , tt
@@ -11495,7 +11032,7 @@ _>>=_ : ∀ {a b}
  terms that could not be formed without pattern matching on the possible
  syntactic constructions.  An up to date and gentle introduction to reflection in
  Agda can be found at \citep{gentle-intro-to-reflection} }@@ that acts on the
- syntactic term representations of types.  Below is main transformation ---the
+ syntactic term representations of types.  Below is the main transformation ---the
  details can be found in Appendix [[sec:pi-to-lambda]].
  #+begin_center
  #+begin_export latex
@@ -11506,6 +11043,7 @@ _>>=_ : ∀ {a b}
  That is, we walk along the term tree replacing occurrences of ~Π~ with ~λ~. For
  example,
   #+latex: {\renewcommand{\arraystretch}{1.3}
+{{{code( Example use of Π→λ )}}}
  #+begin_src agda :tangle no
   Π→λ (Π→λ (DynamicSystem 2))
 ≡{- Definition of DynamicSystem at exposure level 2 -}
@@ -11525,7 +11063,7 @@ _>>=_ : ∀ {a b}
  #+latex: \vspace{1em}
  #+begin_center latex
  #+begin_export latex
- \dbox{\parbox{0.3\textwidth}{%
+ \dbox{\parbox{0.4\textwidth}{%
 
  \texttt{τ :waist n  =  Π→λⁿ (τ n)}
 
@@ -11541,6 +11079,7 @@ _>>=_ : ∀ {a b}
  We can now “fix arguments ahead of time”. Before such demonstration, we need to
  be mindful of our practicality goals: One declares a grouping mechanism with
  ~do … End~, which in turn has its instance values constructed with ~⟨ … ⟩~.
+{{{code( Syntactic Sugar for Context Values )}}}
  #+begin_src agda :tangle no
 -- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
 infixr 5 ⟨ _⟩
@@ -11556,6 +11095,7 @@ s ⟩ = s , tt
  #+latex: \noindent
  The following instances of grouping types demonstrate how information moves from
  the body level to the parameter level.
+{{{code( Unbundling: Lifting Fields into Parameters )}}}
  #+BEGIN_SRC agda
 𝒩⁰ : DynamicSystem :waist 0
 𝒩⁰ = ⟨ ℕ , 0 , suc ⟩
@@ -11581,6 +11121,7 @@ s ⟩ = s , tt
  for being is to distinguish two common monoids: The former is for /integers with
  addition/ whereas the latter is for /integers with multiplication/.
  An orthogonal solution would be to use contexts:
+{{{code( ? )}}}
  #+begin_src agda :tangle Context_examples.agda
 Monoid : ∀ ℓ → Context (ℓsuc ℓ)
 Monoid ℓ = do Carrier ← Set ℓ
@@ -11610,6 +11151,7 @@ Monoid ℓ = do Carrier ← Set ℓ
    citet:DBLP:journals/jfp/Swierstra08 for more on this idea.  In particular, the
    description language ~𝔻~ for dynamical systems, below, declares concrete
    constructors for a fixpoint of a certain functor ~F~; i.e., ~𝔻 ≅ Fix F~ where:
+{{{code( ADTs and Functors )}}}
    #+begin_src agda :tangle no
 data 𝔻 : Set where
     startD : 𝔻
@@ -11628,6 +11170,7 @@ data Fix (F : Set → Set) : Set where
  # Avoid overfull \hboxes. E.g., \scalebox{0.9}[1]{The whole comments}
  # +name: termtypes-guide
  # +caption: Guide to termtypes
+{{{code( From Contexts to Fixed-points )}}}
  #+BEGIN_SRC agda :tangle no
   do S ← Set; s ← S; n ← (S → S); End
 ⇒{- Use existing interpretation to obtain a record. -}
@@ -11652,7 +11195,7 @@ data Fix (F : Set → Set) : Set where
    treat the fields of a record as constructors, then obtain their sources, then
    union them.  That is, since algebraic-datatype constructors necessarily target
    the declared type, they are determined by their sources.  For example,
-   considered as a unary constructor ~op : A → B~ targets the termtype ~B~ and
+   considered as a unary constructor ~op ∶ A → B~ targets the termtype ~B~ and
    so its source is ~A~.
    The details on the operations ~⇊, Σ→⊎~, and ~sources~
    characterised by the pseudocode below can be found in appendices
@@ -11663,19 +11206,19 @@ data Fix (F : Set → Set) : Set where
  #+latex: \vspace{1em}
  #+begin_center latex
  #+begin_export latex
- \dbox{\parbox{0.71\textwidth}{%
+ \dbox{\parbox{0.75\textwidth}{%
 
  \texttt{⇊ τ = “reduce all de Bruijn indices within τ by 1”}
 
- \vspace{1em}
+ \vspace{2em}
  \texttt{Σ→⊎ (Σ a ∶ A • Ba) = A ⊎ Σ→⊎ (⇊ Ba)}
 
- \vspace{0.5em}
+ \vspace{2em}
  \texttt{sources (λ x ∶ (Π a ∶ A • Ba) • τ) = (λ x ∶ A • sources τ)}
 
  \texttt{sources (λ x ∶ A \hspace{5.9em} • τ) = (λ x ∶ 𝟙 • sources τ)}
 
- \vspace{0.5em}
+ \vspace{2em}
  \texttt{termtype τ = Fix (Σ→⊎ (sources τ))}
 
  }}
@@ -11685,7 +11228,8 @@ data Fix (F : Set → Set) : Set where
  #+latex: \vspace{1em}\noindent
  It is instructive to work through the process of how ~𝔻~ is obtained from ~termtype~
  in order to demonstrate that this approach to algebraic data types
- is practical.
+ is practical *within Agda*.
+{{{code( Declaring a Derived Termtype )}}}
  #+begin_src agda :tangle no
 𝔻 = termtype (DynamicSystem :waist 1)
 
@@ -11698,6 +11242,7 @@ pattern nextD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
  ~startD~ and ~nextD~ when pattern matching, instead of the seemingly daunting
  μ-~inj~-ections.  For instance, we can immediately see that the natural numbers
  act as the description language for dynamical systems:
+{{{code( Seemingly Trivial Remappings )}}}
  #+begin_src agda :tangle no
 to : 𝔻 → ℕ
 to startD    = 0
@@ -11712,7 +11257,7 @@ from (suc n) = nextD (from n)
  Readers whose language does not have src_agda[:exports code]{pattern} clauses
  need not despair.  With the macro
  #+begin_center latex
- @@latex:\dbox{\texttt{Inj n x = μ (inj₂ ⁿ (inj₁ x))}}@@
+ @@latex:\dbox{\quad\texttt{Inj n x = μ (inj₂ ⁿ (inj₁ x))}\quad}@@
  #+end_center
  we may define src_agda[:exports code]{startD = Inj 0 tt} and
  src_agda[:exports code]{nextD e = Inj 1 e} ---that is, constructors of termtypes
@@ -11725,6 +11270,7 @@ from (suc n) = nextD (from n)
  Astonishingly, useful programming datatypes arise from termtypes of theories
  (contexts). That is, if a parameterised context src_agda[:exports code]{𝒞 : Set
  → Context ℓ₀} is given, then
+{{{code( Abstract Syntax Trees )}}}
  #+begin_src agda
 ℂ = λ X → termtype (𝒞 X :waist 1)
  #+end_src
@@ -11744,6 +11290,7 @@ from (suc n) = nextD (from n)
  Similarly, by starting at “theories of
  pointed sets over a given set Ξ”, the resulting termtype is the ~Maybe~
  type constructor ---another instructive exercise to the reader: Show that ~ℙ ≅ Maybe~.
+{{{code( ? )}}}
  #+begin_src agda :tangle no
 PointedOver  : Set → Context (ℓsuc ℓ₀)
 PointedOver Ξ    = do Carrier ← Set ℓ₀
@@ -11773,10 +11320,12 @@ pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
  The final entry in Table 2 is a well known correspondence that we
  can now not only formally express, but also prove to be true.
  :Hide:
+{{{code( ? )}}}
  #+begin_src agda :tangle Context_examples.agda
 module termtype[Monoid]≅TreeSkeleton where
        #+end_src
  :End:
+{{{code( Trees from Monoids )}}}
        #+begin_src agda :tangle Context_examples.agda
   𝕄 : Set
   𝕄 = termtype (Monoid ℓ₀ :waist 1)
@@ -11789,9 +11338,9 @@ module termtype[Monoid]≅TreeSkeleton where
   -}
 
   -- Pattern synonyms for more compact presentation
-  pattern emptyM      = μ (inj₂ (inj₁ tt))               -- : 𝕄
-  pattern branchM l r = μ (inj₁ (l , r , tt))            -- : 𝕄 → 𝕄 → 𝕄
-  pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a))))  -- absurd values of 𝟘
+  pattern emptyM      = μ (inj₂ (inj₁ tt))              -- : 𝕄
+  pattern branchM l r = μ (inj₁ (l , r , tt))           -- : 𝕄 → 𝕄 → 𝕄
+  pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a)))) -- absurd 𝟘-values
 
   data TreeSkeleton : Set where
     empty  : TreeSkeleton
@@ -11801,6 +11350,7 @@ module termtype[Monoid]≅TreeSkeleton where
  Using Agda's Emacs interface, we may interactively
  case-split on values of =𝕄= until the declared patterns appear, then we associate them
  with the constructors of ~TreeSkeleton~.
+{{{code( Seemingly Trivial Remappings )}}}
  #+begin_src agda  :tangle Context_examples.agda
   to : 𝕄 → TreeSkeleton
   to emptyM        = empty
@@ -11814,6 +11364,7 @@ module termtype[Monoid]≅TreeSkeleton where
  #+end_src
  #+latex: \noindent
  That these two operations are inverses is easily demonstrated.
+{{{code( Trees from Monoids )}}}
  #+begin_src agda  :tangle Context_examples.agda
   from∘to : ∀ m → from (to m) ≡ m
   from∘to emptyM        = refl
@@ -11835,10 +11386,12 @@ module termtype[Monoid]≅TreeSkeleton where
  “theories containing a given set Ξ”. For example, we could begin with the
  theory of abstract collections, then obtain lists as the associated termtype.
  :Hide:
+{{{code( ? )}}}
  #+begin_src agda  :tangle Context_examples.agda
 module termtype[Collection]≅List where
  #+end_src
  :End:
+{{{code( Lists from Paramterised Collections )}}}
  #+begin_src agda :tangle Context_examples.agda
   Collection : ∀ ℓ → Context (ℓsuc ℓ)
   Collection ℓ = do Elem    ← Set ℓ
@@ -11853,7 +11406,8 @@ module termtype[Collection]≅List where
   pattern _::_ x xs = μ (inj₁ (x , xs , tt))
   pattern  ∅        = μ (inj₂ (inj₁ tt))
  #+end_src
- #+latex: \newpage
+ # +latex: \newpage
+{{{code( Realising Collection ASTs as Lists )}}}
  #+begin_src agda  :tangle Context_examples.agda
   to : ∀ {E} → ℂ E → List E
   to (e :: es) = e ∷ to es
@@ -11863,6 +11417,7 @@ module termtype[Collection]≅List where
  It is then little trouble to show that ~to~ is invertible.  We invite the readers
  to join in on the fun and try it out themselves!
  :Hide:
+{{{code( ? )}}}
  #+begin_src agda  :tangle Context_examples.agda
   from : ∀ {E} → List E → ℂ E
   from []       = ∅
@@ -11884,15 +11439,15 @@ module termtype[Collection]≅List where
    Surprisingly, conflating parameterised and non-parameterised record types
    with termtypes /within a language in a practical fashion/ has not been done before.
 
-   The PackageFormer citet:DBLP:conf/gpce/Al-hassyCK19,alhassy_thesis_proposal
-   editor extension reads contexts ---in nearly the same notation as ours---
+   The =PackageFormer= citet:DBLP:conf/gpce/Al-hassyCK19,alhassy_thesis_proposal
+   editor extension reads contexts ---in nearly the same notation as =Context=---
    enclosed in dedicated comments, then generates and imports Agda code from them
    seamlessly in the background whenever typechecking happens. The framework
    provides a fixed number of meta-primitives for producing arbitrary notions of
    grouping mechanisms, and allows arbitrary Emacs Lisp citet:10.5555/229872 to be
    invoked in the construction of complex grouping mechanisms.
 
-   #+caption: Comparing the in-language Context mechanism with the PackageFormer editor extension
+   #+caption: Comparing the in-language =Context= mechanism with the =PackageFormer= editor extension
    |                          | PackageFormer      | Contexts             |
    |--------------------------+--------------------+----------------------|
    | Type of Entity           | Preprocessing Tool | Language Library     |
@@ -11904,14 +11459,15 @@ module termtype[Collection]≅List where
    | Usability Barrier        | None               | None                 |
    | Extensibility Barrier    | Lisp               | Weak Metaprogramming |
 
-   The PackageFormer paper citet:DBLP:conf/gpce/Al-hassyCK19 provided the syntax
+   The =PackageFormer= paper citet:DBLP:conf/gpce/Al-hassyCK19 provided the syntax
    necessary to form useful grouping mechanisms but was shy on the semantics of
-   such constructs.  We have chosen the names of our combinators to closely match
-   those of PackageFormer's with an aim of furnishing the mechanism with
-   semantics by construing the syntax as semantics-functions; i.e., we have a
-   shallow embedding of PackageFormer's constructs as Agda entities:
+   such constructs.  We have chosen the names of the =Context= combinators to
+   closely match those of =PackageFormer='s with an aim of furnishing the
+   mechanism with semantics by construing the syntax as semantics-functions;
+   i.e., we have a shallow embedding of =PackageFormer='s constructs as Agda
+   entities:
 
- #+caption: Contexts as a semantics for PackageFormer constructs
+ #+caption: =Context= as a semantics for =PackageFormer= constructs
  | Syntax          | Semantics                    |
  |-----------------+------------------------------|
  | ~PackageFormer~   | ~Context~                      |
@@ -11924,12 +11480,13 @@ module termtype[Collection]≅List where
  # Moreover, it is nearly as readable
  #  and is a library method, rather than an editor extension.
 
- PackageFormer's ~_:kind_~ meta-primitive dictates how an abstract grouping
+ =PackageFormer='s ~_:kind_~ meta-primitive dictates how an abstract grouping
  mechanism should be viewed in terms of existing Agda syntax.  However, unlike
  PackageFormer, all of our syntax consists of legitimate Agda terms.
  Since language syntax is being manipulated,
  we are forced to implement the ~_:kind_~ meta-primitive as a macro
  ---further details can be found in Appendix [[sec:kind]].
+{{{code( Codes for Agda's First-class Grouping Mechanisms )}}}
  #+begin_src agda :tangle no
 data Kind : Set where
   ‵record    : Kind
@@ -11939,7 +11496,7 @@ data Kind : Set where
  #+latex: \vspace{1em}
  #+begin_center latex
  #+begin_export latex
- \dbox{\parbox{0.47\textwidth}{%
+ \dbox{\parbox{0.50\textwidth}{%
 
  \texttt{𝒞 :kind ‵record    = 𝒞 0}
 
@@ -11953,13 +11510,13 @@ data Kind : Set where
 
  #+latex: \vspace{0.5em}\medbreak\noindent
  We did not expect to be able to define a full Agda implementation of the semantics of
- PackageFormer's
+ =PackageFormer='s
  syntactic constructs due to Agda's rather constrained metaprogramming mechanism.
- However, it is important to note that PackageFormer's Lisp extensibility
+ However, it is important to note that =PackageFormer='s Lisp extensibility
  expedites the process of trying out arbitrary grouping mechanisms ---such as
  partial-choices of pushouts and pullbacks along user-provided assignment
  functions--- since it is all either string or symbolic list manipulation. On the
- Agda side, using contexts, it would require substantially more effort due to the
+ Agda side, using =Context=, it would require substantially more effort due to the
  limited reflection mechanism and the intrusion of the stringent type system.
 
  :Ignore:
@@ -12006,7 +11563,7 @@ data Kind : Set where
  | Record Type        | =Σ S ∶ Set • Σ s ∶ S • Σ n ∶ S → S • 𝟙= | “bundled-up data”      |
  | Function Type      | =Π S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a type of functions”  |
  | Type constructor   | =λ S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a function on types”  |
- | Algebraic datatype | ~data 𝔻 : Set where s : 𝔻; n : 𝔻 → 𝔻~   | “a descriptive syntax” |
+ | Algebraic datatype | ~data 𝔻 ∶ Set where s ∶ 𝔻; n ∶ 𝔻 → 𝔻~   | “a descriptive syntax” |
  #+latex: \FloatBarrier
  # The FloatBarrier stops floats (figures are floats) from jumping over them. I
  # will need to look into passing [tbh] options to figures from org mode further.
@@ -12085,6 +11642,7 @@ data Kind : Set where
     is contravariant in its collection of vertices. Recall that a multi-graph, or
     quiver, is a collection of vertices along with a collection of edges between
     any two vertices; here's the traditional record form:
+{{{code( ? )}}}
     #+begin_src agda
 Graph  : Context ℓ₁
 Graph  = do Vertex ← Set
@@ -12096,6 +11654,7 @@ Graph  = do Vertex ← Set
     “relabels the vertices”. Even worse, the awkward phrasing only serves to
     ensure certain constraints hold ---which are reified at the value level via
     the uninsightful ~refl~-exivity proof.
+{{{code( ? )}}}
     #+begin_src agda
 comap₀ : ∀ {A B : Set}
       → (f : A → B)
@@ -12108,6 +11667,7 @@ comap₀ {A} {B} f (⟨ .B , edgs ⟩ , refl) = (A , (λ a₁ a₂ → edgs (f a
     clearer and easier to implement at the value-level, it also makes it clear
     that we are “pulling back” the vertex type and so have also shown graphs are
     closed under reducts.
+{{{code( ? )}}}
         #+begin_src agda
 -- Way better and less awkward!
 comap : ∀ {A B : Set}
@@ -12153,8 +11713,6 @@ comap f ⟨ edgs ⟩₁ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩₁
  | =https://github.com/alhassy/next-700-module-systems/tree/master/prototype= |
 
 ** COMMENT OLD Abstract                                                      :ignore:
-   CLOSED: [2020-03-02 Mon 16:00]
-
    #+begin_abstract org
    Folklore has held that any ‘semantic unit’ is essentially a type-theoretic
    context ---this includes, for example, records and algebraic datatypes.  We
@@ -12177,8 +11735,6 @@ comap f ⟨ edgs ⟩₁ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩₁
    allow arbitrary grouping mechanisms to be derived, such as obtaining the
    homomorphism type of a given record.
  #+end_abstract
-
-  \maketitle
 * COMMENT Conclusion
 ** What we have done
 ** How it is useful to others, now.
@@ -12835,6 +12391,384 @@ data Π (A : Set) (B : A → Set) : Set where
 
 <<sec:conclusion>>
 
+** COMMENT [!] section 4? curapr ← Solution Requirements
+   :PROPERTIES:
+   :CUSTOM_ID: solution_requirements
+   :END:
+
+  From the outset we have proposed a particular approach to resolving the
+  needless duplication present in current module systems that are utilised in
+  non-dependently-typed languages. Up to this point, we have only discussed how
+  our approach could mitigate certain troubles; such as a difference of
+  perspectives of modules, or of equivalent operations acting on different
+  perspectives of modules. We now turn to discussing, in the following
+  subsections, what it is that is missing from existing module systems, what one
+  actually wants to do with modules, and conclude with a checklist of features
+  that a proposed system should meet in order to be considered a practical and
+  pragmatic improvement over existing systems.
+
+*** Missing Features
+    :PROPERTIES:
+    :header-args: :tangle translate_functions.agda :comments link
+    :END:
+
+ # Our preliminary research, and personal use with dependently-typed systems,
+ # has yielded three strongly desirable features of a module system for DTLs.
+
+ Certain mechanically-derivable concepts, such as different perspectives, are
+ needlessly delegated to the user by pedestrian packaging systems. Besides being
+ tedious and error-prone, the inexpressibility of derivates obscures the
+ corresponding general principles underlying them, thus foregoing any machine
+ assistance in ensuring any correctness or safety-ness guarantees. The desire to
+ pursue a more economical yet powerful packaging system follows from our
+ research team's expedited efforts that could have been mechanised . We will
+ only mention two such use cases.
+
+ # [[https://www.google.com/search?ei=MeLSXLaTIuqN5wLSsaTwDw&q=derivate&oq=derivate&gs_l=psy-ab.3..0i67j0i10j0j0i10l7.27397.29434..29651...0.0..0.100.195.1j1......0....1..gws-wiz.......0i71j0i7i10i30.ZZBrC21FopE][define derivate]] :: something derived, especially a product obtained chemically from a raw material.
+ # #
+ #       derivates
+ #  or   what could be considered as derived views
+
+*** Expressivity
+ # #+latex: \noindent
+ # *Expressivity*
+ #
+ # #+latex: \noindent
+  A common pattern that can be seen, for example, in the Agda standard library,
+  is of a predicate ensuring desirable properties *of* its inputs, then of a record
+  containing the inputs as fields along with a proof of said predicate ---c.f.,
+  section ref:sec:examples:IsX. More concretely, suppose we have a binary predicate named
+  ~IsSemi~ and the record is named ~Semi~; the predicate form allows us to quantify
+  over inputs as in ~∀ x y → IsSemi x y → ⋯~, in contrast the latter approach is
+  intrinsic in nature: ~∀ (s ∶ Semi) → ⋯~ ---contrast this with a mathematician
+  naturally declaring /“let ~s~ be a semigroup”/, whereas almost never do
+  mathematicians say /“let ~x~ be a set and ~y~ be an operation on it that together
+  constitute a semigroup”/.
+
+  At a first glance, it does not seem too troublesome to produce the record
+  presentation from the predicate presentation: Simply /repeat all/ the inputs
+  under a record declaration along with a proof obligation. However, the word
+  ‘repeat’ already suggests a problem, and ‘all’ suggests another one. What if
+  one desires to utilise the record associated to the predicate by only packaging
+  certain inputs but not others? This is akin to the problem of constructors in
+  object-oriented languages: In Java, for example, one uses overloading to
+  provide a number of user-written constructors for only a few resonable input
+  invocations to construct an object; in contrast, Common Lisp permits optional
+  named arguments, and so in one fell swoop, with one user-written, constructor,
+  provides all possible combinations of constructor invocations ---this is the
+  ideal level of power and flexibility.
+  #
+  # WK: [OCaml] permits optional named arguments.
+
+  Lest it's unclear, let's elaborate slightly on the idea.
+  :Setup:
+  #+begin_src haskell
+open import Relation.Binary.PropositionalEquality
+open ≡-Reasoning
+
+-- Z-notation for sums
+open import Level
+open import Data.Product using (Σ ; proj₁ ; proj₂ ; _×_ ; _,_)
+Σ∶• : {a b : Level} (A : Set a) (B : A → Set b) → Set (a ⊔ b)
+Σ∶• = Σ
+infix -666 Σ∶•
+syntax Σ∶• A (λ x → B) = Σ x ∶ A • B
+  #+end_src
+  :End:
+
+  A semigroup is an algebraic structure that models (untyped) compositionality:
+  It consists of a collection of objects of interest called the ~Carrier~ set, and
+  an operation ~_⨾_~ to compose existing items to produce new items, and the
+  operation is associative. Below is a spectrum of ways to bundle up such a
+  structure ---starting from being completely bundled up all the way to being
+  completely exposed.
+ {{{code(A value of ‘Semigroup₀’ is an arbitrary semigroup)}}}
+  #+begin_src haskell :tangle semigroup.agda :prologue "open import Notation"
+-- One extreme: Completely bundled up
+record Semigroup₀ : Set₁ where
+  field
+    Carrier : Set
+    _⨾_     : Carrier → Carrier → Carrier
+    assoc   : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+  #+end_src
+  {{{code(A value of ‘Semigroup₁ C’ is a semigroup “structure on” type ‘C’)}}}
+  #+begin_src haskell :tangle semigroup.agda
+-- ‘Typeclass’ on a given Carrier
+-- Alternatively: Carrier is known as runtime.
+record Semigroup₁ (Carrier : Set): Set₁ where
+  field
+    _⨾_   : Carrier → Carrier → Carrier
+    assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+  #+end_src
+  {{{code(A value of ‘Semigroup₂ C op’ is a “proof” that ‘C’ with ‘op’ forms a semigroup)}}}
+  #+begin_src haskell :tangle semigroup.agda
+-- Two items known at run time --c.f., “IsSemi” above.
+record Semigroup₂
+ (Carrier : Set)
+ (_⨾_     : Carrier → Carrier → Carrier) : Set where
+  field
+    assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+  #+end_src
+  {{{code(The other extreme: Completely unbundled)}}}
+  #+begin_src haskell :tangle semigroup.agda
+-- A value of ‘Semigroup₃ C op pf’ is trivially the empty record, if any,
+-- provided ‘pf’ is a proof that ‘C’ forms a semigroup with ‘op’.
+-- This type is usualy written Σ C ∶ Set • Σ _⨾_ ∶ C → C → C • Σ assoc ∶ ⋯.
+record Semigroup₃
+ (Carrier : Set)
+ (_⨾_ : Carrier → Carrier → Carrier)
+ (assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) : Set where
+ {- no fields -}
+  #+end_src
+  Depending on the user's needs, it may be useful to have one form or another.
+  Unfortunately they are enslaved to the choices of the library designer,
+  or if they deviate then they must produce tedious conversion methods and use
+  them to pad all the library methods for the structures.
+  Even worse, such back and forth conversions will not only be representation
+  shuffling but also wasteful of resources.
+
+  For example, every bijective function $f : A \to B$ furnishes its target $B$
+  with a semigroup structure provided its source $A$ has the structure to begin
+  with. Since the statement mentions the carriers of semigroups, it is only
+  natural to formulate it an prove it using presentation ~Semigroup₁~ where the
+  carrier is exposed at the type level.
+  {{{code(Elementary Properties of Functions)}}}
+  #+begin_src haskell :tangle semigroup.agda
+Surjection : ∀{A B : Set} → (A → B) → Set
+Surjection {A} {B} f = ∀ (b : B) → Σ a ∶ A • b ≡ f a
+-- (Σ a ∶ A • P a) ≈ { (a, proof) ❙ a ∈ A ∧ pf is a proof of P(a) }
+
+Injection : ∀{A B : Set} → (A → B) → Set
+Injection {A} {B} f = ∀ {x y} →  f x ≡ f y → x ≡ y
+  #+end_src
+  {{{code(An Involved Proof That We Would Like to Reuse)}}}
+  #+begin_src haskell :tangle semigroup.agda
+translate₁ : ∀{A B} → (f : A → B) → Surjection f → Injection f
+       → Semigroup₁ A → Semigroup₁ B
+translate₁ f surj inj AS =
+  let
+    open ≡-Reasoning
+    open Semigroup₁ AS
+
+    -- x ⨾′ y is obtained by applying f to the ⨾-composition of the pre-images of x, y
+    infix 5 _⨾′_
+    _⨾′_ = λ x y → let a₀ = proj₁ (surj x); a₁ = proj₁ (surj y) in f (a₀ ⨾ a₁)
+
+    -- f distributes over ⨾ turning it into ⨾′
+    factor : ∀ {a a′} → f a ⨾′ f a′ ≡ f (a ⨾ a′)
+    factor {a} {a′} =
+           let 𝒶  , m  = surj (f a)
+               𝒶′ , w  = surj (f a′)
+           in
+           begin
+             f a ⨾′ f a′
+           ≡⟨ refl ⟩
+             f (𝒶 ⨾ 𝒶′)
+           ≡⟨ cong f (cong₂ _⨾_ (inj (sym m)) (inj (sym w)))  ⟩
+             f (a ⨾ a′)
+           ∎
+
+    distribute : ∀ {a a′} → f (a ⨾ a′) ≡ f a ⨾′ f a′
+    distribute {a} {a′} = sym (factor {a} {a′})
+
+  in {- Bundle up ⨾′ along with a proof of associativity -}
+    record { _⨾_ = _⨾′_; assoc = λ x y z →
+     let
+    -- Obtain f-pre-images
+    a₀ , x≈fa₀  =  surj x
+    a₁ , y≈fa₁  =  surj y
+    a₂ , z≈fa₂  =  surj z
+     in
+      {- Tersely: We rewrite along the pre-images,
+     factor f, perform the associativity of ⨾,
+     then distribute f and rewrite along the pre-images. -}
+       begin
+         (x ⨾′ y) ⨾′ z
+       ≡⟨ cong₂ _⨾′_ (cong₂ _⨾′_ x≈fa₀ y≈fa₁) z≈fa₂ ⟩
+         (f a₀ ⨾′ f a₁) ⨾′ f a₂
+       ≡⟨ cong (_⨾′ f a₂) factor ⟩
+         f (a₀ ⨾ a₁) ⨾′ f a₂
+       ≡⟨ factor ⟩
+         f ((a₀ ⨾ a₁) ⨾ a₂)
+       ≡⟨ cong f (assoc _ _ _)  ⟩
+         f (a₀ ⨾ (a₁ ⨾ a₂))
+       ≡⟨ distribute ⟩
+         f a₀ ⨾′ f (a₁ ⨾ a₂)
+       ≡⟨ cong (f a₀ ⨾′_) distribute ⟩
+         f a₀ ⨾′ (f a₁ ⨾′ f a₂)
+       ≡⟨ sym (cong₂ _⨾′_ x≈fa₀ (cong₂ _⨾′_ y≈fa₁ z≈fa₂))  ⟩
+         x ⨾′ (y ⨾′ z)
+       ∎ }
+  #+end_src
+  ~translate₁~ is a lengthy proof, we could repeat it, or invoke it. Since
+  duplication with alteration is error-prone and non-generic, we perform the
+  latter.
+ {{{code(Conversions are a Nuisance)}}}
+  #+begin_src haskell :tangle semigroup.agda
+translate₀ : ∀{B : Set} (AS : Semigroup₀) (f : Semigroup₀.Carrier AS → B)
+       → Surjection f → Injection f
+       → Semigroup₀
+translate₀ {B} AS f surj inj = record { Carrier = B ; _⨾_ = _⨾_ ; assoc = assoc }
+  where
+
+       -- Repackage ‘AS’ from a ‘Semigroup₀’ to a ‘Semigroup₁’
+       -- only to immediatley unpack it, so that its contents
+       -- are available to be repacked above as a ‘Semigroup₀’.
+
+       pack : Semigroup₁ (Semigroup₀.Carrier AS)
+       pack = let open Semigroup₀ AS in record {_⨾_ = _⨾_; assoc = assoc }
+
+       open Semigroup₁ (translate₁ f surj inj pack)
+  #+end_src
+  Observe that ~translate₀~ repackages ~AS~ via ~pack~, then passes that as an argument
+  to ~translate₁~, which in turn unpacks it to form a new ~Semigroup₀~, which is then
+  unpacked in the last line above. Regardless of any possible wasteful amount of
+  packing and unpacking of records ---which may be mitigated via inlining--- the
+  way ~translate₀~ is written is far from ideal; whereas ~translate₁~ is the
+  appropriate level of abstraction to pose the problem. Instead, it would be
+  ideal to write the method at a sufficient level of generality such that
+  ~translate₀~ and ~translate₁~ are, say, polymorphic instances thereof. This is what
+  we shall propose in a later section, section ref:sec:lost. More generally, notice that
+  ~Semigroupᵢ~ is a type constructor consuming 𝒾-many arguments, which are also
+  arguments to ~translateᵢ~. The ideal context to phrase the translation result is
+  with ~𝒾 = 1~, but we also want to be able to apply it for the other possible
+  values of ~𝒾 ∶ 0..3~.
+
+  :Relocate_yoneda:
+  Moreover, as a stylistic decision, implementers may prefer to view
+  an object in either its predicate form ---with the constituents varying---
+  or in its record form ---with the constituents fixed---, will all
+  library utilities tied to a particular form.
+  :End:
+
+*** DONE COMMENT efficiency_remarks_incomplete
+    CLOSED: [2020-04-10 Fri 10:42]
+
+  *Efficiency:*
+
+  A hallmark of computing is to reduce new problems to ones already considered.
+  One realisation of this principle is found in the sharing mechanisms of
+  certain lazy languages: In the expression ~let y = f(x) in g(y, y)~,
+  the term ~y~ is evaluated once and the result is shared among its multiple
+  call sites. This idea comes under the name of /thunks/:
+  When we encounter an instance of ~y~ and we need to ‘think’
+  of its value, we realise we have already ‘thunk’ it.
+
+  # :What:
+  Memory is tremendously difficult to reason about {{{remark(reynolds calculus)}}},
+  and lazy sharing only compounds to the troubles of garbage collection
+  and complexity analysis {{{remark(Haskell)}}}.
+  # :End:
+
+  Dependently-typed languages are usually not only utilised for programming
+  but generally also for proof; as such, their implementations adhere to
+  a particular logic.
+
+  To be completed …
+
+*** Conclusion
+
+  # One final benefit is exposition. It happens in academic literature, that an
+  # audicance may not be familar with the rudiments of a hierarchy, nor should they
+  # be forced to ...
+
+  These features are considered ‘missing’ since they are reasonably achievable in
+  a dependently-typed system ---e.g., the different forms of dependently-typed
+  bundling suggest a form of polymorphism. Their absence may be due to logistic
+  reasons, such as no effort expedited in their direction, or due to issues
+  surrounding the logical frameworks of the systems.
+
+  We posit that the problem lies in /typing/; e.g., it is not at all clear how to
+  type a generic ~translate~ function that works for all possible ~Semigroupᵢ~. With
+  the presence of metaprogramming, we could quote arguments to obtain abstract
+  syntax, ~Term~, and so define the following.
+ #+BEGIN_SRC haskell
+ translate : (𝒾 : Fin 4)
+             {A B : Set} (f : A → B) (inj : Injection f) (surj : Surjection f)
+             → (args : Vec 𝒾 Term)
+             → Σ S ∶ Semigroupᵢ args • Carrierᵢ S ≡ A
+             → Σ T ∶ Semigroupᵢ args • Carrierᵢ S ≡ B
+ translate = ⋯
+ #+END_SRC
+
+ Notice that unlike ~translate₀~, this form is more useful since it relates the
+ output semigroup with the input semigroup via the function ~f~ ---in contrast,
+ ~semigroup₀~ could have simply returned the input semigroup and still typecheck.
+ Even though the need to quote and unquote terms is not ideal, there is a more
+ processing concern: With the exception of ~𝒾 = 0~, the Σ constraints will all be
+ tedious =refl=-exivity proofs that will mention ~A~ before and after the bullet, ~•~.
+ Instead, it would be preferable to declare the carrier ~A~ of the input semigroup
+ as was done in ~translate₁~ ---namely, directly in the type application of
+ ~Semigroupᵢ~. That is, we would like an operation =_with-carrier_= so that ~translate~
+ could drop the Σ's and instead conclude with ~Semigroupᵢ args with-carrier A →
+ Semigroupᵢ args with-carrier B~. Such an infix operation would require decidable
+ equality on syntax. It seems that metaprogramming is necessary ---at least from
+ the library builder's perspective.
+
+ Going forward, we will thus use metaprogramming /on the implementation side/,
+ but try to hide it from the user as much as possible.
+
+*** Con
+   These features are desirable for working with modules, yet raise a number of
+   immediate concerns. For example, uniformity may lead to ambiguous parsing,
+   genericity may lead to inefficient execution, and extensibility borders on
+   meta-programming thereby leaving the realm of types altogether.
+   Possible limitations on these features may result in the thesis efforts
+   to implement them in a dependently-typed system, such as Agda.
+** COMMENT Semantics Continued ← the second choice
+
+ *Intuitively, the nature of the meta-primitives:*
+ 1. A ~PackageFormer~ is a context, a signature, an essentially algebraic theory of Freyd, or a generalised algebraic theory of Cartmell.
+    Moreover, it is tagged by some values for practical purposes; e.g., the kind of concrete realisation that is possible in Agda ---namely, ~record, data, module,~ or
+    the abstract ~PackageFormer~.
+ 2. A ‘variational’ is a morphism between PackageFormers ---taking signatures to signatures.
+
+    Built up from the grammar:
+    #+BEGIN_SRC haskell :tangle no
+𝓋 ∷=                   -- empty, identity, variational
+   | 𝓋 ⟴ 𝓋            -- composition
+   | :kind  𝓀          -- 𝓀 ∈ {record, data, module, PackageFormer}
+   | :waist 𝓃          -- n ∈ ℕ, number of initial items to be considered as ‘parameters’
+   | :alter-elements 𝒻 -- f : List Elements → List Elements
+    #+END_SRC
+
+    ~:alter-elements~ is a sledgehammer that may result in ill-formed signatures, but we leave it in the system due to its power.
+    Instead, we recommend using the following derivied primitives for signature catenation, map, and filter:
+    #+BEGIN_SRC haskell :tangle no
+   | extended-by ds  -- Adjoin declarations ds, “name : type”, to a PackageFormer
+   | map         f   -- Alter each element by f : Element → Element
+   | generated   f   -- Keep the largest well-formed PackageFormer whose elements satisfy predicate f
+ #+END_SRC
+
+    Why are these sufficient? The first homomorphism theorem of lists ---i.e., the fact that lists are free monoids---
+    informs us that all well-behaved functions from a list monoid are determined as folds after maps. Since our signatures
+    are essentially free monoids and the target of our functions are again the same free monoids, the fold is determined and only
+    the map remains. We conjecture this is enough; we are not yet certain.
+
+    Interestingly, we are mostly generic over the underlying type theory.
+
+    #  Γ extended-by x₀:τ₀,…,xₙ:τₙ  -- where Γ,x₀:τ₀,…,xₖ₋₁:τₖ₋₁ ⊢ τₖ Type
+
+    Since a ~PackageFormer~ corresponds to a signature, then these variationals
+    ---at least the well-behaved ones--- correspond to signature morphisms.
+    Great difficulty lies in providing semantics for ~alter-elements~; if
+    we demand a well-typedness judgement, “⊢”, from our underlying type theory
+    then we could define ~(x₀ : τ₀, …, xₙ ∶ τₙ) = Γ :alter-elements f~ to be well-typed iff
+    ~f : List Elements → List Elements~ and ~x₀:τ₀,…,xₖ₋₁:τₖ₋₁ ⊢ τₖ Type~ for ~k : 0..n~;
+    likewise if we admit defined constants in our contexts.
+
+    :functorial_semantics:
+ Object-level Semantics -- “functorial semantics”
+ - ⟦_⟧ : PF ⟶ |ℂ|
+ - ⟦Empty⟧ = ()  -- the empty context
+ - ⟦Γ extended-by Δ⟧ = ⟦Γ⟧ ++ Δ
+ - ⟦Γ :waist n⟧ = ???
+ - ⟦Γ :kind k⟧  = ???
+ - ⟦Γ :map f⟧   = map f ⟦Γ⟧
+ - ⟦Γ :filter p⟧ = filter p ⟦Γ⟧
+ - ⟦Γ A ⟴ B⟧ = ⟦ ⟦Γ A⟧ B ⟧ -- get a context, then apply B to that.
+ :end:
+
 * Glossary :ignore:
 
 #+LaTeX: \addcontentsline{toc}{part}{Glossary}
@@ -13202,21 +13136,22 @@ These papers come from people!
  92. citet:seven_hundred_libraries Ant\'onio Menezes Leit\~ao, The next 700 programming libraries, In , International Lisp Conference, {ILC} 2007, Cambridge, UK, April 1-4, 2007 (pp. 21) (2007). : .
 
  93. citet:seven_hundred_data Fisher, K., Mandelbaum, Y., & Walker, D., The next 700 data description languages, J. {ACM, 57(2), 10–1–10–51 (2010).  http://dx.doi.org/10.1145/1667053.1667059
-* COMMENT appendix marker :ignore:
+* appendix marker :ignore:
 \appendix
 
 :Musa:
 The appendix marker must occur before the section on appendices.
 :End:
 
-* COMMENT Appendices
+* Appendices
 #+latex_header: \usepackage[toc,page]{appendix}
 
 # Appendices are for the details, and so have a smaller font.
 #+LaTeX: \setminted[agda]{fontsize=\footnotesize}
 
-Below is the entirety of the Context library discussed in the paper proper.
+Below is the entirety of the =Context= library.
 
+{{{code(The Context Library)}}}
 #+begin_src agda :tangle Context.agda
 -- Agda version 2.6.0.1
 -- Standard library version 1.2
@@ -13224,7 +13159,7 @@ Below is the entirety of the Context library discussed in the paper proper.
 module Context where
 #+end_src
 
-Also included are unit tests, evidence for claims made in the paper proper, and
+Also included are unit tests, evidence for claims made in the thesis proper, and
 a brief case-study on graphs to demonstrate some features of the Context library
 that are necessary for practical use, such as field projections, but which did
 not receive attention in the paper proper.
