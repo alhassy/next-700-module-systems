@@ -26,7 +26,35 @@
 + [X] you're missing a "lessons learned" section where you summarize the problems
   that have been encountered that need a solution.
 
+
+
 :END:
+
+:SOL_modules:
+@InProceedings{DBLP:conf/slp/Chen87,
+  author       = {Weidong Chen},
+  title        = {A Theory of Modules Based on Second-Order Logic},
+  year         = 1987,
+  booktitle    = {Proceedings of the 1987 Symposium on Logic Programming, San
+                  Francisco, California, USA, August 31 - September 4, 1987},
+  pages        = {24-33},
+  crossref     = {DBLP:conf/slp/1987},
+  timestamp    = {Wed, 04 Dec 2013 14:42:59 +0100},
+  biburl       = {https://dblp.org/rec/conf/slp/Chen87.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@proceedings{DBLP:conf/slp/1987,
+  title     = {Proceedings of the 1987 Symposium on Logic Programming, San Francisco,
+               California, USA, August 31 - September 4, 1987},
+  publisher = {{IEEE-CS}},
+  year      = {1987},
+  isbn      = {0-8186-0799-8},
+  timestamp = {Wed, 04 Dec 2013 14:42:58 +0100},
+  biburl    = {https://dblp.org/rec/conf/slp/1987.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+:End:
 
 :JC:
 #+begin_edcomm
@@ -69,7 +97,6 @@ E.g., sorting.
 :End:
 
 * COMMENT Proposed Outline
-
 1. Motivating the problem
    - Where has this problem been encountered in the wild?
    - What benefits would there be to solving this problem?
@@ -145,6 +172,8 @@ E.g., sorting.
 #+latex_header: \newunicodechar{⦃}{\ensuremath{\{\!\mid}}
 #+latex_header: \newunicodechar{⦄}{\ensuremath{\mid\!\}}}
 
+#+latex_header: \newunicodechar{⨁}{\ensuremath{\bigoplus}}
+
 #+latex_header: \newunicodechar{𝓉}{\ensuremath{t}}
 #+latex_header: \newunicodechar{𝓎}{\ensuremath{y}}
 #+latex_header: \newunicodechar{𝓅}{\ensuremath{p}}
@@ -195,7 +224,7 @@ E.g., sorting.
 #+LaTeX: \setminted[agda2]{fontsize=\footnotesize, breaklines}
 
 
-# LaTeX doesn't alow \def's in a \def; but a \def may occur in a \[re]newcommand.
+# LaTeX doesn't allow \def's in a \def; but a \def may occur in a \ [re]newcommand.
 # +LATEX_HEADER: \BeforeBeginEnvironment{listing}{ \let\oldcaption\caption \renewcommand{\caption}[1]{ \def\mytitle{#1} } }%
 # +LATEX_HEADER: \AfterEndEnvironment{listing}{ \let\caption\oldcaption }%
 # #
@@ -266,11 +295,9 @@ A custom version of the reports class which makes the outermost headings
 chapters, rather than parts.
 #+NAME: make-reports-class
 #+BEGIN_SRC emacs-lisp :results none
-(load-file "~/Dropbox/new-blocks.el")
-
 (setq org-latex-caption-above nil)
 
-  (add-to-list 'org-src-lang-modes '("agda" . haskell))
+(add-to-list 'org-src-lang-modes '("agda" . haskell))
 
 (add-to-list
   'org-latex-classes
@@ -404,7 +431,8 @@ Please resolve references before you ship PDF...
 
 #+latex: \newpage
 #+latex: \thispagestyle{empty}
-#+TOC: headlines 4
+#+latex: \tableofcontents
+# +TOC: headlines 4
 # Change the titles from “List of 𝒳” to something else.
 # +latex: \renewcommand{\listfigurename}{List of ???}
 # +latex: \renewcommand{\listtablename}{Tables}
@@ -412,7 +440,6 @@ Please resolve references before you ship PDF...
 #+latex: \listoftables
 
 #+latex: \newpage
-
 
 ** COMMENT Abstract                                                  :ignore:
  #
@@ -513,6 +540,8 @@ worked hard on.
 #+end_edcomm
 
 ** A Language Has Many Tongues
+
+<<sec:many_tongues>>
 
 #+begin_edcomm
 :ed: JC
@@ -675,8 +704,8 @@ you have.”
 *Main Observation* Packages, modules, theories, contexts, traits, typeclasses,
 interfaces, what have you all boil down to dependent records at the end of the
 day and /really differ/ in /how/ they are used or implemented. At the end of section
-ref:sec:lost we demonstrate various distinct presentations of such notions of packaging
-arising from a single package declaration.
+ref:sec:PF:practicality we demonstrate various distinct presentations of such
+notions of packaging arising from a single package declaration.
 
    # After discussing existing approach and foundations, along with the minimal
    # requirements of a candidate solution, we then present our preliminary findings
@@ -788,13 +817,13 @@ such expressive type systems necessitate certain constraints on these concepts
 according to their intended usage ---e.g., no multiple inheritance for Java's
 classes and only one instance for Haskell's typeclasses. It is not clear whether
 such constraints have been brought to more expressive languages out of
-necessity, convention, or convenience. Hence, in chapter ref:sec:three, we
-perform a systematic exploration of the structuring-mechanism design space for
-DTLs as a starting point for the design of an appropriate dependently-typed
-module system (section  ref:sec:four). Along the way, we intend to provide a set of
-atomic combinators that suffice as building blocks for generally desirable
-features of grouping mechanisms, and moreover we intend to provide an analyses
-of their interactions.
+necessity, convention, or convenience. Hence, in Section
+ref:sec:current_approaches, we perform a systematic exploration of the
+structuring-mechanism design space for DTLs as a starting point for the design
+of an appropriate dependently-typed module system (Section ref:sec:contexts). Along
+the way, we intend to provide a set of atomic combinators that suffice as
+building blocks for generally desirable features of grouping mechanisms, and
+moreover we intend to provide an analyses of their interactions.
 
 That is, we want to look at the edge cases of the design space for
 structuring-mechanism /systems/, not only what is considered convenient or
@@ -933,6 +962,8 @@ It has been an exciting journey, I hope you enjoy the ride!
 
 * Motivating the problem ---Examples from the Wild
 
+<<sec:examples_from_the_wild>>
+
 :Hide:
 #+begin_edcomm
 :ed: JC
@@ -1046,8 +1077,8 @@ of an algebraic structure share the same carrier and thus it is reasonable to
 connect the two somehow by a coherence axiom. Perhaps the most popular instance
 of this scenario is in the setting of rings: There is an additive monoid ~(R, +,
 1)~ and a multiplicative monoid ~(R, ×, 0)~ on the same underlying set ~R~, and their
-interaction is dictated by two distributivity axioms, such as ~a × (b + c) ≈ (a ×
-b) + (a × c)~. As with ~head~ above, depending on which features of a monoid are
+interaction is dictated by two distributivity axioms, such as
+~a × (b + c) ≈ (a×b) + (a × c)~. As with ~head~ above, depending on which features of a monoid are
 exposed upfront, such axioms may be either difficult to express or relatively
 easy.
 
@@ -1192,7 +1223,7 @@ solutions are, respectively:
 
 # #
 The ~open ⋯ public ⋯ renaming ⋯~ pattern shown below will be presented later,
-section ref:sec:lost, as a library method.
+section ref:sec:PF:practicality, as a library method.
 
 *** Renaming Problems from Agda's Standard Library
 
@@ -1825,8 +1856,8 @@ defaultOrder S = let open Semigroup S
    then /extend/ it with features as necessary. E.g., begin with ~Semigroup~
    then add orthogonal features until ~Monoid~ is reached. Extensions are also
    known by /subclassing/ or /inheritance/.
-
- #+BEGIN_SRC mermaid :file semigroup-to-monoid.png :theme default :background-color transparent  :tangle no :tangle no :exports results
+:hide:
+ #+BEGIN_SRC mermaid :file semigroup-to-monoid.png :theme default :background-color transparent  :tangle no :tangle no :exports results :noeval
 graph LR                          %% A “L”eft to “R”ight graph
 
 Semigroup[<strong>Semigroup</strong><br>carrier <br> binary operation <br> associativity law ]
@@ -1843,7 +1874,7 @@ PointedSemigroup --> RightUnitalSemigroup
 LeftUnitalSemigroup --> Monoid
 RightUnitalSemigroup --> Monoid
  #+END_SRC
-
+:end:
  #+RESULTS:
  [[file:semigroup-to-monoid.png]]
 
@@ -1987,6 +2018,8 @@ ideal module system for dependently-typed languages.
 
 *** Lessons Learned
 
+<<sec:DTL_design_patterns>>
+
    Systems tend to come with a pre-defined set of operations for built-in constructs;
    the user is left to utilise third-party pre-processing tools, for example, to
    provide extra-linguistic support for common repetitive scenarios they encounter.
@@ -2018,7 +2051,8 @@ ideal module system for dependently-typed languages.
  #    :END:
  # #
     # #+BEGIN_SRC mermaid  :file patterns.png :theme forest :background-color transparent
-   #+BEGIN_SRC mermaid  :file patterns.png :theme forest :exports results
+   :hide:
+   #+BEGIN_SRC mermaid  :file patterns.png :theme forest :exports results :noeval
 graph TD %% LR and TD are both also good!
 
 %% A(<br><hr> Carrier : Set <br> _⨾_ : Carrier → Carrier → Carrier <br> Id : Carrier)
@@ -2062,7 +2096,7 @@ subgraph  %% A subgraph environment places the legend in the top left, which is 
 Legend[<center>Legend</center>0. Parameters occur above the waist line <br> 1. Fields occur below the waist line <br> 2. Dashed lines are design patterns ]
 end
    #+END_SRC
-
+   :end:
    #+caption: PL Research is about getting free stuff: From the left-most node, we can get a lot!
    [[file:patterns.png]]
 
@@ -2155,6 +2189,8 @@ Fonts in drawings should not be smaller than the footnote font in the main text.
    fine-grained hierarchy of monoids.
 
 * Current Approaches
+
+<<sec:current_approaches>>
 
 #+begin_edcomm
 :ed: JC
@@ -2914,8 +2950,8 @@ intent, as summarised briefly in the table below.
  treated formally under the name of ‘glspl:theory-presentation’. It is the aim of
  this section to attest that the introduction's story is not completely on shaky
  foundations, thereby asserting that the aforementioned goals of the
- introduction are not unachievable ---and the problems that will be posed in
- ref:sec:lost are not trivial.
+ introduction are not unachievable ---and the problems that posed in
+ ref:sec:examples_from_the_wild are not trivial.
 
  As discussed, languages are usually designed with a bit more thought given to a
  first-class citizen notion of grouping than is given to second-class notions of
@@ -3119,12 +3155,12 @@ magma.
 
  #  {{{remark(WK: Then you should discuss it in more detail.)}}}
 
- In subsequent sections, ref:sec:prototype:morphisms and ref:sec:lost, we shall
- identify a number of views that are formed /syntactically/ and the fact that they
- are indeed views then becomes the need to mechanically provide certain values
- ---which by the propositions-as-types view means we mechanically provide
- certain “proofs of propositions”. Incidentally, moving forward, we shall
- consider an essentially untyped setting in which to perform such syntax
+ In subsequent sections, ref:sec:prototype:morphisms and ref:sec:PF:extension,
+ we shall identify a number of views that are formed /syntactically/ and the fact
+ that they are indeed views then becomes the need to mechanically provide
+ certain values ---which by the propositions-as-types view means we mechanically
+ provide certain “proofs of propositions”. Incidentally, moving forward, we
+ shall consider an essentially untyped setting in which to perform such syntax
  shuffling ---that is, even though we are tackling DTLs, we shall follow a
  JavaScript-like approach with essentially /one/ notion of grouping rather than a
  theory presentation approach with two notions.
@@ -3559,10 +3595,10 @@ involving library development.
  type variables and have them applied to radically different types. Likewise, it
  would be desirable to write once a generic function on a kind of package and
  have it operate on the many variations of packaging. An example of this idea is
- presented at the end of this section, section ref:lost. Moreover, we demonstrate a
+ presented in Section ref:sec:PF_scrap_repetition. Moreover, we demonstrate a
  novel form of generic programming, /package polymorphism/: A method is written
  against a generic notion of container and is then applied to derived notions
- ---such as the =Semigroupᵢ= forms from the previous section, section ref:lost.
+ ---such as the =Semigroupᵢ= forms from the previous section, see Section ref:sec:PF:extracting_little_theories.
 
 *** Uniformity
 
@@ -4501,7 +4537,7 @@ _ ≡⟨ refl ⟩ refl = refl
   + Within a module, we may have nested module declarations.
   + All names in a module are public, unless declared ~private~.
   #
-  #+begin_parallel4NB org
+  #+begin_4parallelNB org
   #+latex: \vspace{0.5em}
 {{{code( A Simple Module )}}}
   #+BEGIN_SRC agda
@@ -4569,7 +4605,7 @@ use′₁ = y
     open M′ 3
   #+END_SRC
 
-  #+end_parallel4NB
+  #+end_4parallelNB
 
   + Public names may be accessed by qualification or by opening them locally or globally.
   + Modules may be parameterised by arbitrarily many values and types ---but not by other modules.
@@ -5365,7 +5401,7 @@ open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
  our thesis that it is essentially /utility/ that distinguishes packages more than
  anything else. In particular, explicit distinctions have lead to a duplication
  of work where the same structure is formalised using different notions of
- packaging. In chapter ref:sec:lost we will show how to avoid duplication by
+ packaging. In chapter ref:sec:PF we will show how to avoid duplication by
  coding against a particular ‘package former’ rather than a particular variation
  thereof ---this is akin to a type former.
 ** Comparing Modules in Coq then in Agda
@@ -5803,15 +5839,19 @@ Type of functors do not η-reduce, and as such one cannot expect them to be appl
 
 * The Second Choice: =PackageFormer=
 
+<<sec:PF>>
+
+<<sec:module_meta_primitives_as_library_methods>>
+
+<<sec:metaprogramming_module_meta_primitives>>
+
 #+macro: fold
 #+macro: end-fold
 
+#+macro: fold $1
+#+macro: end-fold $1
 
-
-   #+macro: fold $1
-   #+macro: end-fold $1
-
- #+macro: goal |→$1←|
+#+macro: goal |→$1←|
 
  #+latex_header: \newunicodechar{⇨}{→}
  #+latex_header: \newunicodechar{➩}{→}
@@ -5869,7 +5909,7 @@ primitives for forming combinators on modules.
 The extension is written in Lisp, an excellent language for rapid prototyping.
 The purpose of writing the editor extension is to show that the ‘flattening’ of
 value terms and module terms is not only feasible, but practical.  The resulting
-tool resolves many of the issues discussed in section ref:lost, examples from the wild.
+tool resolves many of the issues discussed in section ref:sec:examples_from_the_wild.
 
 # Utility of a protottype?
 
@@ -5927,12 +5967,14 @@ modules.
   :CUSTOM_ID: Aim---Scrap-the-Repetition-
   :END:
 
+<<sec:PF_scrap_repetition>>
+
 Programming Language research is summarised, in essence, by the question: /“If 𝒳
 is written manually, what information 𝒴 can be derived for free?”/.  Perhaps the
 most popular instance is /type inference/: From the syntactic structure of an
 expression, its type can be derived. From a context, the =PackageFormer= tool can
-generate the many common design patterns discussed earlier in section ref:sec:lost,
-ref:DTL_design_patterns; such as unbundled variations of any number wherein
+generate the many common design patterns discussed earlier in Section
+ref:sec:DTL_design_patterns; such as unbundled variations of any number wherein
 fields are exposed as parameters at the type level, term types for syntactic
 manipulation, arbitrary renaming, extracting signatures, and forming
 homomorphism types.
@@ -6053,7 +6095,8 @@ With this understanding, we can explain the different ways to organise M-sets.
 
   Notice how ~Semantics𝒟~ was /built from/ a concrete context, namely the ~Semantics~
   record.  As such, every instance of ~Semantics𝒟~ can be transformed as an
-  instance of ~Semantics~: This view, section ref:lost, is automatically generated and
+  instance of ~Semantics~: This view ---see Section ref:sec:module_theory---
+  is automatically generated and
   named ~toSemantics~ above, by default. Likewise, ~Right-M-Set~ was derived from
   ~Left-M-Set~ and so we have automatically have a view ~Right-M-Set → Left-M-Set~.
 
@@ -6065,8 +6108,7 @@ With this understanding, we can explain the different ways to organise M-sets.
   Symbols that target =Set= are considered sorts and if we keep only the symbols
   targeting a sort, we have a signature.
 
-  By allowing symbols to be of type ~Set~, we actually have *generalised contexts*
-  [ref:lost].
+  By allowing symbols to be of type ~Set~, we actually have *generalised contexts*.
 
   {{{code(Termtypes and lawless presentations)}}}
   #+INCLUDE: "M-Set-generated.agda" src agda :lines "75-94"
@@ -6115,7 +6157,7 @@ something that works, is decently documented, and can be useful.
 :End:
 
 ** Practicality
-
+<<sec:PF:practicality>>
 *** Intro                                                            :ignore:
 
  # If the previous section is unclear regarding the aims and uses of this prototype,
@@ -6131,7 +6173,7 @@ something that works, is decently documented, and can be useful.
  The few constructs demonstrated in this section not only create new grouping
  mechanisms from old ones, but also create maps from the new, child,
  presentations to the old parent presentations. Maps between grouping mechanisms
- are sometimes called /views/, section  ref:sec:lost.  For example, a theory extended by
+ are sometimes called /views/, Section ref:sec:module_theory.  For example, a theory extended by
  new declarations comes equipped with a map that forgets the new declarations to
  obtain an instance of the original theory.  Such morphisms are tedious to write
  out, and our system provides them for free.  How? You, the user, can implement
@@ -6162,7 +6204,7 @@ import Relation.Binary.PropositionalEquality as ≡; open ≡ using (_≡_)
  # manual) for users to build what they want.
 
 *** Extension
-
+<<sec:PF:extension>>
 
     The simplest situation is where the presentation of one theory is included, verbatim, in another.
     Concretely, consider ~Monoid~ and ~CommutativeMonoid~.
@@ -6339,9 +6381,9 @@ record RelationalMagma : Set₁ where
     toRawRelationalMagma        : let View X = X in View RawRelationalMagma ;   toRawRelationalMagma = record {Carrier = Carrier;op = op;_≈_ = _≈_}
  #+END_SRC
 
- Regarding the idea that /“each piece of mathematical knowledge should be
- formalized only once”,/ see the paper [[https://inf.ug.edu.pl/~schwarzw/papers/mkm2010.pdf][On Duplication in Mathematical Repositories]]
- [ref:sec:lost].
+ The idea that /“each piece of mathematical knowledge should be formalised only
+ once”/ is prompted in cite:DBLP:conf/aisc/GrabowskiS10.
+ # see the paper [[https://inf.ug.edu.pl/~schwarzw/papers/mkm2010.pdf][On Duplication in Mathematical Repositories]]
 *** Renaming
     :PROPERTIES:
     :CUSTOM_ID: Renaming
@@ -6450,6 +6492,8 @@ record Sequential : Set₁ where
     :PROPERTIES:
     :CUSTOM_ID: Union
     :END:
+
+<<sec:PF:practicality:pushout>>
 
  But even with these features, given ~GroupR~, we would find ourselves writing:
  {{{code()}}}
@@ -6846,6 +6890,8 @@ module woah (M : MeetSemiLatticeR) where
     :CUSTOM_ID: Extracting-Little-Theories
     :END:
 
+<<sec:PF:extracting_little_theories>>
+
  The ~extended-by~ variational allows Agda users to easily employ the /tiny theories/ [citet:little_theories][mathscheme]
  approach to library design: New structures are built from old ones by augmenting one concept at a time,
  then one uses mixins such as ~union~, below, to obtain a complex structure.
@@ -7137,7 +7183,7 @@ $$\frac{\text{\texttt{𝒱-l a = r} is declared}}{p \,⟴\, l\, e ⟿ p \,⟴\, 
 # Declared variationals may have any number of arguments.
 
 Ideally variational definition would be rendered in Agda code;
-we will return to this issue in section ref:sec:lost.
+we will return to this issue in Section ref:sec:contexts.
 
 *Declaration Well-definedness Provisos*: A declaration ~l = r~ must satisfy:
 1. The name ~l~ is a string of consecutive symbols, if this is a context
@@ -10582,7 +10628,6 @@ pk decorated f = record { Name         = bimap id f pk.Name
  It would unsurprising if this approach yields
  the next 700 module systems.
 
-
 ** Contributions
 
 1. Expressive & extendable specification language for the library developer.
@@ -10639,8 +10684,10 @@ pk decorated f = record { Name         = bimap id f pk.Name
 # 2. Realise this for Agda, likely using an editor-extension.
 # 3. Provide a semantics to the existing syntax.
 # 4. Ensure the resulting semantics is consistent with that of Agda's.
-#
+
 * The Third Choice: Contexts
+
+<<sec:contexts>>
 
   # Similar to \framebox and \fbox, we get \dbox and \dashbox[width][pos]{text}
   # Also get \lbox[#layers]{text} for layered boxes and \dlbox[layers]{text} for
@@ -11435,6 +11482,7 @@ module termtype[Collection]≅List where
 
 ** Related Works
    <<sec:related-works>>
+   <<sec:context:related-works>>
 
    Surprisingly, conflating parameterised and non-parameterised record types
    with termtypes /within a language in a practical fashion/ has not been done before.
@@ -11735,6 +11783,255 @@ comap f ⟨ edgs ⟩₁ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩₁
    allow arbitrary grouping mechanisms to be derived, such as obtaining the
    homomorphism type of a given record.
  #+end_abstract
+* Discussion, Conclusion, and Future Work
+
+<<sec:conclusion>>
+
+# Conclusion
+#   - What we have done
+#   - How it is useful to others, now.
+
+As discussed in the introduction, Section ref:sec:many_tongues, there is a lack of a
+unified and practical language for dealing with grouping mechanisms as standard
+and unexceptional /values/.  In an effort to address this issue, this thesis has
+presented a framework for modelling grouping mechanisms as first class values.
+This framework aids in advancing the current understanding of grouping
+mechanisms ---as summarised in the table below.
+
+| Grouping Mechanism | Distinguishing Features                                      |
+|--------------------+------------------------------------------------------------|
+| =record=             | Opaque /fields/                                              |
+| =data=               | Uninterpreted /constructors/                                 |
+| =module=             | Namespacing for derived results or definitional extensions |
+| =Context=            | Mixture of fields, constructors, and derived results       |
+
+This chapter summarises and discusses the contributions of this thesis and
+points to future research directions resulting from this work.  Specifically,
+Section ref:sec:conclusion:contributions highlights, discuss, and assesses the
+contributions that are made by this thesis. Section ref:sec:conclusion:futurework
+suggests avenues for future work resulting from the prototypical =PackageFormer=
+framework, and its applications and tools. Finally, Section
+ref:sec:conclusion:closing makes final comments and closing remarks.
+
+** Highlights of the Contributions
+<<sec:conclusion:contributions>>
+
+
+The contributions related to the proposed framework for the modelling grouping
+mechanisms as first class values include:
+
+1. *Necessary conditions for the first-class grouping mechanisms:*
+
+   This thesis proposed a set of necessary conditions for a programming language
+   to treat grouping mechanisms as ordinary values.  If the language provides a
+   fixed-point operator and metaprogramming, then algebraic data types can be
+   obtained from contexts. The minimal number of constraints aid in advancing
+   the current understanding of grouping mechanisms by serving as a basis
+   permitting exotic notions of grouping to be experimented with ---such as
+   soundly deriving homomorphism types from a given context declaration.
+
+2. *Specification of the relationships between grouping mechanisms:*
+
+   This thesis builds atop well-established foundations
+   but /without dictatorially declaring/ what grouping mechanisms are ‘useful’
+   and which should be omitted. Instead, we provide primitives from which new
+   grouping notions may be derived. This is akin to a programming language
+   providing a set of combinators from which complex programs may be constructed.
+
+3. *Two tools to experiment with new notions of grouping mechanisms:*
+
+   This thesis provides the dynamic =PackageFormer= Emacs extension for /rapid,
+   albeit practical, prototyping/ of new notions of grouping mechanisms.  For
+   example, as discussed in Section ref:sec:PF:practicality:pushout, partial
+   choices of pushouts can be quickly expressed and usefully so.  In contrast,
+   the thesis also provides the =Context= library for /sound, typechecked,/
+   developments of new notions of grouping mechanisms.
+
+4. *Two semantics for a practical and pragmatic tool for developing grouping
+   mechanisms:*
+
+   This thesis provides a rewrite-based semantics for the
+   =PackageFormer= Emacs editor extension, as well as interpreting
+   its syntax as semantically as Agda-functions via the correspondence
+   with =Context= outlined in Section ref:sec:context:related-works.
+
+5. *Numerous examples of common grouping mechanisms:*
+
+   This thesis presented a number of way to group data together, in the setting
+   of =PackageFormer= in Section ref:sec:PF:practicality, with many more
+   formalised in the tool's online repository[fn:12]. The usability of these
+   notions of grouping mechanisms were found by exploring existing libraries on
+   dependently typed languages, in Section ref:sec:examples_from_the_wild, which
+   then led us to provide a listing of ‘design patterns for dependently typed
+   languages’.
+
+** Future Work
+
+<<sec:conclusion:futurework>>
+
+The frameworks presented in this thesis can be extended in a number of
+different directions. The following subsections describe possible
+extensions and further work with respect to the proposed framework
+and applications thereof.
+
+*** Theory: Models and Techniques
+
+Concerning the proposed framework for capturing the relationships of
+grouping mechanisms, the following directions can be explored:
+
+1. An investigation into providing more, and potentially better semantical
+   models, of =PackageFormer= ought to be undertaken. For instance, since
+   grouping mechanisms are about organising data and we wish to treat
+   them as first-class citizens, a natural semantics would be using
+   a form of closed categories, institutions, or rooms and corridors
+   cite:institution_interpretations,institutions,cats_logic_shulman,dtl_cat_correspondences,Z_categorical,modules_categorically.
+
+2. Further investigation into the interplay between external and internal
+   grouping mechanisms. For instance, in Agda record projections can be costly
+   cite:perna but every record-valued function is essentially a
+   parameterised module, so an automatic shift in tools could result in
+   increased efficiency.
+
+3. A further study into the relationships between the module primitives
+   and the ambient type theories is needed. For example, one can study how
+   different λ-calculi can be used in place of the MLTT-fragment in our
+   initial semantics for =PackageFormer=. This can allow for flexible representations
+   and varying degrees of expressivity. Moreover, such an investigation can
+   allow for different way to reason about modules, such as using a little
+   theories approach cite:little_theories.
+
+4. There are a number of directions that can be explored with regard to a
+   re-implementation of the =Context= library. For example, sufficiently careful
+   definitions could be used to mitigate the need to side-step Agda's
+   termination checker. Moreover, rather than leap to =do=-notation there is an
+   interesting class of modules that could be defined using an applicative
+   structure ---a sort-of Cartesian functor. Such modules would consist of
+   entities that are defined independently of each other and thus the order of
+   their declaration is essentially irrelevant, and as such could provide
+   an opportunity for optimisation.
+
+5. With regard to the existing representation of =Context=, there are a number of
+   possible extensions. For example, rather than simply using Σ and Π based on
+   whether the exposure is zero or not, what if the library were parameterised
+   by a /family/ of such ‘binding quantifiers’, say /⨁/, and for each level of
+   exposure /n/ we used the quantifier /⨁ₙ/.  For instance, we may be interested in
+   interleaving arbitrary meets and joins of a complete lattice rather
+   than just consider types.
+
+6. The =Context= semantics to =PackageFormer='s =:alter-elements= sledgehammer is the
+   notion of Agda macros. It would be ideal to consider well-behaved
+   approximations to this primitive that also have well-behaved semantical
+   counterparts. This would necessitate an investigation into what people
+   actually want to do to the components of a module and how to do so
+   coherently. From our experience of implementing multiple notions of modules,
+   we feel that =p :alter-elements f= will likely be a colimit construction so as
+   to account for possibly ‘dangling edges’ when deletion happens and to also
+   account for ‘gluing components’ when items are identified.
+
+7. The material presented in Chapter 5 ref:sec:PF:practicality can serve as the
+   basis for many future research directions into /mechanising/ notions of
+   grouping mechanisms. In particular, work can be done in order to further
+   articulate how constructions from universal algebra can be used to produce
+   useful notions of grouping mechanisms.
+
+*** Applications
+
+With respect to the possible applications of the proposed framework,
+the following directions can be investigated further.
+
+1. The range of the application domain of =Context= can be explored further.  Such
+   domains include the λ-calculi of programming languages with varying degrees
+   of type expressivity ----from unityped to dependently-typed languages. This
+   can lead to new and innovative ways to think and reason about modular
+   programming in such systems, as well as to provide insight into the interplay
+   between seemingly different notions of modularisation.  For example, by
+   modelling the C language's =#include= approach to modules using =Context=, it may
+   be possible to mechanically derive algebraic data types which may act as a
+   ‘description language’ for the purposes of serialisation.
+
+2. A study of how the proposed framework can be used to support the treatment of
+   modules as standard values /derivable/ from other values is another fruitful
+   future research opportunity.  For example, a constant is essentially a module
+   consisting of one entity, whereas a function is essentially a parameterised
+   module. It would be interesting to see which properties of functions could be
+   transformed into ideas about modules; here is a preliminary sketch.
+
+   | Functional concept | Modular counterpart     |
+   |--------------------+-------------------------|
+   | Application        | Parameter instantiation |
+   | λ-abstraction      | Module formation        |
+   | Currying           | Module nesting          |
+   | Continuations      | ???                     |
+
+   Continuations, also known as ‘generalised double negation’, can be used to
+   provide structural control-flow and, specialised as difference lists, provide
+   efficiency gains. Perhaps similar benefits lie on the side of modules.
+
+3. An exploration into how the proposed framework could be used to ‘discover’
+   modular patterns in existing systems for the purposes of releasing modular
+   libraries /after/ an initial library has been written.
+   This could allow library developers to rapidly produce systems
+   with, say, ‘specification hints’ to guide the automation of discovering
+   certain kinds of packaging structures and hierarchical organisations.
+
+4. Further investigations into how contexts can be developed such that the
+   resulting interplay of contexts, within a system, exhibit a set of desirable
+   properties, such as well-behaved cyclic dependencies.  This can lead to new
+   and innovative ways to construct modules.  In conjunction with the previous
+   item, this can be used in new applications of modules such as large-scale
+   refactoring of libraries, say, by requesting the pullback, ‘intersection’, of
+   two libraries to find their well-behaved, implicitly shared, common parent
+   module. More concretely, in object-oriented programming, this is tantamount
+   to taking two classes ~Q, R~ and requesting they be re-factored by introducing
+   a new parent ~P~ class with children classes ~Q′, R′~ which are /observationally
+   indistinguishable/ from ~Q, R~.
+
+*** Tools and Automation
+
+This thesis developed a prototype tool, =PackageFormer=, to mitigate the amount of
+duplication present in designing a library by declaratively specifying how new
+packages are to be formed from existing ones. Moreover, the =Context= library has
+been developed in order to provide a type-checked analogue; thereby, showing
+that the treatment of modular values is promising in languages with sufficient
+power. There are a number of ways in which these tools can be enhanced and
+extended to provide a more comprehensive tool for specifying packages.
+
+1. The prototype tool can be enhanced by further testing.  In particular,
+   further work into investigating ways in which the tool can be used to model
+   commonly occurring notions of packaging as inspired by universal algebra and
+   category theory, such as forming products and limits, then proving coherence
+   results.
+
+2. The prototype tool can be extended by incorporating the functionality to
+   support ‘discovarability’. Currently, the prototype can be programmed by
+   the user to form intersections of packages, but this only results in a new
+   package rather than in a new /library/. Given one library, we would like to
+   produce a new library where discovered shared packages are factored-out.
+
+3. The prototype provides rapid development whereas the =Contenxt= library gives
+   rise to analysis and verification, as such it would be beneficial for the
+   prototype tool to interface directly with =Context=.
+
+# - Asts for PF
+
+# - More power for Context
+
+** Closing Remarks
+<<sec:conclusion:closing>>
+
+The treatment of packages as unexceptional values is an ongoing and ambitious
+endeavour, particular with the respect to the increasing connectedness
+and complexity of large software developments.
+A reduction in the number of tongues that a user needs to be familiar with
+in a programming language reduces accessibility barriers, thereby reducing
+the amount of repetitive code.
+
+Using the little theories approach cite:little_theories to software development
+can mitigate duplication of code. However, it is unreasonable and impractical to
+always enforce a disciplined and fine-grained approach to developing software.
+Instead, the prototype allows /after the fact/ library refactoring by specifying
+relationships between grouping mechanisms ---as demonstrated in Section ref:sec:PF:extracting_little_theories.
+# See the example on the PF website for extracting a proof for Id²≈Id
 * COMMENT Conclusion
 ** What we have done
 ** How it is useful to others, now.
@@ -12377,21 +12674,7 @@ data Π (A : Set) (B : A → Set) : Set where
 Γ ⊢ proj₂ e : B[x ≔ proj₁ e]
  #+END_SRC
 
-* TODO Sections not yet written
-
-<<sec:lost>>
-<<sec:three>>
-<<sec:four>>
-
-<<sec:examples_from_the_wild>>
-
-<<sec:metaprogramming_module_meta_primitives>>
-
-<<sec:module_meta_primitives_as_library_methods>>
-
-<<sec:conclusion>>
-
-** COMMENT [!] section 4? curapr ← Solution Requirements
+* COMMENT [!] section 4? curapr ← Solution Requirements
    :PROPERTIES:
    :CUSTOM_ID: solution_requirements
    :END:
@@ -12628,7 +12911,7 @@ translate₀ {B} AS f surj inj = record { Carrier = B ; _⨾_ = _⨾_ ; assoc = 
   appropriate level of abstraction to pose the problem. Instead, it would be
   ideal to write the method at a sufficient level of generality such that
   ~translate₀~ and ~translate₁~ are, say, polymorphic instances thereof. This is what
-  we shall propose in a later section, section ref:sec:lost. More generally, notice that
+  we shall propose in a later section, section ref:sec:PF. More generally, notice that
   ~Semigroupᵢ~ is a type constructor consuming 𝒾-many arguments, which are also
   arguments to ~translateᵢ~. The ideal context to phrase the translation result is
   with ~𝒾 = 1~, but we also want to be able to apply it for the other possible
@@ -12715,7 +12998,7 @@ translate₀ {B} AS f surj inj = record { Carrier = B ; _⨾_ = _⨾_ ; assoc = 
    meta-programming thereby leaving the realm of types altogether.
    Possible limitations on these features may result in the thesis efforts
    to implement them in a dependently-typed system, such as Agda.
-** COMMENT Semantics Continued ← the second choice
+* COMMENT Semantics Continued ← the second choice
 
  *Intuitively, the nature of the meta-primitives:*
  1. A ~PackageFormer~ is a context, a signature, an essentially algebraic theory of Freyd, or a generalised algebraic theory of Cartmell.
@@ -12950,192 +13233,6 @@ These papers come from people!
 #+LaTeX: \addcontentsline{toc}{part}{References}
 #+LaTeX: \printbibliography
 
-** COMMENT literal
-  1. citet:haskell_modules_formally Diatchki, I. S., Jones, M. P., & Hallgren, T., A formal specification of the Haskell 98 module system , In ,  (pp. 17–28) (). : .
-
-  2. citet:haskell_in_haskell Sheard, T., Harrison, W., & Hook, J., Modeling the fine control of demand in haskell. (2001). Unpublished manuscript.
-
-  3. citet:classic_haskell_genericity Sheard, T., Generic unification via two-level types and parameterized modules, In , ICFP 2001 (pp. ) (). : acm press.
-
-  4. citet:modular_modules Leroy, X., A modular module system, J. Funct. Program., 10(3), 269–303 (2000).  http://dx.doi.org/10.1017/S0956796800003683
-
-  5. citet:acsl Brito, E., & Pinto, J. S., Program verification in SPARK and ACSL: A comparative case study, In , Reliable Software Technologiey - Ada-Europe 2010, 15th Ada-Europe International Conference on Reliable Software Technologies, Valencia, Spain, June 14-18, 2010. Proceedings (pp. 97–110) (2010). : .
-
-  6. citet:programatica Hallgren, T., Hook, J., Jones, M. P., & Kieburtz, R. B., An overview of the programatica toolset, In , HCSS '04 (pp. ) (). : .
-
-  7. citet:frama_c Volkov, G., Mandrykin, M. U., & Efremov, D., Lemma functions for frama-c: C programs as proofs, CoRR, abs/1811.05879(),  (2018).
-
-  8. citet:knuth_lp Knuth, D. E., Literate Programming, Comput. J., 27(2), 97–111 (1984).  http://dx.doi.org/10.1093/comjnl/27.2.97
-
-  9. citet:haskell_backpack Kilpatrick, S., Dreyer, D., Simon L. Peyton Jones, & Marlow, S., Backpack: retrofitting haskell with interfaces, In , The 41st Annual {ACM} {SIGPLAN-SIGACT} Symposium on Principles of Programming Languages, {POPL} '14, San Diego, CA, USA, January 20-21, 2014 (pp. 19–32) (2014). : .
-
- 10. citet:lenses !!! No entry found !!!
-
- 11. citet:coq_cat_experiences !!! No entry found !!!
-
- 12. citet:perna Perna, N., (re-)creating sharing in agda's ghc backend (2017).
-
- 13. citet:maude_module_algebra Francisco Dur\'an, & Jos\'e Meseguer, Maude's module algebra, Sci. Comput. Program., 66(2), 125–153 (2007).  http://dx.doi.org/10.1016/j.scico.2006.07.002
-
- 14. citet:B_reuse Blazy, S., Fr\'ed\'eric Gervais, & R\'egine Laleau, Reuse of specification patterns with the B method, CoRR, abs/cs/0610097(),  (2006).
-
- 15. citet:sec:three !!! No entry found !!!
-
- 16. citet:sec:four !!! No entry found !!!
-
- 17. citet:types_for_modules Dreyer, D., Crary, K., & Harper, R., A type system for higher-order modules, In , Conference Record of {POPL} 2003: The 30th {SIGPLAN-SIGACT} Symposium on Principles of Programming Languages, New Orleans, Louisisana, USA, January 15-17, 2003 (pp. 236–249) (2003). : .
-
- 18. citet:dtls_give_modules MacQueen, D. B., Using dependent types to express modular structure, In , Conference Record of the Thirteenth Annual {ACM} Symposium on Principles of Programming Languages, St. Petersburg Beach, Florida, USA, January 1986 (pp. 277–286) (1986). : .
-
- 19. citet:deriving_via Baldur Bl\"ondal, Andres L\"oh, & Scott, R., Deriving via: or, how to turn hand-written instances into an anti-pattern, In , Proceedings of the 11th {ACM} {SIGPLAN} International Symposium on Haskell, Haskell@ICFP 2018, St. Louis, MO, USA, September 27-17, 2018 (pp. 55–67) (2018). : .
-
- 20. citet:hasochism Lindley, S., & McBride, C., Hasochism: the pleasure and pain of dependently typed haskell programming, In , Proceedings of the 2013 {ACM} {SIGPLAN} Symposium on Haskell, Boston, MA, USA, September 23-24, 2013 (pp. 81–92) (2013). : .
-
- 21. citet:10.1145/1411204.1411213 Oury, N., & Swierstra, W., The power of pi, In , Proceedings of the 13th ACM SIGPLAN International Conference on Functional Programming (pp. 39–50) (2008). New York, NY, USA: Association for Computing Machinery.
-
- 22. citet:DBLP:conf/gpce/Al-hassyCK19 Musa Al-hassy, Carette, J., & Kahl, W., A language feature to unbundle data at will (short paper), In I. Schaefer, C. Reichenbach, & T. v. d. Storm, Proceedings of the 18th {ACM} {SIGPLAN} International Conference on Generative Programming: Concepts and Experiences, {GPCE} 2019, Athens, Greece, October 21-22, 2019 (pp. 14–19) (2019). : ACM.
-
- 23. citet:LF_practical_module_system Rabe, F., & Carsten Sch\"urmann, A practical module system for LF, In , Proceedings of the Fourth International Workshop on Logical Frameworks and Meta-Languages: Theory and Practice, {LFMTP} '09, McGill University, Montreal, Canada, August 2, 2009 (pp. 40–48) (2009). : .
-
- 24. citet:named_instances Kahl, W., & Scheffczyk, J., Named instances for haskell type classes, In ,  (pp. ) (2001). : .
-
- 25. citet:type_inference_in_math !!! No entry found !!!
-
- 26. citet:understanding_typescript Bierman, G. M., Mart\'\in Abadi, & Torgersen, M., Understanding Typescript, In , ECOOP} 2014 - Object-Oriented Programming - 28th European Conference, Uppsala, Sweden, July 28 - August 1, 2014. Proceedings (pp. 257–281) (2014). : .
-
- 27. citet:little_theories Farmer, W. M., Guttman, J. D., & Javier Thayer, F., Little theories, In D. Kapur, Automated Deduction---CADE-11 (pp. 567–581) (1992). Berlin, Heidelberg: Springer Berlin Heidelberg.
-
- 28. citet:coq_canonical Gonthier, G., Ziliani, B., Nanevski, A., & Dreyer, D., How to make ad hoc proof automation less ad hoc, J. Funct. Program., 23(4), 357–401 (2013).  http://dx.doi.org/10.1017/S0956796813000051
-
- 29. citet:coq_canonical_tutorial Mahboubi, A., & Tassi, E., Canonical structures for the working coq user, In S. Blazy, C. Paulin, & D. Pichardie, ITP 2013, 4th Conference on Interactive Theorem Proving (pp. 19–34) (2013). Rennes, France: Springer.
-
- 30. citet:wiki_proof_assistants !!! No entry found !!!
-
- 31. citet:agda_overview Bove, A., Dybjer, P., & Norell, U., A brief overview of Agda --- A functional language with dependent types, In , Theorem Proving in Higher Order Logics, 22nd International Conference, TPHOLs 2009, Munich, Germany, August 17--20, 2009. Proceedings (pp. 73–78) (2009). : .
-
- 32. citet:agda_web Jeffrey, A., Dependently typed web client applications - FRP in agda in HTML5, In , Practical Aspects of Declarative Languages - 15th International Symposium, {PADL} 2013, Rome, Italy, January 21-22, 2013. Proceedings (pp. 228–243) (2013). : .
-
- 33. citet:coq_implementation Paulin-Mohring, C., The calculus of inductive definitions and its implementation: the coq proof assistant, In ,  (pp. ) (). : .
-
- 34. citet:coq_four_colour !!! No entry found !!!
-
- 35. citet:coq_compcert !!! No entry found !!!
-
- 36. citet:tacticstype !!! No entry found !!!
-
- 37. citet:purposes_of_proof !!! No entry found !!!
-
- 38. citet:coq_manual The Coq Development Team, The coq proof assistant, version 8.8.0 (2018).
-
- 39. citet:maude , All about maude - A high-performance logical framework, how to specify, program and verify systems in rewriting logic (2007), : Springer.
-
- 40. citet:casl_overview Astesiano, E., Bidoit, M., H\'el\`ene Kirchner, Bernd Krieg-Br\"uckner, Mosses, P. D., Sannella, D., & Tarlecki, A., CASL: the common algebraic specification language, Theor. Comput. Sci., 286(2), 153–196 (2002).  http://dx.doi.org/10.1016/S0304-3975(01)00368-1
-
- 41. citet:idris_main Brady, E. C., IDRIS --- systems programming meets full dependent types, In , Proceedings of the 5th ACM workshop on Programming languages meets program verification (pp. 43–54) (2011). New York, NY, USA: ACM.
-
- 42. citet:idris_website !!! No entry found !!!
-
- 43. citet:idris_faq !!! No entry found !!!
-
- 44. citet:lean_system_desc Leonardo Mendon\cca de Moura, Kong, S., Avigad, J., Doorn, F. v., & Raumer, J. v., The lean theorem prover (system description), In , Automated Deduction - {CADE-25} - 25th International Conference on Automated Deduction, Berlin, Germany, August 1-7, 2015, Proceedings (pp. 378–388) (2015). : .
-
- 45. citet:ats_website !!! No entry found !!!
-
- 46. citet:fstar_website !!! No entry found !!!
-
- 47. citet:beluga Pientka, B., Beluga: programming with dependent types, contextual data, and contexts, In , Functional and Logic Programming, 10th International Symposium, {FLOPS} 2010, Sendai, Japan, April 19-21, 2010. Proceedings (pp. 1–12) (2010). : .
-
- 48. citet:mizar_website !!! No entry found !!!
-
- 49. citet:locales Ballarin, C., Locales and locale expressions in isabelle/isar, In , Types for Proofs and Programs, International Workshop, {TYPES} 2003, Torino, Italy, April 30 - May 4, 2003, Revised Selected Papers (pp. 34–50) (2003). : .
-
- 50. citet:prl_site !!! No entry found !!!
-
- 51. citet:girard_paradox Coquand, T., An analysis of girard's paradox, In , Proceedings of the Symposium on Logic in Computer Science {(LICS} '86), Cambridge, Massachusetts, USA, June 16-18, 1986 (pp. 227–236) (1986). : .
-
- 52. citet:pvs_prover !!! No entry found !!!
-
- 53. citet:twelf_site !!! No entry found !!!
-
- 54. citet:lf_meta_mechanisation !!! No entry found !!!
-
- 55. citet:lf_practical_modules Rabe, F., & Carsten Sch\"urmann, A practical module system for LF, In , Proceedings of the Fourth International Workshop on Logical Frameworks and Meta-Languages: Theory and Practice, {LFMTP} '09, McGill University, Montreal, Canada, August 2, 2009 (pp. 40–48) (2009). : .
-
- 56. citet:matita_main Asperti, A., Coen, C. S., Tassi, E., & Zacchiroli, S., Crafting a proof assistant, In , Types for Proofs and Programs, International Workshop, {TYPES} 2006, Nottingham, UK, April 18-21, 2006, Revised Selected Papers (pp. 18–32) (2006). : .
-
- 57. citet:dtl_imperative Nanevski, A., Morrisett, G., Shinnar, A., Govereau, P., & Birkedal, L., Ynot: dependent types for imperative programs, In , Proceeding of the 13th {ACM} {SIGPLAN} international conference on Functional programming, {ICFP} 2008, Victoria, BC, Canada, September 20-28, 2008 (pp. 229–240) (2008). : .
-
- 58. citet:theories_as_types Dennis M\"uller, Rabe, F., & Kohlhase, M., Theories as types, In , Automated Reasoning - 9th International Joint Conference, {IJCAR} 2018, Held as Part of the Federated Logic Conference, FloC 2018, Oxford, UK, July 14-17, 2018, Proceedings (pp. 575–590) (2018). : .
-
- 59. citet:tpc Carette, J., & O’Connor, R., Theory Presentation Combinators, Intelligent Computer Mathematics, (), 202–215 (2012).  http://dx.doi.org/10.1007/978-3-642-31374-5_14
-
- 60. citet:theory_interpretations_farmer  (Eds.),  (1993). : Springer-Verlag.
-
- 61. citet:mlt_partial Palmgren, E., & Viggo Stoltenberg-Hansen, Domain interpretations of martin-l\"of's partial type theory, Ann. Pure Appl. Logic, 48(2), 135–196 (1990).  http://dx.doi.org/10.1016/0168-0072(90)90044-3
-
- 62. citet:typeclasses_for_maths Spitters, B., & Weegen, E. v. d., Type classes for mathematics in type theory, Mathematical Structures in Computer Science, 21(4), 795–825 (2011).  http://dx.doi.org/10.1017/S0960129511000119
-
- 63. citet:dtl_why !!! No entry found !!!
-
- 64. citet:cats_logic_shulman !!! No entry found !!!
-
- 65. citet:rig_computation !!! No entry found !!!
-
- 66. citet:packaging_mathematical_structures Garillot, Fran\c cois, Gonthier, G., Mahboubi, A., & Rideau, L., Packaging Mathematical Structures, In T. Nipkow, & C. Urban, Theorem Proving in Higher Order Logics (pp. ) (2009). Munich, Germany: Springer.
-
- 67. citet:realms !!! No entry found !!!
-
- 68. citet:RATH !!! No entry found !!!
-
- 69. citet:ambiguous_parsing Coen, C. S., & Zacchiroli, S., Efficient ambiguous parsing of mathematical formulae, Mathematical Knowledge Management, (), 347–362 (2004).  http://dx.doi.org/10.1007/978-3-540-27818-4_25
-
- 70. citet:mathscheme !!! No entry found !!!
-
- 71. citet:Norell-2007 Norell, U., Towards a practical programming language based on dependent type theory (Doctoral dissertation) (2007). Dept.\null{} Comp.\null{} Sci.\null{} and Eng., Chalmers Univ.\null{} of Technology, .
-
- 72. citet:agda_std_lib !!! No entry found !!!
-
- 73. citet:Hales-blog-post !!! No entry found !!!
-
- 74. citet:Bird_2009 Bird, R., Thinking functionally with Haskell, , (),  (2009).  http://dx.doi.org/10.1017/cbo9781316092415
-
- 75. citet:DBLP:conf/hopl/HudakHJW07 Hudak, P., Hughes, J., Simon L. Peyton Jones, & Wadler, P., A history of Haskell: being lazy with class, In B. G. Ryder, & B. Hailpern, Proceedings of the Third {ACM} {SIGPLAN} History of Programming Languages Conference (HOPL-III), San Diego, California, USA, 9-10 June 2007 (pp. 1–55) (2007). : ACM.
-
- 76. citet:data_monoid !!! No entry found !!!
-
- 77. citet:DBLP:journals/jfp/Swierstra08 Swierstra, W., Data types \`a la carte, J. Funct. Program., 18(4), 423–436 (2008).  http://dx.doi.org/10.1017/S0956796808006758
-
- 78. citet:alhassy_thesis_proposal !!! No entry found !!!
-
- 79. citet:10.5555/229872 Graham, P., Ansi Common Lisp (1995), USA: Prentice Hall Press.
-
- 80. citet:DBLP:conf/europar/StanisicL14 Stanisic, L., & Legrand, A., Effective reproducible research with org-mode and git, In L. M. B. Lopes, J. Zilinskas, A. Costan, R. G. Cascella, G. Kecskemeti, E. Jeannot, M. Cannataro, L. Ricci, S. Benkner, S. Petit, V. Scarano, J. Gracia, S. Hunold, S. L. Scott, S. Lankes, C. Lengauer, J. Carretero, J. Breitbart, M. Alexander, .., Euro-Par 2014: Parallel Processing Workshops - Euro-Par 2014 International Workshops, Porto, Portugal, August 25-26, 2014, Revised Selected Papers, Part {I (pp. 475–486) (2014). : Springer.
-
- 81. citet:10.5555/235337 Woodcock, J., & Davies, J., Using Z: specification, refinement, and proof (1996), USA: Prentice-Hall, Inc.
-
- 82. citet:lof_constructive_math Martin-L\"of, P., Constructive mathematics and computer programming, In , Proc. Of a Discussion Meeting of the Royal Society of London on Mathematical Logic and Programming Languages (pp. 167–184) (1985). Upper Saddle River, NJ, USA: Prentice-Hall, Inc.
-
- 83. citet:coq_website !!! No entry found !!!
-
- 84. citet:coq_inductive_coc Pfenning, F., & Christine Paulin-Mohring, Inductively defined types in the calculus of constructions, In , Mathematical Foundations of Programming Semantics, 5th International Conference, Tulane University, New Orleans, Louisiana, USA, March 29 - April 1, 1989, Proceedings (pp. 209–228) (1989). : .
-
- 85. citet:tactics Kamal Aboul-Hosn, A proof-theoretic approach to tactics, In , Mathematical Knowledge Management, 5th International Conference, {MKM} 2006, Wokingham, UK, August 11-12, 2006, Proceedings (pp. 54–66) (2006). : .
-
- 86. citet:agda_iowa_book Stump, A., Verified functional programming in agda (2016), New York, NY, USA: Association for Computing Machinery and Morgan \&\#38; Claypool.
-
- 87. citet:agda_docs !!! No entry found !!!
-
- 88. citet:seven_hundred_langs Landin, P. J., The next 700 programming languages, Commun. {ACM, 9(3), 157–166 (1966).  http://dx.doi.org/10.1145/365230.365257
-
- 89. citet:seven_hundred_tt_models Boulier, S., Pierre-Marie P\'edrot, & Tabareau, N., The next 700 syntactical models of type theory, In , Proceedings of the 6th {ACM} {SIGPLAN} Conference on Certified Programs and Proofs, {CPP} 2017, Paris, France, January 16-17, 2017 (pp. 182–194) (2017). : .
-
- 90. citet:seven_hundred_provers Paulson, L. C., Isabelle: the next 700 theorem provers, CoRR, cs.LO/9301106(),  (1993).
-
- 91. citet:seven_hundred_hoas Felty, A. P., Momigliano, A., & Pientka, B., The next 700 challenge problems for reasoning with higher-order abstract syntax representations - part 2 - A survey, J. Autom. Reasoning, 55(4), 307–372 (2015).  http://dx.doi.org/10.1007/s10817-015-9327-3
-
- 92. citet:seven_hundred_libraries Ant\'onio Menezes Leit\~ao, The next 700 programming libraries, In , International Lisp Conference, {ILC} 2007, Cambridge, UK, April 1-4, 2007 (pp. 21) (2007). : .
-
- 93. citet:seven_hundred_data Fisher, K., Mandelbaum, Y., & Walker, D., The next 700 data description languages, J. {ACM, 57(2), 10–1–10–51 (2010).  http://dx.doi.org/10.1145/1667053.1667059
 * appendix marker :ignore:
 \appendix
 
@@ -14186,13 +14283,15 @@ comap′ f ⟨ edgs ⟩¹ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩¹
 
     #+latex: \vspace{1em}\noindent
     Excellent, we can unbundle at will.
-* footer                                                             :ignore:
+* prologue                                                           :ignore:
 
  # Local Variables:
  # eval: (progn (org-babel-goto-named-src-block "make-reports-class") (org-babel-execute-src-block))
  # End:
 
 * Footnotes
+[fn:12]
+https://alhassy.github.io/next-700-module-systems/prototype/package-former.html
 
 [fn:11] The method call ~(s-replace old new s)~ replaces all occurrences of string
 ~old~ by ~new~ in the given string ~s~; whereas ~(pcase e (x₀ y₀) … (xₙ yₙ))~ pattern
