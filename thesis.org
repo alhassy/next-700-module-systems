@@ -2627,8 +2627,8 @@ Incidentally, the common solutions to the problems presented may be construed as
 algorithms yearning to be formalised. The power of the host language dictates
 whether design patterns remain as informal directions to be implemented in an
 ad-hoc basis then checked by other humans, or as a library methods that are
-written once and may be freely applied by users. For instance, [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Morphism.html#1][Agda's
-~Algebra.Morphism~ “library”]] presents /only/ an example(!) of the homomorphism design
+written once and may be freely applied by users. For instance, the [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Morphism.html#1][Agda
+~Algebra.Morphism~ “library”]][fn:17] presents /only/ an example(!) of the homomorphism design
 pattern ---which shows how to form operation-preserving functions for algebraic
 structures. The documentation reads: ~An example showing how a morphism type can
 be defined~. An example, rather than a library method, is all that can be done
@@ -2638,19 +2638,6 @@ least, not out of the box.
 # #
 # + The procedure is essentially the same for other algebraic structures.
 # + It takes time to do form these explicitly, even for the common structures.
-
-#+begin_edcomm org
-:ed: WK
-Chapt. 2:
-  Agda's Algebra.Morphism  library
-    - not Agda's, but part of the Agda ``standard library'', or Agda std-lib
-    - every reference to Agdaa std-lib needs to include the version referred to.
-
-  The cited sentence does not occur in stdlib-1.0.1.
-
-  Your overall description of the issue there is very fuzzy, and not understandable
-  without looking at that module.
-#+end_edcomm
 
 ** Simplifying Programs by Exposing Invariants at the Type Level
 <<sec:examples:readability>>
@@ -2989,7 +2976,7 @@ record IsRing
 At first glance, one solution would be to package up these renamings into helper modules.
 For example, consider the setting of monoids.
 
-{{{code(Orginal, Prototypical, Notations)}}}
+{{{code(Original ---Prototypical--- Notations)}}}
 #+BEGIN_SRC agda
 record IsMonoid {a ℓ} {A : Set a} (≈ : Rel A ℓ)
                 (∙ : Op₂ A) (ε : A) : Set (a ⊔ ℓ) where
@@ -3051,7 +3038,6 @@ Unless carefully organised, such notational modules would bloat the standard
 library, resulting in difficulty when navigating the library. As it stands
 however, the new algebraic structures appear large and complex due to the
 “renaming hell” encountered to provide the expected conventional notation.
-
 *** Renaming Problems from the RATH-Agda Library
 
 The impressive [[http://relmics.mcmaster.ca/RATH-Agda/RATH-Agda-2.2.pdf][Relational Algebraic Theories in Agda]] library takes a disciplined
@@ -3487,8 +3473,8 @@ defaultOrder S = let open Semigroup S
    then /extend/ it with features as necessary. E.g., begin with ~Semigroup~
    then add orthogonal features until ~Monoid~ is reached. Extensions are also
    known by /subclassing/ or /inheritance/.
-:hide:
- #+BEGIN_SRC mermaid :file semigroup-to-monoid.png :theme default :background-color transparent  :tangle no :tangle no :exports results :noeval
+
+ #+BEGIN_SRC mermaid :file semigroup-to-monoid.png :theme default :background-color transparent  :tangle no :tangle no :exports results
 graph LR                          %% A “L”eft to “R”ight graph
 
 Semigroup[<strong>Semigroup</strong><br>carrier <br> binary operation <br> associativity law ]
@@ -3505,17 +3491,9 @@ PointedSemigroup --> RightUnitalSemigroup
 LeftUnitalSemigroup --> Monoid
 RightUnitalSemigroup --> Monoid
  #+END_SRC
-:end:
+
  #+RESULTS:
  [[file:semigroup-to-monoid.png]]
-
-#+begin_edcomm org
-:ed: WK
-drawing:
-+            left identity --> left-identity
-+            right identity --> right-identity
-+            unit element --> identity element
-#+end_edcomm
 
  The libraries mentioned thus far generally implement extensions in this way. By
  way of example, here is how monoids could be built directly from semigroups in
@@ -3683,59 +3661,67 @@ ideal module system for dependently-typed languages.
  #    :END:
  # #
     # #+BEGIN_SRC mermaid  :file patterns.png :theme forest :background-color transparent
-   :hide:
-   #+BEGIN_SRC mermaid  :file patterns.png :theme forest :exports results :noeval
-graph TD %% LR and TD are both also good!
 
-%% A(<br><hr> Carrier : Set <br> _⨾_ : Carrier → Carrier → Carrier <br> Id : Carrier)
-A(<hr> carrier <br> binary operation <br> point <br> left-identity law <br> right-identity law <br> associativity law)
-B(carrier <br> binary operation <br> point <br><hr> left-identity law <br> right-identity law <br> associativity law)
-C(carrier <br><hr> binary operation <br> point <br> left-identity law <br> right-identity law <br> associativity law)
 
-D{<hr> <pre>Branch <br>Nil </pre>}               %% Using verbatim environment
-E{Variables <br><hr> <pre>Embed <br>Branch <br>Nil </pre>} %% Using verbatim environment
-F((<hr> &ensp;carrier <br> &ensp;binary operation <br> &ensp;point))
+#+BEGIN_SRC mermaid :file patterns.png :theme forest :exports results :noeval
+graph LR %% LR and TD are both also good!
 
-A-. Predicate  &ensp;<br> .->B
-B-. Σ Padding  &ensp;<br>.->A
-A-. Typeclass  &ensp;<br> .-> C
-C-. Σ Padding &ensp;<br> .-> A
+%% A(<h1><br><hr> Carrier : Set <br> _⨾_ : Carrier → Carrier → Carrier <br> Id : Carrier</h1>)
+A(<h1><hr> carrier <br> binary operation <br> point <br> left-identity law <br> right-identity law <br> associativity law</h1>)
+B(<h1>carrier <br> binary operation <br> point <br><hr> left-identity law <br> right-identity law <br> associativity law</h1>)
+C(<h1>carrier <br><hr> binary operation <br> point <br> left-identity law <br> right-identity law <br> associativity law</h1>)
 
-A-. Closed Termtype  &ensp;<br> .-> D
-D-. Interpreter &ensp;<br> .-> A
-A-. Open Termtype &ensp;<br> .-> E
-E-. Interpreter  &ensp;<br> .-> C
-E-. Setoid &ensp;<br> .-> A
-A-. Signature &ensp;<br> .-> F
-E-- Instance  &ensp;<br> --> F
+D{<h1><hr> <pre>Branch <br>Nil </pre></h1>}               %% Using verbatim environment
+E{<h1>Variables <br><hr> <pre>Embed <br>Branch <br>Nil </pre></h1>} %% Using verbatim environment
+F((<h1><hr> &ensp;carrier <br> &ensp;binary operation <br> &ensp;point</h1>))
 
-A-. Renaming &ensp;<br> .-> R
-R-. Renaming &ensp;<br> .-> A
-R(<hr> universe of discourse <br> composition <br> unit <br> left unital <br> right unital <br> parenthesis shift)
+A-. <h1>Predicate  &ensp;<br></h1> .->B
+B-. <h1>Σ Padding  &ensp;<br></h1>.->A
+A-. <h1>Typeclass  &ensp;<br></h1> .-> C
+C-. <h1>Σ Padding &ensp;<br></h1> .-> A
 
-A-- Theorem Proving &ensp;<br> -->A
+A-. <h1>Closed Termtype  &ensp;<br></h1> .-> D
+D-. <h1>Interpreter &ensp;<br></h1> .-> A
+A-. <h1>Open Termtype &ensp;<br></h1> .-> E
+E-. <h1>Interpreter  &ensp;<br></h1> .-> C
+E-. <h1>Setoid &ensp;<br></h1> .-> A
+A-. <h1>Signature &ensp;<br></h1> .-> F
+E-- <h1>Instance  &ensp;<br></h1> --> F
 
-E-- Simplifier  &ensp;<br> -->E
-E-- Metaprogramming  &ensp;<br> -->E
+A-. <h1>Renaming &ensp;<br></h1> .-> R
+R-. <h1>Renaming &ensp;<br></h1> .-> A
+R(<h1><hr> universe of discourse <br> composition <br> unit <br> left unital <br> right unital <br> parenthesis shift</h1>)
 
-UA> Universal <br> Algebra ]
+A-- <h1>Theorem Proving &ensp;<br></h1> -->A
 
-A-. λ Homomorphism &nbsp;<br> λ Kernel &nbsp;<br> λ Products &nbsp;<br> λ FOL termtypes &nbsp;<br> λ etc .-> UA
-C-. λ Products &nbsp;<br> λ Substructure &nbsp;<br> λ etc .-> UA
-UA-. λ Pushouts / Pullbacks &nbsp;<br> λ Extensions / Exclusions &nbsp;<br> λ Duality / Views &nbsp;<br> λ etc .-> UA
+E-- <h1>Simplifier  &ensp;<br></h1> -->E
+E-- <h1>Metaprogramming  &ensp;<br></h1> -->E
+
+UA> <h1>Universal <br> Algebra</h1> ]
+
+A-. <h1>λ Homomorphism &nbsp;<br> λ Kernel &nbsp;<br> λ Products &nbsp;<br> λ FOL termtypes &nbsp;<br> λ etc</h1> .-> UA
+C-. <h1> λ Products &nbsp;<br> λ Substructure &nbsp;<br> λ etc</h1> .-> UA
+UA-. <h1>λ Pushouts / Pullbacks &nbsp;<br> λ Extensions / Exclusions &nbsp;<br> λ Duality / Views &nbsp;<br> λ etc</h1> .-> UA
 
 subgraph  %% A subgraph environment places the legend in the top left, which is better than it being in the bottom somewhere.
-Legend[<center>Legend</center>0. Parameters occur above the waist line <br> 1. Fields occur below the waist line <br> 2. Dashed lines are design patterns ]
+Legend[<h1><center>Legend</center>0. Parameters occur above the waist line <br> 1. Fields occur below the waist line <br> 2. Dashed lines are design patterns</h1> ]
 end
    #+END_SRC
-   :end:
-   #+caption: PL Research is about getting free stuff: From the left-most node, we can get a lot!
-   [[file:patterns.png]]
 
-#+begin_edcomm org
-:ed: WK
-Fonts in drawings should not be smaller than the footnote font in the main text.
-#+end_edcomm
+# +latex:\includegraphics[width=\linewidth, height=20cm]{patterns.png}
+
+#+LATEX_HEADER: \usepackage{placeins}
+
+#+begin_export latex
+\begin{figure*}[h]
+\centering
+ \makebox[\textwidth]{\includegraphics[width=.9\paperwidth, height=.75\paperheight]{patterns.png}}
+\caption{PL Research is about getting free stuff: From the left-most node, we can get a lot!}
+\end{figure*}
+#+end_export
+#+latex: \FloatBarrier
+# The FloatBarrier stops floats (figures are floats) from jumping over them. I
+# will need to look into passing [tbh] options to figures from org mode further.
 
    #+latex: \noindent
    Remarks:
@@ -3819,7 +3805,6 @@ Fonts in drawings should not be smaller than the footnote font in the main text.
    Unfortunately, a common scenario is when one wants to /instantiate/ such a deeply
    nested theory ---as was the case in section ref:sec:examples:extensions for
    fine-grained hierarchy of monoids.
-
 * Current Approaches
 
 <<sec:current_approaches>>
@@ -14799,6 +14784,12 @@ Type of functors do not η-reduce, and as such one cannot expect them to be appl
 
     Maybe tackle this "as needed", rather than upfront.
 * Footnotes
+
+[fn:17] All references to the Agda Standard Library refer to version 0.7.  The
+current version is 1.3, however, for the =Algebra.Morphism= library, the newer
+library only refactors the one monolithic homomorphism example into a fine
+grained hierarchy of homomorphisms. The library can be accessed at https://github.com/agda/agda-stdlib.
+
 
 [fn:16]  The standard type ~Vec A n~, consisting of lists of elements of ~A~ having
  length ~n~, is defined in Appendix B.
