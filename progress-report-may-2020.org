@@ -1,0 +1,786 @@
+# (progn (org-beamer-export-to-pdf) (switch-to-buffer "progress-report-may-2020.pdf"))
+# M-x org-beamer-export-to-pdf
+#+TITLE: Supervisory Committee Meeting
+#+AUTHOR: Musa Al-hassy
+
+# +ATTR_LATEX: :width 0.9\paperwidth :height 0.85\paperheight
+
+* Beamer Setup :ignore:
+#+OPTIONS: H:2 toc:nil d:nil title:nil
+# BEAMER_THEME: Rochester
+# BEAMER_THEME: Copenhagen
+# +BEAMER_THEME: default
+# +BEAMER_THEME: metropolis [numbering=fraction, progressbar=frametitle, titleformat=smallcaps]
+#+BEAMER_THEME: metropolis
+
+#+BEAMER_COLOR_THEME: structure[RGB={87,83,170}]
+#+LATEX_HEADER: \hypersetup{pdfauthor="Musa Al-hassy", pdftitle="Supervisory Committee Meeting", colorlinks, linkcolor=black, urlcolor=blue}
+#+LATEX: \AtBeginSection{\frame{\sectionpage}}
+# use the \insertsection command to get the current section name
+
+# +LATEX_COMPILER: pdflatex -shell-escape
+
+#+LATEX_HEADER: \setbeamersize{text margin left=3mm,text margin right=3mm}
+
+#+LaTeX: \setminted[haskell]{fontsize=\footnotesize, breaklines}
+
+#+latex_header: \usepackage{picture,xcolor,multicol}
+
+# Needs to be before \begin{document}, hence in a latex-header.
+# Add numbers to slides.
+#
+#+LATEX_HEADER: \setbeamertemplate {footline}{\color{gray}\hspace{49.7em}\insertframenumber\strut\quad}
+# LATEX_HEADER: \setbeamertemplate{footline}[frame number]
+
+# minted, like other verbatim, environments is ``fragile'' wrt to beamer.
+# Hence all frames with code may behave erracticly if not marked fragile.
+#
+# \begin{frame}[fragile]{titleHere}
+
+#+LATEX_HEADER: \usepackage{minted}
+# https://armkeh.github.io/unicode-sty/
+#+LATEX_HEADER: \usepackage{\string~"/unicode-sty/unicode"}
+
+# Removing the red box that appears in "minted" when using unicode.
+# Src: https://tex.stackexchange.com/questions/343494/minted-red-box-around-greek-characters
+#
+#+LATEX_HEADER: \makeatletter
+#+LATEX_HEADER: \AtBeginEnvironment{minted}{\dontdofcolorbox}
+#+LATEX_HEADER: \def\dontdofcolorbox{\renewcommand\fcolorbox[4][]{##4}}
+#+LATEX_HEADER: \makeatother
+
+# Did you ``print to file'' or did you ``save a copy''?
+# Previously, after ``save a copy'' I have been able to continue editing
+# fillable PDFs.
+
+\title[Supervisory Committee Meeting]{The Final Supervisory Committee Meeting}
+\date{May 20, 2020}
+
+\begin{frame}
+  \titlepage
+   % \begin{block}{}
+     \centerline{<< Prototype, Unbundling at Will, and Thesis Writing >>}
+   % \end{block}
+\end{frame}
+
+# to use super tiny fonts, or large ones; e.g., \scalebox{.2}{supertiny}
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \usepackage{listings}
+#+LATEX_HEADER: \usepackage{lipsum}
+#+BEGIN_EXPORT latex
+\newcommand\Wider[2][3em]{%
+\makebox[\linewidth][c]{%
+  \begin{minipage}{\dimexpr\textwidth+#1\relax}
+  \raggedright#2
+  \end{minipage}%
+  }%
+}
+#+END_EXPORT
+
+* Past and Present Efforts
+** Research Question
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+
+#+begin_center
+*Use a dependently-typed language (DTL) to implement the ‘missing’ module system
+features directly inside the language*
+#+end_center
+
+\pause
+-----
+#+LaTeX: \setminted[haskell]{fontsize=\scriptsize, breaklines}
+#+begin_src haskell +n 0
+-- Terms: Expressions and Types
+e, τ ::= α          -- base types and constants
+    | Typeᵢ       -- “type of types”; Universe of types at level i : ℕ
+    | ℕ             -- “Levels” for the type hierarchy
+    | Π x : τ • τ   -- “Pi”, dependent-function type
+    | Σ x : τ • τ   -- “Sigma”, dependent-sum type
+    | x             -- Variable
+    | e e           -- Application; Π-elimination
+    | λ x : τ • e   -- Abstraction; Π-introduction
+    | (e , e)       -- Pairing; Σ-introduction
+    | fst e | snd e -- Projections; Σ-elimination
+    | Fix 𝑭         -- Fixpoints for 𝑭 : Typeᵢ → Typeᵢ
+
+-- Abbreviation: Provided β does not refer to variable ‘_’,
+(α → β) :=  (Π _ : α • β)
+ #+end_src
+#+latex: \vspace{-1em}
+| DTL Syntax   |
+#+LaTeX: \setminted[haskell]{fontsize=\footnotesize, breaklines}
+
+** Ubiquitous *mechanical* module constructions are *out of reach* of DTL module systems...
+
+   # [[file:~/thesis-proposal/patterns.png]]
+
+#+latex_header: \usepackage{smartdiagram}
+#+latex: \vspace{-2em}
+#+begin_export latex
+\begin{center}
+\smartdiagram[constellation diagram]{
+ {\footnotesize Monoids}
+,{\footnotesize Monoids \emph{with} carrier \texttt{C}}
+,{\footnotesize Homomorphisms, products, duals}
+,{\footnotesize Signature (Tree skeletons)}
+,{\footnotesize Pointed Magma} % (“Exclusion”)
+,{\footnotesize Terms} %  (Trees with variables)
+,{\footnotesize Monoids \emph{over} a setoid}
+%,Universal Algebra constructions
+,{\scriptsize Monoids \emph{with} carrier \texttt{C} and operation $\oplus$}
+% %
+% Build a program,Set up,Run,Analyze,Modify~/\\ Add,Check
+}
+
+\end{center}
+#+end_export
+
+:Hide:
+
+\begin{figure}
+\centering
+ \makebox[\textwidth]{\includegraphics[width=.9\paperwidth, height=.75\paperheight]{~/thesis-proposal/patterns.png}}
+\end{figure}
+
+\pause
+#+begin_export latex
+  % X-axis to the right and Y-axis upwards
+  \setlength{\unitlength}{1cm}
+  \begin{picture}(0,0)(0,0)
+   \put(8.5,8.5){\underline{\textbf{\emph{PL Research is about}}}}
+   \put(8.5,8.0){\underline{\textbf{\emph{getting free stuff:}}}}
+   \put(8.5,7.5){\underline{\textbf{\emph{We can get a lot!}}}}
+\end{picture}
+#+end_export
+
+:End:
+
+# (progn (org-beamer-export-to-pdf) (switch-to-buffer "committee.pdf"))
+
+** Evidence that the theory ‘actually works’
+
+#+begin_center
+*Prototype* with an editor extension
+/then/ incorporate *lessons learned* into a DTL library!
+#+end_center
+
+#+begin_export latex
+\begin{figure}
+\centering
+ \makebox[\textwidth]{\includegraphics[width=.5\paperwidth, height=.4\paperheight]{~/thesis-proposal/Paper0_MousingOverLarge.png}}
+\end{figure}
+#+end_export
+
+\pause
+1. =PackageFormer= Emacs Editor Extension
+2. =Context= Agda Library
+
+** Prototype ⇒ Publication
+
+ /A Language Feature to Unbundle Data at Will/ (GPCE '19)
+
+ #+ATTR_LATEX: :width 0.75\paperwidth :height 0.75\paperheight
+ [[file:~/thesis-proposal/gpce19.png]]
+
+** Prototype ⇒ *Lisp Metaprogramming*, ASTs, Untyped, String Manipulation, Agda Generation, Macro DSL
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+
+# +ATTR_LATEX: :height 0.75\paperheight
+# [[file:~/thesis-proposal/lisp.png]]
+#+latex: \centering
+#+LaTeX: \setminted[common-lisp]{fontsize=\tiny, breaklines}
+#+latex: \begin{minipage}[t]{0.95\linewidth}
+#+BEGIN_SRC emacs-lisp
+{-lisp
+(𝒱 record₁ (discard-equations nil)
+ = "Reify a variational as an Agda “record”.
+    Elements with equations are construed as
+    derivatives of fields  ---the elements
+    without any equations--- by default, unless
+    DISCARD-EQUATIONS is provided with a non-nil value."
+  :kind record
+  :alter-elements
+    (λ es →
+      (thread-last es
+      ;; Keep or drop eqns depending on “discard-equations”
+      (--map
+        (if discard-equations
+            (map-equations (λ _ → nil) it)
+            it))
+      ;; Unless there's equations, mark elements as fields.
+      (--map (map-qualifier
+        (λ _ → (unless (element-equations it)
+               "field")) it)))))
+-}
+
+{-700
+Monoid-record-with-definitional-extensions  =  MonoidP record₁
+Monoid-record-with-extensions-as-fields     =  MonoidP record₁ :discard-equations t
+-}
+#+END_SRC
+#+LaTeX: \setminted[common-lisp]{fontsize=\footnotesize, breaklines}
+#+latex:   \end{minipage}
+
+** Generated 200+ theories using the Lisp metaprogramming framework ---the MathScheme library
+
+# +ATTR_LATEX: :width 0.75\paperwidth :height 0.75\paperheight
+# [[file:~/thesis-proposal/200+specs.png]]
+
+#+LaTeX: \setminted[haskell]{fontsize=\tiny, breaklines}
+#+BEGIN_SRC haskell
+AdditiveMagma            = Magma renaming′ "_*_ to _+_"
+LeftDivisionMagma        = Magma renaming′ "_*_ to _╲_"
+RightDivisionMagma       = Magma renaming′ "_*_ to _╱_"
+LeftOperation            = MultiCarrier extended-by′ "_⟫_ : U → S → S"
+RightOperation           = MultiCarrier extended-by′ "_⟪_ : S → U → S"
+IdempotentMagma          = Magma extended-by′ "*-idempotent : ∀ (x : U) → (x * x) ≡ x"
+IdempotentAdditiveMagma  = IdempotentMagma renaming′ "_*_ to _+_"
+SelectiveMagma           = Magma extended-by′ "*-selective : ∀ (x y : U) → (x * y ≡ x) ⊎ (x * y ≡ y)"
+SelectiveAdditiveMagma   = SelectiveMagma renaming′ "_*_ to _+_"
+PointedMagma             = Magma union′ PointedCarrier
+Pointed𝟘Magma            = PointedMagma renaming′ "e to 𝟘"
+AdditivePointed1Magma    = PointedMagma renaming′ "_*_ to _+_; e to 𝟙"
+LeftPointAction          = PointedMagma extended-by "pointactLeft  :  U → U; pointactLeft x = e * x"
+RightPointAction         = PointedMagma extended-by "pointactRight  :  U → U; pointactRight x = x * e"
+CommutativeMagma         = Magma extended-by′ "*-commutative  :  ∀ (x y : U) →  (x * y) ≡ (y * x)"
+CommutativeAdditiveMagma = CommutativeMagma renaming′ "_*_ to _+_"
+PointedCommutativeMagma  = PointedMagma union′ CommutativeMagma ⟴ :remark "over Magma"
+AntiAbsorbent            = Magma extended-by′ "*-anti-self-absorbent  : ∀ (x y : U) → (x * (x * y)) ≡ y"
+SteinerMagma             = CommutativeMagma union′ AntiAbsorbent ⟴ :remark "over Magma"
+Squag                    = SteinerMagma union′ IdempotentMagma ⟴ :remark "over Magma"
+PointedSteinerMagma      = PointedMagma union′ SteinerMagma ⟴ :remark "over Magma"
+UnipotentPointedMagma    = PointedMagma extended-by′ "unipotent  : ∀ (x : U) →  (x * x) ≡ e"
+Sloop                    = PointedSteinerMagma union′ UnipotentPointedMagma
+#+END_SRC
+#+LaTeX: \setminted[haskell]{fontsize=\footnotesize, breaklines}
+
+#+begin_export latex
+\setlength{\unitlength}{1cm}
+\begin{picture}(0,0)(0,0)
+
+\pause
+\put(2,6){\colorbox{yellow}{\Large Terse, readable, specifications}}
+\put(2,5.4){\colorbox{yellow}{\Large ↦ Useful, typecheckable, dauntingly large code }}
+
+\pause
+\put(2,4){\colorbox{yellow}{\Large 200+ \textbf{one-line} specs}}
+\put(2,3.4){\colorbox{yellow}{\Large \hspace{1em} ↦ 1500+ lines of typechecked Agda}}
+\pause
+\put(2,2.8){\colorbox{yellow}{\Large ⇒ 750\% efficiency savings}}
+
+\put(2,1.8){\colorbox{yellow}{\Large Useful engineering result}}
+\end{picture}
+#+end_export
+
+** *Pushout* unions, intersections, extensions, views, …
+
+# +ATTR_LATEX: :height 0.75\paperheight
+# [[file:~/thesis-proposal/pushouts.png]]
+
+#+LaTeX: \setminted[common-lisp]{fontsize=\tiny, breaklines}
+#+BEGIN_SRC emacs-lisp
+(𝒱 union pf (renaming₁ "") (renaming₂ "") (adjoin-retract₁ t) (adjoin-retract₂ t)
+ = "Union the elements of the parent PackageFormer with those of
+    the provided PF symbolic name, then adorn the result with two views:
+    One to the parent and one to the provided PF.
+
+    If an identifer is shared but has different types, then crash."
+   :alter-elements (λ es →
+     (let* ((p (symbol-name 'pf))
+            (es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
+            (es₂ (alter-elements ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) renaming renaming₂ :adjoin-retract nil))
+            (es′ (-concat es₁ es₂)))
+
+      ;; Ensure no name clashes!
+      (loop for n in (find-duplicates (mapcar #'element-name es′))
+            for e = (--filter (equal n (element-name it)) es′)
+            unless (--all-p (equal (car e) it) e)
+            do (-let [debug-on-error nil]
+              (error "%s = %s union %s \n\n\t\t ➩ Error: Elements “%s” conflict!\n\n\t\t\t%s"
+                     $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 p (element-name (car e)) (s-join "\n\t\t\t" (mapcar #'show-element e)))))
+
+   ;; return value
+   (-concat
+       es′
+       (when adjoin-retract₁ (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es₁ :name adjoin-retract₁)))
+       (when adjoin-retract₂ (list (element-retract p     ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) :new es₂ :name adjoin-retract₂)))))))
+#+END_SRC
+#+LaTeX: \setminted[common-lisp]{fontsize=\footnotesize, breaklines}
+
+
+#+latex: \centerline{\alert{Primitives are motivated from existing, real-world, DTL libraries!}}
+
+** Primary Lesson Learned: *=:waist=*
+
+The difference between *field* and *parameter* is an illusion ---as is that of *input*
+and *output* when one considers relations rather than deterministic functions.
+
+\pause
+-----
+
+User-defined variational: /Drop definitions when lifting fields into parameters./
+# [[file:~/thesis-proposal/waist.png]]
+#+LaTeX: \setminted[common-lisp]{fontsize=\tiny, breaklines}
+#+BEGIN_SRC emacs-lisp
+(𝒱 unbundling n
+ = "Turn the first N elements into parameters to the PackageFormer.
+
+    Any elements above the waist line have their equations dropped."
+   :waist n
+   :alter-elements (λ es →
+     (-let [i 0]
+       (--graph-map (progn (incf i) (<= i n))
+                    (map-equations (-const nil) it)
+                    es))))
+#+END_SRC
+#+LaTeX: \setminted[common-lisp]{fontsize=\footnotesize, breaklines}
+
+** Characterising =:waist= as Π→λ
+
+#+ATTR_LATEX: :width 0.4\paperwidth
+# [[file:~/thesis-proposal/waist-pi-to-lambda-char.png]]
+
+# +begin_center
+
+
+# src_haskell[:exports code]{Π→λ (Π a : A • τ)  =  (λ a : A • τ)}
+
+#+BEGIN_SRC haskell
+Π→λ (Π a : A • τ)  =  (λ a : A • τ)
+#+END_SRC
+
+\pause
+-----
+\vspace{0.5em}
+
+#+begin_parallelNB org
+#+begin_src haskell
+id₀ : Set₁
+id₀ = Π X ∶ Set • Π e ∶ X • X
+
+id₁ : Π X ∶ Set • Set
+id₁ = λ (X : Set) → Π e ∶ X • X
+
+id₂ : Π X ∶ Set • Π e ∶ X • Set
+id₂ = λ (X : Set) (e : X) → X
+#+end_src
+
+#+latex: \columnbreak
+
+\pause
++ ~idᵢ₊₁ ≈ Π→λ idᵢ~
++ ~id₀~ is a /type of functions/
++ ~id₁~ is a /function on types/
+
+#+end_parallelNB
+
+:Details:
+We shall refer to the latter change
+as @@latex: \emph{re\"{\i}fication}@@ since the result is more concrete: It can
+be applied. This transformation will be
+denoted by ~Π→λ~. To clarify this subtlety, consider the following forms of the
+polymorphic identity function. Notice that $\mathsf{id}ᵢ$ /exposes/ =i=-many details at the
+type level to indicate the sort of data it consists of. However, notice that ~id₀~ is
+a type of functions whereas $\mathsf{id}₁$ is a function on types. Indeed, the latter
+:End:
+
+** =Context= Agda Library ⇒ *Pragmatic Interface*
+
+   # [[file:~/thesis-proposal/pragmattic.png]]
+
+#+latex: \centering
+#+latex: \begin{minipage}[t]{0.95\linewidth}
+#+begin_src haskell
+Monoid : ∀ ℓ → Context (ℓsuc ℓ)
+Monoid ℓ = do Carrier ← Set ℓ
+              _⊕_    ← (Carrier → Carrier → Carrier)
+              Id      ← Carrier
+              leftId  ← ∀ {x : Carrier} → x ⊕ Id ≡ x
+              rightId ← ∀ {x : Carrier} → Id ⊕ x ≡ x
+              assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
+              End {ℓ}
+#+end_src
+#+latex:   \end{minipage}
+
+\pause \vspace{1em}
+- Ideas: /Weak/ *Agda Reflection*, No fresh names, Monads, Termination,
+  ‘Reification’ Π→λ
+
+  \pause  \vspace{1em}
+- Draft paper: /Do-it-yourself Module Systems/
+
+** ‘All’ module constructions are born from =Context=
+# [[file:~/thesis-proposal/everything-is-a-context.png]]
+
+# +begin_scriptsize org
+    \pause \vspace{0.5em}
++ Context: “name-type pairs”
+  #+BEGIN_SRC haskell
+do S ← Set; s ← S; n ← (S → S); End
+#+END_SRC
+    \pause \vspace{0.5em}
+
++ Record Type: “bundled-up data”
+   #+BEGIN_SRC haskell
+Σ S ∶ Set • Σ s ∶ S • Σ n ∶ S → S • 𝟙
+#+END_SRC
+    \pause \vspace{0.5em}
+
++ Function Type: “a type of functions”
+   #+BEGIN_SRC haskell
+Π S • Σ s ∶ S • Σ n ∶ S → S • 𝟙
+#+END_SRC
+    \pause \vspace{0.5em}
+
++ Type constructor: “a function on types”
+   #+BEGIN_SRC haskell
+λ S • Σ s ∶ S • Σ n ∶ S → S • 𝟙
+#+END_SRC
+    \pause \vspace{0.5em}
+
++ Algebraic datatype: “a descriptive syntax”
+   #+BEGIN_SRC haskell
+data 𝔻 : Set where s : 𝔻; n : 𝔻 → 𝔻
+#+END_SRC
+
+# +end_scriptsize
+
+** Comparing =PackageFormer= and =Context=
+   # [[file:~/thesis-proposal/PF-Context-comparision.png]]
+
+  |                          | PackageFormer      | Contexts             |
+  |--------------------------+--------------------+----------------------|
+  | Type of Entity           | Preprocessing Tool | Language Library     |
+  | Specification Language   | Lisp + Agda        | Agda                 |
+  | Well-formedness Checking | ❌               | ✓                    |
+  | Termination Checking     | ✓                  | ✓                    |
+  | Elaboration Tooltips     | ✓                  | ❌                 |
+  | Rapid Prototyping        | ✓                  | ✓ (Slower)           |
+  | Usability Barrier        | None               | None                 |
+  | Extensibility Barrier    | Lisp               | Weak Metaprogramming |
+
+** Current Activities
+
+1. Complete a \alert{interpreter}, via a rewrite-system, for =PackageFormer=
+
+   #+latex: \vspace{2em}
+
+2. Finish \alert{writing thesis}
+   - Demonstrate that \alert{common module idioms} are expressible in our framework
+   - Demonstrate that several @@latex:\alert{uncommon notions of packaging from universal
+     algebra} are also possible!@@
+
+* Contributions
+
+** Module Systems for DTLs
+
+1. The ability to /implement/ module systems \alert{for DTLs within DTLs}
+
+   #+latex: \vspace{1em} \pause
+2. The ability to arbitrarily \alert{extend} such systems by users at a high-level
+
+      #+latex: \vspace{1em} \pause
+3. Demonstrate that there is an expressive yet minimal set of
+   \alert{module meta-primitives} which allow common module constructions to be defined
+
+   # **Unifying Seemingly Disparate Notions of Modules
+      #+latex: \vspace{1em} \pause
+4. [@4] Demonstrate that relationships between modules can also be \alert{mechanically}
+   generated.
+   # - In particular, if module ℬ is obtained by applying a user-defined
+   #   ‘variational’ to module 𝒜, then the user could also enrich the child module
+   #   ℬ with morphisms that describe its relationships to the parent module 𝒜.
+   # - E.g., if ℬ is an extension of 𝒜, then we may have a “forgetful mapping”
+   #   that drops the new components; or if ℬ is a ‘minimal’ rendition of the
+   #   theory 𝒜, then we have a “smart constructor” that forms the rich 𝒜 by only
+   #   asking the few ℬ components of the user.
+
+** Termtypes as Modules
+
+#+latex: \centering
+
+5. [@5] Bring \alert{algebraic data types} under the umbrella of grouping mechanisms:
+   An ADT is just a context whose symbols target the ADT ‘carrier’ and
+   are not otherwise interpreted.
+   - In particular, both an ADT and a record can be obtained *practically* from
+     a *single* context declaration.
+
+\pause
+
+\vspace{-0.5em}
+#+begin_parallel org
+
+# +ATTR_LATEX: :width 0.45\paperwidth :height 0.35\paperheight
+#+begin_src haskell
+DynamicSystem : Context ℓ₁
+DynamicSystem
+    = do State ← Set
+         start ← State
+         next  ← (State → State)
+         End
+#+end_src
+# [[file:~/thesis-proposal/unbundling-DS-0.png]]
+
+#+latex: \columnbreak
+
+\pause
+# +ATTR_LATEX: :width 0.2\paperwidth :height 0.2\paperheight
+# [[file:~/thesis-proposal/DS-data.png]]
+
+#+begin_src haskell
+data 𝔻 : Set where
+    startD : 𝔻
+    nextD  : 𝔻 → 𝔻
+#+end_src
+
+#+end_parallel
+
+\pause
+\vspace{-1.3em}
+-----
+\vspace{-2em}
+#+latex: \begin{minipage}[t]{0.85\linewidth}
+#+begin_src haskell
+𝔻 = termtype (DynamicSystem :waist 1)
+
+-- Pattern synonyms for more compact presentation
+pattern startD  = μ (inj₁ tt)       -- : 𝔻
+pattern nextD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
+trivial : 𝔻 ≅ ℕ
+#+end_src
+#+latex: \end{minipage}
+
+# +latex: \setlength{\unitlength}{1cm} \begin{picture}(0,0)(0,0)
+# +latex: \put(6,-1.55){
+# +ATTR_LATEX: :width 0.45\paperwidth :height 0.4\paperheight
+# [[file:~/thesis-proposal/DS-termtype.png]]
+# +latex: }
+# +latex: \end{picture}
+
+** Common data-structures as *free* termtypes
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+
+6. [@6] Show that common data-structures are \alert{mechanically the (free) termtypes} of
+   common modules.
+
+\centering
+\vspace{-1em}
+\pause
+
+   | Module System         | Termtype |
+   |-----------------------+----------|
+   | Dynamical Structures  | Naturals |
+   | Collection Structures | Lists    |
+   | Pointed Structures    | Maybe    |
+
+\vspace{-1em}
+\pause
+
+# +ATTR_LATEX: :width 0.45\paperwidth :height 0.5\paperheight
+# [[file:~/thesis-proposal/lists-as-free-collections.png]]
+
+#+LaTeX: \setminted[haskell]{fontsize=\scriptsize, breaklines}
+#+begin_src haskell
+Collection : ∀ ℓ → Context (ℓsuc ℓ)
+Collection ℓ = do Elem    ← Set ℓ
+                  Carrier ← Set ℓ
+                  insert  ← (Elem → Carrier → Carrier)
+                  ∅       ← Carrier
+                  End {ℓ}
+
+List : Set → Set
+List ElemType = termtype ((Collection ℓ₀ :waist 2) ElemType)
+
+pattern _::_ x xs = μ (inj₁ (x , xs , tt))
+pattern  ∅        = μ (inj₂ (inj₁ tt))
+#+end_src
+#+LaTeX: \setminted[haskell]{fontsize=\footnotesize, breaklines}
+
+# (progn (org-beamer-export-to-pdf) (switch-to-buffer "committee.pdf"))
+
+** Solve the unbundling problem ---all in Agda!
+
+7. [@7] The ability to ‘unbundle’ module fields as if they were parameters ‘on
+   the fly’
+
+\pause
+\vspace{-1.2em}
+-----
+#+begin_parallelNB org
+# +ATTR_LATEX: :width 0.45\paperwidth :height 0.5\paperheight
+#+begin_src haskell
+DynamicSystem : Context ℓ₁
+DynamicSystem
+    = do State ← Set
+         start ← State
+         next  ← (State → State)
+         End
+#+end_src
+# [[file:~/thesis-proposal/unbundling-DS-0.png]]
+
+\pause \columnbreak
+# +ATTR_LATEX: :width 0.45\paperwidth :height 0.5\paperheight
+# [[file:~/thesis-proposal/unbundling-DS-1.png]]
+
+#+BEGIN_SRC haskell
+𝒩⁰ : DynamicSystem :waist 0
+𝒩⁰ = ⟨ ℕ , 0 , suc ⟩
+
+𝒩¹ : (DynamicSystem :waist 1) ℕ
+𝒩¹ = ⟨ 0 , suc ⟩
+
+𝒩² : (DynamicSystem :waist 2) ℕ 0
+𝒩² = ⟨ suc ⟩
+
+𝒩³ : (DynamicSystem :waist 3) ℕ 0 suc
+𝒩³ = ⟨⟩
+#+END_SRC
+#+end_parallelNB
+
+\pause
+#+begin_export latex
+  % X-axis to the right and Y-axis upwards
+  \setlength{\unitlength}{1cm}
+  \begin{picture}(0,0)(0,0)
+   \put(0,2.5){\textbf{Without redefining \texttt{DynamicSystem}},}
+   \put(0,2.0){we are able to \textbf{fix} some of its fields}
+   \put(0,1.5){by making them into parameters!}
+\end{picture}
+#+end_export
+
+\pause
+\vspace{-3em}
+-----
+\vspace{-0.5em}
+#+begin_footnotesize org
+# Using ~:waist 𝒾~ we may fix the first ~𝒾~-parameters ahead of time.
+# \vspace{-1em}
+# + =(DynamicSystem :waist 1) ℕ= is /the type of dynamic systems over carrier ℕ/
+# \vspace{-1em}
+
+The type of dynamic systems *over* carrier ℕ and start state 0
+\newline is =(DynamicSystem :waist 2) ℕ 0=.
+#+end_footnotesize
+
+# (progn (org-beamer-export-to-pdf) (switch-to-buffer "committee.pdf"))
+
+:Examples_in_the_wild:
+
+Examples of the need for such on-the-fly unbundling can be found in numerous
+places in the Haskell standard library. For instance, the standard libraries cite:data_monoid
+have two isomorphic copies of the integers, called ~Sum~ and ~Product~, whose reason
+for being is to distinguish two common monoids: The former is for /integers with
+addition/ whereas the latter is for /integers with multiplication/.
+
+:End:
+
+** Theory & Implementation
+
+8. [@8] Demonstrate that there is a \alert{practical implementation} of such a framework
+
+   - [X] The =Context= framework is implemented in Agda and we've seen practical examples of
+     its use.
+
+      #+latex: \vspace{2em} \pause
+9. Finally, the resulting framework is /mostly/ \alert{type-theory agnostic}: The target
+   setting is DTLs but we only assume the barebones; if users drop parts of that
+   theory, then /only/ some parts of the framework will no longer apply.
+
+   - [ ] Started ...
+
+# - For instance, in DTLs without a fixed-point functor the framework still
+#   ‘applies’, but can no longer be used to provide arbitrary algebraic data
+#   types from contexts.
+#
+* Next Steps
+
+** SMART Goals
+# Slide I: Specific goals and milestones for the next six months
+
++ June 2020 :: Finish \alert{interpreter} for =PackageFormer=
+
+   #+latex: \vspace{1em} \pause
++ July 2020 :: Finish writing \alert{thesis}
+  - Possibly submit draft paper /Do-it-yourself Module Systems/
+
+   #+latex: \vspace{1em} \pause
++ August 2020 :: \alert{Defend} thesis
+
+** Summary
+   :PROPERTIES:
+   :UNNUMBERED: t
+   :END:
+
+\pause
+
+1. *Published* one paper regarding research and have a draft ready to be
+   cleaned-up
+      #+latex: \vspace{2em}
+2. *Currently* working on the thesis with the \alert{intention} of defending in the next few months
+
+\pause
+\vspace{1em}
+/Thank-you for your time!/
+
+\vspace{1em}
+\centerline{Questions?}
+* COMMENT Half-page summary 2020
+
+  This year I have completed the majority of my research and
+  have begun the thesis writing phase.
+
+  Since the last meeting of May 24 2019, the following tasks have been
+  accomplished:
+  + A prototype has been written to show the theory ‘works’
+  + An associated Agda library has also been written
+  + A publication and paper draft have been written, attached
+    - There were no prior publications
+
+  Besides research, I was a teaching assistant in each academic term.
+
+  Common, mechanical, patterns for module construction are just out
+  of reach of the module systems of dependently-typed languages.
+  Such languages permit a rich number of possible formulations for
+  a module, such as by having some of its constituents exposed
+  at the type level as paramters, others as fields, and others
+  as definitional extensions.
+
+  Library designers are generally conservative; they provide a predicate
+  formulation consisting of a set of proof obligations that constrain the
+  functional symbols provided as paramters in the type level. This formulation
+  is then usually accompanied by a fully “bundled up” variation that has no
+  parameters and all relevant data is rendered as fields.
+
+  However, trouble arises when library users wish to fix only one field ahead of
+  time ---this is the “unbundling problem” and it is akin to function uncurrying
+  but for modules.
+
+  Moreover, library designers for dependently-typed languages generally only
+  provide a handful of formulations for a single module. Other formulations
+  must be written out by hand by users, which must then form coercions
+  between the new forms and those used in the library, so as to make use
+  of the library's utilities.
+
+  I have produced an editor extension for Agda's de-facto IDE, Emacs,
+  which reduces the boilerplate for new formulations of modules to
+  simple, usually one-line, specifications. The tool is run in the background
+  and works on ordinary Agda files by looking at special comments.
+  The specifications are expanded into typechecked Agda code.
+
+  Moreover, using the lessons learned from the editor extension, an Agda library
+  has been implemented to achieve similar goals within Agda itself.  Due to
+  Agda's current metaprogramming limitations, such as the inability to produce
+  fresh names, development with the library is slower than with the editor
+  extension.
+
+  A paper has been published regarding the editor extension
+  and a paper draft is in preparation regarding the associated Agda library.
+
+  Going forward, the aim is to finish thesis writing and to defend in the
+  upcoming months, namely August 2020.
