@@ -96,6 +96,19 @@ E.g., sorting.
 #+end_edcomm
 :End:
 
+:Diagrasms_to_add:
+
+#+begin_center latex
+How most people use pacakges:
+\smartdiagram[sequence diagram]{Namespacing}
+
+How /we/ think they should be used:
+\smartdiagram[sequence diagram]{Definition Silo (Namspacing), Record Types,
+Algebraic Data Types}
+#+end_center
+
+:End:
+
 * COMMENT Proposed Outline
 1. Motivating the problem
    - Where has this problem been encountered in the wild?
@@ -158,51 +171,12 @@ E.g., sorting.
 #+latex_header: \usepackage{glossaries}
 #+latex_header: \makeglossaries
 
-#+LATEX_HEADER: \usepackage{unicode}
-#+LATEX_HEADER: \usepackage{papers/UnicodeSymbols}
+# https://armkeh.github.io/unicode-sty/
+#+LATEX_HEADER: \usepackage{\string~"/unicode-sty/unicode"}
+
+# +LATEX_HEADER: \usepackage{papers/UnicodeSymbols}
 #+latex_header: \usepackage{newunicodechar}
-
-# To contrast with ‘₊’, subscript x is used as a subscript times.
-#+latex_header: \newunicodechar{ₓ}{\ensuremath{_{\times}}}
-
-#+latex_header: \newunicodechar{‼}{\ensuremath{!\! !}}
-
-#+latex_header: \newunicodechar{─}{\text{---}}
-#+latex_header: \newunicodechar{╱}{\text{/}}
-#+latex_header: \newunicodechar{⦃}{\ensuremath{\{\!\mid}}
-#+latex_header: \newunicodechar{⦄}{\ensuremath{\mid\!\}}}
-
-#+latex_header: \newunicodechar{𝑭}{\ensuremath{\mathbf{F}}}
-
-#+latex_header: \newunicodechar{⨁}{\ensuremath{\bigoplus}}
-
-#+latex_header: \newunicodechar{𝓉}{\ensuremath{t}}
-#+latex_header: \newunicodechar{𝓎}{\ensuremath{y}}
-#+latex_header: \newunicodechar{𝓅}{\ensuremath{p}}
-#+latex_header: \newunicodechar{𝒆}{\ensuremath{e}}
-
-#+latex_header: \newunicodechar{⊆}{\ensuremath{\subseteq}}
-#+latex_header: \newunicodechar{⟺}{\ensuremath{\iff}}
-#+latex_header: \newunicodechar{̈}{\ensuremath{^{..}}}
-#+latex_header: \newunicodechar{∶}{\ensuremath{:}}
-#+latex_header: \newunicodechar{′}{'}
-#+latex_header: \newunicodechar{″}{''}
-# +latex_header: \newunicodechar{⨾}{;}
-#+latex_header: \newunicodechar{‿}{CONVERSE}
-#+latex_header: \newunicodechar{⁻}{\ensuremath{{}^{-}}}
-#+latex_header: \newunicodechar{□}{\ensuremath{QED}}
-# +latex_header: \newunicodechar{∎}{\ensuremath{QED}}
-#+latex_header: \newunicodechar{𝓓}{\ensuremath{\mathcal{D}}}
-#+latex_header: \newunicodechar{○}{\ensuremath{\circ}}
-#+latex_header: \newunicodechar{𝓧}{\ensuremath{\mathcal{X}}}
-#+latex_header: \newunicodechar{𝓨}{\ensuremath{\mathcal{Y}}}
-#+latex_header: \newunicodechar{𝒇}{\ensuremath{f}}
-#+latex_header: \newunicodechar{𝔁}{\ensuremath{x}}
-#+latex_header: \newunicodechar{↦}{\ensuremath{\mapsto}}
-#+latex_header: \newunicodechar{♯}{\ensuremath{SHARP}}
-#+latex_header: \newunicodechar{❙}{\ensuremath{\,\mid\,}}
-
-#+latex_header: \newunicodechar{́}{\ensuremath{'}}
+#+latex_header: \newunicodechar{⨾}{\, ; \,}
 
 #+latex_header: \usepackage[font=itshape]{quoting}
 # Now quote blocks have their contents italicised.
@@ -233,13 +207,6 @@ E.g., sorting.
 # This doesn't work since org inserts \caption !after! the minted block, which
 # needs the \mytitle.
 
-# Removing the red box that appears in "minted" when using unicode.
-# Src: https://tex.stackexchange.com/questions/343494/minted-red-box-around-greek-characters
-#
-#+LATEX_HEADER: \makeatletter
-#+LATEX_HEADER: \AtBeginEnvironment{minted}{\dontdofcolorbox}
-#+LATEX_HEADER: \def\dontdofcolorbox{\renewcommand\fcolorbox[4][]{##4}}
-#+LATEX_HEADER: \makeatother
 
 
 # Nope.
@@ -363,10 +330,12 @@ Wolfram Kahl                                         kahl@cas.mcmaster.ca
 #+end_src
 #+end_center
 
+:Hide:
 #+begin_edcomm org
 :ed: WK
 Please resolve references before you ship PDF...
 #+end_edcomm
+:End:
 
 # LaTeX: \centerline{\sc Draft}* Abstract and toc                                                   :ignore:
    :PROPERTIES:
@@ -378,6 +347,7 @@ Please resolve references before you ship PDF...
  #
  #+MACRO: null  @@latex:\null{}@@
 
+:HideAbstract_and_toc:
 #+begin_abstract
 
  Structuring-mechanisms, such as Java's ~package~ and Haskell's ~module~, are often
@@ -459,6 +429,7 @@ else. Someone had to write that sentence in order for it to exist. By cutting
 and pasting it into your “original” work, you committed theft. So, yes,
 plagiarism even comes down to one sentence.” ---Ninth Ward Goethe
 #+end_edcomm
+:End:
 
 #+latex: \newpage
 
@@ -876,6 +847,215 @@ The remainder of the thesis is organised as follows.
 It has been an exciting journey, I hope you enjoy the ride!
 
 * Introduction
+
+The construction of programming libraries is managed by decomposing ideas into
+self-contained units called ‘packages’ whose relationships are then formalised
+as transformations that reorganise representations of data.  Depending on the
+/expressivity/ of a language, packages may serve to avoid having different ideas
+share the same name ---which is usually their /only/ use--- but they may
+additionally serve as silos of source definitions from which interfaces and
+types may be /extracted/.  Figure ref:fig:monoid-derivatives exemplifies the
+idea for monoids ---which themselves model a notion of composition.  In general,
+such derived constructions are /out of reach/ from /within/ a language and have to
+be extracted /by hand/ by users who have the time and training to do so.
+Unfortunately, this is the standard approach; even though it is error-prone and
+disguises mechanical /library methods/ (that are written /once/ and proven correct)
+as /design patterns/ (which need to be carefully implemented for /each/ use and
+argued to be correct).  The goal of this thesis is to show that sufficiently
+expressive languages make packages an interesting /and/ central programming
+concept by extending their common use as silos of data with the ability for
+/users/ to /mechanically/ derive related ideas (programming constructs) as well as
+the relationships between them.
+
+#+latex_header: \usepackage{smartdiagram}
+#+caption: Deriving related /types/ from /the/ definition of monoids
+#+begin_figure latex
+\label{fig:monoid-derivatives}
+\begin{center}
+\smartdiagram[constellation diagram]{
+ {\footnotesize Monoids}
+,{\footnotesize Monoids \emph{with} carrier \texttt{C}}
+,{\footnotesize Homomorphisms, products, duals}
+,{\footnotesize Signature (Tree skeletons)}
+,{\footnotesize Pointed Magma} % \\ (“Exclusion”)
+,{\footnotesize Terms \\ (Trees with variables)}
+,{\footnotesize Monoids \emph{over} a setoid}
+% ,Universal Algebra constructions
+,{\scriptsize Monoids \emph{with} carrier \texttt{C} and operation $\oplus$}
+}
+
+\end{center}
+#+end_figure
+
+The framework developed in this thesis is motivated by the following concerns
+when developing libraries in the dependently-typed language (DTL) Agda, such as
+cite:RATH.
+1. *Practical₁: Renaming* There is excessive repetition in the simplest of tasks
+   when working with packages; e.g., to /uniformly/ decorate the names in a
+   package with subscripts ~₀, ₁, ₂~ requires the package's contents be listed
+   thrice.  It would be more economical to /apply/ a renaming /function/ to a
+   package.
+
+2. *Practical₂: Unbundling* In general, in a DTL, /packages behave like functions/
+   in that they may have a subset of their contents designated as /parameters
+   exposed at the type-level/ which users can /instantiate/. Unfortunately, library
+   developers generally provide only a few /variations/ on /a/ package; such as
+   having no parameters or having only /functional symbols/ as parameters ---c.f.,
+   the carrier ~C~ and operation ~⊕~ in figure ref:fig:monoid-derivatives.  Whereas
+   functions can /bundle-up/ or /unbundle/ their parameters using currying and
+   uncurrying, only the latter is generally supported and, even then, not in an
+   elegant fashion.  Rather than provide /several variations/ on a package, it
+   would be more economical to provide one singular fully-bundled package and
+   have an operator that allows users to /declaratively/, “on the fly”, expose
+   package constituents as parameters.
+
+3. *Theoretical₁: Exceptionality* DTLs blur the distinguish between expressions and
+   types, treating them as the same thing: /Terms/. This collapses a number of
+   seemingly different language constructs into the same thing ---e.g., programs
+   and proofs are essentially the same thing.  Unfortunately, packages are
+   treated as /exceptional/ values that differ from /usual/ values ---such as
+   functions and numbers--- in that the former are ‘second-class citizens’ which
+   only serve to collect the latter ‘first-class citizens’.  This forces users
+   to learn two families of ‘sub-languages’ ---one for each citizen class.
+   There is essentially no /theoretical/ reason why packages do not deserve
+   first-class citizenship, and so receive the same treatment as other
+   /unexceptional/ values. Another advantage of giving packages equal treatment is
+   that we are inexorably led to wonder what *computable algebraic structure* they
+   have and how they relate to other constructs in a language; e.g., packages
+   are essentially record-valued functions.
+
+4. *Theoretical₂: Syntax* It is well known that sequences of declarations may be
+   grouped together within a /package/. If any declarations are opaque, not fully
+   undefined, they become /parameters/ of the package ---which may then be
+   identified as a /record type/ with the opaque declarations called /fields/.
+   However, when a declaration is /intentionally opaque/ not because it is missing
+   an implementation, but rather it acts as a value construction itself then one
+   uses /algebraic data types/, or ‘termtypes’. Such types share the general
+   structure of a package, and so it would be interesting to illuminate the
+   exact difference between the concepts ---/if any/. In practice, one forms a
+   record type to model an interface, instances of which are actual
+   implementations, and forms an /associated/ termtype to /describe computations/
+   over that record type, thereby making available a syntactic treatment of the
+   interface ---textual substitution, simplification / optimisation, evaluators,
+   canonical forms. For example, as shown in figure ref:fig:monoid-derivatives,
+   the record type of monoids models composition whereas the (tremendously
+   useful) termtype of binary trees acts as a description language for monoids.
+   The /problem of maintenance/ now arises: Whenever the record type is altered,
+   one must mechanically update the associated termtype.  It would be more
+   economical to extract /both/ record types and termtypes from a single package
+   declaration.
+
+In this thesis, we aim to mitigate the above concerns with a focus on
+*practicality*. A theoretical framework may address the concerns, but it would be
+incapable of accommodating /real-world use-cases/ when it cannot be applied to
+real-world code. For instance, one may speak of ‘amalgamating packages’, which
+can always “be made disjoint”, but in practice the union of two packages would
+likely result in name clashes which could be avoided in a number of ways but the
+/user-defined names/ are important and so a result that is “unique up to
+isomorphism” is not practical. As such, we will implement a framework to show
+that the above concerns can be addressed in a way that *actually works*.
+
+** Thesis Overview
+
+The remainder of the thesis is organised as follows.
+
++ Chapter 2 consists of preliminaries, to make the thesis self-contained, and
+  contributions of the thesis.
+
+  A review of dependently-typed programming with Agda is presented, with a focus
+  on its packaging constructs: Namespacing with =module=, record types with
+  =record=, and as contexts with Σ-padding. The interdefinability of the
+  aforementioned three packaging constructs is demonstrated.  After-which is a
+  quick review of other DTLs that shows the idea of a unified notion of package
+  is promising ---Agda is only a presentation language, but the ideas transfer
+  to other DTLs.
+
+  With sufficient preliminaries reviewed, the reader is in a position to
+  appreciate a survey of package systems in DTLs and the contributions of this
+  thesis. The contributions listed will then act as a guide for the remainder of
+  the thesis.
+
++ Chapter 3 consists of real world examples of problems encountered with the
+  existing package system of Agda.
+
+  Along the way, we identify a set of /DTL design patterns/ that users repeatedly
+  implement. An indicator of the *practicality* of our resulting framework is the
+  ability to actually implement such patterns as library methods.
+
++ Chapter 4 discusses a prototype that addresses /nearly/ all of our concerns.
+
+  Unfortunately, the prototype introduces a new sublanguage for users to learn.
+  Packages are /nearly/ first-class citizens: Their manipulation must be specified
+  in Lisp rather than in the host language, Agda.  However, the ability to
+  rapidly, textually, manipulate a package makes the prototype an extremely
+  useful tool to test ideas and implementations of package combinators.  In
+  particular, the aforementioned example of forming unions of packages is
+  implemented in such a way that the amount of input required ---such as /along/
+  what interface should a given pair of packages be /glued/ and /how/ name clashes
+  should be handled--- can be ‘inferred’ when not provided by making use of
+  Lisp's support for keyword arguments. Moreover, the union operation is a
+  /user-defined/ combinator: It is a /possible/ implementation by a user of the
+  prototype, built upon the prototype's “package meta-primitives”.
+
++ Chapter 5 takes the lessons learned from the prototype to show that
+  /DTLs can have a unified package system within the host language/.
+
+  The prototype is given semantics as Agda types and functions by forming a
+  *practical* library within Agda that achieves the core features of the prototype.
+  The switch to a DTL is nontrivial due to the type system; e.g., fresh names
+  cannot be arbitrarily introduced nor can syntactic shuffling happen without a
+  bit of overhead. The resulting library is both usable and practical, but lacks
+  the immense power of the prototype due to the limitations of the existing
+  implementation of Agda's metaprogramming facility.
+
+  We conclude with the observation that ubiquitous data structures in computing
+  arise /mechanically/ as termtypes of simple ‘mathematical theories’ ---i.e.,
+  packages.
+
++ Chapter 6 concludes with a discussion about the results presented in the
+  thesis.
+
+The underlying motivation for the research is the conviction that packages play
+/the/ crucial role for forming compound computations, subsuming /both/ record types
+and termtypes. The approach followed is summarised in figure ref:fig:thesis-guidline.
+
+#+caption: Approach for a *practical* framework
+#+begin_figure latex
+\begin{center}
+\label{fig:thesis-guidline}
+\smartdiagram[flow diagram:horizontal]{
+  Real-world use cases
+ ,IDE Prototype
+ ,DTL Library}
+\end{center}
+#+end_figure
+
+* COMMENT Diagrams
+The concepts related to this thesis include:
+#+begin_center latex
+\smartdiagram[bubble diagram]{this thesis,
+dependent-types, first-class citizens, pragmatic syntax, metaprogramming,
+unbundling problem, module combinators}
+#+end_center
+
+For PackageFormer, this was the general plan:
+#+begin_center latex
+\tikzset{my decoration/.style={decorate,decoration=zigzag}}
+\smartdiagramset{module shape=rectangle,
+insert decoration={my decoration},
+uniform arrow color=true,
+arrow color=gray!50!black,
+}
+
+\smartdiagram[priority descriptive diagram]{
+  Find real-world examples of manual package manipulation
+ ,Identify and implement the underlying syntactic transformations
+ ,Factor-out similarities from the implementations
+ ,Fine-tune the essence of a package
+ }
+#+end_center
+
+* COMMENT [OLD] Introduction
   :PROPERTIES:
   :CUSTOM_ID: Introduction-new
   :END:
@@ -1342,8 +1522,8 @@ factorial = f , refl , refl
 #+attr_latex: :options xleftmargin=6pt
  #+begin_src haskell +n 0
 -- Terms: Expressions and Types
-e, τ ::= α          -- base type
-    | Typeᵢ         -- “type of types”; Universe of small types at level i : ℕ
+e, τ ::= α          -- base type and constants
+    | Typeᵢ         -- “type of types”; Universe of types at level i : ℕ
     | ℕ             -- “Levels” for the type hierarchy
     | Π x : τ • τ   -- ‘Pi’, dependent-function type
     | Σ x : τ • τ   -- ‘Sigma’, dependent-sum type
@@ -2582,7 +2762,7 @@ settings, citet:dtl_imperative, albeit less prominently.
  # That paper is from 2012, are there any newer ones!?
 :end:
 
-* Motivating the problem ---Examples from the Wild
+* COMMENT Motivating the problem ---Examples from the Wild
 
 <<sec:examples_from_the_wild>>
 #+latex: \label{sec:examples_from_the_wild}
@@ -3805,7 +3985,7 @@ end
    Unfortunately, a common scenario is when one wants to /instantiate/ such a deeply
    nested theory ---as was the case in section ref:sec:examples:extensions for
    fine-grained hierarchy of monoids.
-* Current Approaches
+* COMMENT Current Approaches
 
 <<sec:current_approaches>>
 #+latex: \label{sec:current_approaches}
@@ -5084,7 +5264,7 @@ console.log( maximal instanceof Object // ⇒ false
   So objects do more than just hold their own properties. They have prototypes,
   which are other objects. They’ll act as if they have properties they don’t have
   as long as their prototype has that property.
-* The =PackageFormer= Prototype
+* COMMENT The =PackageFormer= Prototype
 
 # The Second Choice: =PackageFormer=
 
@@ -5105,27 +5285,6 @@ console.log( maximal instanceof Object // ⇒ false
 
 #+macro: goal |→$1←|
 
- #+latex_header: \newunicodechar{⇨}{→}
- #+latex_header: \newunicodechar{➩}{→}
- #+latex_header: \newunicodechar{𝑝}{p}
- #+latex_header: \newunicodechar{𝑎}{a}
- #+latex_header: \newunicodechar{𝑟}{r}
- #+latex_header: \newunicodechar{𝑒}{e}
- #+latex_header: \newunicodechar{𝑛}{n}
- #+latex_header: \newunicodechar{𝑡}{t}
- #+latex_header: \newunicodechar{𝑚}{m}
- #+latex_header: \newunicodechar{𝑙}{l}
- #+latex_header: \newunicodechar{𝑠}{s}
- #+latex_header: \newunicodechar{𝑜}{o}
- #+latex_header: \newunicodechar{𝑓}{f}
-
- #+latex_header: \newunicodechar{𝟘}{\textbf{0}}
-
- #+latex_header: \newunicodechar{⟦}{\ensuremath{[\![}}
-  #+latex_header: \newunicodechar{⟧}{\ensuremath{]\!]}}
-
- #+latex_header: \newunicodechar{⟿}{\ensuremath{\rightsquigarrow}}
-
  #+latex: \def\Id{\mathsf{Id}}
  #+latex_header: \def\KIND{\,:\!\mathsf{kind}\,}
  #+latex_header: \def\WAIST{\,:\!\mathsf{waist}\,}
@@ -5135,12 +5294,6 @@ console.log( maximal instanceof Object // ⇒ false
  #+latex: \def\THEN{\,\mathsf{then}\,}
  #+latex: \def\ELSE{\,\mathsf{else}\,}
 
-  #+LATEX_HEADER: \DeclareMathOperator{\VCCompose}{\longrightarrow\hspace{-3.5ex}\oplus\;}
-  #+LATEX_HEADER: \newunicodechar{⟴}{\ensuremath{\!\!\VCCompose}}
-  #+LATEX_HEADER: \newunicodechar{𝓋}{\ensuremath{v}}
-  #+LATEX_HEADER: \newunicodechar{₋}{\ensuremath{_-}}
-  #+LATEX_HEADER: \newunicodechar{𝒱}{\ensuremath{\mathcal{V}}}
-  #+LATEX_HEADER: \newunicodechar{↪}{\ensuremath{\hookrightarrow}}
 
    # I'm trying to do things with one language, in a DTL, and about being first-class.
    # What I currently have is to approximate what it could look like.
@@ -9952,7 +10105,7 @@ pk decorated f = record { Name         = bimap id f pk.Name
 # 3. Provide a semantics to the existing syntax.
 # 4. Ensure the resulting semantics is consistent with that of Agda's.
 
-* The =Context= Library
+* COMMENT The =Context= Library
 # The Third Choice: Contexts
 
 <<sec:contexts>>
@@ -9963,15 +10116,6 @@ pk decorated f = record { Name         = bimap id f pk.Name
   # dashed and layered boxes.
   #+latex_header: \usepackage{dashbox}
 
-#+latex_header: \usepackage{newunicodechar}
-#+latex_header: \newunicodechar{‵}{\ensuremath{`}}
-#+latex_header: \newunicodechar{𝟘}{\ensuremath{\mathbf{0}}}
-#+latex_header: \newunicodechar{✓}{\ensuremath{\checkmark}}
-#+latex_header: \newunicodechar{←}{\ensuremath{\leftarrow}}
-#+latex_header: \newunicodechar{⇊}{\ensuremath{\downarrow\downarrow}}
-
-# trash!
-#+latex_header: \newunicodechar{⟴}{\ensuremath{\oplus\!\!\to}}
 
 ** Introduction :ignore:
 
@@ -10891,6 +11035,22 @@ data Kind : Set where
  # The FloatBarrier stops floats (figures are floats) from jumping over them. I
  # will need to look into passing [tbh] options to figures from org mode further.
 
+#+begin_edcomm
+:ed: Musa
+
+Maybe render the above table as a descriptive diagram:
+
+\smartdiagram[descriptive diagram]{
+  {Style,{Define shapes, colors, shading,
+          and line styles for nodes and arrows}},
+  {Position, {Place nodes using a matrix,
+              relative or absolute positioning}},
+  {Relation, Insert edges or arrows
+             between selected nodes},
+  {Label, Add labels on edges or arrows}}
+
+#+end_edcomm
+
  To those interested in exotic ways to group data together ---such as,
  mechanically deriving product types and homomorphism types of theories---
  we offer an interface that is extensible using Agda's reflection mechanism.
@@ -11058,7 +11218,7 @@ comap f ⟨ edgs ⟩₁ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩₁
    allow arbitrary grouping mechanisms to be derived, such as obtaining the
    homomorphism type of a given record.
  #+end_abstract
-* Discussion, Conclusion, and Future Work
+* COMMENT Discussion, Conclusion, and Future Work
 
 <<sec:conclusion>>
 #+latex: \label{sec:conclusion}
@@ -12331,7 +12491,7 @@ translate₀ {B} AS f surj inj = record { Carrier = B ; _⨾_ = _⨾_ ; assoc = 
  - ⟦Γ A ⟴ B⟧ = ⟦ ⟦Γ A⟧ B ⟧ -- get a context, then apply B to that.
  :end:
 
-* Glossary :ignore:
+* COMMENT Glossary :ignore:
 
 #+LaTeX: \addcontentsline{toc}{part}{Glossary}
 
@@ -12489,11 +12649,13 @@ Better yet, simply add it to the export process:
 
 * Bib                                                                :ignore:
 
+:ignore:
 #+begin_edcomm org
 :ed: WK
 Don't cite Wikipedia in your PhD thesis, and don't copy anything from Wikipedia.
 Just don't.
 #+end_edcomm
+:end:
 
 :Use_citet_instead_of_cite:
 #+begin_edcomm org
@@ -12512,14 +12674,14 @@ These papers come from people!
 #+LaTeX: \addcontentsline{toc}{part}{References}
 #+LaTeX: \printbibliography
 
-* appendix marker :ignore:
+* COMMENT appendix marker :ignore:
 \appendix
 
 :Musa:
 The appendix marker must occur before the section on appendices.
 :End:
 
-* Context Implementation
+* COMMENT Context Implementation
 #+latex_header: \usepackage[toc,page]{appendix}
 
 # Appendices are for the details, and so have a smaller font.
@@ -13571,7 +13733,7 @@ comap′ f ⟨ edgs ⟩¹ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩¹
     #+latex: \vspace{1em}\noindent
     Excellent, we can unbundle at will.
 
-* A Whirlwind Tour of Agda
+* COMMENT A Whirlwind Tour of Agda
 <<sec:what_is_DTL>>
 #+latex: \label{sec:what_is_DTL}
 
@@ -14805,11 +14967,13 @@ Here are a few concrete instances:
 
 [fn:13] It is common to see /binder notation/ as =𝒬 x ∶ τ → ⋯=, =(𝒬 x ∶ τ) ⋯=, and in
 ~𝒬 x ∶ τ • ⋯~. We prefer the final form.  Agda uses =𝒬 (x ∶ τ) → ⋯= for binders, and
-uses ~∀~ in-place of ~Π~ and ~record~-syntax in-place of ~Σ~.  The appendix shows how to
-use Agda's =syntax= declarations to allow one to use nearly any desired, linear,
-syntax.  Our demonstration language, Agda, happens to use a /hierarchy of types/
-which it calls =Setᵢ= instead of ~Typeᵢ~; however, DTLs do not need such a
-hierarchy; indeed some have a single universe ~Type~ with the rule ~Type ∶ Type~.
+uses ~∀~ in-place of ~Π~ and ~record~-syntax in-place of ~Σ~.  To emphasise that Π/Σ
+/extend/ the usual ×/→, one may write ~(a : A) → B a~ and ~(a : A) × B a~.  The
+appendix shows how to use Agda's =syntax= declarations to allow one to use nearly
+any desired, linear, syntax.  Our demonstration language, Agda, happens to use a
+/hierarchy of types/ which it calls =Setᵢ= instead of ~Typeᵢ~; however, DTLs do not
+need such a hierarchy; indeed some have a single universe ~Type~ with the rule
+~Type ∶ Type~.
 
 [fn:12]
 https://alhassy.github.io/next-700-module-systems/prototype/package-former.html
