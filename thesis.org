@@ -177,6 +177,8 @@ Algebraic Data Types}
 # +LATEX_HEADER: \usepackage{papers/UnicodeSymbols}
 #+latex_header: \usepackage{newunicodechar}
 #+latex_header: \newunicodechar{⨾}{\, ; \,}
+#+latex_header: \newunicodechar{♯}{\ensuremath{\sharp}}
+#+latex_header: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
 
 #+latex_header: \usepackage[font=itshape]{quoting}
 # Now quote blocks have their contents italicised.
@@ -184,7 +186,14 @@ Algebraic Data Types}
 ** Minted setup -- colouring code blocks                             :ignore:
 
 #+LATEX_HEADER: \usepackage{minted}
+
 #+LATEX_HEADER: \usepackage{tcolorbox}
+#+latex: \tcbset{colback=green!10!white}
+# \tcbsetforeverylayer{colframe=red!75!black}
+#+latex: \newtcolorbox{myexamplebox}[1]{title=#1,
+#+latex: colback=red!5!white, colframe=red!75!black, colbacktitle=yellow!50!red, coltitle=red!25!black, fonttitle=\bfseries,
+#+latex: subtitle style={boxrule=0.4pt, colback=yellow!50!red!25!white}}
+
 #+LATEX_HEADER: \usepackage{etoolbox}
 #+LATEX_HEADER: \def\mytitle{??? Program Code ???}
 #+LATEX_HEADER: \BeforeBeginEnvironment{minted}{\begin{tcolorbox}[title=\hfill \mytitle]}%
@@ -440,10 +449,11 @@ plagiarism even comes down to one sentence.” ---Ninth Ward Goethe
 
 #+latex: \newpage
 
-** COMMENT Abstract                                                  :ignore:
+** Abstract                                                  :ignore:
  #
    #+begin_abstract org
-   Can parameterised records and algebraic datatypes be derived from one
+   Can parameterised records and algebraic datatypes ---i.e., Π-, Σ-, and
+   𝒲-types--- be derived from one
    pragmatic declaration?
 
    Record types give a universe of discourse, parameterised record types fix
@@ -455,7 +465,8 @@ plagiarism even comes down to one sentence.” ---Ninth Ward Goethe
    we also find that common data structures correspond to simple theories.
  #+end_abstract
 
-  \maketitle
+#  \maketitle
+#+TOC: headlines 4
 * COMMENT OLD Introduction ---The Thesis’ “Story”
   :PROPERTIES:
   :CUSTOM_ID: introduction
@@ -1047,32 +1058,33 @@ and termtypes. The approach followed is summarised in figure ref:fig:thesis-guid
 
 ** Intro :ignore:
 
-The purpose of language is to communicate ideas that ‘live’ in our minds.  In
+#+begin_parallelNB org
+
+The purpose of language is to communicate ideas that ‘live’ in our minds
+---conversely, language also limits the kinds of thoughts we may have.  In
 particular, written text captures ideas independently of the person who
 initially thought of them.  To understand the idea /behind/ a written sentence,
 people agree on *how* sentences may be organised and *what* content they denote from
 their parts. For example, in English, a sentence is considered ‘well-formed’ if
 it is in the order subject-verb-object ---such as /“Jim ate the apple”/--- and it
 is considered ‘meaningful’ if the subject and object are noun phrases that
-/denote things in the world that *could exist*/ and the verb is a *possible action*
-by the subject on the object. For instance, in the previous example, there /could/
-be a person named /Jim/ who /could/ eat an apple, and so the sentence is
-meaningful.  In contrast the phrase /“the colourless green apple kissed Jim”/ is
-well-formed /but not/ meaningful: The indicated action *could happen*, say, /in a
-world/ of sentient apples; however, the subject ---/the colourless green apple/---
-*cannot possibly exist* since a thing cannot be both lacking colour but also
-having colour at the same time. Moreover, /depending on who you ask/, the action
-of the previous example ---/the [...] apple *kissed* Jim/---, may be ludicrous /on
-the basis/ that kissing is ‘classified’ as a verb whose subject, in the ‘real’
-world, has the ability to kiss.  As such, ‘meaningfulness’ is not necessarily
-fixed, but may vary. Likewise, as there is no one universal language spoken by
-all
-people, written text is also not fixed but varies; e.g., a translation
-tool may convert an idea /captured in/ Arabic to a related idea /captured in/
-French.
-It is with the observations that we will discuss the
-concepts required to have a formal theory of packages, as summarised in Figure
-\ref{tbl:languages}.
+/denote things in a world that *could exist*/ and the verb is a *possible action* by
+the subject on the object. For instance, in the previous example, there /could/ be
+a person named /Jim/ who /could/ eat an apple, and so the sentence is meaningful.
+In contrast the phrase /“the colourless green apple kissed Jim”/ is well-formed
+/but not/ meaningful: The indicated action *could happen*, say, /in a world/ of
+sentient apples; however, the subject ---/the colourless green apple/--- *cannot
+possibly exist* since a thing cannot be both lacking colour but also having
+colour at the same time. Moreover, /depending on who you ask/, the action of the
+previous example ---/the [...] apple *kissed* Jim/---, may be ludicrous /on the basis/
+that kissing is ‘classified’ as a verb whose subject, in the ‘real’ world, has
+the ability to kiss.  As such, ‘meaningfulness’ is not necessarily fixed, but
+may vary. Likewise, as there is no one universal language spoken by all people,
+written text is also not fixed but varies; e.g., a translation tool may convert
+an idea /captured in/ Arabic to a related idea /captured in/ French.  It is with
+these observations that we will discuss the concepts required to have a formal
+theory of packages, as summarised in the figure below.
+# Figure \ref{fig:languages}.
 
 :OG:
 # +latex: \begin{tcolorbox}
@@ -1094,8 +1106,10 @@ concepts required to have a formal theory of packages, as summarised in Figure
 # The “,” is not a seperator but a terminator in smartdiagrams: It must appear
 # at the end of a line; not the next line.
 #+begin_export latex
-\begin{center}
-\label{tbl:languages}
+% \begin{figure}
+% \begin{center}
+% \caption{Languages}
+% \label{fig:languages}
 \smartdiagram[descriptive diagram]{
   {Syntax    , {Written text; a sequence of symbols}},
 {Well-formed , {Adherence to a particular organisation}},
@@ -1104,12 +1118,20 @@ concepts required to have a formal theory of packages, as summarised in Figure
 {Package     , {A language consisting of a vocabulary and sentences}},
 {Combinator  , {A translation of ideas in one language (package) into another}},
 }
-\end{center}
+% \end{center}
+% \end{figure}
 #+end_export
+#+end_parallelNB
 
-The contents of Table \ref{tbl:languages} may be intimidating to the
+#+latex_header: \newtcolorbox{mybox}[2][]{colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black,title=#2,#1}
+
+#+latex: \begin{mybox}{Game-Play Analogy}
+# The contents of Figure \ref{fig:languages} may be intimidating to the
+The contents of above figure may be intimidating to the
 uninitiated; so we reach for a game-play based analogy to further make the
 concepts accessible.
+
+#+latex: \tcblower
 
 Programming, as is the case with all of mathematics, is the manipulation of
 symbols according to specific /rules/.  Moreover, like a game, when one plays
@@ -1138,6 +1160,7 @@ the primary game ---more concretely, a game may require a roll of a die whose
 numbers /denote/, or /refer to/, players in the main game which are not expressible
 in the mini-game.  A /model/ of a game (type theory) is an interpretation of the
 game's pieces in way that the rules are true under the interpretation.
+#+latex: \end{mybox}
 
 :SyntaxAdjSemantics:
 #+begin_center
@@ -1145,14 +1168,15 @@ game's pieces in way that the rules are true under the interpretation.
 #+end_center
 :End:
 
-Consider the following real-world examples.  First, suppose you have a machine whose
-actions you cannot see, but you have a control panel before you that shows a
-starting screen, ~start~, and the panel has one button, ~next~, that forces the
-machine to act which updates the screen. Moreover, there is a screen capture
-called ~thrice~ /which happens/ to be the result of pressing ~next~ three times after
-starting the machine. Second, suppose you are an artist mixing colours together.
+To see an example of packages, consider the following real-world examples of
+dynamical systems.  First, suppose you have a machine whose actions you cannot
+see, but you have a control panel before you that shows a starting screen,
+~start~, and the panel has one button, ~next~, that forces the machine to act which
+updates the screen. Moreover, there is a screen capture called ~thrice~ /which
+happens/ to be the result of pressing ~next~ three times after starting the
+machine. Second, suppose you are an artist mixing colours together.
 #+begin_parallelNB org
-{{{code(A dynamical system -- Machine)}}}
+{{{code(Machine)}}}
 #+begin_src haskell
 State  : Type
 start  : State
@@ -1161,7 +1185,7 @@ thrice : State
 thrice = next (next (next start))
 #+end_src
 :columnbreak:
-{{{code(A dynamical system -- Colours)}}}
+{{{code(Colours)}}}
 #+begin_src haskell
 Colour : Type
 red    : Colour
@@ -1195,7 +1219,11 @@ but it lacks any implementation and is thus not actually a function.
 A /function symbol/ is to a function, like a name is to a person:
 Your name does not fully determine who you are as a person.
 
-This sections aims to present a mathematical formalisation of packages.  For
+** Subsection Goals                                                  :ignore:
+
+#+latex: \subsection*{Subsection Goals}
+
+This section aims to present a mathematical formalisation of packages.  For
 brevity, we only consider parameters in the first few sections then accommodate
 non-parameters after a working definition is established.  As discussed in the
 introduction, there are a number of ‘sub-languages’ one must be familiar with in
@@ -1204,12 +1232,9 @@ respective operations--- and so a prime goal of our discussions will be to
 /reduce/ the number of distinctions so that we have a /uniform/ approach to
 different aspects of a language.
 
-** Subsection goals :ignore:
-
 The goals of the subsections are as follows.
 
-+ Provide a formalism of the above =Colour= package.
-
+#+latex: \begin{tcolorbox}[title=Provide a formalism of the above \texttt{Colour} package]
   1. [@1] *What is a language?* Sketch out the English sentences example from above,
      introducing the notation used for declaring grammars of languages, along with
      typing contexts.
@@ -1219,48 +1244,53 @@ The goals of the subsections are as follows.
      (signatures) /practically/ in a uniform notation leads to types that /vary/
      according to other types and so the constructor Π; then the *(un)bundling
      problem* is used to motivate the introduction of the Σ type constructor.
-  4. *Permitting Optional Definitions* Round-up the discovery of a formal definition
-     of packages by returning to the =Colour= example above.
-  5. *The Definition of /Generalised Signatures/* Summarise the final definition of
-     _packages as generalised signatures_; a theory related to /sketches/.
+  #   4. *Permitting Optional Definitions* Round-up the discovery of a formal definition
+  #      of packages by returning to the =Colour= example above.
+  #   5. *The Definition of /Generalised Signatures/* Summarise the final definition of
+  #      _packages as generalised signatures_; a theory related to /sketches/.
+#+latex: \end{tcolorbox}
 
-+ Demonstrate the interdefinability of structuring mechanisms.
-
-  6. [@6] *A Whirlwind Tour of Agda* Tersely review the Agda language as a tool
+#+latex: \begin{tcolorbox}[title=Demonstrate the interdefinability of structuring mechanisms]
+  4. [@4] *A Whirlwind Tour of Agda* Tersely review the Agda language as a tool
      supporting the ideas of the previous subsections. In particular, the usual
      structuring mechanisms found in most settings are discussed ---they are
      records, namespacing modules, and “algebraic datatypes” (grammars in a new
      setting).
 
-  7. *Facets of Structuring Mechanisms* Demonstrate three possible ways to define
+  5. *Facets of Structuring Mechanisms* Demonstrate three possible ways to define
      monoids in Agda and argue their equivalence; thereby, showing that
      structuring mechanisms are in effect accomplishing the same goal in
      different ways: They package data along with a particular /usage interface/.
      As such, it is not unreasonable to seek out a unified notion of *package*
      ---namely, the aforementioned generalised signatures.
+#+latex: \end{tcolorbox}
 
-+ Take inspiration from how other DTLs handle packages.
+#+latex: \begin{tcolorbox}[title=Take inspiration from how other DTLs handle packages]
 
-  8. [@8] *Contexts are Promising* Discuss how other dependently-typed languages
+  6. [@6] *Contexts are Promising* Discuss how other dependently-typed languages
      (DTLs) view
      contexts and signatures.
 
-  9. *Coq Modules as Generalised Signatures* Argue that the notion of generalised
+  7. *Coq Modules as Generalised Signatures* Argue that the notion of generalised
      signature is promising as the underlying formal definition of packages.
 
-+ Contributions of the thesis.
+#+latex: \end{tcolorbox}
 
-  10. [@10] What is the primary problem the thesis aims to address.
+#+latex: \begin{tcolorbox}[title=Contributions of the thesis]
 
-  11. What are the outcomes of the thesis effort.
+  8. [@8] What is the primary problem the thesis aims to address.
 
+  9. What are the outcomes of the thesis effort.
+#+latex: \end{tcolorbox}
 ** What is a language?
+
+#+latex: \tcbset{colback=green!10!white}
 
 In this section, we introduce two languages in preparation for the terminology
 and ideas of the next section. The first language, /Madlips/, will only be
 discussed briefly and is mentioned due to its inherit accessibility, thereby
 avoiding unnecessary domain specific clutter and making definitions clearer.
-The plan for this section is summarised in the following diagram.
+The plan for this section is loosely summarised by the following diagram.
 #+begin_export latex
 \begin{center}
 \smartdiagram[sequence diagram]{English Example, Arithmetic Example, Rules, Contexts}
@@ -1270,7 +1300,7 @@ The plan for this section is summarised in the following diagram.
 # The languages are presented gently in increasing
 # degrees of abstraction.
 
-*Madlips[fn:18]* Simple English sentences have the form subject-verb-object such
+*Madlips[fn:18]*: Simple English sentences have the form subject-verb-object such
 as /“Jim ate the apple”/. To /mindlessly/ produce such sentences, one must produce a
 subject, then a verb, then an object ---all from given lists of possibilities. A
 convenient notation to describe a language is its /grammar/
@@ -1278,6 +1308,11 @@ cite:DBLP:journals/iandc/Chomsky59b,DBLP:journals/iandc/Chomsky59a presented in
 /Backus-Naur Form/
 cite:DBLP:journals/cj/ChaplinCH73,DBLP:conf/aplas/GuoyongDF02,DBLP:journals/bmcbi/LarosBDT11,DBLP:journals/cacm/Knuth64a
 as in Figure ref:fig:madlips-grammar.
+
+#+LATEX_HEADER: \usepackage{placeins}
+#+latex: \FloatBarrier
+# The FloatBarrier stops floats (figures are floats) from jumping over them. I
+# will need to look into passing [tbh] options to figures from org mode further.
 
 {{{code(Madlips Grammar)}}}
 #+caption: Madlips Grammar
@@ -1311,7 +1346,7 @@ of the collection names is replaced by one of its constructors until there are
 no more possible replacements.
 {{{code(Example Derivation)}}}
 #+begin_src haskell
-  Sentence
+   Sentence
 → Subject Verb Object
 → Jim     Verb Object
 → Jim     Ate  Object
@@ -1332,7 +1367,7 @@ sentence =Apple Kissed He=.
 #+latex: \noindent
 We will return to the notions of /context/ and /judgement/ after the next example language.
 
-*Freshmen*
+*Freshmen*:
 Introductory computing classes are generally interested in arithmetic
 that involves both numeric and truth values ---also known as /Boolean values/. We can capture some of their ideas with the following
 grammar.
@@ -1360,8 +1395,8 @@ the conditions under which the relationship is true.
 #+begin_src haskell
 Type ∷= Number | Boolean
 #+end_src
-
 #+begin_export latex
+\begin{tcolorbox}[colframe=red!75!black, title= Judgement Rules]
 \begin{mathpar}
        \inferrule{ }{\mathtt{Zero} : \mathtt{Number}}
   \and \inferrule{t : \mathtt{Number}}{\mathtt{Succ}\, t : \mathtt{Number}}
@@ -1374,9 +1409,10 @@ Type ∷= Number | Boolean
   \and \inferrule{s : \mathtt{Boolean} \quad t : \mathtt{Boolean}}%
         {s\, ≈ \,t : \mathtt{Boolean}}
 \end{mathpar}
+\end{tcolorbox}
 #+end_export
 A rule ${premises \over conclusion}$ means “if the top parts are all true, then
-the bottom part is also true”; some rules have no premises and are their
+the bottom part is also true”; some rules have no premises and so their
 conclusions are unconditionally true.  That these are /judgement rules/ means that
 a particular instance of the relationship ~t ∶ τ~ is true if and only if it is the
 conclusion of ‘repeatedly stacking’ these rules on each other.  For example,
@@ -1394,20 +1430,22 @@ there are no more possible rules to apply.
 \end{mathpar}
 #+end_export
 
-This solves the problem of nonsensical terms; for example, ~True + Zero~ /cannot
-be assigned/ a type since the judgement rule involving =+= requires both its
+This solves the problem of nonsensical terms; for example, ~True + Zero~ /cannot be
+assigned/ a type since the judgement rule involving =_+_= requires both its
 arguments to be numbers. As such, *consideration is moved from raw terms, to
 typeable terms.* The types can be interpreted as /well-definedness constraints/ on
 the constructions of terms.  Alternatively, types can be considered as *abstract
-interpreters* in that, say, we may not know the exact /value/ of ~s + t~ but we
-know that it is a ~Number~ /provided/ both ~s~ and ~t~ are numbers; whereas we know
-nothing about ~Zero + False~.
+interpreters* in that, say, we may not know the exact /value/ of ~s + t~ but we know
+that it is a ~Number~ /provided/ both ~s~ and ~t~ are numbers; whereas we know nothing
+about ~Zero + False~.
 
+#+latex: \begin{tcolorbox}[colframe=red!75!black]
 | Concept | Intended Interpretation                                |
 |---------+--------------------------------------------------------|
 | type    | a collection of things                                 |
 | term    | a particular one of those things                       |
 | $x : τ$ | the declaration that $x$ is indeed within collection τ |
+#+latex: \end{tcolorbox}
 
 There is one remaining ingredient we have yet to transfer over from the Madlips
 setting: Pronouns, or /variables/, which “stand in” for “yet unknown” values of a
@@ -1437,14 +1475,17 @@ Term     ∷= ⋯ | Variable
 Variable ∷= 𝓍 | 𝓎 | 𝓏
 #+end_src
 
-We have one new rule to type variables, which makes use of the underlying context.
+We have one new rule to type variables, which makes use of the underlying
+context.
+#+latex: \begin{tcolorbox}[colframe=red!75!black]
 #+begin_export latex
 \begin{mathpar}
        \inferrule{Γ(x) = τ}{Γ ⊢ x : τ}
 \end{mathpar}
 #+end_export
+#+latex: \end{tcolorbox}
 All previous rules now must now additionally keep track of the context; e.g.,
-the =‘+’= rule becomes:
+the =_+_= rule becomes:
 #+begin_export latex
 \begin{mathpar}
   \inferrule{Γ ⊢ s : \mathtt{Number} \quad Γ ⊢ t : \mathtt{Number}}%
@@ -1481,6 +1522,8 @@ structure for compound computations. To this aim, we have the approximation:
 
 ** Signatures
 
+#+latex: \tcbset{colback=green!10!white}
+
 The languages of the previous section can be organised into /signatures/, which
 define interfaces in computing since they consist of the /names/ of the types of
 data as well as the /names/ of operations on the types ---there are only symbolic
@@ -1507,18 +1550,20 @@ presentation of packages given in the first subsection above.
   and $\tgt : ℱ → 𝒮$ that associate a list[fn:20] of /source sorts/ and a
   /target sort/ with a given function symbol.
 
+#+latex: \begin{tcolorbox}[colframe=red!75!black, title=Signatures generalise graphical sketches]
 /Unary Signatures/ have only one source sort for each function symbol
 ---i.e., the length of $\src f$ is always 1--- and so are just graphs.
-The ontology is captured in Figure ref:tbl:sigs-are-graphs.
+# The ontology is captured in table ref:tbl:sigs-are-graphs.
 
 # +name: tbl:sigs-are-graphs
-#+begin_figure org
-#+latex: \label{tbl:sigs-are-graphs}
-| Signatures       | ≈ | Graphs            |
-|------------------+---+-------------------|
-| Sorts            |   | Nodes, Vertices   |
-| Function symbols |   | Edges, Tentacles  |
-#+end_figure
+# +begin_figure org
+# +latex: \label{tbl:sigs-are-graphs}
+| Signatures       | ≈ | Graphs                                     |
+|------------------+---+--------------------------------------------|
+| Sorts            |   | “dots on a page”, Nodes, Vertices          |
+| Function symbols |   | “lines between the dots”, Edges, Tentacles |
+# +end_figure
+#+latex: \end{tcolorbox}
 
 *Typing* the symbols of a signature as follows[fn:21] lets us treat signatures
 as general forms of ‘type theories’ since we may speak of ‘typed terms’.
@@ -1526,23 +1571,22 @@ as general forms of ‘type theories’ since we may speak of ‘typed terms’.
 f : s₁ × ⋯ × sₙ → t \qquad≡\quad \src f = [s₁, …, sₙ] \;∧\; \tgt f = t
 \]
 Moreover, we regain the /typing judgements/ of the previous section by introducing
-a grammar for /terms/ which the above typing relation ---i.e., ~_⊢_∶_~ is
-definable using the above definition of ‘:’.
+a grammar for /terms/.
 Given a set 𝒱 of *variables*, we may define *terms* with the following grammar.
 {{{code(Grammar for Arbitrary Terms)}}}
 #+begin_src haskell
-Term ::= x             {- A variable; an element of 𝓥            -}
-       | f t₁ t₂ … tₙ  {- A function symbol f of ℱ taking n sorts
-                          where each tᵢ is a Term                 -}
+Term ∷= x              -- A variable; an element of 𝒱
+       | f t₁ t₂ … tₙ  -- A function symbol f of ℱ taking n sorts
+                       --   where each tᵢ is a Term
 #+end_src
-
 #+begin_export latex
-\begin{figure}
+\begin{figure}[h]
 \begin{mathpar}
        \inferrule{Γ(x) = τ}{Γ ⊢ x : τ}
   \and \inferrule{Γ \,⊢\, t₁ : τₙ \quad … \quad Γ \,⊢\, tₙ : τₙ \qquad f : τ₁ × ⋯ × τₙ → τ}
        {Γ \,⊢\, \mathtt{f}\, t₁\, t₂\, …\, tₙ : \mathtt{τ}}
 \end{mathpar}
+\caption{Signature Typing}
 \label{fig:signature-typing}
 \end{figure}
 #+end_export
@@ -1565,42 +1609,46 @@ How do we actually *present* a signature?
 
 *Brute force* Recall the Freshmen language, we can present an /approximation[fn:22]/
 of it as signature by providing the necessary components 𝒮, ℱ, $\src$, and
-$\tgt$ with
+$\tgt$ as follows ---where, for brevity, we write ℬ and 𝒩 instead of =Boolean= and =Number=.
 | =𝒮 = {Number, Boolean}= |
 | =ℱ = {Zero, Succ, Plus, True, False, Equal}= |
 # and src, tgt:
 #+latex: \vspace{-2em}
-  |   /op/   |  =Zero=  |   =Succ=   |  =True=   |  =False=  |       =_+_=        |       =_≈_=        |
-  |  <c>   |  <c>   |   <c>    |   <c>   |   <c>   |       <c>        |       <c>        |
-  |--------+--------+----------+---------+---------+------------------+------------------+
-  | ~src~ /op/ |   ~[]~   | =[Number]= |   ~[]~    |   ~[]~    | =[Number, Number]= | =[Number, Number]= |
-  | ~tgt~ /op/ | =Number= |  =Number=  | ~Boolean~ | ~Boolean~ |      =Number=      |     =Boolean=      |
+  |   /op/   | =Zero= | =Succ= | =True= | =False= |  =_+_=   |  =_≈_=   |
+  |  <c>   | <c>  | <c>  | <c>  |  <c>  |  <c>   |  <c>   |
+  |--------+------+------+------+-------+--------+--------|
+  | ~src~ /op/ |  ~[]~  | =[𝒩]=  |  ~[]~  |  ~[]~   | =[𝒩, 𝒩]= | =[𝒩, 𝒩]= |
+  | ~tgt~ /op/ |  =𝒩=   |  =𝒩=   |  ~ℬ~   |   ~ℬ~   |   =𝒩=    |   =ℬ=    |
 
+#+latex: \vspace{-1.5em}
+#+begin_footnotesize
+( For each choice of /op/ in the first line, =src op= is defined by the
+corresponding column of the second line; likewise for =tgt op=. )
+#+end_footnotesize
 
 This is however rather *clumsy* and not that clear.  We may collapse the =src, tgt=
 definitions into the =_:_→_= relation defined above; i.e., replacing /two/
-definition declarations ~src Zero = [] ∧ tgt Zero = Number~ by /one/ definition
-declaration ~Zero ∶ Number~.  However, function symbol names are still repeated
-twice∶ Once in the definition of ~ℱ~ and once in the definition of ~_∶_→_~; the
-latter mentions all the names of ℱ and so ℱ may be inferred from the typing
-relationship.  We are left with two declarations∶ The sorts 𝒮 and the typing
+definition declarations \newline ~src Zero = [] ∧ tgt Zero = Number~ by /one/
+definition declaration ~Zero ∶ Number~.  However, function symbol names are still
+repeated twice∶ Once in the definition of ~ℱ~ and once in the definition of ~_∶_→_~;
+the latter mentions all the names of ℱ and so ℱ may be inferred from the typing
+relationships.  We are left with two declarations∶ The sorts 𝒮 and the typing
 declarations.  However, the set 𝒮 only serves to declare its elements as sort
-symbols; if we use the relationship ~_∶ Type~ defined by ~τ ∶ Type ≡ τ ∈ 𝒮~, then
+symbols; if we use a relationship ~_∶ Type~ defined by ~τ ∶ Type ≡ τ ∈ 𝒮~, then
 the sort symbols can also be introduced by seemingly similar ‘typing
-declarations’. With this approach, Freshmen can be introduced more naturally[fn:19]
-as follows.
-{{{code(Freshmen as a Generalised Signature)}}}
+declarations’. With this approach, Freshmen can be introduced more
+naturally[fn:19] as follows.  {{{code(Freshmen as a Generalised Signature)}}}
 #+begin_src haskell
 Number  : Type
 Boolean : Type
 
 Zero : Number
 Succ : Number → Number
-Plus : Number × Number → Number
+_+_  : Number × Number → Number
 
 True  : Boolean
 False : Boolean
-Equal : Number × Number → Boolean
+_≈_   : Number × Number → Boolean
 #+end_src
 
 What a twist: *Generalised signatures are contexts!* That is, a sequence of
@@ -1610,28 +1658,39 @@ their later elements to be typeable.  For example, the context =S ∶ Type; x �
 can be proven to be package whereas the context =S ∶ Type; x ∶ Q= cannot ---it has
 the ‘global name’ /Q/.
 #+latex: \def\package{\mathtt{package}\,}
-#+caption: Given a set $Name$ for variable names, a package is a context
+#+latex: \begin{tcolorbox}[colframe=red!75!black, title=Rules for determining when a signature is a package]
 #+begin_export latex
+A package is a context where later names' types may refer to earlier names.
+
+\vspace{1em}
+Given a set $Name$ for variable names and context Γ, let $FName_Γ$ denote
+the values of $Name$ that do not occur as names in context Γ
+---these are the “fresh names for context Γ”.
+
 \begin{mathpar}
   \inferrule{ }{\package ∅}
-  \and \inferrule{\package Γ \qquad τ ∈ Name}{\package(Γ, τ : \mathtt{Type})}
-  \and \inferrule{\text{For $i : 1..n+1$,\;} Γ ⊢ τᵢ : \mathtt{Type} \qquad f ∈ Name \qquad \package Γ}{\package(Γ, f : τ₁ × ⋯ × τₙ → τₙ₊₁)}
+  \and \inferrule{\package Γ \qquad τ ∈ FName_Γ}{\package(Γ, τ : \mathtt{Type})}
+  \and \inferrule{ \package Γ  \qquad f ∈ FName_Γ \qquad  Γ ⊢ τᵢ : \mathtt{Type} \;\;\text{for each τᵢ}
+    }{\package(Γ, f : τ₁ × ⋯ × τₙ → τₙ₊₁)}
 \end{mathpar}
+
+By using $FName_Γ$, names are declared at most once in a context.
 #+end_export
-Of-course these rules require contexts to be well-formed: Names are declared at
-most once in a context. Below is an example derivation demonstrating that the
-context ~𝒩 ∶ Type, ℬ ∶ Type, z ∶ 𝒩, s ∶ 𝒩 → 𝒩~ (an initial segment of Freshmen) is
-actually a package by taking $Name = \{𝒩, ℬ, s, z\}$.
+#+latex: \end{tcolorbox}
+
+Below is an example derivation demonstrating that the context ~𝒩 ∶ Type, ℬ ∶
+Type, z ∶ 𝒩, s ∶ 𝒩 → 𝒩~ (an initial segment of Freshmen) is actually a package by
+taking $Name = \{𝒩, ℬ, s, z\}$.
 #+latex: \def\Type{\mathtt{Type}}
 #+begin_export latex
 \begin{tiny}
 \begin{mathpar}
   \inferrule{
     \inferrule{ }{∅, 𝒩 : \Type, ℬ : \Type, z : 𝒩 ⊢ 𝒩 : \Type}
-    \and\inferrule{ }{s ∈ Name}
+    \and\inferrule{ }{s ∈ FName}
     \and\inferrule{
     \inferrule{ }{∅, 𝒩 : \Type, ℬ : \Type ⊢ 𝒩 : \Type}
-    \and\inferrule{ }{z ∈ Name}
+    \and\inferrule{ }{z ∈ FName}
     \inferrule{
           \inferrule{
             \inferrule{
@@ -1648,53 +1707,60 @@ actually a package by taking $Name = \{𝒩, ℬ, s, z\}$.
 
 It is important to pause and realise that there are *three relations with ‘∶’ in
 their name* ---which may include spaces as part of their names.
-#+name: tbl:three-typing-relations
 #+caption: Three “typing” relations
-| Function symbol to sort /adjacency/ | $f : s₁ × ⋯ × sₙ → t$ | ≡ | ~src f = [s₁, …, sₙ] ∧ tgt f = t~ |
-| Sort symbol /membership/            | $s : \mathrm{Type}$ | ≡ | ~s ∈ 𝒮~                 |
-| /Pair formation/ within contexts Γ  | $x : t$       | ≡ | ~(x , t)~               |
+#+name: tbl:three-typing-relations
+| Function symbol to sort /adjacency/ | $f : s₁ × ⋯ × sₙ → s$ | ≡ | $\mathsf{src}\, f = [s₁, …, sₙ] ∧ \mathsf{tgt}\, f = s$ |
+| Sort symbol /membership/            | $s : \mathsf{Type}$   | ≡ | $s ∈ 𝒮$                                                 |
+| /Pair formation/ within contexts Γ  | $x : t$               | ≡ | $(x , t)$                                               |
 
 Consequently, we have stumbled upon a grammar =TYPE= for types
 ---called the /types for signature Σ/ over a collection of names
 𝒱.
 {{{code(Induced Grammar for Types)}}}
 #+begin_src haskell
-TYPE ::= Type             {- An opaque symbol; “the type of types” -}
-      |  τ                {- τ is a sort symbol; a value of 𝒮 -}
-      |  x                {- A variable; an element of 𝒱 -}
-      |  TYPE → TYPE      {- ‘→’ takes two TYPE arguments -}
-      |  TYPE × TYPE |  𝟙 {-- “product types” -}
+TYPE ::= Type             -- An opaque symbol; “the type of types”
+      |  τ                -- τ is a sort symbol; a value of 𝒮
+      |  x                -- A variable; an element of 𝒱
+      |  TYPE → TYPE      -- _→_ takes two TYPE arguments
+      |  TYPE × TYPE |  𝟙 -- “product types”
 #+END_SRC
-Where the type 𝟙 is used for constants∶ With this grammar a constant $c ∶ τ$
+The type 𝟙 is used for constants∶ With this grammar a constant $c ∶ τ$
 would have type ~c ∶ 𝟙 → τ~. The symbol 𝟙 is used simply to indicate that the
 function symbol =c= takes no arguments. The introduction of 𝟙 saves us from
 having to include the constant-typing relationship defined above
----namely, ~c ∶ τ ≡ src c = [] ∧ tgt c = τ~.
+---namely, ~c ∶ τ   ≡   src c = [] ∧ tgt c = τ~.
 
-We may now form types $α → β$ and $α × β$ but there is no way for the type ~β~
-to depend on the type ~α~.
-In particular, recall that in Freshmen we wanted
-to have ~s ≈ t~ to be a well-formed term of type =Boolean=
-/provided/ =s= and =t= have the /same/ type, either =Number= or =Boolean=.
-That is, ‘_≈_’ wants to have /both/ ~Number × Number → Boolean~ /and/
-~Boolean × Boolean → Boolean~ as types ---since it is reasonable
-to compare either numbers of truth values for equality.
-But a function symbol can have only /one/ type ---since =src= and =tgt= are
-(deterministic) functions.
-If we had access to variables which stand-in for types,
-we could type equality as ~α × α → Boolean~ /for any type α/.
+We may now form types $α → β$ and $α × β$ but there is no way for the type ~β~ to
+depend on the type ~α~.  In particular, recall that in Freshmen we wanted to have
+~s ≈ t~ to be a well-formed term of type =Boolean= /provided/ =s= and =t= have the /same/
+type, either =Number= or =Boolean=.  That is, =_≈_= wants to have /both/ ~Number ×
+Number → Boolean~ /and/  \newline ~Boolean × Boolean → Boolean~ as types ---since it is
+reasonable to compare either numbers /or/ truth values for equality.  But a
+function symbol can have only /one/ type ---since =src= and =tgt= are (deterministic)
+functions.  If we had access to variables which stand-in for types, we could
+type equality as ~α × α → Boolean~ /for any type α/.
 #+begin_export latex
 \begin{mathpar}
     \inferrule{ }{α : \Type \quad⊢\quad \_{}≈\_{} : α × α → \mathtt{Boolean}}
 \end{mathpar}
 #+end_export
 
-Even though types /constrain/ terms, there seems to be a subtle repetition:
-The =TYPE= grammar resembles the =Term= grammar. In fact, if we pretend
-=Type, 𝟙, ×, →= /are/ function symbols, then =TYPE= is subsumed by =Term=.
-Hence, we may conflate the two into one declaration ---a concern
-which we will return to at a later time.
-# This is summarised in the following definition.
+Even though types /constrain/ terms, there seems to be a subtle repetition: The
+=TYPE= grammar resembles the =Term= grammar. In fact, if we pretend =Type, 𝟙, _×_, _→_=
+/are/ function symbols, then =TYPE= is subsumed by =Term=.  Hence, we may conflate the
+two into one declaration to obtain /dependently-typed terms/ ---a concern which
+we will return to at a later time. For now, we may summarise our progress with
+the following figure.
+#+begin_src latex
+\begin{center}
+\smartdiagram[descriptive diagram]{
+{Signatures, Names that act as “types” and “functions”},
+{Typing, The “$Γ⊢t∶τ$” relation},
+{Contexts, Signatures presented using typing relations},
+{Packages, Contexts with later names typed by earlier names},
+}
+\end{center}
+#+end_src
 
 ** Presentations of Signatures ---Π and Σ
 
@@ -1704,13 +1770,12 @@ which we will return to at a later time.
 #+latex: \def\type{\mathtt{type}\,}
 #+latex: \def\Type{\mathtt{Type}}
 
-Since a signature's types also have a grammar, we can present
-a signature in the natural style of “name ∶ type-term” pairs.
-That is, a signature may be presented as a context; i.e., sequence of
-declarations ~δ₀; δ₁; …; δₙ~ /such that/ each =δᵢ= is of the form =nameᵢ ∶ typeᵢ=
-where /nameᵢ/ are unique names but /typeᵢ/ are terms from the =TYPE= grammar.
-For example, the above presentation of Freshmen is a context
-from which we regain a signature /Σ = (𝒮, ℱ, src, tgt)/ where:
+Since a signature's types also have a grammar, we can present a signature in the
+natural style of “name ∶ type-term” pairs.  That is, a signature may be
+presented as a context; i.e., sequence of declarations ~δ₀, δ₁, …, δₙ~ /such that/
+each =δᵢ= is of the form =nameᵢ ∶ typeᵢ= where /nameᵢ/ are unique names but /typeᵢ/ are
+*terms* from the =TYPE= grammar.  For example, the above presentation of Freshmen is
+a context from which we regain a signature /Σ = (𝒮, ℱ, src, tgt)/ where:
 + /𝒮/ is all of the /nameᵢ/ where /typeᵢ/ is =Type=;
 + ℱ is the remaining /nameᵢ/ symbols;
 + =src, tgt= are defined by the following equations, where the right side,
@@ -1737,7 +1802,7 @@ that accounts for how the smart type /depends/ on location.
 However, if variables are not permitted, then =call= cannot have a type
 which is unreasonable.
 It is a well-defined context, but it does not denote a signature.
-{{{code(Calling-smart-people Grammar)}}}
+{{{code(Calling-smart-people Context)}}}
 #+begin_src haskell
 Location : Type
 
@@ -1748,17 +1813,16 @@ TV       : Location
 Smart    : Location → Type
 
 Phone    : Type
-call     : Smart α → Phone  -- A variable?!
+call     : Smart ℓ → Phone  -- A variable?!
 #+end_src
 
-The first problem, the type of =Smart=, is easily rectified:
-The sorts 𝒮 are now /all/ names in the context that /conclude/ with
-=Type= or that /conclude/ with some τ that has type =Type=.
-Sorts now may /vary/ or /depend/ on other sorts.
+The first problem, the type of =Smart=, is easily rectified: The sorts 𝒮 are now
+/all/ names in the context that /conclude/ with =Type= or that /conclude/ with some τ
+that has type =Type=.  Sorts now may /vary/ or /depend/ on other sorts.
 
 The second problem, the type of =call=, requires the introduction of
 a new[fn:24] type operation. The operation =Π_∶_•_= will permit us to
-type operations that have variables in their types
+type function symbols that have variables in their types
 even when there is no variable collection 𝒱.
 
 #+latex: \begin{tcolorbox}[title = Dependent Function Type]
@@ -1776,7 +1840,7 @@ The type of =call= is now =Π ℓ ∶ Location • (Smart ℓ → Phone)=.  That
 location ℓ, =call ℓ= specialises to a function symbol of type =Smart ℓ → Phone=, then
 given any “smart person /s/ in location ℓ”, =call ℓ s= would be their phone number.
 Interestingly, if /s/ is a street-smart person then =call School s= is /ill-typed/:
-The type of =s= must be =Smart School= not =Smart Street=. Hence, later inputs may be
+The type of =s= must be \newline =Smart School= not =Smart Street=. Hence, later inputs may be
 constrained by earlier inputs. This is a new feature that simple signatures did
 not have.
 
@@ -1784,20 +1848,22 @@ Before extending the previous definition of signatures, there is a practical
 subtlety to consider.  Suppose we want to talk about smart people /regardless/ of
 their location, how would you express such a type?  The type of =call ∶ (Π 𝓁 ∶
 Location • Smart 𝓁 → Phone)= reads∶ /After picking a particular location ℓ, you
-may get the phone numbers of the smart people at that location./ In particular, =Π
-ℓ ∶ Location • Smart ℓ= is the type of smart people *at a particular* location ℓ.
-Since, in this case, we do not care about locations, we would like to simply
-pick a person who is located *somewhere*.  The ability to “bundle away” a varying
-feature of a type, instead of fixing it as a particular value, is known as the
-*(un)bundling problem[fn:23]*. It is addressed by introducing a new[fn:25] type
-operator =Σ_∶_•_= ---the symbol ‘Σ’ is conventionally used both for the name of
-signatures and for this new type operator.
+may get the phone numbers of the smart people at that location./ More
+specifically, =Π ℓ ∶ Location • Smart ℓ= is the type of smart people *at a
+particular* location ℓ.  Since, in this case, we do not care about locations, we
+would like to simply pick a person who is located *somewhere*.  The ability to
+“bundle away” a varying feature of a type, instead of fixing it as a particular
+value, is known as the *(un)bundling problem[fn:23]*. It is addressed by
+introducing a new[fn:25] type operator =Σ_∶_•_= ---the symbol ‘Σ’ is
+conventionally used both for the name of signatures and for this new type
+operator.
 
-| =Π ℓ ∶ Location • Smart ℓ= | Pick a location, then pick a person     |
-| =Σ ℓ ∶ Location • Smart ℓ= | Pick a person, who is located /somewhere/ |
-|--------------------------+-----------------------------------------|
-| =Π a ∶ A • B a=            | Pick a value =a ∶ A=, to get =B a= values   |
-| =Σ a ∶ A • B a=            | Values are pairs =(a, b)= with =a ∶ A= and =b ∶ B a=      |
+| =Π ℓ ∶ Location • Smart ℓ= | Pick a location, then pick a person                 |
+| =Σ ℓ ∶ Location • Smart ℓ= | Pick a person, who is located /somewhere/             |
+|--------------------------+-----------------------------------------------------|
+| =Π a ∶ A • B a=            | Pick a value =a ∶ A=, to get =B a= values               |
+| =Σ a ∶ A • B a=            | Pick a value =b ∶ B a=, which is tagged by /some/ =a ∶ A= |
+# Values are pairs =(a, b)= with =a ∶ A= and =b ∶ B a=
 
 #+latex: \begin{tcolorbox}[title = Dependent Product Type]
 #+latex: \vspace{-2em}
@@ -1819,6 +1885,9 @@ $Π a : A • B$ is just =A → B=. Likewise, Σ generalises =_×_=.
 Provided $B$ is a type that does not vary,
 | $A → B$ | ≡ | $Π\, x : A • B$ |
 | $A × B$ | ≡ | $Σ\, x : A • B$ |
+
+Since Π/Σ are the /varying/ generalisations of →/×, sometimes Π/Σ are written as
+$(a : A) → B\, a$ and $(a : A) × B\, a$, respectively.
 #+latex: \end{tcolorbox}
 
 Before returning to the task of defining signatures, let us present a number of
@@ -1827,14 +1896,19 @@ examples to showcase the differences between dependent and non-dependent types.
 #+latex: \def\weekday{\mathtt{Weekday}}
 #+latex: \def\people{\mathtt{People}}
 #+latex: \def\english{\mathtt{English}}
-1. Let $\birthday : \weekday → \Type$ denote the collection of all people who
+
+
+
+#+latex: \begin{myexamplebox}{Example 1: People and their birthdays }
+
+   Let $\birthday : \weekday → \Type$ denote the collection of all people who
    have a birthday on a given weekday.  One says, /$\birthday$ is the collection
    of all people, *indexed* by their birth day of the week./ Moreover, let
    $\people$ denote the collection of all people in the world.
 
-   _$Π\, d : \weekday • \birthday d$_
-     is the type of /functions/ that given any weekday /d/,
-     yield a person whose birthday is on that weekday.
+   #+latex: \tcbsubtitle{$Π\, d : \weekday • \birthday d$
+   #+latex:      is the type of \emph{functions} that given any weekday $d$,
+   #+latex:      yield a person whose birthday is on that weekday.}
 
        #+begin_parallel org
      Example functions in this type are $f$ and $g$ below...
@@ -1860,9 +1934,9 @@ examples to showcase the differences between dependent and non-dependent types.
      people to weekdays ---no constraints whatsoever.
      E.g., =f d = Jim= is the function that associates =Jim= to every weekday =d=.
 
-   _$Σ\, d : \weekday • \birthday d$_
-     is the type of /pairs/ $(d, p)$ of a weekday $d$
-     and a person whose birthday is that weekday.
+   #+latex: \tcbsubtitle{$Σ\, d : \weekday • \birthday d$
+   #+latex:   is the type of \emph{pairs} $(d, p)$ of a weekday $d$
+   #+latex:   and a person whose birthday is that weekday.}
 
      Below are two values of this type (✓) and a non-value (×).  The third one
    is a pair $(d, p)$ where $d$ is the weekday =Tuesday= and so the $p$ must be
@@ -1877,13 +1951,15 @@ examples to showcase the differences between dependent and non-dependent types.
      $\weekday × \people$ is the collection of pairs $(w, p)$ of
      weekdays and people ---no constraints whatsoever.
      E.g., =(Tuesday, Mark)= is a valid such value.
+#+latex: \end{myexamplebox}
 
-2. Let $\english_{≤ n}$ denote the collection of all English
+#+latex: \begin{myexamplebox}{Example 2: English words and their lengths }
+   Let $\english_{≤ n}$ denote the collection of all English
    worlds that have at most /n/ letters; let $\english$ denote
    /all/ English words.
 
-   _$Π\, n : ℕ • \english_{≤ n}$_ is the type of /functions/
-          that given a length /n/, yield a word of that length.
+   #+latex: \tcbsubtitle{$Π\, n : ℕ • \english_{≤ n}$ is the type of \emph{functions}
+   #+latex:        that given a length $n$, yield a word of that length.}
      Below is part of a such a function =f=.
      #+begin_example haskell
      f 0 = ""   -- The empty word
@@ -1897,32 +1973,41 @@ examples to showcase the differences between dependent and non-dependent types.
      In contrast, an $f : ℕ → \english$ is just a list of English words
      with the /i/-th element in the list being $f\, i$.
 
-   _$Σ\, n : ℕ • \english_{≤ n}$_ is the type of /values/ $(n, w)$ where $n$ is a
-   number and $w$ is an English word of that length.  E.g., ~(5, "hello")~ is an
-   example such value; whereas ~(2, "height")~ is not since the length of ="height"=
-   is /not/ 2.
+   #+latex: \tcbsubtitle{$Σ\, n : ℕ • \english_{≤ n}$ is the type of \emph{values} $(n, w)$ where $n$ is a
+   #+latex: number and $w$ is an English word of that length.}
 
+   For instance, ~(5, "hello")~ is an example such value; whereas ~(2, "height")~ is
+   not such a value ---since the length of ="height"= is /not/ 2.
+
+   #+latex: \vspace{1em}
    In contrast, $ℕ × \english$ is any number-word pair, such as =(12, "hi")=.
 
+   #+latex: \vspace{1em}
    /Notice that dependent types may *encode properties* of values./
 
-3. (*“All errors are type errors”*) Suppose =get i xs= is the /i/-th element in a list
+#+latex: \end{myexamplebox}
+
+#+latex: \begin{myexamplebox}{Example 3: “All errors are type errors” }
+   Suppose =get i xs= is the /i/-th element in a list
    =xs = [x₀, x₁, …, xₙ]=, what is the type of such a method =get=?
 
+   #+latex: \vspace{1em}
    Using =get ∶ Lists → ℕ → Value= will allow us to write =get [x₁, x₂] 44= which
    makes no sense∶ There is no 44-th element in that 2-element list! Hence, the
    =get= operation must constrain its numeric argument to be at most the length of
    its list argument.  That is, =get ∶ (Π (xs ∶ Lists) • ℕ< (length xs) → Value)=
    where =ℕ< n= is the collection of numbers less than /n.  Now the previous call,
-   =get [x₁, x₂] 44= does not need to make sense since it is /ill-typed/: The second
+   =get [x₁, x₂] 44= does not need to make sense since it is ill-typed/: The second
    argument does not match the required constraining type.
 
+   #+latex: \vspace{1em}
    In fact, when we speak of lists we implicitly have a notion of the kind of
    value type they contain. As such, we should write =List X= for the type of
    lists with elements drawn from type =X=. Then what is the type of =List=? It is
    simply =Type → Type=.  With this form, =get= has the type =Π X ∶ Type • Π xs ∶
    List X • ℕ< (length xs) → X=.
 
+   #+latex: \vspace{1em}
    Interestingly, lists of a particular length are known as /vectors/. The type of
    which is denoted =Vec X n=; this is a type that is /indexed/ by /both/ another /type/
    =X= and an /expression/ =n=. Of-course =Vec ∶ Type → ℕ → Type= and, with vectors, =get=
@@ -1930,6 +2015,8 @@ examples to showcase the differences between dependent and non-dependent types.
    that the /external computation/ =length xs= in the previous typing of =get= is
    replaced by the /intrinsic index/ =n=; that is, *dependent types allow us to
    encode properties of elements at the type level!*
+
+#+latex: \end{myexamplebox}
 
 :TypeFamilies:
 3. (“Type families”)
@@ -1946,86 +2033,177 @@ examples to showcase the differences between dependent and non-dependent types.
 
 Anyhow, back to the task as hand ---defining signatures (packages).
 
-Given two collections of names 𝒱 and ℬ
-where each name in ℬ has an associated /arity/, a number,
-we may form the collection of generalised terms as follows.
+Given two collections of “names” 𝒱 and “base symbols” ℬ, we may form the
+collection of generalised terms as follows ---for brevity we ignore the unit type 𝟙.
 {{{code(Generalised Terms)}}}
 #+begin_src haskell
 Term ∷= x            -- A “variable”; a value of 𝒱
-      | β t₁ t₂ … tₙ -- A “base symbol of arity n”; a value of ℬ
-      | Π a : τ • τ′ -- For previously constructed types τ and τ′
-      | Σ a : τ • τ′ --     and variable “a”
-      | 𝟙            -- “unit type”
+      | β            -- A “base symbol; a value of ℬ
+      | Type         -- The type of types
+      -- For previously constructed types τ and τ′,
+      -- previously constructed terms tᵢ,
+      -- and variable x:
+      | (Π x : τ • τ′) | (λ x : τ • t)          |  t₁ t₂
+      | (Σ x : τ • τ′) | let (t₁, t₂) ≔ t₃ in t₄ | (t₁, t₂)
 #+end_src
-Since this collection constructs a number of different kinds of things:
-- The term =Type= is usually called a */kind/*;
-- the terms =τ= of type =Type= are called */types/*;
-- all other terms, those =t ∶ τ= for =τ ∶ Type=, are called */expressions/*.
+This collection constructs a number of different kinds of things:
+If =t ∶ τ= and =τ ∶ Type= we refer to =t= as an *expression*, to τ as a *type*, and
+to =Type= as a *kind*. The following table provides an intuitive interpretation of
+these terms.
+
+# - The term =Type= is usually called a */kind/*;
+# - The terms =τ= of type =Type= are called */types/*;
+# - All other terms, those =t ∶ τ= for =τ ∶ Type=, are called */expressions/*.
+
+#+latex: \begin{tcolorbox}[title = Intended Interpretations of Generalised Terms]
+| Symbols             | Intended Interpretation                                  |
+|---------------------+----------------------------------------------------------|
+| =Type=                | The type of all types                                    |
+| =𝟙=                   | The type with one element; an example of a base symbol   |
+|---------------------+----------------------------------------------------------|
+| =Π a ∶ A • B a=       | Values of /type/ =B a=, for each value =a= of type =A=           |
+| =λ x ∶ τ • t=         | The function that takes input =x ∶ τ= and yields output =t=  |
+| =f e=                 | Apply the function =f= on input term =e=                     |
+|---------------------+----------------------------------------------------------|
+| =Σ a ∶ A • B a=       | Pairs =(a, b)= where =a ∶ A= and =b= is a value of /type/ =B a=    |
+| =(x , w)=             | A pair of items where the second may depend on the first |
+| =let (x, w) ≔ β in e= | Unpack the pair =β= as the pair =(x, t)= for use in term =e=   |
+
+*Abbreviations*:
+Provided $B$ is a type that does not vary,
+| Symbol  |   | Elaboration     |   | Intended Interpretation                      |
+|---------+---+-----------------+---+---------------------------------------------|
+| $A → B$ | ≡ | $Π\, x : A • B$ |   | The functions from /A/ to /B/                   |
+| $A × B$ | ≡ | $Σ\, x : A • B$ |   | Pairs of values /(a, b)/ with /a : A/ and /b : B/ |
+#+latex: \end{tcolorbox}
+
 
 The rules below classify the well-formed generalised terms.
 The rules for Π and Σ show that they are /families/ of types
 ‘indexed’ by the first type. The rules only allow the construction
 of types and variable values, to construct /values of types/ we
 will need some starting base types, whence the upcoming definition.
+#+latex: \begin{tcolorbox}[colframe=red!75!black, title=Judgements for Generalised Terms]
 #+begin_rule org
 :multiple-rules: yes
-:terminate-leaves: ${}$
 
 + Type-in-Type :: $Γ \;⊢\; \Type : \Type$
-#+end_rule
-#+begin_rule org
-:multiple-rules: yes
+  - ${}$
 
 + Variables :: $Γ \;⊢\; x : τ$
   - Γ(x) = τ
-
-+ Dependent Function Type :: $Γ ⊢ (Π\, a : τ • τ′) : \Type$
-  - $Γ, a : τ \;⊢\; τ′ : \Type$
-
-+ Unit Type :: $Γ \;⊢\; 𝟙 : \Type$
-  - ${}$
-
-+ Dependent Product Type :: $Γ \;⊢\; (Σ a : τ • τ′) : \Type$
-  - $Γ, a : τ \;⊢\; τ′ : \Type$
 #+end_rule
+#+begin_footnotesize org
+#+latex: The {\sc Variables} rule is also known as {\sc Assumption} and may be rendered
+as follows.
+#+end_footnotesize
+#+begin_rule org
+:multiple-rules: yes
+:terminate-leaves: ${}$
++ Variables :: $x₁ : τ₁,\, …,\, xₙ : τₙ \;⊢\; xᵢ : τᵢ$
+#+end_rule
+# + Unit Type :: $Γ \;⊢\; 𝟙 : \Type$
+#  - ${}$
 
-A *Generalised Signature* is a tuple /(ℬ, arity, type)/
-where /ℬ = [β₀, β₁, …, βₙ]/ is an /ordered/ list of “base symbols”,
-$\mathtt{arity} : ℬ → ℕ$ associates a number to each base symbol,
-and $\type : ℬ → \mathtt{Term}$ associates a generalised term
-to each base symbol such that \\
-$Γₖ₋₁ ⊢ \type βₖ : \Type$ for each /k : 0..n/, where
-$Γₖ = (β₀ : τ₀, …, βₖ : τₖ)$ and $τᵢ = \type βᵢ$.
-That is $\type$ associates to each base symbol a type-term
-that is well-defined according to the typing rules above
-for generalised terms and /possibly/ making use of previous
-symbols in the listing. We may now augment the above rule listing
-so that we can form well-typed /expressions/ as well as /terms/
-using the symbols of ℬ
----for now we are ignoring Σ for brevity.
+#+latex: \dotfill
 #+begin_rule org
 :multiple-rules: yes
 
-+ Base Symbol :: $Γ \;⊢\; β : τ$
-  - $\type β \;=\; τ$
++ Π-Formation :: $Γ ⊢ (Π\, x : τ • τ′) : \Type$
+  - $Γ, x : τ \;⊢\; τ′ : \Type$
 
-+ Symbol Introduction :: $Γ \;⊢\; β\, t \,:\, τ′[x ≔ t]$
++ Π-Introduction :: $Γ \;⊢\; (λ\, x : τ • t) \,:\,(Π\, x : τ • τ′)$
+  - $Γ, x : τ \;⊢\; t : τ′$
+
++ Π-Elimination :: $Γ \;⊢\; β\, t \,:\, τ′[x ≔ t]$
   - $Γ \;⊢\; β : (Π\, x : τ • τ′)$
   - $Γ \;⊢\; t : τ$
 #+end_rule
+#+begin_footnotesize org
+#+latex: \noindent
+The notation $E[x := F]$ means “replace every occurrence of the name $x$
+within term $E$ by the term $F$.”
+This ‘find-and-replace’ operation is formally known as \emph{textual substitution}.
+#+end_footnotesize
 
-( The notation $E[x := F]$ means “replace every occurrence of the name $x$
-within term $E$ by the term $F$.” )
+#+latex: \dotfill
+#+begin_rule org
+:multiple-rules: yes
 
-Crucially, generalised signatures may be presented as
-a sequence of “symbol ∶ type” pairs where the symbols are unique names
-and each type is a generalised term. Below is an example
-similar to Calling-smart-people. In this example, =A= denotes a collection
-that each member =a ∶ A= of which determines a collection =B a=
-which each have a ‘selected point’ =it a ∶ B a=.
-More concretely, think of =A= as the countries in the world
-from which =B= are the households in each country, and =it= selects
-a representative member of a household =B a= for each country =a ∶ A=.
++ Σ-Formation :: $Γ \;⊢\; (Σ\, x : τ • τ′) : \Type$
+  - $Γ, x : τ \;⊢\; τ′ : \Type$
+
++ Σ-Introduction :: $Γ \;⊢\; (e, t) \,:\, (Σ\, x : τ • τ′)$
+  - $Γ \;⊢\; e : τ$
+  - $Γ \;⊢\; t : τ′[x ≔ e]$
+
++ Σ-Elimination :: $Γ \;\;⊢\;\; \mathsf{let}\; (x, t) ≔ β \;\mathsf{in}\; γ\;:\; τ″$
+  - $Γ \;⊢\; β : (Σ\, x : τ • τ′)$
+  - $Γ, x : τ, t : τ′ \;⊢\; γ : τ″$
+#+end_rule
+#+begin_footnotesize org
+#+latex: \noindent
+Just as Σ is the dual to Π, in some suitable sense, so too the /eliminator/ =let=
+is dual to the /constructor/ lambda λ.
+# In particular, $(λ x : τ • t)$ introduces an opaque /parameter/ $x$ that is used to form
+# the phrase $t$; whereas $\mathsf{let}\; (x, t) ≔ β \;\mathsf{in}\; γ$
+# introduces ...?
+#+end_footnotesize
+#+latex: \end{tcolorbox}
+
+#+latex: \begin{myexamplebox}{Π and Σ together allow the meta-language to be expressed in the object-language}
+
+Recall that a phrase /“Γ ⊢ t : τ”/ denotes a property that *we* check using
+day-to-day mathematical logic in conjunction with the provided rules for it.  In
+turn, the property *talks about* terms /t/ and /τ/ which are related provided
+assumptions Γ are true. In particular, contexts and the entailment relation are
+/not/ expressible as terms of the object language; i.e., they cannot appear in the
+$t$ nor the $τ$ positions … that is, until now.
+
+#+latex: \tcbsubtitle{Π types \emph{internalise} contexts}
+Contextual information is ‘absorbed’ as a λ-term; that is,
+$x₁ : τ₁, …, xₙ : τₙ ⊢ t : τ$ is essentially
+$⊢ (λ x₁ : τ₁ • ⋯ • λ xₙ : τₙ • t) : (Π x₁ : τ₁ • ⋯ • Π xₙ : τₙ • τ)$.
+
+Recall that initially we remarked that terms-in-context are essentially
+functions /provided/ we have some form of semantics operation =⟦_⟧=.  However, in
+the presence of Π types, terms-in-context correspond to functional terms in the
+/empty/ context. The @@latex: {\sc Π-Formation}@@ rule “explains away” the new
+λ-terms using the old familiar notion of contexts.
+
+#+latex: \tcbsubtitle{Σ types \emph{internalise} pairing contexts}
+Multiple contexts are ‘fused’ as a Σ-type term; that is,
+/multiple/ premises in a judgement rule can be replaced by a /single/
+premise by repeatedly using @@latex: {\sc Σ-Formation}@@.
+
+#+latex: \end{myexamplebox}
+
+A *Generalised Signature* is a tuple /(ℬ, type)/ where /ℬ = [β₀, β₁, …, βₙ]/ is an
+/ordered/ list of “base symbols” and $\type : ℬ → \mathtt{Term}$ associates a
+generalised term to each base symbol such that $Γₖ₋₁ ⊢ \type βₖ : \Type$ for
+each /k : 0..n/, where $Γₖ = (β₀ : τ₀, …, βₖ : τₖ)$ and $τᵢ = \type βᵢ$.  That is
+$\type$ associates to each base symbol a type-term that is well-defined
+according to the typing rules above for generalised terms and /possibly/ making
+use of previous symbols in the listing. We may now augment the above rule
+listing so that we can form well-typed /expressions/ as well as /terms/ using the
+symbols of ℬ.
+#+latex: \begin{tcolorbox}[colframe=red!75!black, title=Judgement for Generalised Signatures]
+#+begin_rule org
+:multiple-rules: yes
+
++ Base Symbol Introduction :: $Γ \;⊢\; β : τ$
+  - $\type β \;=\; τ$
+#+end_rule
+#+latex: \end{tcolorbox}
+
+Crucially, generalised signatures may be presented as a sequence of “symbol ∶
+type” pairs where the symbols are unique names and each type is a generalised
+term. Below is an example similar to the calling-smart-people example from the
+previous section. In this example, =A= denotes a collection that each member =a ∶ A=
+of which determines a collection =B a= which each have a ‘selected point’ =it a ∶ B
+a=.  More concretely, thinking of =A= as the countries in the world from which =B= are
+the households in each country, then =it= selects a representative member of a
+household =B a= for each country =a ∶ A=.
 #+begin_parallelNB org
 {{{code(Pointed Families)}}}
 #+begin_src haskell
@@ -2034,13 +2212,10 @@ B  : A → Type
 it : Π a : A • B a
 #+end_src
 :columnbreak:
-This is a generalised signature /(ℬ, arity, type)/
-where:
-# /ℬ = [A, B, it]/;
-#+latex: \vspace{-1.3em}
+This is a generalised signature /(ℬ, type)/ where:
+#+latex: \vspace{-2.1em}
 | ℬ     | =A=    | =B=        | =it=            |
 |-------+------+----------+---------------|
-| =arity= | 0    | 1        | 1             |
 | =type=  | =Type= | =A → Type= | =Π a ∶ A • B a= |
 
 # - =arity A = 0; arity B = 1; arity it = 1=;
@@ -2053,43 +2228,51 @@ The =Γₖ₋₁ ⊢ type βₖ ∶ Type= obligations for this example become∶
 3. =A ∶ Type, B ∶ A → Type ⊢ (Π a ∶ A • B a) ∶ Type=.
 
 #+begin_export latex
-The first is just the {\sc Type-in-Type} rule,
-the second is a mixture of the {\sc Abbreviation}
-and {\sc Dependent Function Type} rules;
-the third one is a mixture of the
-{\sc Dependent Function Type} and
-{\sc Symbol Introduction} rules.
+The first is just the {\sc Type-in-Type} rule, the second
+is a mixture of the {\sc Abbreviation} and {\sc Π-Formation} rules; the third
+one is a mixture of the {\sc Π-Formation}, {\sc Base Symbol Introduction}, and {\sc Π-Elimination}
+rules.
 #+end_export
-Moreover, notice that =it a= is a valid term /provided/ =a ∶ A= as
-shown in the following derivation.
+Moreover, notice that   =it a=  is a valid term /provided/ =a ∶ A= as shown in the
+following derivation.
 #+latex: \def\it{\mathtt{it}\,}
 # :terminate-leaves: \checkmark
 #+begin_rule org
 :terminate-leaves: ${}$
-+ Symbol Introduction :: $a : A \;⊢\; \it a : B a$
-+ Base Symbol :: $a : A \;⊢\; \it : (Π\, x : A • B x)$
++ Π-Elim :: $a : A \;⊢\; \it a \,:\, B\, a$
++ Symbol Intro :: $a : A \;⊢\; \it : (Π\, x : A • B x)$
 + Variables :: $a : A \;⊢\; a : A$
 #+end_rule
 
-Signatures are a staple of computing science
-since they formalise interfaces and generalise graphs and type theories.
-Our generalised signatures have been formalised “after the fact” from
-the creation of the prototype for packages.
-In the literature, our definition of generalised signatures
-is essentially a streamlined presentation of
-Cartmell's /Generalised Algebraic Theories/
-cite:DBLP:journals/apal/Cartmell86
-expect that we do not allow arbitrary equational ‘axioms’
-instead using “name = term” rather than “term = term” axioms
+Signatures are a staple of computing science since they formalise interfaces and
+generalise graphs and type theories.  Our generalised signatures have been
+formalised “after the fact” from the creation of the prototype for packages.  In
+the literature, our definition of generalised signatures is essentially a
+streamlined presentation of Cartmell's /Generalised Algebraic Theories/
+cite:DBLP:journals/apal/Cartmell86 expect that we do not allow arbitrary
+equational ‘axioms’ instead using “name = term” rather than “term = term” axioms
 which serve as /default implementations/ of names.
-The notion of optional definitions is explored in the next section.
+We now turn to extending the current setup to permit optional definitions.
+# The notion of optional
+# definitions is explored in the next section.
 
-** Permitting Optional Definitions
 
-The examples packages from this chapter's introduction, one of which is
-shown below for convenience, can /almost/ be understood as presentations
-of generalised signatures. What is lacking is the ability for
-/optional/ definitions, as is the case with =violet= and =dark= below.
+
+
+\subsection*{Permitting Optional Definitions}
+
+
+
+
+#+latex: \tcbset{colback=green!10!white} \def\type{\mathsf{type}\,} \def\Type{\mathsf{Type}}
+
+#+begin_parallelNB org
+
+The example packages from this chapter's introduction, one of which is shown
+below for convenience, can /almost/ be understood as presentations of generalised
+signatures. What is lacking is the ability for /optional/ definitions, as is the
+case with =violet= and =dark= below.
+
 {{{code(A dynamical system -- Colours)}}}
 #+begin_src haskell
 Colour : Type
@@ -2103,6 +2286,22 @@ dark   : Colour → Colour
 dark c = mix c blue
 #+end_src
 
+#+end_parallelNB
+
+Recall that the crucial feature of generalised signatures is that they may be
+presented as a sequence of /declarations/ $δ₁, …, δₙ$. When written with multiple
+lines, the commas are replaced by newlines ---as with =Colour= above.  Originally,
+each $δᵢ$ is of the form “$name : type$”, but above we have a definition for
+=violet=, so the first step is to redefine /declaration/ so that each $δᵢ$ is of the
+form “$η : τ = d$” where the first term $τ$ is of type =Type= and the second term
+$d : τ$. In the multi-line rendition, $η : τ = d$ occurs as two lines: One with
+$η : τ$ and one with $η = d$; c.f., =violet= above. The only ingredient missing is
+the variable support in =dark= above: What could =η x = d= mean? Since =d= is defined
+/in the context/ of =x= and λ-terms internalise contexts, as discussed above, we can
+take =η x = d= to be an abbreviation for =η = (λ x ∶ τ • d)= for a suitable type =τ=.
+
+
+:Hide:
 The first step in  *amend* the definition of generalised signatures
 is to introduce a new syntactic representation for functional
 definitions. The =Term= obtains a new clause.
@@ -2119,97 +2318,89 @@ well-definedness rule. Essentially, one treats
 + Π-Introduction :: Γ ⊢ (λ x : τ • e) : (Π x : τ • τ′)
   - Γ, x : τ ⊢ e : τ′
 #+end_rule
+:End:
 
-A *Generalised Signature* is now defined to be a tuple /(ℬ, arity, type, definition)/
-where /ℬ = [β₀, β₁, …, βₙ]/ is an /ordered/ list of “base symbols”,
-$\mathtt{arity} : ℬ → ℕ$ associates a number to each base symbol,
-and $\type : ℬ → \mathtt{Term}$ associates a generalised term
-to each base symbol such that
-$Γₖ₋₁ ⊢ τₖ : \Type$ for each /k : 0..n/, where
-$Γₖ = (β₀ : τ₀, …, βₖ : τₖ)$ and $τᵢ = \type βᵢ$;
-and $\mathtt{definition} : ℬ → \mathtt{Term}$
-is a partial function associating a term to each symbol name
-such that the types agree:
-$Γₖ₋₁ ⊢ \mathtt{definition}\, βₖ : \type βₖ$.
+A *Generalised Signature* is now defined to be a tuple /(ℬ, type, definition)/ where
+/ℬ = [β₀, β₁, …, βₙ]/ is an /ordered/ list of “base symbols”, $\type : ℬ →
+\mathtt{Term}$ associates a generalised term to each base symbol such that $Γₖ₋₁
+⊢ τₖ : \Type$ for each /k : 0..n/, where $Γₖ = (β₀ : τ₀, …, βₖ : τₖ)$ and $τᵢ =
+\type βᵢ$; and $\mathtt{definition} : ℬ → \mathtt{Term}$ is a partial function
+associating a term to each symbol name such that the types agree: $Γₖ₋₁ ⊢
+\mathtt{definition}\, βₖ : \type βₖ$.  That is $\type$ associates to each base
+symbol a type-term that is well-defined according to the typing rules above for
+generalised terms and /possibly/ making use of previous symbols in the
+listing. Then $\mathtt{definition}\, βₖ$ /may/ provide a description of a value of
+$\type βₖ$.
 
-Crucially, a generalised signature may be presented
-as a sequence of declarations $δ₁, …, δₙ$
-where each $δᵢ$ is of the form $name ∶ term = term$
-where the “$= term$” portion is optional and
-the names are unique.
-+ When presented with multiple lines, with one declaration $δᵢ$ on
-  each line, we omit the commas and split “$name ∶ type = definition$”
-  into two lines∶ The first being “$name ∶ type$” and the second, if any,
-  being $name = definition$.
-  - Moreover, =name = (λ x ∶ τ • e)= is instead simplified to
-    =name x = e=.
+:Equivalently:
+*Equivalently*, a Generalised Signature is an ordered list of ‘declarations’
+$δ₁, …, δₙ$ where each $δᵢ$ is a tuple from $Name × Term × (Term ∪ \{-\})$
+---for an inferred set /Name/--- with the following constraints:
+1. Each tuple $δᵢ = (ηᵢ, τᵢ, dᵢ)$ is written as $ηᵢ ∶ τᵢ ≔ dᵢ$ or
+  as $ηᵢ ∶ τᵢ$ when $dᵢ$ is the special symbol “-”.
+   a. We refer to $ηᵢ, τᵢ, dᵢ$ as the /name, type/, and /definition/ of $δᵢ$, respectively.
+2. Declaration names must be unique.
+3. $δ₁, …, δₖ₋₁ ⊢ δₖ$ for all $k : 1..n$.
 
-For example, the Colours context above is a generalised signature,
-as follows ---where, for brevity, we write 𝑪 in place of =Colour=.
+We refer to the second definition as a *contextual presentation* of Generalised
+Signatures. In practice, we replace the separating commas of $δ₁, …, δₙ$ with
+line breaks, and write $η ∶ τ ≔ d$ as two lines: One with $η ∶ τ$ and another
+with $η = d$, if $d$ is not the opaqueness-value “-”.  Moreover, in the case of
+$η = (λ x ∶ α • e)$ we elide this as $η\, x = e$.
+:End:
+
+Crucially, a generalised signature may be presented as a sequence of
+declarations $δ₁, …, δₙ$ where each $δᵢ$ is of the form “$name ∶ term = term$”
+where the “$= term$” portion is optional and the names are unique.  When
+presented with multiple lines, we replace commas by newlines, and split “$name ∶
+type = definition$” into two lines∶ The first being “$name ∶ type$” and the
+second, if any, being “$name = definition$”.  Moreover, =name = (λ x ∶ τ • e)= is
+instead simplified to =name x = e=.
+
+#+latex: \begin{myexamplebox}{Example 4: Colours as Generalised Signatures}
+
+For example, the =Colours= context above is a generalised signature, as follows
+---where, for brevity, we write 𝑪 in place of =Colour=.
 #+begin_footnotesize org
-| ℬ          | 𝑪  | =Red= | =green= | =blue= |    =mix=    |     =violet=     |         =dark=         |
-|            |  <c>   | <c> |  <c>  | <c>  |    <c>    |      <c>       |         <c>          |
-|------------+--------+-----+-------+------+-----------+----------------+----------------------|
-| =arity=      |   0    |  0  |   0   |  0   |     2     |       0        |          1           |
-| =type=       |  =Type=  |  𝑪  |   𝑪   |  𝑪   | ~𝑪 × 𝑪 → 𝑪~ |       =𝑪=        |        ~𝑪 → 𝑪~         |
-| =definition= |   -    |  -  |   -   |  -   |     -     | =mix green blue= | ~λ c ∶ 𝑪 • mix c blue~ |
-|            |        |     |       |      |           |                |                      |
+| ℬ          |  𝑪   | =Red= | =green= | =blue= |     =mix=     |                     =violet=                      |                     =dark=                     |
+|            | <c>  | <c> |  <c>  | <c>  |     <c>     |                       <c>                       |                     <c>                      |
+|------------+------+-----+-------+------+-------------+-------------------------------------------------+----------------------------------------------|
+| =type=       | =Type= |  𝑪  |   𝑪   |  𝑪   | $𝑪 × 𝑪 → 𝑪$ |                        𝑪                        |                   $𝑪 → 𝑪$                    |
+| =definition= |  -   |  -  |   -   |  -   |      -      | $\mathsf{mix}\, \mathsf{green}\, \mathsf{blue}$ | $λ c ∶ 𝑪 • \mathsf{mix}\, c\, \mathsf{blue}$ |
 #+end_footnotesize
 
-As another example, we show how disjoint sums can be defined.
+#+latex:  \end{myexamplebox}
+
+#+latex: \begin{myexamplebox}{Example 5: Disjoin Sums as Generalised Signatures}
+
+# As another example, we show how disjoint sums can be defined.
+
+The type =X + Y= denotes the collection of values of the form “in left” =inl x= or
+“in right” =inr y= for all =x ∶ X= and =y ∶ Y=.  That is, =X + Y= is the disjoint union
+of collections =X= and =Y=.  Below are “default implementations” for =_+_, inl, inr=;
+however, there are other ways to encode sum types.
+
 {{{code(Sums from Σ and 𝔹)}}}
 #+begin_src haskell
 𝔹             : Type
 True          : 𝔹
 False         : 𝔹
-if_then_else_ : Π A : Type • 𝔹 → A → A → A
+_if_then_else_ : Π A : Type • 𝔹 → A → A → A
 
 _+_ : Type → Type → Type
-_+_ X Y  =  Σ tag : 𝔹 • if tag then X else Y
+_+_ X Y  =  Σ tag : 𝔹  •  Type if tag then X else Y
 
 inl : Π X : Type • X → 𝔹 × X
-inl x = (True, x)
+inl X x = (True, x)
 
-inr : Π X : Type • X → 𝔹 × X
-inr y = (False, y)
+inr : Π Y : Type • Y → 𝔹 × Y
+inr Y y = (False, y)
 #+end_src
-The type =X + Y= denotes the collection of values of the form
-“in left” =inl x= or “in right” =inr y= for all =x ∶ X= and =y ∶ Y=.
-That is, =X + Y= is the disjoint union of collections =X= and =Y=.
-Above are “default implementations” for =_+_, inl, inr=; however,
-there are other ways to encode sum types.
 
-** The Definition of /Generalised Signatures/
+#+latex:  \end{myexamplebox}
 
-For reference, we collect the necessary pieces
-to formulate the definition of Generalised Signatures.
-Moreover, we extend the grammar for terms with additional useful
-constructs.
 
-#+latex: \begin{tcolorbox}[title = Review of Inteded Interpretations of Symbols]
-| Symbols       | Intended Interpretation                                 |
-|---------------+---------------------------------------------------------|
-| =Type=          | The type of all types                                   |
-| =𝟙=             | The type with one element                               |
-| =Π a : A • B a= | Values of /type/ =B a=, for each value =a= of type =A=          |
-| =Σ a : A • B a= | Pairs =(a, b)= where =a ∶ A= and =b= is a value of /type/ =B a=   |
-| =λ x : τ • e=   | The function that takes input =x ∶ τ= and yields output =e=  |
-
-*Abbreviations*:
-Provided $B$ is a type that does not vary,
-| Symbol  |   | Elaboration     |   | Inteded Interpretation                      |
-|---------+---+-----------------+---+---------------------------------------------|
-| $A → B$ | ≡ | $Π\, x : A • B$ |   | The functions from /A/ to /B/                   |
-| $A × B$ | ≡ | $Σ\, x : A • B$ |   | Pairs of values /(a, b)/ with /a : A/ and /b : B/ |
-#+latex: \end{tcolorbox}
-
-# | =Π a ∶ A • B a=            | Pick a value =a ∶ A=, to get =B a= values   |
-# | =Σ a ∶ A • B a=            | Values are pairs =(a, b)= with =a ∶ A= and =b ∶ B a=      |
-
-Given two collections of names 𝒱 and ℬ
-where each name in ℬ has an associated /arity/, a number,
-we may form the collection of generalised terms as follows.
-{{{code(Generalised Terms)}}}
+:Terms_with_𝟙_and_PropositionalEquality:
 #+begin_src haskell
 Term ∷= x              -- A “variable”; a value of 𝒱
       | β t₁ t₂ … tₙ   -- A “base symbol of arity n”; a value of ℬ
@@ -2222,46 +2413,16 @@ Term ∷= x              -- A “variable”; a value of 𝒱
       | τ ≡ τ′         -- “Propositional equality” type
       | refl x         -- “Reflexivity proofs”
 #+end_src
-If =t ∶ τ= and =τ ∶ Type= we refer to =t= as an *expression*, to τ as a *type*, and
-to =Type= as a *kind*.
-The rules below classify the well-formed generalised terms.
-The rules for Π and Σ show that they are /families/ of types
-‘indexed’ by the first type.
+
 #+latex: \def\tt{\mathtt{tt}}
-:Hide:
 #+begin_rule org
 :multiple-rules: yes
-:terminate-leaves: ${}$
-
-+ Type-in-Type :: $Γ \;⊢\; \Type : \Type$
-#+end_rule
-:End:
-#+begin_rule org
-:multiple-rules: yes
-+ Type-in-Type :: $Γ \;⊢\; \Type : \Type$
-  - ${}$
-
-+ Variables :: $Γ \;⊢\; x : τ$
-  - Γ(x) = τ
 
 + Unit Type :: $Γ \;⊢\; 𝟙 : \Type$
   - ${}$
 
-+ Dependent Function Type :: $Γ ⊢ (Π\, a : τ • τ′) : \Type$
-  - $Γ, a : τ \;⊢\; τ′ : \Type$
-
 + 𝟙-Intro :: $Γ \;⊢\; \tt : 𝟙$
   - ${}$
-
-+ Π-Intro :: $Γ \;⊢\; (λ\, a : τ • e) \,:\, (Π\, a : τ • τ′)$
-  - $Γ, a : τ \;⊢\; e : τ′$
-
-+ Dependent Product Type :: $Γ \;⊢\; (Σ\, a : τ • τ′) : \Type$
-  - $Γ, a : τ \;⊢\; τ′ : \Type$
-
-+ Σ-Intro :: $Γ \;⊢\; (e, p) : (Σ a : τ • τ′)$
-  - $Γ \;⊢\; e : τ$
-  - $Γ \;⊢\; p : τ′[a ≔ e]$
 
 + Propositional Equality Type :: $Γ \;⊢\; (l ≡ r) : \Type$
   - $Γ \;⊢\; l : τ$
@@ -2270,77 +2431,30 @@ The rules for Π and Σ show that they are /families/ of types
 + Equality Introduction :: $Γ \;⊢\; \mathtt{refl}_x \,:\, (x ≡ x)$
   - $Γ \;⊢\; x : τ$
 #+end_rule
-
-A *Generalised Signature* is a tuple /(ℬ, arity, type, definition)/
-where /ℬ = [β₀, β₁, …, βₙ]/ is an /ordered/ list of “base symbols”,
-$\mathtt{arity} : ℬ → ℕ$ associates a number to each base symbol,
-and $\type : ℬ → \mathtt{Term}$ associates a generalised term
-to each base symbol such that \\
-$Γₖ₋₁ ⊢ τₖ : \Type$ for each /k : 0..n/, where
-$Γₖ = (β₀ : τ₀, …, βₖ : τₖ)$ and $τᵢ = \type βᵢ$;
-and $\mathtt{definition} : ℬ → \mathtt{Term}$
-is a partial function associating a term to each symbol name
-such that the types agree:
-$Γₖ₋₁ ⊢ \mathtt{definition}\, βₖ : \type βₖ$.
-
-That is $\type$ associates to each base symbol a type-term
-that is well-defined according to the typing rules above
-for generalised terms and /possibly/ making use of previous
-symbols in the listing. Then $\mathtt{definition}\, βₖ$ /may/ provide
-a description of a value of $\type βₖ$.
-
-#+begin_rule org
-:multiple-rules: yes
-
-+ Base Symbol :: $Γ \;⊢\; β : τ$
-  - $\type β \;=\; τ$
-
-+ Symbol Introduction :: $Γ \;⊢\; β\, t \,:\, τ′[x ≔ t]$
-  - $Γ \;⊢\; β : (Π\, x : τ • τ′)$
-  - $Γ \;⊢\; t : τ$
-#+end_rule
-
-*Equivalently*, a Generalised Signature is an ordered list of ‘declarations’
-$δ₁, …, δₙ$ where each $δᵢ$ is a tuple from $Name × Term × (Term ∪ \{-\})$
----for an inferred set /Name/--- with the following constraints:
-- Each tuple $δᵢ = (ηᵢ, τᵢ, dᵢ)$ is written as $ηᵢ ∶ τᵢ ≔ dᵢ$ or
-  as $ηᵢ ∶ τᵢ$ when $dᵢ$ is the special symbols “-”.
-  + We refer to $ηᵢ, τᵢ, dᵢ$ as the /name, type/, and /definition/ of $δᵢ$, respectively.
-- Declaration names must be unique.
-- $δ₁, …, δₖ₋₁ ⊢ δₖ$ for all $k : 1..n$.
+:End:
 
 Of course contexts now associate /both/ a type and an optional definition with a
-given name, and so $Γ : Name → Term × (Term ∪ {-})$ where “-” denotes “no
-definition”. We augment our rules with the following two to accomodate this
-extended capability.
+given name, and so $Γ : \mathsf{Name} → \mathsf{Term} × (\mathsf{Term} ∪ \{-\})$
+where “$-$” denotes “no definition”.  That is, we essentially have two judgement
+relations $Γ ⊢ η : τ$ and $Γ ⊢ η : τ ≔ d$ where the extra information in the
+second can be dropped to get back to the first relation ---c.f., @@latex: {\sc
+≔-Elimination}@@ below.  We augment our rules with the following two to
+accommodate this extended capability.
 #+begin_rule org
 :multiple-rules: yes
 
 + ≔-Introduction :: $Γ \;⊢\; η : τ ≔ d$
   - Γ(η) = (τ, d)
-  - $d \;≠\; -$
 
-+ ∶-Introduction :: $Γ \;⊢\; η : τ$
-  - Γ(η) = (τ, -)
-
-+ ≔-Formation :: $Γ \;⊢\; η : τ ≔ d$
-  - $Γ \;⊢\; η : τ$
-  - $Γ \;⊢\; d : τ$
++ ≔-Elimination :: $Γ \;⊢\; η : τ$
+  - $Γ \;⊢\; η : τ ≔ d$
 #+end_rule
 
-We refer to the second definition as a *contextual presentation* of Generalised
-Signatures. In practice, we replace the separating commas of $δ₁, …, δₙ$
-with line breaks,
-and write $η ∶ τ ≔ d$ as two lines: One with $η ∶ τ$ and another with $η = d$,
-if $d$ is not the opaqueness-value “-”.
-Moreover, in the case of $η = (λ x ∶ α • e)$ we elide this as
-$η\, x = e$.
-
+# Perhaps make as a footnote?
 Readers familiar with elementary computing may note that our contextual
 presentations, when omitting types, are essentially “JSON objects”; i.e.,
 sequences of key-value pairs where the keys are operation names and the values
-are term descriptions, possibly the “null” description ‘-’.
-
+are term descriptions, possibly the “null” description “$-$”.
 ** A Whirlwind Tour of Agda
  <<sec:what_is_DTL>>
  #+latex: \label{sec:what_is_DTL}
@@ -2348,11 +2462,16 @@ are term descriptions, possibly the “null” description ‘-’.
  <<sec:agda_tour>>
  #+latex: \label{sec:agda_tour}
 
+#+latex: \tcbset{colback=green!10!white}
+
+# +latex: \newtcolorbox{myexamplebox}[1]{title=#1,
+# +latex: colback=red!5!white, colframe=red!75!black, colbacktitle=yellow!50!red, coltitle=red!25!black, fonttitle=\bfseries,
+# +latex: subtitle style={boxrule=0.4pt, colback=yellow!50!red!25!white}}
 
  We have introduced a number of concepts and it can be difficult to keep track
  of when relationships $Γ ⊢ t : τ$ are in-fact derivable. The Agda
  citet:why_dependent_types_matter,dependent_matching_is_just_K,curry_howard,agda_plf
- programming language will allow us to the expressivity of generalised
+ programming language will provide us with the expressivity of generalised
  signatures and it will keep track of contexts Γ for us. This section recasts
  many ideas of the previous sections using Agda notation, and introduces some
  new ideas. In particular, the ‘type of types’ =Type= is now cast as a hierarchy
@@ -2363,13 +2482,12 @@ are term descriptions, possibly the “null” description ‘-’.
 #+begin_export latex
 \begin{center}
 \smartdiagram[bubble diagram]{
-Agda, Π/Σ, \_{}≡\_{}, \texttt{data} \\ (Grammars), \texttt{record} \\ (Context), \texttt{module} \\ (Namespacing)
+Agda, \texttt{data} / 𝒲 \\ (Grammars), \texttt{record}  / Σ \\ (Context), \texttt{module} / Π \\ (Namespacing)
 }
 \end{center}
 #+end_export
 
-*** COMMENT Intro                                                            :ignore:
-
+:OldIntro:
  Agda
  citet:why_dependent_types_matter,dependent_matching_is_just_K,curry_howard,agda_plf
  is based on Martin-{{{lof}}}'s intuitionistic type theory. By identifying types
@@ -2377,7 +2495,9 @@ Agda, Π/Σ, \_{}≡\_{}, \texttt{data} \\ (Grammars), \texttt{record} \\ (Conte
  Setᵢ₊₁~ ---the indices ~i~ are called /levels/ and the small type ~Set₀~ is abbreviated
  as ~Set~. In some regard, Agda adds /harmonious/ support for dependent types to
  Haskell.
+:End:
 
+#+latex: \begin{tcolorbox}[colframe=red!75!black, title=Unicode Notation]
  Unlike most languages, Agda not only allows arbitrary mixfix Unicode lexemes,
  identifiers, but their use is encouraged by the community as a whole. Almost
  anything can be a valid name; e.g., ~[]~ and ~_∷_~ to denote list constructors
@@ -2388,15 +2508,16 @@ Agda, Π/Σ, \_{}≡\_{}, \texttt{data} \\ (Grammars), \texttt{record} \\ (Conte
  ₇, ∷, →~. Moreover, the Emacs interface allows programming by gradual refinement
  of incomplete type-correct terms. One uses the “hole” marker ~?~ as a placeholder
  that is used to stepwise write a program.
+#+latex: \end{tcolorbox}
 
-*** Dependent Functions
+*** Dependent Functions --- Π-types
 
   A /[[gls:dependent-function][dependent function]] type/ has those functions whose result /type/ depends on the
-  /value/ of the argument. If ~B~ is a type depending on a type ~A~, then ~(a ∶ A) → B a~
-  is the type of functions ~f~ mapping arguments ~a ∶ A~ to values ~f a ∶ B a~.
+  /value/ of the argument. If ~B~ is a type depending on a type ~A~, then ~(a ∶ A) → B
+  a~ is the type of functions ~f~ mapping arguments ~a ∶ A~ to values ~f a ∶ B a~.
   Vectors, matrices, sorted lists, and trees of a particular height are all
-  examples of dependent types. One also sees the notations ~∀ (a ∶ A) → B a~ and ~Π
-  a ∶ A • B a~ to denote dependent types.
+  examples of dependent types. One also sees the notations @@latex: \newline@@ ~∀
+  (a ∶ A) → B a~ and ~Π a ∶ A • B a~ to denote dependent types.
 
   For example, /the/ generic identity function takes as /input/ a type ~X~ and returns
   as /output/ a function ~X → X~. Here are a number of ways to write it in Agda.
@@ -2455,25 +2576,113 @@ explicit′ = id₀ _ 3
   useful to have them explicitly.
 
   In a type, ~(a ∶ A)~ is called a /telescope/ and they can be combined for convenience.
-  #
-  #+begin_parallel org
   #+BEGIN_EXAMPLE agda
-   {x : _} {y : _} (z : _) → ⋯
-≈  ∀ {x y} z → ⋯
+   (a₁ : A) → {a₂ : A} → {z : _} → (b : B) → ⋯
+≈  (a₁ {a₂} : A) {z : _} (b : B) → ⋯
+≈  ∀ a₁ {a₂ z} b → ⋯
   #+END_EXAMPLE
-  #+latex: \columnbreak
-  #+BEGIN_EXAMPLE agda
-   (a₁ : A) → (a₂ : A) → (b : B) → ⋯
-≈  (a₁ a₂ : A) (b : B) → ⋯
-  #+END_EXAMPLE
-  #+end_parallel
-  #+latex: \vspace{-1.5em}
 
-*** Dependent Datatypes
+  #+latex: \vspace{-1em}
 
-   Algebraic datatypes are introduced with a ~data~ declaration, giving the name,
-   arguments, and type of the datatype as well as the constructors and their
-   types. Below we define the datatype of lists of a particular length.
+  Agda supports the ∀ and the $(a : A) → B\, a$ notations for dependent types;
+  the following declaration allows us to use the Π notation.
+  {{{code(Π Notation in Agda)}}}
+  #+begin_src agda
+Π∶• : ∀ {a b} (A : Set a) (B : A → Set b) → Set _
+Π∶• A B = (x : A) → B x
+
+infix -666 Π∶•
+syntax Π∶• A (λ x → B) = Π x ∶ A • B -- The ‘∶’ is Ghost colon, \:
+  #+end_src
+
+  The “ =syntax function args = new_notation= ” clause treats occurrences of
+  =new_notation= as aliases for proper function calls =f x₁ x₂ … xₙ=. The =infix=
+  declaration indicates how complex expressions involving the new notation
+  should be parsed; in this case, the new notation binds less than any operator
+  in Agda.
+
+*** Dependent Datatypes --- ADTs
+
+Recall that grammars permit a method to discuss “possible scenarios”, such as a
+verb clause or a noun clause; in programming, it is useful to be able to have
+‘possible scenarios’ and then program by considering each option.  For instance,
+a natural number is either zero or the successor of another number, and a door
+is either open, closed, or ajar to some degree.
+
+{{{code(Informal Grammar Notation)}}}
+#+begin_src haskell
+Door ∷= Open | Closed | Ajar ℕ
+#+end_src
+{{{code(Agda Rendition of Grammars)}}}
+#+begin_src agda
+data Door : Set where
+    Open   : Door
+    Closed : Door
+    Ajar   : ℕ → Door
+#+end_src
+While the Agda form looks more verbose, it allows more possibilities that are
+difficult to express in the informal notation ---such as, having
+/parameterised[fn:28]/ languages/types for which the constructors make words
+belonging to a /particular/ parameter only; the =Vec= example below demonstrates
+this idea.
+
+Languages, such as C, which do not support such an “algebraic” approach, force
+you, the user, to actually choose a particular representation ---even though, it
+does not matter, since we only want /a way to speak of/ “different cases, with
+additional information”. The above declaration makes a new datatype with three
+different scenarios: The =Door= collection has the values =Open=, =Closed=, and =Ajar n=
+where =n= is any number ---so that =Ajar 10= and =Ajar 20= are both values of =Door=.
+
+{{{code(Interpreting the Door Values as Options)}}}
+#+begin_src agda
+-- Using Door to model getting values from a type X.
+-- If the door is open, we get the “yes” value
+-- If the door is closed, we get the “no” value
+-- If the door is ajar to a degree n, obtain the “jump n” X value.
+walk : {X : Type} (yes no : X) (jump : ℕ → X) → Door → X
+walk yes no jump Open     = yes
+walk yes no jump Closed   = no
+walk yes no jump (Ajar n) = jump n
+#+end_src
+
+*What is a constructor?* A grammar defines a language consisting of sentences
+built from primitive words; a /constructor/ is just a word and a word's /meaning/ is
+determined by how it is used ---c.f., =walk= above and the =Vec= construction below
+which gives us a way to talk about lists. The important thing is that a grammar
+defines languages, via words, without reference to meaning.  Programmatically,
+constructors could be implemented as “(value position, payload data)”; i.e.,
+pairs =(i, args)= where =i= is the position of the constructor in the list of
+constructors and =args= is a tuple values that it takes; for instance, =Door='s
+constructors could be implemented as =(0,()), (1, ()), (2, (n))= for =Open, Closed,
+Ajar n= where we use =()= to denote “the empty tuple of arguments”.  The *purpose* of
+such types is that we have a number of /distinct/ scenarios that may contain a
+‘payload’ of additional information about the scenario; it is preferable to have
+*informative* (typed) names such as =Open= instead of strange-looking pairs =(0, ())=.
+In case it is not yet clear, unlike functions, a value construction such as ~Ajar
+10~ cannot be simplified any further; just as the pair value ~(2, 5)~ cannot be
+simplified any further. Table ref:tbl:utility-of-adts below showcases how many
+ideas arise from grammars.
+
+# Tables cannot be in tcolorbox easily.
+# +latex: \begin{tcolorbox}[colframe=red!75!black]
+#+caption: Many useful ideas arise as grammars
+#+name: tbl:utility-of-adts
+| Concept                  | Formal Name        | Scenarios                            |
+|--------------------------+--------------------+--------------------------------------|
+| “Two things”             | Σ, =A × B=, records  | One scenario with two payloads       |
+| “One from a union”       | Sums =A + B=, unions | Two scenarios, each with one payload |
+| “A sequence of things”   | Lists, Vectors, ℕ  | Empty and non-empty scenarios        |
+| “Truth values”           | Booleans 𝔹         | Two scenarios with /no/ payloads       |
+| “A pointer or reference” | =Maybe τ=            | Two scenarios; successful or =null=    |
+| “Equality of two things” | Propositional =_≡_=  | One scenario; discussed later        |
+# +latex: \end{tcolorbox}
+
+Such “enumerated type with payloads” are also known as *algebraic data types*
+(ADTs). They have as values =Cᵢ x₁ x₂ … xₙ=, a constructor =Cᵢ= with payload values
+=xᵢ=. Functions are then defined by ‘pattern matching’ on the possible ways to
+/construct/ values; i.e., by considering all of the possible cases =Cᵢ= ---see =walk=
+above. In Agda, they are introduced with a ~data~ declaration; an intricate
+example below defines the datatype of lists of a particular length.
 
    {{{code(Vectors ---ℕ-indexed Lists)}}}
    #+BEGIN_SRC agda
@@ -2523,15 +2732,24 @@ _++_ : {A : Set} {n m : ℕ} → Vec A n → Vec A m → Vec A (n + m)
   Notice that the *type encodes a useful property*: The length of the catenation is
   the sum of the lengths of the arguments.
 
-*** Propositional Equality
+*** ADT Example: Propositional Equality
 
      <<sec:propositional-equality>>
  #+latex: \label{sec:propositional-equality}
 
-   An example of propositions-as-types is a definition of the identity relation
-   ---the least reflexive relation. For a type ~A~ and an element ~x~ of ~A~, we define
-   the family of proofs of “being equal to $x$” by declaring only one inhabitant
-   at index ~x~.
+ In this section, we present a notion of equality as an algebraic data type.
+   Equality is a notoriously difficult concept, even posing it is non-trivial:
+   “When are two things equal?” sounds absurd, since the question speaks about
+   two things and two different things cannot be the same one thing.  For us,
+   equality is the smallest possible reflexive relation: Any relation ℛ that
+   relates things to themselves ---such that $x\, ℛ\, x$ for any /x/--- must
+   necessarily contain the propositional equality relation; i.e., =_≡_ ⊆ ℛ=.
+
+   # An example of propositions-as-types is a definition of the identity relation
+   # ---the least reflexive relation.
+
+   For a type ~A~ and an element ~x~ of ~A~, we define the family of types/proofs of
+   “being equal to $x$” by declaring only one inhabitant at index ~x~.
 
    #+begin_parallelNB org
  {{{code( Propositional Equality )}}}
@@ -2552,13 +2770,34 @@ data _≡_ {A : Set} : A → A → Set
    for equals”:
    {{{code( Transport along proofs )}}}
    #+BEGIN_SRC agda
+{- If l ≡ r and we have P l, then we also have P r too! -}
 subst : {A : Set} {P : A → Set} {l r : A} → l ≡ r → P l → P r
 subst refl it = it
    #+END_SRC
    Why does this work? An element of ~l ≡ r~ must be of the form ~refl {x}~ for some
    canonical form ~x~; but if ~l~ and ~r~ are both ~x~, then ~P l~ and ~P r~ are the /same
    type/. Pattern matching on a proof of ~l ≡ r~ gave us information about the rest
-   of the program's type.
+   of the program's type. By the same reasoning, we can prove that equality is
+   the least reflexive relation.
+
+   {{{code( Propositional equality is the least reflexive relagtion )}}}
+#+begin_src agda
+-- If ℛ is reflexive, then it contains _≡_
+lrr : ∀ {X} {_ℛ_ : X → X → Set}
+    → (reflᵣ : ∀ {x} → x ℛ x)
+    → ∀ {x y} → x ≡ y → x ℛ y
+lrr reflᵣ refl = reflᵣ
+
+-- If ℛ contains _≡_, then it is reflexive
+lrr˘ : ∀ {X} {_ℛ_ : X → X → Set}
+     → (ℛ-contains-≡ : ∀ {x y} → x ≡ y → x ℛ y)
+     → ∀ {x} → x ℛ x
+lrr˘ ℛ-contains-≡ {x} = ℛ-contains-≡ refl
+
+-- “ℛ is reflexive precively when it contains _≡_”
+-- This follows from (lrr) and (lrr˘), and is sometimes
+-- “the” definition of reflexivity.
+#+end_src
 
  One says ~𝓁 ≡ 𝓇~ is <<</definitionally equal/>>>
  #+latex: \label{</definitionally equal/>}
@@ -2578,7 +2817,167 @@ propositional : ∀ {A m n} → Vec A (m + n) ≡ Vec A (n + m)
 propositional = {!!}
  #+END_SRC
 
-*** Calculational Proofs ---Making Use of Unicode Mixfix Lexemes
+*** ADTs as 𝒲-types
+
+Grammars, =data= declarations, /describe/ the /smallest/ language that has the
+constructors as words. What if no such language exists?  Indeed, not all
+grammars are ‘sensible’ in that they define a language.  For instance, =N= below
+is a language of only *one word*, =MakeN=; whereas =No= is a language with *no words*,
+since to form a phrase =MakeNo n= first requires we form =n=, which leads to
+infinite regress, and so there are no /finite/ words. Even worse, =Noo= describes no
+language at all and Agda says that it is =not strictly postive=.
+# While =N= and =No= could be
+# represented using pairs, as discussed earlier, ---=N= with /one/ pair, =No= with one
+# pair function and /no/ pairs--- the =Noo= language is worse since it has no possible
+# representation, using pairs or otherwise.
+
+{{{code( Describing Possibly Non-Existent Languages )}}}
+#+begin_src agda
+data N : Set where
+  MakeN : N
+
+data No : Set where
+  MakeNo : No → No
+
+data Noo : Set where
+ MakeNoo : (Noo → Noo) → Noo
+#+end_src
+
+How do we know if a grammar describes a language that /actually exists/?  Suppose
+=T= is defined by $n$ constructors =Cᵢ ∶ τᵢ(T) → T=, which may mention =T= in their
+payload =τᵢ(T)=. Then we have a type operation =𝑭 X = (Σ i ∶ Fin n • τᵢ(X))=, where
+=Fin n= is the type of natural numbers less than =n=. The type =T= describes a
+language =X= that /contains/ all the constructors; i.e., “it can distinguish the
+constructors, along with their payloads”; i.e., there is a method =𝑭 X → X= that
+shows how the descriptive constructors =𝑭 X= can be viewed as values of =X=.  More
+concretely, the type =N= above has one constructor =MakeN= which takes an empty
+tuple of arguments, denoted =𝟙 = { () }=, and so it has =𝑭 X ≈ 𝟙= and so @@latex:
+\newline@@ =(𝑭 X → X) ≈ (𝟙 → X) ≈ X=; whence any non-empty collection =X= is
+described by 𝑭; but the *smallest* such language is a singleton language with one
+element that we call =MakeN=. *ADTs describe the smallest languages generated by
+their constructors*.
+
+#+latex: \begin{tcolorbox}[colframe=red!75!black, title=Important Observation]
+Recall that we earlier observed that Π and Σ could be thought of as way to
+interpret a contextual judgement; so too a judgement $Γ ⊢ t : τ$ could be
+interpreted as a term $t : τ$ in the presence of the ADT described by some $𝑭$
+which is obtained by treating all (or a select set of) names of Γ as constructors.
+
+#+latex: \vspace{1em}
+Indeed, 𝒲-types (introduced below) are essentially generalised signatures: =𝒲 A B=
+has =A= as ‘function symbols’ and each symbol =f ∶ A= has ‘type’ =B f=.  𝒲-types are
+not generalised signatures since they do not support optional definitions; which
+is a minor technicality: If $t$ has the associated definition =d=, then we may use
+“ =let t = d in 𝒲 ⋯= ” and repeated =let= clauses solve the issue of optional
+definitions.
+
+#+latex: \vspace{1em}
+The generic situation of ‘containers’ is described in
+cite:DBLP:journals/jfp/AltenkirchGHMM15.
+#+latex: \end{tcolorbox}
+
+Notice that we have again encountered the problem of a syntax that is “too
+powerful” for the concepts it denotes: We can declare grammars (ADTs) that do
+not describe /any/ language. Since a grammar consists of a number of /disjoint/
+(“Σ”) constructor clauses that take a /tuple/ (“Π”) of arguments, it suffices to
+consider when “polynomial”[fn:29] descriptions @@latex: \newline@@ =𝑭 X = (Σ a ∶
+A • Π b ∶ B a • X)= actually describe a language. That is, when is there a
+function $𝑭\, X → X$ and what is the /smallest/ $X$ with such a function?  The
+values of $𝑭\, X$ are pairs $(a, f)$ where $a : A$ and $f : B\, a → X$; so we
+may take the collection of /only/ such pairs to be the language described by 𝑭,
+and it is thus the smallest such collection. This[fn:30] language is called a
+*𝒲-type*.
+
+#+latex: \begin{tcolorbox}[colframe=red!75!black, title=Descriptions of Languages That Necessarily Exist]
+
+=(𝒲 a ∶ A • B a)= is the type of well-founded[fn:32] trees with node “labels from $A$”
+and each node having “$B\, a$ many possible children trees”.  That is, it is the
+(inductive) language/type whose /constructors/ are indexed by elements $a : A$,
+each with arity $B\, a$.
+
+# An element sup(r, s) of W x : A • B x is a tree with label r and subtrees s(b)
+#   for b : B(r). The elements of W A B are therefore trees with branching degrees
+#   (B a)_{a : A}.
+
+{{{code(𝒲-types in Agda)}}}
+#+begin_src agda
+-- The type of trees with B-branching degrees
+data 𝒲 (A : Set) (B : A → Set) : Set where
+  sup : (a : A) → (B a → 𝒲 A B) → 𝒲 A B
+#+end_src
+
+In particular, =𝒲 𝒾 ∶ Fin n • B 𝒾= is essentially the =data= declaration of =n=
+constructors where the 𝒾-th constructor takes arguments of ‘shape’ =B 𝒾=.
+#+latex: \newline
+E.g., in Agda syntax, =ℕ ≅ 𝒲 (Fin 2) λ{zero → Fin 0; (suc zero) → Fin 1}=.
+#+latex: \end{tcolorbox}
+
+To further understand 𝒲-types, consider the type =Rose A= of “multi-branching
+trees with leaves from $A$”. /𝒲-types generalise the idea of rose trees:/ Each
+list of children trees =xs ∶ List (Rose A)= can be equivalently[fn:31] replaced by
+a /tabulation/ =cs ∶ Fin (length xs) → Rose A= that tells the 𝒾-th child of =xs=.
+That is, *𝒲-types are trees with branching degrees $(B\, a)_{a : A}$.*
+# The elimination rule for the W-type formalises induction over trees.
+
+{{{code(Rose trees)}}}
+#+begin_src agda
+data Rose (A : Set) : Set where
+  Node : (parent : A) (children : List (Rose A)) → Rose A
+
+example : Rose ℕ
+example = MkRose 0  (MkRose 1 (MkRose 3 [] ∷ [])
+                   ∷ MkRose 2 (MkRose 4 [] ∷ []) ∷ [])
+#+end_src
+The =example= tree is shown diagrammatically below.
+#+begin_src dot :file rose-example.png
+digraph {0 -> 1;
+            1 -> 3;
+       0 -> 2;
+            2 -> 4;
+       rankdir=LR;  //Rank Direction Left to Right
+       }
+#+end_src
+
+#+attr_latex: :width 5cm
+#+RESULTS:
+[[file:rose-example.png]]
+
+We can easily recast the =Rose= type and the example as a 𝒲-type.  In particular,
+notice that in the construction of =example′=, each node construction =sup (a, n) cs=
+indicates that the label is =n= and the number of children the node has is =n=.
+That is, the choice of using lists or vectors in the design of =Rose= is forced to
+being (implicitly and essentially) vectors in the construction of =Rose′=.
+#+begin_src agda
+Rose′ : Set → Set
+Rose′ A = 𝒲 (A × ℕ) λ{ (a , ♯children)  → Fin ♯children }
+
+example′ : Rose′ ℕ
+example′ = sup ((0 , 2))
+             λ { zero       → sup (1 , 1) λ {zero → sup (3 , 0) λ ()}
+               ; (suc zero) → sup (2 , 1) λ {zero → sup (4 , 0) λ ()}}
+#+end_src
+
+Similar to rose trees, =𝒲 a ∶ Fin n • Fin 0= is an enumerated type having =n=
+constants, such as the Booleans.  That is, if =B a= is empty for all =a=, then trees
+in =𝒲 a ∶ A • B a= have no subtrees, and hence have ‘height’ 0.
+
+The /height/ of a tree, is an ordinal, and is defined to be the supremum[fn:34] ---i.e.,
+the least upper bound--- of the height of its elements. This may be reason why
+the only constructor of 𝒲-types is named =sup=.
+\[ \mathsf{height}\, (\sup\, a\, \mathsf{child}) \;=\;
+{\large \sup}_{i : B\, a} \, \left(\mathsf{height}\, (\mathsf{child}\, i) + 1\right) \]
+
+In contrast, =𝒲 a ∶ A • Fin n= is a data type with =A=-many clauses that /each/ make =n=
+recursive calls; this is an /empty type/ since every construction requires =n= many
+existing constructions ---however, it is still a type, unlike =Noo= above.  That
+is[fn:33], if =B a= is non-empty for all =a=, then =𝒲 a ∶ A • B a= is empty, since in
+order to form an element =sup a c=, we need to have defined before-hand =c(b) ∶ (𝒲
+a ∶ A • B a)= for each one of the elements =b= of =B a=.
+
+Unlike generalised signatures which do not possess a singular
+semantics, Agda =data= declarations are pleasant way to write 𝒲-types.
+
+*** COMMENT Calculational Proofs ---Making Use of Unicode Mixfix Lexemes
    School math classes show calculations as follows.
    # #
    #+begin_parallelNB
@@ -2610,18 +3009,19 @@ _ ≡⟨ refl ⟩ refl = refl
    right to obtain: ~p ≡⟨ reason₁ ⟩ (q ≡⟨ reason₂ ⟩ (r ∎))~. We can code this up,
    as show above on the right.
 
-*** Modules ---Namespace Management
+*** Modules ---Namespace Management; ΠΣ-types
 
      #+latex: \hspace{-1.3em}
-   Agda modules are not a first-class construct, yet.
-   + Within a module, we may have nested module declarations.
-   + All names in a module are public, unless declared ~private~.
-   #
+
+For now, Agda modules are not first-class[fn:35] constructs and essentially only
+serve to delimit namespaces, thereby avoiding name clashes. They use is
+exemplified by the following snippets.
+
    #+begin_4parallelNB org
    #+latex: \vspace{0.5em}
  {{{code( A Simple Module )}}}
    #+BEGIN_SRC agda
-module M where
+module A where
 
   𝒩 : Set
   𝒩 = ℕ
@@ -2637,14 +3037,14 @@ module M where
    #+latex: \vspace{0.5em}
  {{{code( Using It )}}}
    #+BEGIN_SRC agda
-use₀ : M.𝒩
-use₀ = M.y
+use₀ : A.𝒩
+use₀ = A.y
 
 use₁ : ℕ
 use₁ = y
-  where open M
+  where open A
 
-open M
+open A
 
 use₂ : ℕ
 use₂ = y
@@ -2653,18 +3053,20 @@ use₂ = y
    #+latex: \vspace{0.5em}
  {{{code( Parameterised Modules )}}}
    #+BEGIN_SRC agda
-module M′ (x : ℕ)
+module B
+    (x : ℕ)
   where
     y : ℕ
     y = x + 1
    #+END_SRC
    #+latex: \vfill
    #+latex: \vspace{0.2em}
- {{{code( Names=Functions )}}}
+ {{{code( Name = Function )}}}
    #+BEGIN_SRC agda
-exposed : (x : ℕ)
-        → ℕ
-exposed = M′.y
+exposed
+   : (x : ℕ)
+   → ℕ
+exposed = B.y
    #+END_SRC
    #+latex: \columnbreak
 
@@ -2672,33 +3074,55 @@ exposed = M′.y
  {{{code( Using Them )}}}
    #+BEGIN_SRC agda
 use′₀ : ℕ
-use′₀ = M′.y 3
+use′₀ = B.y 3
 
-module M″ = M′ 3
+module C = B 3
 
 use″ : ℕ
-use″ = M″.y
+use″ = C.y
 
 use′₁ : ℕ
 use′₁ = y
   where
-    open M′ 3
+    open B 3
    #+END_SRC
 
    #+end_4parallelNB
 
-   + Public names may be accessed by qualification or by opening them locally or globally.
-   + Modules may be parameterised by arbitrarily many values and types ---but not by other modules.
+  When opening a module, we can control which names are brought into scope with
+  the ~using, hiding,~ and ~renaming~ keywords.
+  #+caption: Module combinators supported in the current implementation of Agda
+  | ~open M hiding (𝓃₀; …; 𝓃ₖ)~               | Essentially treat ~𝓃ᵢ~ as private      |
+  | ~open M using  (𝓃₀; …; 𝓃ₖ)~               | Essentially treat /only/ ~𝓃ᵢ~ as public  |
+  | ~open M renaming (𝓃₀ to 𝓂₀; …; 𝓃ₖ to 𝓂ₖ)~ | Use names ~𝓂ᵢ~ instead of ~𝓃ᵢ~ |
+#   + ~open M public~: Treat the contents of ~M~ as if they were public contents of
+# the current module.
 
-   Modules are essentially implemented as syntactic sugar: Their declarations are
-   treated as top-level functions that take the parameters of the module as
-   extra arguments. In particular, it may appear that module arguments are
-   ‘shared’ among their declarations, but this is not so.
+# Within a module, we may have nested module declarations.
 
-   “Using Them”:
-   + This explains how names in parameterised modules are used: They are treated as functions.
-   + We may prefer to instantiate some parameters and name the resulting module.
-   + However, we can still ~open~ them as usual.
+All names in a module are public, unless declared ~private~.  Public names may be
+accessed by qualification or by opening them locally or globally. Modules may be
+parameterised by arbitrarily many values and types ---but not by other modules.
+
+Modules are essentially implemented as syntactic sugar: Their declarations are
+treated as top-level functions that take the parameters of the module as extra
+arguments. In particular, it may appear that module arguments are ‘shared’ among
+their declarations, but this is not so ---see the =exposed= function above.
+
+Parameterised Agda modules are generalised signatures that have all their
+parameters first then followed by only by named symbols that must have term
+definitions.  Unlike generalised signatures which do not possess a singular
+semantics, Agda modules are pleasant way to write ΠΣ-types ---the parameters are
+captured by a Π type and the defined named are captured by Σ-types as in “ =Π
+parameters • Σ body= ”.
+
+# Agda records are closed to being generalised signatures, so we turn
+# to them next.
+
+#   “Using Them”:
+#   + This explains how names in parameterised modules are used: They are treated as functions.
+#   + We may prefer to instantiate some parameters and name the resulting module.
+#   + However, we can still ~open~ them as usual.
 
 **** COMMENT Anonymous Modules and Variables
 
@@ -2723,50 +3147,48 @@ variable
   #+END_EXAMPLE
   #+end_parallel \vspace{-1em}
 
-**** Module Keywords                                                 :ignore:
-
-  When opening a module, we can control which names are brought into scope with
-  the ~using, hiding,~ and ~renaming~ keywords.
-  #+caption: Module combinators supported in the current implementation of Agda
-  | ~open M hiding (𝓃₀; …; 𝓃ₖ)~               | Essentially treat ~𝓃ᵢ~ as private      |
-  | ~open M using  (𝓃₀; …; 𝓃ₖ)~               | Essentially treat /only/ ~𝓃ᵢ~ as public  |
-  | ~open M renaming (𝓃₀ to 𝓂₀; …; 𝓃ₖ to 𝓂ₖ)~ | Use names ~𝓂ᵢ~ instead of ~𝓃ᵢ~ |
+**** COMMENT Module efficiency                                       :ignore:
 
   Splitting a program over several files will improve type checking performance,
   since when you are making changes the type checker only has to check the files
   that are influenced by the change.
   + ~import X.Y.Z~: Use the definitions of module ~Z~ which lives in file ~./X/Y/Z.agda~.
-  + ~open M public~: Treat the contents of ~M~ as if they were public contents of the current module.
 
   So much for Agda modules.
 
-*** Records
+*** Records --- Σ-types
 
-     A record type is declared much like a datatype where the fields are indicated
-     by the ~field~ keyword. The nature of records is summarised by the following
-     equation.
+     An Agda record type is /presented/ like a generalised signature, except
+     parameters may either appear immediately after the record's name
+     declaration or may be declared with the =field= keyword; other named symbols
+     must have an accompanying term definition. Unlike generalised signatures
+     which do not possess a singular semantics, Agda records are essentially a
+     pleasant way to write Σ-types. The nature of records is summarised by the
+     following equation.
 
      | ~record~ | ≈ | ~module~ +  ~data~ with one constructor |
 
-   #+begin_parallelNB
+   #+begin_parallelNB org
  {{{code( The class of types along with a value picked out )}}}
    #+BEGIN_SRC agda
 record PointedSet : Set₁ where
-  constructor MkIt  {- Optional -}
+  constructor MkIt  -- Optional
   field
     Carrier : Set
     point   : Carrier
 
-  {- It's like a module,
-  we can add derived definitions -}
-  blind : {A : Set} → A → Carrier
+  -- It's like a module,
+  -- we can add definitions
+  blind : {A : Set}
+        → A → Carrier
   blind = λ a → point
    #+END_SRC
    #+latex: \columnbreak
  {{{code( Defining Instances )}}}
    #+BEGIN_SRC agda
 ex₀ : PointedSet
-ex₀ = record {Carrier = ℕ; point = 3}
+ex₀ = record { Carrier = ℕ
+             ; point   = 3 }
 
 ex₁ : PointedSet
 ex₁ = MkIt ℕ 3
@@ -2780,24 +3202,30 @@ point   ex₂ = 3
    #+end_parallelNB
    #+latex: \vspace{-1em}
 
-   Within the Emacs interface, start with ~ex₂ = ?~, then in the hole enter ~C-c C-c
-   RET~ to obtain the /co-pattern/ setup. Two tuples are the same when they have the
-   same components, likewise a record is defined by its projections, whence
-   /co-patterns/. If you are using many local definitions, you likely want to use
-   co-patterns.
+   #    Within the Emacs interface, start with ~ex₂ = ?~, then in the hole enter
+   # ~C-c C-c RET~ to obtain the /co-pattern/ setup.
+
+   Two tuples are the same when they have the same components, likewise a record
+   is (extensionaly) defined by its projections, whence /co-patterns/: The
+   declarations @@latex: \newline@@ ~r = record {fᵢ = dᵢ}~ and =fᵢ r = dᵢ=, for field names =fᵢ=, are the
+   same; they define values of record types. See =ex₂= above for such an example.
+
+   # If you are using many local definitions, you likely want to use
+   # co-patterns.
 
    To allow projection of the fields from a record, each record type comes with a
    module of the same name. This module is parameterised by an element of the
    record type and contains projection functions for the fields.
 
-   #+begin_parallel org
+   #+begin_parallelNB org
  {{{code( Simple Uses )}}}
    #+BEGIN_SRC agda
 use⁰ : ℕ
 use⁰ = PointedSet.point ex₀
 
 use¹ : ℕ
-use¹ = point where open PointedSet ex₀
+use¹ = point
+    where open PointedSet ex₀
 
 open PointedSet
 
@@ -2807,22 +3235,30 @@ use² = blind ex₀ true
    #+latex: \columnbreak
 
   #+macro: newline @@latex: \newline@@
+   #    Notice that we could  pattern match on records {{{newline}}} ---they're
+   # just ~data~ after all!
 
-   You can even pattern match on records {{{newline}}} ---they're just ~data~ after
-   all!
    #+latex: \vspace{1em}
  {{{code( Pattern Matching on Records )}}}
    #+BEGIN_SRC agda
-use³ : (P : PointedSet) → Carrier P
-use³ record {Carrier = C; point = x}
+use³ use⁴ : (P : PointedSet)
+           → Carrier P
+
+use³ record {Carrier = C
+            ; point = x}
   = x
 
-use⁴ : (P : PointedSet) → Carrier P
 use⁴ (MkIt C x)
   = x
    #+END_SRC
-   #+end_parallel
+   #+end_parallelNB
    #+latex: \vspace{-1em}
+
+
+   Records are =data= declarations whose one and only constructor is named
+   @@latex: \newline @@ =record {fᵢ = _}=, where the =fᵢ= are the filed names; above
+   we provided =MkIt= as an optional alias. As such, above we could pattern match
+   on records using either constructor name.
 
   So much for records.
 
@@ -3181,6 +3617,8 @@ open import Data.Nat.Properties
   #+end_src
   :End:
 
+#+begin_parallelNB org
+
   In this section we provide a demonstration that with dependent-types we can
   show records, direct dependent types, and contexts ---which in Agda may be
   thought of as parameters to a module--- are interdefinable. Consequently, we
@@ -3198,29 +3636,42 @@ open import Data.Nat.Properties
   previous claim that records and direct dependent types are essentially the
   same.
 
-
   #+begin_export latex
-\begin{center}
-\smartdiagram[circular diagram:clockwise]{Records, Typeclasses, Dependent Sums, Modules}
-\end{center}
+% \begin{center}
+\smartdiagram[descriptive diagram]{
+  {Record, A $\Sigma$-type in \texttt{record} notation },
+  {Typeclass,A ``$\Pi\, parameter \bullet \Sigma\, body$''-type in \texttt{record} notation },
+  {Dependent Product, A $\Sigma$-type in $\Sigma$-notation},
+  {Context / \\ Telescope, A $\Pi$-type in \texttt{module} notation},
+  }
+% \end{center}
   #+end_export
+#+end_parallelNB
+
 *** Three Ways to Define Monoids
     :PROPERTIES:
     :CUSTOM_ID: Three-Ways-to-Define-Monoids
     :END:
 
- Recall that the signature of a monoid consists of a type ~Carrier~ with a method
- ~_⨾_~ that composes values and an ~Id~-entity value. With Agda's lack of type-proof
- discrimination, i.e., its support for the Curry-Howard Correspondence, the
- “propositions as types” interpretation, we can encode the signature as well as
- the axioms of monoids to yield their theory presentation in the following two
- ways. Additionally, we have the derived result: ~Id~-entity can be popped-in and
+A *monoid* is a collection, say =Carrier=, along with an operation, say =_⨾_=, on it
+and a chosen point, say =Id=, from that collection. *Monoids model composition:* We
+have a bunch of things called =Carrier= ---such as programs or words---, we have a
+way to ‘mix’ or ‘compose’ two things =x= and =y= to get a third =x ⨾ y= ---such as
+forming a big program from smaller pieces or a story from words--- which has an
+selected ‘empty’ thing that does not affect composition ---such as the
+do-nothing program or the ‘empty word’ which does not add content to a story.
+The type of monoids is formalised below as =Monoid-Record=;
+additionally, we have the derived result: ~Id~-entity can be popped-in and
  out as desired.
 
- The following code blocks contain essentially the same content, but presented
- using different notions of packaging. Even though both use the ~record~ keyword,
- the latter is treated as a typeclass since the carrier of the monoid is given
- ‘statically’ and instance search is used to invoke such instances.
+ # Recall that the signature of a monoid consists of a type ~Carrier~ with a method
+ # ~_⨾_~ that composes values and an ~Id~-entity value. With Agda's lack of type-proof
+ # discrimination, i.e., its support for the Curry-Howard Correspondence, the
+ # “propositions as types” interpretation, we can encode the signature as well as
+ # the axioms of monoids to yield their theory presentation in the following two
+ # ways. Additionally, we have the derived result: ~Id~-entity can be popped-in and
+ # out as desired.
+
  {{{code(Monoids as Agda Records)}}}
  #+BEGIN_SRC haskell
 record Monoid-Record : Set₁ where
@@ -3237,15 +3688,45 @@ record Monoid-Record : Set₁ where
     assoc : ∀ x y z → (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
 
   -- derived result
-  pop-Idᵣ : ∀ x y  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
-  pop-Idᵣ x y = cong (_⨾ y) rid
+  pop-Id-Rec : ∀ x y  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
+  pop-Id-Rec x y = cong (_⨾ y) rid
 
-open Monoid-Record {{...}} using (pop-Idᵣ)
+open Monoid-Record {{...}} using (pop-Id-Rec)
  #+END_SRC
+
+#+latex: \begin{tcolorbox}[colframe=red!75!black, title=Instance Resolution]
+ The double curly-braces ~{{...}}~ serve to indicate that the given argument is to
+ be found by /instance resolution/. For example, if we declare =it ∶ {{e ∶ A}} → B=,
+ then =it= is a =B= value that is formed using an =A= value; but which =A= value? Unlike
+ a function which requires the =A= value as input, =it= will “look up” an =A= value in
+ the list of names that are marked for look-up by the keyword =instance=.  If
+ multiple =A= values are marked for look-up, it is not clear which one should be
+ used; as such, /at most one[fn:36]/ value can be provided for lookup and this
+ value is called “the declared =A=-instance”, whence the name ‘instance
+ resolution’.  Recall that Agda records automatically come with an associated
+ module, and so the =open= clause, above, makes the name @@latex: \newline@@
+ =pop-Id-Rec : {{𝑴 : Monoid-Record}} → (x y : Monoid-Record.Carrier 𝑴) → …=
+ accessible; in-particular, this name uses instance resolution: The derived
+ result, =pop-Id-Rec=, can be invoked without having to mention a monoid, provided
+ a unique =Monoid-Record= value is declared for instance search ---otherwise one
+ must use named instances citet:named_instances. We will return to actually
+ declaring and using instances in the next section.
+ # Notice that the
+ # carrier argument in the typeclasses approach, “structure on a carrier”, is an
+ # (undeclared) implicit argument to the ~pop-Id-tc~ operation.
+#+latex: \end{tcolorbox}
+
+ A value of =Monoid-Record= is essentially a tuple =record{Carrier = C; …}=; so the
+ carrier is /bundled at the value level/. If we to speak of “monoids with the
+ specific carrier 𝒳”, we need to /bundle the carrier at the type level/.
+ This is akin to finding the carrier “dynamically, at runtime” versus
+ finding it “statically, at typechecking time”.
+ # i.e., the difference between
+ # “a structure” and “a structure on a particular carrier”.
 
  {{{code(Monoids as Typeclasses)}}}
  #+BEGIN_SRC haskell
-record HasMonoid (Carrier : Set) : Set₁ where
+record MonoidOn (Carrier : Set) : Set₁ where
   infixl 5 _⨾_
   field
     Id    : Carrier
@@ -3254,24 +3735,16 @@ record HasMonoid (Carrier : Set) : Set₁ where
     rid   : ∀{x} → (x ⨾ Id) ≡ x
     assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
 
-  pop-Id-tc : ∀ x y →  x ⨾ Id ⨾ y  ≡  x ⨾ y
-  pop-Id-tc x y = cong (_⨾ y) rid
+  pop-Id-Tc : ∀ x y →  x ⨾ Id ⨾ y  ≡  x ⨾ y
+  pop-Id-Tc x y = cong (_⨾ y) rid
 
-open HasMonoid {{...}} using (pop-Id-tc)
+open MonoidOn {{...}} using (pop-Id-Tc)
  #+END_SRC
 
- The double curly-braces ~{{...}}~ serve to indicate that the given argument is to
- be found by instance resolution: The derived results for ~Monoid-Record~ and
- ~HasMonoid~ can be invoked without having to mention a monoid on a particular
- carrier, provided there exists one unique record value having it as carrier
- ---otherwise one must use named instances citet:named_instances. Notice that the
- carrier argument in the typeclasses approach, “structure on a carrier”, is an
- (undeclared) implicit argument to the ~pop-Id-tc~ operation.
-
  Alternatively, in a DTL we may encode the monoidal interface using dependent
- products *directly* rather than use the syntactic sugar of records. The notation
- ~Σ x ∶ A • B x~ denotes the type of pairs ~(x , pf)~ where ~x ∶ A~ and ~pf ∶ B x~
- ---i.e., a record consisting of two fields. It may be thought of as a
+ products *directly* rather than use the syntactic sugar of records. Recall that
+ ~Σ a ∶ A • B a~ denotes the type of pairs ~(a , b)~ where ~a ∶ A~ and ~b ∶ B a~
+ ---i.e., a record consisting of two fields--- and it may be thought of as a
  constructive analogue to the classical set comprehension {{{newline}}}
  ~{x ∶ A ❙ B x}~.
 
@@ -3310,16 +3783,20 @@ Carrierₜ = proj₁
 
  Of the renditions thus far, the ~Σ~ rendering makes it clear that a monoid could
  have any subpart as a record with the rest being dependent upon said record.
- For example, if we had a semigroup type, we could have declared
- | ~Monoid-Σ = Σ S ∶ Semigroup • Σ Id ∶ Semigroup.Carrier S • ⋯~ |
- There are a large number of such hyper-graphs, we have only presented a
- stratified view for brevity. In particular, ~Monoid-Σ~ is the extreme unbundled
- version, whereas ~Monoid-Record~ is the other extreme, and there is a large
- spectrum in between ---all of which are somehow isomorphic; e.g., ~Monoid-Record
- ≅ Σ C ∶ Set • HasMonoid C~. Our envisioned system would be able to derive any
- such view at will citet:casl_overview and so programs may be written according
- to one view, but easily repurposed for other view with little human
- intervention.
+ For example, if we had a semigroup[fn:37] type, we could have declared a monoid to be
+ a semigroup with additional pieces:
+ | ~Monoid-Σ  =  Σ S ∶ Semigroup • Σ Id ∶ Semigroup.Carrier S • ⋯~ |
+
+ #+latex: \begin{tcolorbox}[colframe=red!75!black]
+ There are a large number of hyper-graphs indicating how monoidal interfaces
+ could be built from their parts, we have only presented a stratified view for
+ brevity. In particular, ~Monoid-Σ~ is the extreme unbundled version, whereas
+ ~Monoid-Record~ is the other extreme, and there is a large spectrum in between
+ ---all of which are somehow isomorphic[fn:38]; e.g., ~Monoid-Record ≅ Σ C ∶ Set •
+ MonoidOn C~. Our envisioned system would be able to derive any such
+ view at will citet:casl_overview and so programs may be written according to
+ one view, but easily repurposed for other view with little human intervention.
+#+latex: \end{tcolorbox}
 
 *** Instances and Their Use
     :PROPERTIES:
@@ -3335,18 +3812,21 @@ Carrierₜ = proj₁
 
   # Instances and their use are as follows.
 
-  Instances of the monoid types are declared by providing implementations for the
-  necessary fields. Moreover, as mentioned earlier, to support instance search,
-  we place the declarations in an ~instance~ clause. {{{code(Instance
-  Declarations)}}}
+  Instances of the monoid types are declared by providing implementations for
+  the necessary fields. Moreover, as mentioned earlier, to support instance
+  search, we place the declarations in an ~instance~ clause.
+
+  {{{code(Instance Declarations)}}}
   #+BEGIN_SRC haskell
 instance
-   ℕ-record = record { Carrier = ℕ ; Id = 0 ; _⨾_ = _+_
-             ; lid =  +-identityˡ _  ; rid = +-identityʳ _ ; assoc = +-assoc }
+   ℕ-Rec : Monoid-Record
+   ℕ-Rec = record { Carrier = ℕ ; Id = 0 ; _⨾_ = _+_
+                  ; lid =  +-identityˡ _  ; rid = +-identityʳ _
+                  ; assoc = +-assoc }
 
-   ℕ-tc : HasMonoid ℕ
-   ℕ-tc = record { Id = 0; _⨾_ = _+_
-         ; lid = +-identityˡ _ ; rid = +-identityʳ _ ; assoc = +-assoc }
+   ℕ-Tc : MonoidOn ℕ
+   ℕ-Tc = record { Id = 0; _⨾_ = _+_ ; lid = +-identityˡ _
+                 ; rid = +-identityʳ _ ; assoc = +-assoc }
 
    ℕ-Σ : Monoid-Σ
    ℕ-Σ = ℕ , 0 , _+_ , +-identityˡ _ , +-identityʳ _ , +-assoc
@@ -3359,28 +3839,16 @@ instance
 
   {{{code(No Monoids Mentioned at Use Sites)}}}
   #+BEGIN_SRC haskell
-ℕ-pop-0ᵣ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
-ℕ-pop-0ᵣ = pop-Idᵣ
+ℕ-pop-0-Rec ℕ-pop-0-Tc ℕ-pop-0-Σ : (x y : ℕ) → x + 0 + y  ≡  x + y
 
-ℕ-pop-0-tc : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
-ℕ-pop-0-tc = pop-Id-tc
-
-ℕ-pop-0ₜ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
-ℕ-pop-0ₜ = pop-Id-Σ
+ℕ-pop-0-Rec  = pop-Id-Rec
+ℕ-pop-0-Tc   = pop-Id-Tc
+ℕ-pop-0-Σ    = pop-Id-Σ
   #+END_SRC
 
- :Ignore:
- #+begin_edcomm org
- :ed: WK
- Why superfluous ∀?
-
- Musa: I thought it made the presentation more accessible.
- #+end_edcomm
- :End:
-
- One may realise that ~pop-0~ proofs as a form of polymorphism ---the result is
- independent of the particular packaging mechanism; record, typeclass, Σ, it does
- not matter.
+  With a change in perspective, we could treat the =pop-0= implementations as a
+  form of /polymorphism/: The result is independent of the particular packaging
+  mechanism; record, typeclass, Σ, it does not matter.
 
   :Irrelevant:
   This is nearly identical to the previous implementation and possibly
@@ -3391,26 +3859,31 @@ instance
   and distinct from the unlabelled product presentations.
   :End:
 
-  Finally, let us exhibit views between the Σ form and the ~record~ form.
+  Finally, since we have already discussed the relationship between
+  =Monoid-Record= and =MonoidOn=, let us exhibit views between the Σ form and the ~record~ form.
   #+LaTeX: \def\mytitle{Agda}
-  #+BEGIN_SRC haskell
+{{{code(Monoid-Record and Monoid-Σ \emph{represent} the same data)}}}
+  #+BEGIN_SRC agda
 {- Essentially moved from record{⋯} to product listing -}
-from-record-to-usual-type : Monoid-Record → Monoid-Σ
+from : Monoid-Record → Monoid-Σ
+from M  =  let open Monoid-Record M
+           in Carrier , Id , _⨾_ , lid , rid , assoc
+
 from-record-to-usual-type M  =  Carrier , Id , _⨾_ , lid , rid , assoc
-                                where open Monoid-Record M
 
 {- Organise a tuple componenets as implementing named fields -}
-to-record-from-usual-type : Monoid-Σ → Monoid-Record
-to-record-from-usual-type (c , id , op , lid , rid , assoc)
-    = record { Carrier = c
-             ; Id      = id
-             ; _⨾_     = op
-             ; lid     = lid
-             ; rid     = rid
-             ; assoc   = assoc
-             } -- Term construed by ‘Agsy’,
-               -- Agda's mechanical proof search.
+to : Monoid-Σ → Monoid-Record
+to (c , id , op , lid , rid , assoc)  = record { Carrier = c
+                                               ; Id      = id
+                                               ; _⨾_     = op
+                                               ; lid     = lid
+                                               ; rid     = rid
+                                               ; assoc   = assoc
+                                               }
   #+END_SRC
+
+  #                                                } -- Term construed by ‘Agsy’,
+  #               -- Agda's mechanical proof search.
 
   Furthermore, by definition chasing, ~refl~-exivity, these operations are seen to be inverse of
   each other. Hence we have two faithful non-lossy protocols for reshaping our grouped data.
@@ -3436,23 +3909,25 @@ module Monoid-Telescope-User
   (assoc   : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))
   where
 
-  pop-Idₘ : ∀(x y : Carrier)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
-  pop-Idₘ x y = cong (_⨾ y) (rid {x})
+  pop-Id-Tel : ∀(x y : Carrier)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
+  pop-Id-Tel x y = cong (_⨾ y) (rid {x})
  #+END_SRC
 
+ #+latex: \begin{tcolorbox}[colframe=red!75!black, title=Squint and They're The Same]
  Notice that this is nothing more than the named fields of ~Monoid-Record~ but
  not[fn:3] bundled. Additionally, if we insert a Σ before each name we
  essentially regain the ~Monoid-Σ~ formulation. It seems contexts, at least
  superficially, are a nice middle ground between the previous two formulations.
- For instance, if we /syntactically/, visually, move the ~Carrier ∶ Set~ declaration
- one line above, the resulting setup looks eerily similar to the typeclass
- formulation of records.
+ For instance, if we /syntactically/, visually, move the @@latex: \newline @@
+ ~Carrier ∶ Set~ declaration one line above, the resulting setup looks eerily
+ similar to the typeclass formulation of records.
+#+latex: \end{tcolorbox}
 
  As promised earlier, we can regard the above telescope as a record:
  #+LaTeX: \def\mytitle{Agda}
  #+BEGIN_SRC haskell
   {- No more running around with things in our hands. -}
-  {- Place the telescope parameters into a nice bag to hold. -}
+  {- Place the telescope parameters into a nice bag to hold on to. -}
   record-from-telescope : Monoid-Record
   record-from-telescope
     = record { Carrier = Carrier
@@ -3470,36 +3945,37 @@ module Monoid-Telescope-User
  #+BEGIN_SRC haskell
 module record-to-telescope (M : Monoid-Record) where
 
-  open Monoid-Record M
   -- Treat record type as if it were a parameterised module type,
   -- instantiated with M.
+   open Monoid-Record M
 
+  -- Actually using M as a telescope
   open Monoid-Telescope-User Carrier Id _⨾_ lid rid assoc
  #+END_SRC
 
  Notice that we just listed the components out ---rather reminiscent of the formulation
  ~Monoid-Σ~. This observation only increases confidence in our thesis that there is no
  real distinctions of packaging mechanisms in DTLs.
-
- Undeniably instantiating the telescope approach to monoids for the natural number
+ Similarity, instantiating the telescope approach to a natural number monoid
  is nothing more than listing the required components.
  #+LaTeX: \def\mytitle{Agda}
  #+BEGIN_SRC haskell
 open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
  #+END_SRC
 
- C.f., the definition of ~ℕ-Σ~: This is nearly the same instantiation with the primary
- syntactical difference being that this form had its arguments separated by spaces rather than commas!
+ This instantiation is nearly the same as the definition of ~ℕ-Σ~; with the primary
+ syntactical difference being that this form had its arguments separated by
+ spaces rather than commas!
  #+LaTeX: \def\mytitle{Agda}
  #+BEGIN_SRC haskell
-ℕ-popₘ  : ∀(x y : ℕ)  →  x + 0 + y  ≡  x + y
-ℕ-popₘ  =   pop-Idₘ
+ℕ-pop-Tel  : ∀(x y : ℕ)  →  x + 0 + y  ≡  x + y
+ℕ-pop-Tel  =   pop-Id-Tel
  #+END_SRC
 
- Notice how this presentation makes it explicitly clear why we cannot have multiple instances:
- There would be name clashes. Even if the data we used had distinct names, the derived result
- may utilise data having the same name thereby admitting name clashes elsewhere.
- ---This could be avoided in Agda by qualifying names and/or renaming.
+#  Notice how this presentation makes it explicitly clear why we cannot have multiple instances:
+# There would be name clashes. Even if the data we used had distinct names, the derived result
+# may utilise data having the same name thereby admitting name clashes elsewhere.
+# ---This could be avoided in Agda by qualifying names and/or renaming.
 
  It is interesting to note that this presentation is akin to that of ~class~-es in
  C#/Java languages: The interface is declared in one place, monolithic-ly, as
@@ -3509,12 +3985,12 @@ open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
 
  Demonstrating the interdefinablity of different notions of packaging cements
  our thesis that it is essentially /utility/ that distinguishes packages more than
- anything else. In particular, explicit distinctions have lead to a duplication
- of work where the same structure is formalised using different notions of
- packaging. In chapter ref:sec:PF we will show how to avoid duplication by
- coding against a particular ‘package former’ rather than a particular variation
- thereof ---this is akin to a type former.
-
+ anything else ---just as =data= language's words (constructors) have their
+ meanings determined by /utility/.  Consequently, explicit distinctions have lead
+ to a duplication of work where the same structure is formalised using different
+ notions of packaging. In chapter ref:sec:PF we will show how to avoid
+ duplication by coding against a particular ‘package former’ rather than a
+ particular variation thereof ---this is akin to a type former.
 ** Contexts are Promising
    :PROPERTIES:
    :CUSTOM_ID: DTLs-Today-a-précis
@@ -3528,8 +4004,9 @@ open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
   contain sub-modules along with declarations and definitions of first-class
   citizens. The intimate relationship between records and modules is perhaps
   best exemplified here since the current implementation provides a declaration
-  to construe a record as if it were a module. This observation is not specific
-  to Agda, which is only a presentation language.  Indeed,
+  to construe a record as if it were a module ---as demonstrated in the previous
+  section. This observation is not specific
+  to Agda, which is herein only used as a presentation language.  Indeed,
   other DTLs (dependently-typed languages) reassure our hypothesis;
   the existence of a unified notion of package:
 
@@ -3566,17 +4043,17 @@ open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
 
   - *Packages (modules) have their own useful language*
 
-    The current implementation of Coq citet:coq_implementation,coq_cat_experiences
+    The current implementation of *Coq* citet:coq_implementation,coq_cat_experiences
     provides a “copy and paste” operation for modules using the src_coq[:exports
     code]{include} keyword. Consequently it provides a number of module
     combinators, such as ~<+~ which is the infix form of module inclusion
     citet:coq_manual. Since Coq module types are essentially contexts, the module
     type src_coq[:exports code]{X <+ Y <+ Z} is really the catenation of contexts,
-    where later items may depend on former items. The Maude
+    where later items may depend on former items. The *Maude*
     citet:maude,maude_module_algebra framework contains a similar yet more
     comprehensive algebra of modules and how they work with Maude theories.
 
-It is important to consider other languages so as to see their communities treat
+It is important to consider other languages so as to how see their communities treat
 module systems and what uses cases they are interested in.  In the next section,
 we shall see a glimpse of how the Coq community works with packages, and, to
 make the discussion accessible, we shall provide Agda translations of Coq code.
@@ -3964,18 +4441,21 @@ settings, citet:dtl_imperative, albeit less prominently.
 ** Coq Modules as Generalised Signatures
 
     [[Gls:module-systems][Module systems]] parameterise programs, proofs, and tactics over structures.
-    In this section, we shall form a library of simple graphs to showcase how
-    Coq's approach to packages is essentially the proposed definition of
-    generalised signatures: A sequence of name-type-definition tuples where the
-    definition may be omitted. To make the Coq accessible to readers, we will
-    provide an Agda translation that only uses the ~record~ construct in Agda
-    ---completely ignoring the ~data~ and ~module~ forms which would otherwise be
-    more natural in certain scenarios below--- in order to demonstrate that /all
-    packaging concepts essentially coincide in a DTL/.
+    In this section, we shall form a library of simple graphs[fn:40] to showcase how
+    Coq's approach to packages is essentially in the same spirit[fn:39] as the
+    proposed definition of generalised signatures: A sequence of
+    name-type-definition tuples where the definition may be omitted. To make the
+    Coq accessible to readers, we will provide an Agda translation that only
+    uses the ~record~ construct in Agda ---completely ignoring the ~data~ and ~module~
+    forms which would otherwise be more natural in certain scenarios below--- in
+    order to demonstrate that /all packaging concepts essentially coincide in a
+    DTL/.
 
-    ( Along the way, we refer
-    to aspects of Agda that we found convenient and desirable that we chose it
-    as a presentation language instead Coq and other equally appropriate DTLs. )
+    #+latex: \begin{tcolorbox}[colframe=red!75!black]
+    Along the way, we refer to aspects of Agda that we found convenient and
+    desirable that we chose it as a presentation language instead Coq and other
+    equally appropriate DTLs.
+    #+latex: \end{tcolorbox}
 
    # Along the way, we shall flesh out our concerns regarding using Coq:
    # 1. Modules and their types are explicitly given their own language.
@@ -4029,24 +4509,40 @@ End Graph.
 #+BEGIN_SRC agda :tangle modules.agda
 record Graph : Set₁ where
   field
-    Vertex : Set
-    _⟶_  : Vertex → Vertex → Set
-    loops  : ∀ {e} → e ⟶ e
+    Vertex    : Set
+    _⟶_       : Vertex → Vertex → Set
+    loops     : ∀ {e} → e ⟶ e
     decidable : ∀ x y → Dec (x ⟶ y)
     connected : ∀ x y → (x ⟶ y) ⊎ (y ⟶ x)
 #+END_SRC
 
 Notice that due to Agda's support for mixfix Unicode lexemes, we are able to use
 the evocative arrow notation ~_⟶_~ for edges directly. In contrast, Coq uses ASCII
-order notation /after/ the type of edges is declared. Even worse, conventional Coq
-distinguishes between value parameters and proofs, whereas Agda does not.
+order notation /after/ the type of edges is declared. In contrast to Agda,
+conventional Coq distinguishes between value parameters and proofs, thereby
+using the keywords =Parameter= and =Axiom= to, essentially, accomplish the same
+thing.
 
 In Coq, to form an instance of the graph module type, we define a module that
 satisfies the module type signature. The ~_<:_~ declaration requires us to have
 definitions and theorems with the same names and types as those listed in the
 module type's signature. In contrast, the Agda form below explicitly ties the
 signature's named fields with their implementations, rather than inferring it.
+
+#+latex: \begin{tcolorbox}[colframe=red!75!black, title=Birds' Eye View]
+The following two snippets only serve to produce instances of graphs that can be
+used in subsequent snippets, as such their details are mostly irrelevant.  They
+are present here for the sake of completeness and we rely on the reader to
+accept them for their overarching purpose ---namely, to demonstrate how Coq's
+=Module Type='s are close in spirit to the previously discussed notion of
+generalised signatures. For the curious reader, the next Coq snippet is
+annotated with comments explaining the tactics.
+#+latex: \end{tcolorbox}
+
+#+begin_parallelNB org
+
 {{{code(Booleans are Graphs ---Coq)}}}
+#+ATTR_LATEX: :options fontsize=\tiny
 #+BEGIN_SRC coq :tangle modules.v
 Module BoolGraph <: Graph.
   Definition Vertex := bool.
@@ -4090,25 +4586,31 @@ In contrast, in Agda, we explicitly λ-introduce the variables and immediately
 perform case analysis; then use ~C-c C-a~ to have the cases automatically filled
 it.
 :End:
+
+:columnbreak:
+
 {{{code(Booleans are Graphs ---Agda)}}}
+#+ATTR_LATEX: :options fontsize=\tiny
 #+BEGIN_SRC agda :tangle modules.agda
 BoolGraph : Graph
 BoolGraph = record
               { Vertex = Bool
               ; _⟶_ = leb
               ; loops = b≤b
-              {- I only did the case analysis, the rest was “auto”. -}
+              -- I only did the case analysis, the rest was “auto”.
               ; decidable = λ{ true  true  → yes b≤b
                              ; true  false → no (λ ())
                              ; false true  → yes f≤t
                              ; false false → yes b≤b }
-              {- I only did the case analysis, the rest was “auto”. -}
+              -- I only did the case analysis, the rest was “auto”.
               ; connected = λ{ true true   → inj₁ b≤b
                              ; true false  → inj₂ f≤t
                              ; false true  → inj₁ f≤t
                              ; false false → inj₁ b≤b }
               }
 #+END_SRC
+
+#+end_parallelNB
 
 We are now in a position to write a “module functor”: A module that takes some
 ~Module Type~ parameters and results in a module that is inferred from the
@@ -4141,8 +4643,10 @@ End Min.
 #+END_SRC
 
 =Min= is a function-on-modules; the input type is a =Graph= value and the output
-module's type is inferred to be =Sig Definition min : ⋯. Parameter case_analysis:
-⋯. End=. This is similar to JavaScript's approach. In contrast, Agda has no
+module's type is inferred to be:
+| =Sig Definition min : ⋯. Parameter case_analysis: ⋯. End= |
+# This is similar to JavaScript's approach.
+In contrast, Agda has no
 notion of signature, and so the declaration below only serves as a /namespacing/
 mechanism that has a parameter over-which new programs and proofs are abstracted
 ---the primary purpose of module systems mentioned earlier.
@@ -4280,7 +4784,7 @@ as a position of reference.
 
 It is perhaps seen most easily in the last entry in the table, that modules and
 modules types are essentially the same thing: They are just partially defined
-record types. Again there is a difference in the usage intent:
+record types. Again there is a *difference in the usage intent*:
 
 #+caption: Modules and module types only differ in intended utility
 | Concept      | Intent                             |
@@ -4410,25 +4914,40 @@ Currently, first-class module systems for dependently-typed languages are poorly
 /supported/. Modules 𝒳 consisting of functions symbols, properties, and derived
 results are currently presented in the form ~Is𝒳~: A module parameterised by
 function symbols and exposing derived results possibly with further,
-uninstantiated, proof obligations. This is understandable: Function symbols
+uninstantiated, proof obligations ---that is, it is of the shape ΠᵏΣ, below,
+having parameters $pᵢ$ at the type level and fields $p_{w + i}$ at the body level.
+\[ ΠʷΣ \;=\; Π\, p₁ : τ₁ • Π\, p₂ : τ₂ • ⋯ • Π\, p_w : τ_w • Σ\, p_{w + 1} :
+τ'_{w + 1} • ⋯ • Σ\, f : τ'_n • body \] This is understandable: Function symbols
 generally vary more often than proof obligations.  (This is discussed in detail
 in Section ref:sec:examples:IsX.)  However, when users do not yet have the
-necessary parameters, they need to use a curried form of the module and so
-library developers also provide a module =𝒳= which packs up the parameters as
-necessary fields within the module. Unfortunately, there is a whole spectrum of
-modules ~𝒳ᵢ~ that is missing: These are the module 𝒳 where only ~i~ of the original
-parameters are exposed with the remaining being packed-away into the module
-body. It is tedious and error-prone to form all the ~𝒳ᵢ~ by hand; such
-‘unbundling’ should be mechanically achievable from the completely bundled form
-~𝒳~. A similar issue happens when one wants to /describe a computation/ using module
-𝒳, then its function symbols need to have associated syntactic counterparts; the
-tedium then increases if one considers the family ~𝒳ᵢ~.
+necessary parameters =pᵢ=, they need to use a curried (or /bundled/) form of the
+module and so library developers also provide a module =𝒳= which packs up the
+parameters as necessary fields within the module; i.e., 𝒳 has the shape =Π⁰Σ= by
+“pushing down” the parameters into the record body.  Unfortunately, there is a
+whole spectrum of modules $𝒳_w$ that is missing: These are the module 𝒳 where
+only 𝓌-many of the original parameters are exposed with the remaining being
+packed-away into the module body; i.e., having the shape ΠʷΣ for $0 ≤ w ≤ n$
+---in subsequent chapters, we refer to 𝓌 as “the waist” of a package former.  It
+is tedious and error-prone to form all the $𝒳_w$ by hand; such ‘unbundling’
+should be mechanically achievable from the completely bundled form ~𝒳~. A similar
+issue happens when one wants to /describe a computation/ using module 𝒳, then its
+function symbols need to have associated syntactic counterparts ---i.e., we want
+to interpret 𝒳 as a 𝒲-type instead of a ΠⁿΣ-type ---; the tedium is then
+compounded if one considers the family $𝒳_w$.  Finally, instead of combinations
+of Π,Σ,𝒲, a user may need to treat a module 𝒳 as an arbitrary container type
+cite:DBLP:journals/jfp/AltenkirchGHMM15; in which case, they will likely have to
+create it by hand.
 
+# Finally, if the user decides that a /derived/ definition should be /abstracted/ away
+# as a parameter, let-clause or field.
+
+#+latex: \begin{tcolorbox}[colframe=red!75!black]
 This thesis aims to enhance the understanding of modules systems within
 dependently-typed languages by developing an in-language framework for unifying
 disparate presentations of what are essentially the same module.  Moreover, the
 framework will be constructed with /practicality/ in mind so that the end-result
 is not an unusable theoretical claim.
+#+latex: \end{tcolorbox}
 
 *** Objectives and Methodology
 
@@ -4446,34 +4965,39 @@ this thesis sets a number of objectives which are described below.
    module systems ---grouping mechanisms--- within DTLs.
    The resulting framework should capture at least
    the expected features:
-     1. Namespacing, or definitional extensions
+     1. Namespacing, or definitions extensions
+        @@latex: \hfill@@ ---a combination of Π- and Σ-types
      2. Opaque fields, or parameters
+        @@latex: \hfill@@ ---Π-types
      3. Constructors, or uninterpreted identifiers
+        @@latex: \hfill@@ ---𝒲-types
    Moreover, the resulting framework should be /practical/ so as to be a
    usable experimentation-site for further research or immediate application
    ---at least, in DTLs. In this thesis, we present two /declarative/ approaches
    using meta-programming and =do=-notation.
 
 **** *Objective 2: Support Unexpected Notions of Module*
-
+     :PROPERTIES:
+     :UNNUMBERED: t
+     :END:
      #+latex: \vspace{1em}
 
      The second objective is to make the resulting framework /extensible/.  Users
-     should be able to form new exotic notions of grouping mechanisms /within/ a
-     DTL rather than ‘stepping outside’ of it and altering its interpreter
-     ---which may be a code implementation or an abstract rewrite-system.
-     Ideally, users would be able to formulate arbitrary constructions from
-     Universal Algebra and Category Theory.  For example, given a theory ---a
-     notion of grouping--- one would like to ‘glue’ two ‘instances’ along an
-     ‘identified common interface’. More concretely, we may want to treat some
-     parameters as ‘the same’ and others as ‘different’ to obtain a new module
-     that has copies of some parameters but not others.  Moreover, users should
-     be able to mechanically produces the necessary morphisms to make this
-     construction into a pushout.  Likewise, we would expect products, unions,
-     intersections, and substructures of theories ---when possible, and then to
-     be constructed by users. In this thesis, we only want to provide a fixed
-     set of meta-primitives from which usual and (un)conventional notions of
-     grouping may be defined.
+     should be able to form new exotic[fn:41] notions of grouping mechanisms
+     /within/ a DTL rather than ‘stepping outside’ of it and altering its
+     interpreter ---which may be a code implementation or an abstract
+     rewrite-system.  Ideally, users would be able to formulate arbitrary
+     constructions from Universal Algebra and Category Theory.  For example,
+     given a theory ---a notion of grouping--- one would like to ‘glue’ two
+     ‘instances’ along an ‘identified common interface’. More concretely, we may
+     want to treat some parameters as ‘the same’ and others as ‘different’ to
+     obtain a new module that has copies of some parameters but not others.
+     Moreover, users should be able to mechanically produce the necessary
+     morphisms to make this construction into a pushout.  Likewise, we would
+     expect products, unions, intersections, and substructures of theories
+     ---when possible, and then to be constructed by users. In this thesis, we
+     only want to provide a fixed set of meta-primitives from which usual and
+     (un)conventional notions of grouping may be defined.
 
 **** *Objective 3: Provide a Semantics*
      :PROPERTIES:
@@ -4486,12 +5010,13 @@ this thesis sets a number of objectives which are described below.
 
     #+latex: \vspace{1em}
 
-    The third objective is to provide a semantics for the resulting
-    framework. We propose to implement the framework in the dependently-typed
-    functional programming language Agda, thereby automatically furnishing our
-    syntactic constructs with semantics as Agda functions and types.  This has
-    the pleasant side-effect of making the framework accessible to future
-    researchers for experimentation.
+    The third objective is to provide a /concrete/ semantics for the resulting
+    framework ---in contrast to the /abstract/ generalised signatures semantics
+    outlined earlier in this chapter.  We propose to implement the framework in
+    the dependently-typed functional programming language Agda, thereby
+    automatically furnishing our syntactic constructs with semantics as Agda
+    functions and types.  This has the pleasant side-effect of making the
+    framework accessible to future researchers for experimentation.
 
 ** Contributions
   :PROPERTIES:
@@ -4520,9 +5045,11 @@ contributions.
 5. Demonstrate that there is a /practical/ implementation of such a framework
 6. Solve the unbundling problem: The ability to ‘unbundle’ module fields
    as if they were parameters ‘on the fly’
-7. Bring algebraic data types under the umbrella of grouping mechanisms:
-   An ADT is just a context whose symbols target the ADT ‘carrier’ and
-   are not otherwise interpreted.
+   - I.e., to transform a type of the shape ΠʷΣ into $Π^{w+k}Σ$, for $k ≥ 0$,
+     such that the resulting type is /as practical and as usable/ as the original
+7. Bring algebraic data types ---i.e., /termtypes/ or /𝒲-types/--- under the
+   umbrella of grouping mechanisms: An ADT is just a context whose symbols
+   target the ADT ‘carrier’ and are not otherwise interpreted
    - In particular, both an ADT and a record can be obtained from
      a /single/ context declaration.
 8. Show that common data-structures are /mechanically/ the (free) termtypes of
@@ -4537,8 +5064,8 @@ contributions.
    theory, then /only/ some parts of the framework will no longer apply.
    - For instance, in DTLs without a fixed-point functor the framework still
      ‘applies’, but can no longer be used to provide arbitrary algebraic data
-     types from contexts.
-
+     types from contexts. Instead, one could settle for the safer 𝒲-types, if
+     possible.
 
 * COMMENT more TODOs
 
@@ -16387,6 +16914,153 @@ comap′ f ⟨ edgs ⟩¹ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩¹
 
 * Footnotes
 
+[fn:41] “Exotic” in the sense that traditional module systems would not, or
+could not, support such constructions. For instance, some systems allow users to
+get the “shared structure” of two modules ---e.g., for the purposes of finding a
+common abstract interface between them--- and it does so considering /names/ of
+symbols; i.e., an name-based intersection is formed. However, different contexts
+necessitate names meaningful in that context and so it would be ideal to get
+the shared structure by /considering/ a user-provided association of “same thing,
+but different name” ---e.g., recall that a signature has “sorts” whereas a graph
+has “vertices”, they are the ‘same thing, but have different names’.
+
+
+[fn:40] A *graph* models “lines and dots on a page”; i.e., it is a tuple =(V, E,
+tgt, src)= where sets =V= and =E= denote the dots (‘vertices’) and lines (‘edges’),
+respectively, and the functions =src, tgt : E → V= assign a ‘source’ and a
+‘target’ dot (vertex) to each line (edge); so we do not have any “dangling
+lines”: All lines on the page must be between drawn dots.  In a simple graph,
+every edge is determine by its source and target points, so we can instead
+present a graph as a /set/ =V= and a *dependent-type* =E : V × V → Type= where =E x y=
+denotes the collection of edges starting at =x= and ending at =y=. The code
+fragments of this section use the second form, for brevity.
+
+[fn:39] With this observation, it is only natural to wonder why Coq is not used
+as the presentation language in-place of Agda. We could rationalise our choice
+with technical attacks against Coq ---e.g., tactics are evil since they render
+the concept of ‘proof’ as secondary--- but they would not reflect reality: Coq
+is a delight to use, but Agda's community-adopted Unicode support and our own
+experiences with it biased our choice.
+
+
+[fn:38] For this reason ---namely that records are existential closures of a
+ typeclasses--- typeclasses are also known as “constraints, or predicates, on
+ types”.
+
+[fn:37] A /semigroup/ is like a monoid except it does not have the =Id= element.
+
+
+[fn:36] More accurately, there needs to be /a unique instance that solves local
+constraints/. Continuing with =it=, any call to =it= will occur in a context Γ that
+will include inferred types and so when an =A=-valued is looked-up it suffices to
+find a /unique/ value =e= such that =Γ ⊢ e ∶ A=. More concretely, suppose @@latex:
+\newline@@ =A = ℕ × ℕ=, =B == ℕ=, and =it {{(x , y)}} = x= and we declared two ℕumbers
+for instance search, =p = (0 , 10)= and =q = (1, 14)=.  Then in the call site =go ∶
+it ≡ 1; go = refl=, the use of =refl= means both sides of the equality must be
+identical and so =it {{e}}= must have the =e= chosen to make the equality true, but
+only =q= does so and so it is chosen. However, if instead we had defined =p = (1 ,
+10)=, then both =p= and =q= could be used and so there is no local solution;
+prompting Agda to produce an error.
+
+:More_neato:
+#+begin_src agda
+open import Data.Product
+
+it : {{e : ℕ × ℕ}} → ℕ
+it {{x , y}} = x
+
+instance
+  p q : ℕ × ℕ
+  p = (0 , 10)
+  -- p = (1 , 10) -- Using this breaks the resolution of “go” below.
+  q = (1 , 14)
+
+go : it ≡ 1
+go = refl
+
+--------------------------------------------------------------------------------
+-- Again, using records.
+
+open import Data.Nat
+open import Relation.Binary.PropositionalEquality
+
+record R : Set₁ where
+  constructor MkR
+  field c : ℕ
+  field bop : ℕ → ℕ → ℕ
+
+open R {{...}}
+
+instance
+  A = MkR 1 _*_
+  B = MkR 0 _*_
+
+_ : bop 1 2 ≡ 2 -- Which record is used?
+_ = refl
+#+end_src
+:End:
+[fn:35] A /first-class citizen/ is a citizen that is not treated differently by
+having their rights reduced. In particular, first-class citizens may be serviced
+(‘treated as data’) by other citizens; /second-class citizens/ can only provide a
+service and do not themselves have the right to be serviced.
+
+
+[fn:34] The supremum of the empty set is, by definition, 0.
+\[\sup ∅ = 0\]
+Hence, if any (child) tree is empty, then its height is 0.
+
+
+[fn:33] A 𝒲-type is empty precisely when it has no nullary constructor; See
+      exercise 5.17 of cite:hottbook.
+      | =¬(𝒲 a : A • B a) ≅ ¬ (Σ a : A • ¬ B a)= |
+
+
+[fn:32] See cite:hottbook and cite:emmenegger18:_w for an introduction to 𝒲-types.
+   The dual, non-well-founded (coinductive) types, are called /M-types/
+   and they are derivable from W-types; see cite:DBLP:journals/corr/AhrensCS15.
+   The generic concept of ‘containers’ is described in cite:DBLP:journals/jfp/AltenkirchGHMM15.
+
+# See https://arxiv.org/abs/1504.02949
+
+
+[fn:31] Since every functon =Fin n → X= can be ‘tabulated’ as a =List X= value of
+      length =n= @@latex: \newline@@ ---i.e., =(Σ xs ∶ List A • length xs ≡ n) ≅ (Fin n → A)=--- we have
+      that =Rose′ A ≅ Rose A=.
+
+
+[fn:30] Categorically speaking, polynomial functors ---i.e., type formers of the
+shape =𝑭 X = Σ a ∶ A • Π b ∶ B a • X=, “sums of products” or a “disjoint union of
+possible constructors and their arguments”--- have “initial algebras” named =𝑾 =
+(𝒲 a ∶ A • B a)=, which are the smallest languages described by 𝑭.  That is,
+𝒲-types are the initial algebras of polynomial functors; that is, =𝑭= has an
+initial algebra =sup ∶ 𝑭 𝑾 → 𝑾=.
+Moreover, every strictly positive type operator can be expressed in the same
+shape as 𝑭 and so they all have an initial algebra ---for details see
+cite:Dybjer_1997. Inductive families arise as indexed 𝒲-types which are initial
+algebras for dependent polynomial functors, and cite:Gambino_2004 have shown
+them to be constructible from non-dependent ones in locally cartesian closed
+categories. That is, indexed 𝒲-types can be obtained from ordinary 𝒲-types. See
+also cite:DBLP:conf/icalp/AbbottAG04.
+
+# Dybjer's
+# [[https://www.sciencedirect.com/science/article/pii/S0304397596001454?via%3Dihub][“Representing inductively defined sets by wellorderings in Martin-Löf's type theory”]].
+
+# See On Relating Indexed W-Types with Ordinary Ones by Christian Sattler
+[fn:29] Using exponential notation $Q^P = (P → Q)$ along with subscript notation
+yields $𝑭\, X = Σ_{a : A} X^{B\, a}$, which is the shape of a polynomial. These
+notations and names are standard.
+
+[fn:28] With the “types as languages” view, one may treat a “parameterised type”
+as a “language with dialects”. For instance, instead of a single language
+=Arabic=, one may have a /family of languages/ =Arabic ℓ= that depend on a location =ℓ=.
+Then, some words/constructors may be accessible in /any/ dialect ℓ, whereas other
+words can only be expressed in a /particular/ dialect. More concretely, we may
+declare =SalamunAlaykum : ∀ {ℓ} → Arabic ℓ= since the usual greeting “hello”
+(lit. “peace be upon you”) is understandable by all Arabic speakers, whereas we
+may declare =ShakoMako : Arabic Iraq= since this question form “how are you”
+(lit. “what is your colour”) is specific to the Iraqi Arabic dialect.
+
+
 [fn:27]
 
 [fn:26] It is common to use underscores “_” to denote the /position/ of arguments
@@ -16402,13 +17076,15 @@ as ∐ ---the ‘dual’ symbol to Π.
 
 
 [fn:24] Those familiar with set theory may remark that dependent types are not
-/necessary/ in the presence of power sets.  Even though power sets are not present
-in our setting, dependent types provide a natural and elegant approach to
-/indexed types/ in lieu of an encoding in terms of /families of sets or operations/.
-Moreover, an encoding /hides/ essential features of an idea such as dual concepts:
-Σ and Π are ‘adjoint functors’.  Even more surprising, working with Σ and Π
-leads one to interpret “propositions as types” with predicate logic quantifiers
-∀/∃ encoded via dependent types Π/Σ; whence the slogan “Programming ≈ Proving”.
+/necessary/ in the presence of power sets: Instead of a /single/ name =call=, one uses
+a (possibly infinite) /family of names/ $\mathsf{call}_ℓ$ for each possible name
+$ℓ$. Even though power sets are not present in our setting, dependent types
+provide a natural and elegant approach to /indexed types/ in lieu of an encoding
+in terms of /families of sets or operations/.  Moreover, an encoding /hides/
+essential features of an idea such as dual concepts: Σ and Π are ‘adjoint
+functors’.  Even more surprising, working with Σ and Π leads one to interpret
+“propositions as types” with predicate logic quantifiers ∀/∃ encoded via
+dependent types Π/Σ; whence the slogan “Programming ≈ Proving”.
 
 [fn:23] The initiated may recognise this problem as identifying
 the relationship between /slice categories/ $𝒞/A$ whose objects
@@ -16422,7 +17098,7 @@ which we call “Σ-padding”.
 
 
 [fn:22] This is an approximation since we have constrained the equality
-construction, ‘≈’, to take /only/ numeric arguments; whereas the original Freshmen
+construction, =_≈_=, to take /only/ numeric arguments; whereas the original Freshmen
 allowed both numbers and Booleans as arguments to equality /provided/ the
 arguments have the /same type/. We shall return to this issue later when
 discussing /type variables/.
