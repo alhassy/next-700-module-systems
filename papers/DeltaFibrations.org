@@ -1,0 +1,746 @@
+#+title: Edit Space Lenses
+#+subtitle: ---/draft/---
+#+author: Musa Al-hassy and Zinovy Diskin
+#+options: toc:nil
+
+# + Lemma ⇒ stability is implied by weak cartesianity!
+
+* Preamble & title page                                              :ignore:
+
+# Top level editorial comments.
+#+MACRO: remark  @@latex: \fbox{\textbf{Comment: $1 }}@@
+
+#+latex_header: \usepackage{multicol}
+
+#+latex_header: \usepackage{glossaries}
+#+latex_header: \makeglossaries
+
+# https://armkeh.github.io/unicode-sty/
+#+LATEX_HEADER: \usepackage{\string~"/unicode-sty/unicode"}
+
+# +LATEX_HEADER: \usepackage{papers/UnicodeSymbols}
+#+latex_header: \usepackage{newunicodechar}
+#+latex_header: \newunicodechar{⨾}{\, ; \,}
+#+latex_header: \newunicodechar{♯}{\ensuremath{\sharp}}
+#+latex_header: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
+#+latex_header: \newunicodechar{×}{\ensuremath{\times}}
+
+#+latex_header: \usepackage[font=itshape]{quoting}
+# Now quote blocks have their contents italicised.
+
+#+LATEX_HEADER: \usepackage{tcolorbox}
+#+latex: \tcbset{colback=green!10!white}
+# \tcbsetforeverylayer{colframe=red!75!black}
+#+latex: \newtcolorbox{myexamplebox}[1]{title=#1,
+#+latex: colback=red!5!white, colframe=red!75!black, colbacktitle=yellow!50!red, coltitle=red!25!black, fonttitle=\bfseries,
+#+latex: subtitle style={boxrule=0.4pt, colback=yellow!50!red!25!white}}
+
+** LaTeX setup                                                       :ignore:
+
+# Hijacking \date to add addtional text to the frontmatter of a ‘report’.
+#
+#
+# DATE: \today\vfill \centerline{---Supervisors---} {{{newline}}} [[mailto:carette@mcmaster.ca][Jacques Carette]] and [[mailto:kahl@cas.mcmaster.ca][Wolfram Kahl]]
+
+#+LATEX_HEADER: \usepackage[hmargin=25mm,vmargin=25mm]{geometry}
+#+LaTeX_HEADER: \setlength{\parskip}{1em}
+#+latex_class_options: [12pt]
+
+# Double spacing:
+# LaTeX: \setlength{\parskip}{3em}\renewcommand{\baselinestretch}{2.0}
+#
+#+LATEX_HEADER: \setlength{\parskip}{1em}
+
+#+LATEX_HEADER: \usepackage{xcolor} % named colours
+#  +LATEX_HEADER: \usepackage[dvipsnames]{xcolor} % named colours
+#+LATEX_HEADER: \usepackage{color}
+#+LATEX_HEADER: \definecolor{darkred}{rgb}{0.3, 0.0, 0.0}
+#+LATEX_HEADER: \definecolor{darkgreen}{rgb}{0.0, 0.3, 0.1}
+#+LATEX_HEADER: \definecolor{darkblue}{rgb}{0.0, 0.1, 0.3}
+#+LATEX_HEADER: \definecolor{darkorange}{rgb}{1.0, 0.55, 0.0}
+#+LATEX_HEADER: \definecolor{sienna}{rgb}{0.53, 0.18, 0.09}
+#+LATEX_HEADER: \hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkgreen}
+
+#+NAME: symbols for itemisation environment
+#+BEGIN_EXPORT latex
+\def\labelitemi{$\diamond$}
+\def\labelitemii{$\circ$}
+\def\labelitemiii{$\star$}
+
+% Level 0                 Level 0
+% + Level 1               ⋄ Level 1
+%   - Level 2       --->      ∘ Level 2
+%     * Level 3                   ⋆ Level 3
+%
+#+END_EXPORT
+
+# Having small-font code blocks.
+# LATEX_HEADER: \RequirePackage{fancyvrb}
+# LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+
+** COMMENT Abstract                                                  :ignore:
+ #
+   #+begin_abstract org
+
+   We aim to present a more ‘elegant’, /cleaner/, formulation of delta lenses.
+
+ #+end_abstract
+
+* LaTeX Preamble :ignore:
+
+#+latex: \def\src{\mathsf{src}\,}
+#+latex: \def\tgt{\mathsf{tgt}\,}
+#+latex: \def\put{\mathsf{put}}
+#+latex: \def\get{\mathsf{get}}
+#+latex: \def\Hom{\mathsf{Hom}}
+#+latex: \def\Mor{\mathsf{Mor}\,}
+#+latex: \def\Obj{\mathsf{Obj}\,}
+#+latex: \def\Id{\mathsf{Id}}
+
+* Test :ignore:
+
+#+latex_header_extra: \newcounter{mydefn}
+#+latex_header_extra: \newtcolorbox{definition}[1]{colback=red!5!white,colframe=red!75!black, title= Definition \themydefn: #1}
+#+latex_header_extra: \AfterEndEnvironment{definition}{\stepcounter{mydefn}}
+
+#+latex_header_extra: \newcounter{mythm}
+#+latex_header_extra: \newtcolorbox{theorem}[1]{colback=red!5!white, title= Theorem \themythm: #1}
+#+latex_header_extra: \AfterEndEnvironment{theorem}{\stepcounter{mythm}}
+
+#+latex_header_extra: \newcounter{myexmpl}
+#+latex_header_extra: \newtcolorbox{myexample}[1]{colback=red!5!white,colframe=red!75!black,colbacktitle=yellow!50!red,coltitle=red!25!black,title= Example \themyexmpl: #1}
+#+latex_header_extra: \AfterEndEnvironment{myexample}{\stepcounter{myexmpl}}
+
+#+latex_header_extra: \usepackage{tikz-cd}
+#+latex_header_extra: \BeforeBeginEnvironment{tikzcd}{\begin{center}}
+#+latex_header_extra: \AfterEndEnvironment{tikzcd}{\end{center}}
+
+* COMMENT Introduction
+When problem solving, a natural route is to “zoom in” on a particular aspect of
+a problem, work on the narrowed environment, then return to the global
+environment. The return, however, may be impossible when, for example, the
+narrowed environment is derived from the global one rather than being an
+explicit component of it.
+
+The situation is illustrated in Figure ref:given-requireds.  Starting[fn:1] at $X$, we
+can narrow our focus to the context $I$ ---i.e., we “view” an /I/-aspect of
+$X$. Then, we update the /I/-environment to obtain a /J/-environment. In order
+to propagate this local update in the global setting, we need to find a global
+setup $Y$ ---that narrows to /J/--- and a “lift” of the narrowed update.
+#+begin_src latex-as-png :file del-fibration :exports results
+\usepackage{tikz-cd} % 𝒟₁𝒟₂ar specfies an arrow going direction 𝒟₁ then 𝒟₂; the 𝒟ᵢ must be unique.
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usetikzlibrary{decorations.pathmorphing} % to use squiggly arrows
+\def\PB{ \arrow[dr, phantom, "\lrcorner", very near start] }
+\def\midtxt#1{ \arrow[dr, phantom, "#1"] } % text to go in the middle of a square
+% in
+\begin{tikzcd}
+      {\color{green} X} \dar[squiggly, green, "p"] \rar[purple, "f"{name=A}]
+    & {\color{purple} Y} \dar[squiggly, purple, "p"{left}]
+\\
+      {\color{green} I} \rar[green, "u"{name=B}]
+   & {\color{green} J}
+\end{tikzcd}
+   #+end_src
+
+   #+name: given-requireds
+   #+caption: View update problem: “given green, require red”
+   #+ATTR_LATEX: :width 3cm
+   #+RESULTS:
+   [[file:del-fibration.png]]
+
+   :Hide:
+   For example, suppose we are interested in going to a local cinema.  Suppose
+   $X$ is a listing of cinemas, the movies available, and their show times.  For
+   flexibility, say, we are interested in only movies that have multiple show
+   times ---in case we are running late, we can then see the same movie at a later
+   time in the day. Let $I$ be the list of names of the movies, possibly (and
+   importantly) with repetition. Then we want to update this list by dropping
+   the names that do not occur multiple times, to obtain a new name listing $J$.
+   The update on names can be “lifted” to an update on movie times
+   by taking $Y$ ...
+
+
+   For example, let 𝕊 denote the category of database schemas $S$ along with a
+   number of records of type $S$ ---i.e., the objects are pairs $(S, R)$ where
+   $S$ is a set and $R ⊆ S$. We can “zoom in” on any database to obtain its
+   schema. Now for any choice of database $X = (S′, R′)$, every update of its
+   schema, say $u : I → J$ with $p\,I = S′$, we may form a database $Y = (J,
+   \{u(r) \,|\, r ∈ R\})$ on the updated schema $J$.
+
+   :End:
+
+   In general, our initial environments ---the top part of the diagram--- are
+   complex 𝕊ystems that we wish to 𝕍iew as simplified contexts.  As such,
+   they are generally different categories and the ‘narrowing’ operation is a
+   functor $p : 𝕊 → 𝕍$.
+
+   #+latex: \begin{tcolorbox}[colframe=red!75!black]
+   The computation of a view state $I$ from a system state $X$ ---i.e., /I = p
+   X/--- is known as the “get operation”. Whereas, the lift of the update is
+   known as the “put operation”. Moreover, ‘put’ is generally considered a
+   function $𝕊 × 𝕍 → 𝕊$ that updates a system along a given view state to
+   produce a new system; this is implicitly the case in the above diagram: The
+   red depends on the green, and, in particular, on the system $X ∈ 𝕊$ and the
+   view $J ∈ 𝕍$.
+
+   #+latex: \tcblower
+
+   The transitions between system states, and between view states, can be
+   construed as recording /how/ a change is accomplished. They are referred to as /deltas/.
+
+   #+latex: \vspace{1em}
+
+   For instance, if $I$ and $J$ are numbers then their /difference/ is $J - I$,
+   but /how/ the number $J$ is /computed/ from $I$ actually matters in, say, the
+   scenario where only certain primitive operations are allowed ---e.g., in
+   embedded systems. More concretely, if we view only the sales portion of an
+   employee roster and a last-name change occurs, is it because the person got
+   married and changed their name or is it because a person left the company and
+   a new person with the same last-name is hired? In the former, we simply
+   propagate the change; whereas in the latter, we must clear out all employee
+   information since it is not known.
+
+   #+latex: \vspace{1em}
+   As another example, consider a change in location ---as in the case of
+   driving to a particular destination. The difference in locations is secondary
+   to /how/ the change was achieved ---e.g., did we drive over dangerous areas
+   such as lakes or was it a flat road. The view update problem here takes the
+   form: Forget the real world, narrow on the starting and destination points,
+   form a straight line between them, now “lift” this line into a sequence of
+   real-world roads.
+   #+latex: \end{tcolorbox}
+
+   It is important to keep in mind, as shown in the above figure, that a (green)
+   focused update should yield not just a new state ($Y$) but also the
+   transition ($f$) that shows how the new state arises from the preceding
+   state.
+
+#+latex: \begin{tcolorbox}[colframe=red!75!black]
+/Discrete deltas/ are transitions that only record one state has transformed into
+another ---there is no choice of /“how”/. In practice, however, there are many
+choices. For example, suppose a transition $u : x → y$ records that state $y$ is
+reachable from state $x$ by taking action $u$. If the actions were invertible or
+even distinctness-preserving (i.e., cancellative), then discrete deltas would
+suffice. More concretely, when doing arithmetic $\mathsf{mod}\, m$, there are “infinitely
+many ways” to get to 0 from any starting number; namely, $(i * m) : x → 0$ for
+any $i : ℕ$ ---more generally, any system with zero-divisors will require
+non-discrete deltas.
+#+latex: \end{tcolorbox}
+
+* COMMENT Delta Lenses
+
+In practice, one treats a category ℂ as a “meta-model” and its objects as
+“models” that conform to it. Moreover, it is helpful to treat ℂ as /connected/:
+Any two models are reachable, via some transition.
+
+A /(very well-behaved) delta lens/ is a quadruple $(𝕊, 𝕍, \get, \put)$ where
+$\get : 𝕊 → 𝕍$ is a functor of connected categories,
+$\put : \Obj 𝕊 × \Mor 𝕍 → \Mor 𝕊$ is a /partial/ function
+such that
+# $\put : \Obj(\get ↓ Id) → \Mor 𝕊$ is a /partial/ function
+a. (PutInc₁) the source of $\put(S, α : \get S → V)$ is $S$
+b. (PutInc₂) $\put(S, α)$ is defined iff $\get S = \src α$
+c. (PutId)  we have $\put(S, \Id : \get S \to \get S) = \Id_S$
+d. (PutGet) $\get (\put (S, α : \get S → V)) = α$
+e. (PutPut) $\put(S, β ∘ α : \get S → V → V′) = \put(S′, β : \get S′ → V′) ∘
+   \put(S, α : \get S → V)$
+
+   where $S′ = \tgt (\put(S, α : \get S → V))$.
+
+#+latex: \begin{tcolorbox}[colframe=red!75!black]
+The original definition of delta lenses typed $\put$ by $\Obj 𝕍 × \Mor 𝕍 → \Mor
+𝕊$; we have swapped the order for the newer formulation.
+#+latex: \end{tcolorbox}
+
+* COMMENT Delta Lenses: Reformulated
+
+We reformulate the definition in stages.
+
+# 1. For a functor $F : 𝔸 → 𝔹$, the /comma category/ $F ↓ 𝔹$ has as objects the
+#    pairs $(A : \Obj A, f : \Mor 𝔹)$ where $\src f = F\, A$, with composition
+#    inherited from 𝔹.
+
+1. A functor $F : 𝔸 → 𝔹$ is an /opfibration/ if for any $X : \Obj B$,
+   and any 𝔹-arrow $u : I → J$ with $I = F\, X$,
+   there is a “best” 𝔸-arrow $f : X → Y$ with $f = F\, u$.
+
+   #+latex: \begin{tcolorbox}[colframe=red!75!black, title=Shucks!]
+   The fact that an opfibration requires cocartesian morphisms
+   is *more* that what delta lenses request. The universal property
+   of cocartesian morphisms makes them unique up to unique isomorphism.
+   Whereas, delta lenses make no such requirement.
+
+   #+latex: \vspace{1em} {\large Is this Okay?}
+
+   #+latex: \end{tcolorbox}
+
+2. Since these “best” 𝔹-arrows depend on /both/ $Y : \Obj 𝔸$ and $u : \Mor 𝔹$,
+   they are reminiscent of the $\put$ operation when we use $F = \get$.
+
+   Indeed, if we /name/ these arrows by $\put_Y\, u : \get X → Y$
+   then both (PutInc₁) and (PutInc₂) are satisfied.
+
+   Moreover, we also get the (PutGet) law since these best arrows
+   are above the given 𝔹-arrows, and so $\get(\put_Y u) = u$.
+
+3. Now, the (PutId) law says $\put_s$ preserves identities, for any $S : \Obj
+   𝕊$.
+
+   Opfibrations preserve identities /up to isomorphism/; in practice it is
+   important to have equality /on the nose/ and so we could request
+   a split obfibration.
+
+4. Next, the (PutPut) law describes a sort of functoriality of $\put$.
+
+   Rephrased using the family $\put_S$, the law reads:
+   \[
+     \put_S(β ∘ α) \quad=\quad \put_{S′}\,β \;∘\; \put_S\,α
+   \]
+   Where $S′ = \tgt (\put_S α)$
+
+   On the left side, we need $\tgt α = \src β$; but on the right side, we have,
+   using the (PutGet) law that $\src β = \get S′ = \get (\tgt (\put(S, α))) =
+   \tgt (\get (\put (S, α))) = \tgt α$. So everything is well-typed.
+   In particular, we have that α is an arrow between $\get$'s.
+
+5. So, it seems we want a split opfibration that is functorial /up to reindexing/.
+
+* COMMENT Misc
+1. For an object $I$ of a category $𝔹$, the /coslice category I/𝔹/ has as objects
+   the pairs $(B : \Obj 𝔹, f : I → B : \Mor 𝔹)$ and as arrows commuting triangles.
+
+# No implicit space
+#+latex: \def\put{\mathsf{put}}
+
+2. We may now rephrase the /partiality/ of the function $\put$
+   along with both (PutInc₁) and (PutInc₂) laws by requesting a /family/ of
+   functions
+   $\put_S : \Obj(\get S / 𝕍) → \Obj(S / 𝕊)$.
+
+* Background
+
+In this section, let 𝒜 and ℬ be categories.
+We will use the notation $\Obj 𝒳, \Hom 𝒳, \src, \tgt, \_{}⨾\_{}, \Id$
+to refer to the objects of a category 𝒳, its homsets, the source object
+assignment, the target object assignment, the (forward/diagrammatic)
+composition operation, and for the identity operations; respectively.
+
+#+attr_latex: :options {Lifting}
+#+begin_definition
+Let $F : \Obj 𝒜 → \Obj ℬ$ be a /function on objects/.
+Define a *lift[fn:3] for $F$* to be a /family $G_A$ of functions on arrows/, for each object $A : 𝒜$:
+\[
+G_A : \Hom(A, -) ←_𝒜 \Hom(F\, A, -)
+\]
+\begin{tikzcd}
+   A \rar[blue, "u"{name=Q, below}] \dar[mapsto, "F"] &  {\color{blue} A'} \dar[blue, mapsto, "F"{}]
+\\ B \rar["v"{name=P}] & B' \arrow[Rightarrow, "G_A"{right}, from=P, to=Q]
+\end{tikzcd}
+#+end_definition
+
+This paper adheres to the following /colouring discipline/ for diagrams: Items in
+hand are coloured black, whereas /derived/ elements are coloured in blue.
+Intermediary elements, such as those that are output of one transformation
+but input to another, will be coloured grey.
+
+#+attr_latex: :options {Common Liftings}
+#+begin_myexample org
++ For $F$ the identity function, the identity function $α ↦ α$ is a lift.
+
++ For $𝒜 = ℬ = 𝒮ℯ𝓉$, the category of sets and functions,
+  and $F$ a bijective map on sets, we may take
+  $G_A(v) = F ⨾ v ⨾ F^{-1}$ where $A′ = F^{-1}\bigg(\{v(b) \,|\, b ∈ F(A) \}\bigg)$.
+  # ---the invertiblity of $F$ is also used to show $F\, A′ = A$.
+
+  In general, $F$ acts as a form of ‘query’ on 𝒜-objects that yields local,
+  focused, information. Then the lift $G$ allows us to transport the local
+  transformation ---e.g., the set comprehension above--- to the global setting.
+
++ Recall that a functor $F$ is an /obfibration/
+  if given any source object $A : 𝒜$ and an ℬ-arrow $u : F\, A → B'$,
+  there is universal 𝒜-arrow $G_A(u) : A → A′$ with $F\, (G_A(u)) = u$.
+
+  Every opfibration is thus a lift as witnessed by the $G_A$ arrows.
+  As such, out notion of lifts generalises the idea of opfibrations
+  by dropping the universality requirement.
+#+end_myexample
+
+#+attr_latex: :options {Stable Lifting}
+#+begin_definition
+A lifting is *stable* if it preserves identities.
+     \[
+        G_A\, \big(\Id_{F\, A}\big) \quad=\quad \Id_{F\, A}
+        \label{Stability} \tag{\sc Stability}
+     \]
+#+end_definition
+
+#+attr_latex: :options {Sectional Lifting}
+#+begin_definition org
+Let $F : 𝒜 → ℬ$ be a /functor/,
+then a lifting for its object mapping is *sectional* if
+$F$'s morphism mapping is a post-inverse to each member of the family:
+     \[
+        F \left(G_A\, α\right) \quad=\quad α
+        \label{Sectional} \tag{\sc Sectional}
+     \]
+#+end_definition
+
+#+attr_latex: :options {Delta Lens}
+#+begin_definition org
+A *delta lens[fn:2]* is a functor that has a stable sectional lifting.
+
+# +latex: \tcblower
+#+latex: \vspace{1em}
+More explicitly, a delta lens is a tuple $(𝒜, ℬ, \get\!, \put\!)$
+consisting of two categories 𝒜 and ℬ, along with a functor $\get : 𝒜 → ℬ$
+that has $\put$ as its lifting that satisfies both eqref:Stability
+and eqref:Sectional.
+
+#+end_definition
+
+#+attr_latex: :options {Delta Lenses form a subcategory ``δ-Lens'' of 𝒞𝒶𝓉}
+#+begin_theorem
+The identity functor is clearly a delta lens; it remains to show that the
+composition of functors that are delta lenses is again a delta lens.  Indeed, if
+$F₁$ and $F₂$ are functors with stable sectional liftings $G₁$ and $G₂$,
+respectively, then $F₁ ⨾ F₂$ has $A ↦ {G₂}_A ⨾ {G₁}_A$ as a stable sectional
+lifting: Each property is immediately verified by, in the following diagram,
+starting with the given black elements then following the $Gᵢ$'s to obtain the
+required blue elements.
+
+\begin{tikzcd}
+   A \rar[blue, "u"{name=Q, below}] \dar[mapsto, "F_1"] &  {\color{blue} A'} \dar[blue, mapsto, "F_1"]
+\\ B \rar["v"{name=P}, "v"{below, name=P2}, gray]  \dar[mapsto, "F_2"]  & {\color{blue}B'} \arrow[Rightarrow, "{G_1}_A"{right}, from=P, to=Q] \dar[blue, mapsto, "F_2"]
+\\ C \rar["w"{name=R}] & C' \arrow[Rightarrow, "{G_2}_A"{right}, from=R, to=P2]
+\end{tikzcd}
+#+end_theorem
+
+* COMMENT tikz
+
+#+latex: \vspace{-2em}
+    #+begin_src latex-as-png :file put-lifting :exports results
+\usepackage{tikz-cd} % 𝒟₁𝒟₂ar specfies an arrow going direction 𝒟₁ then 𝒟₂; the 𝒟ᵢ must be unique.
+\usepackage{amssymb} % green!70!black ⇒ The colour obtained by mixing 70% green and the remaining 30% black.
+\usepackage{amsmath} % Need to use a “bend” to have arrows between arrows!
+\def\get{\mathsf{get}}
+\def\put{\mathsf{put}}
+\def\dg{green!70!black}
+\usetikzlibrary{decorations.pathmorphing} % to use squiggly arrows
+\usetikzlibrary{arrows.meta}
+\def\midtxt#1{ \arrow[dr, phantom, "#1"] } % text to go in the middle of a square
+% in
+% \begin{tikzcd}
+% {\color{\dg} A} \dar[purple, "u"{name=Q}, bend left = -1] \rar[lime, \dg, mapsto, "\get_0"] & {\color{\dg} B} \dar[\dg, "v"{left, name=P}]
+% \\ {\color{purple} A'} \rar[purple, mapsto, "\get_0"{below}] & {\color{\dg} B'} \arrow[Rightarrow, "\;\put_A", from=P, to=Q]
+% \end{tikzcd}
+%
+%  \arrow[left, Mapsfrom, from=P, to=Q, "\put_A"]
+% \vspace{1em}
+
+\begin{tikzcd}
+   A \rar[blue, "u"{name=Q, below}] \dar[mapsto, "F_1"] &  {\color{blue} A'} \dar[blue, mapsto, "F_1"]
+\\ B \rar["v"{name=P}, "v"{below, name=P2}, gray]  \dar[mapsto, "F_2"]  & {\color{blue}B'} \arrow[Rightarrow, "{G_1}_A"{right}, from=P, to=Q] \dar[blue, mapsto, "F_2"]
+\\ C \rar["w"{name=R}] & C' \arrow[Rightarrow, "{G_2}_A"{right}, from=R, to=P2]
+\end{tikzcd}
+   #+end_src
+    #+name: put-lifting
+   #+caption: Lifting problem: “given green, require red”
+   #+ATTR_LATEX: :width 3cm
+   #+RESULTS:
+   [[file:put-lifting.png]]
+
+    #+begin_src latex-as-png :file put-lifting-putget :exports results
+\usepackage{tikz-cd} % 𝒟₁𝒟₂ar specfies an arrow going direction 𝒟₁ then 𝒟₂; the 𝒟ᵢ must be unique.
+\usepackage{amssymb} % green!70!black ⇒ The colour obtained by mixing 70% green and the remaining 30% black.
+\usepackage{amsmath} % Need to use a “bend” to have arrows between arrows!
+\def\get{\mathsf{get}}
+\def\put{\mathsf{put}}
+\def\dg{green!70!black}
+\usetikzlibrary{decorations.pathmorphing} % to use squiggly arrows
+\usetikzlibrary{arrows.meta}
+\def\midtxt#1{ \arrow[dr, phantom, "#1"] } % text to go in the middle of a square
+% in
+\begin{tikzcd}
+  {\color{\dg} \cdot} \dar[purple, ""{name=Q}, bend left = -1]
+& {\color{\dg} \cdot} \dar[\dg, ""{left, name=P}]
+\\ {\color{purple} \cdot}
+& {\color{\dg} \cdot}
+\arrow[shift right = 1.5ex, Rightarrow, "", from=P, to=Q]
+\arrow[purple, shift right = 1ex, squiggly, ""{below}, from=Q, to=P]
+\end{tikzcd}
+
+%  \arrow[left, Mapsfrom, from=P, to=Q, "\put_A"]
+% \vspace{1em}
+% \begin{tikzcd}
+%   A \dar[squiggly, "\get_0"] \rar["u"] & A' \dar[squiggly, "\get_0"]
+% \\ B \rar["v"] & B'
+% \end{tikzcd}
+
+
+   #+end_src
+   #+name: put-lifting
+   #+caption: Lifting problem: “given green, require red”
+   #+ATTR_LATEX: :width 3cm
+   #+RESULTS:
+   [[file:put-lifting-putget.png]]
+
+   #+begin_src latex-as-png :file put-lifting-compose :exports results
+\usepackage{tikz-cd} % 𝒟₁𝒟₂ar specfies an arrow going direction 𝒟₁ then 𝒟₂; the 𝒟ᵢ must be unique.
+\usepackage{amssymb} % green!70!black ⇒ The colour obtained by mixing 70% green and the remaining 30% black.
+\usepackage{amsmath} % Need to use a “bend” to have arrows between arrows!
+\def\get{\mathsf{get}}
+\def\put{\mathsf{put}}
+\def\dg{green!70!black}
+\usetikzlibrary{decorations.pathmorphing} % to use squiggly arrows
+\usetikzlibrary{arrows.meta}
+\def\midtxt#1{ \arrow[dr, phantom, "#1"] } % text to go in the middle of a square
+% in
+\begin{tikzcd}
+  {\color{\dg} A} \dar[purple, "u"{name=R}, bend left = -2] \rar[lime, \dg, squiggly, "\get^1_0"]
+& {\color{\dg} B} \dar["v" {left, name=QL}, "v"{right, name=QR}, bend left = -1]  \rar[\dg, squiggly, "\get^2_0"]
+& {\color{\dg} C} \dar["w"{left, name=P}, \dg]
+\\ {\color{purple} A'} \rar[purple, squiggly, "\get^1_0"{below}]
+& {\color{purple} B'} \rar[purple, squiggly, "\get^2_0"{below}]
+& {\color{\dg} C'}
+\arrow[Rightarrow, "\;\put^2_A", from=P, to=QR]
+\arrow[Rightarrow, "\;\put^1_A", from=QL, to=R]
+\end{tikzcd}
+   #+end_src
+   #+name: put-lifting-compose
+   #+caption: From the given green, we follow the $\put$'s to get the required red
+   #+ATTR_LATEX: :width 5cm
+   #+RESULTS:
+   [[file:put-lifting-compose.png]]
+
+* Asymmetric Edit Delta Lenses
+
+   #+latex: \def\apply{\mathsf{apply}}
+   #+latex: \def\control{\mathsf{control}}
+
+#+attr_latex: :options {Edit Space}
+#+begin_definition org
+An *edit space* is an (cloven) obfibration[fn:4].
+#+end_definition
+
+Formally, an edit space is a tuple $(𝒜, ℳ, \control, \apply)$
+consisting of:
+ a. a category of “𝒜ctive processes”,
+ b. a category of “ℳotions”, or ‘ℳechanics’, ---these delimit the
+    behaviour
+        of processes; ‘contracts, metamodels, specifications’
+ c. a functor $\control : 𝒜 → ℳ$ that indicates how a process is controlled
+        or behaved,
+ d. a lifting $\apply : \Hom_𝓐(A, -) ← \Hom_𝕄(\control A, -)$
+        where we interpret \\
+         $\apply_A (ϕ : \control A → M)$ as “the execution of
+        the ϕ-update to $A$'s permitted behaviour”.
+ e. such that the lifting produces op-Cartesain arrows:
+    #+begin_tcolorbox org
+    Given any $v : M → M′$ and any $A : \Obj 𝒜$ with
+    $\control\, A = M$, we have that
+    \[\control (\apply_A v) \quad=\quad v
+    \label{Over} \tag{\sc Over} \]
+    It is /universal/ with this property:
+    For any other 𝒜-arrow $u : A → A′$,
+    each factorisation of $\control\, u$ through $v$ uniquely
+    determines a factorisation of $u$ through $\apply_A v$.
+    #+end_tcolorbox
+
+#+attr_latex: :options {Edit Space Lens}
+#+begin_definition org
+Let $\control₁ : 𝒜 → ℳ$ and $\control₂ : ℬ → 𝒩$ be edit spaces
+---with liftings $\apply₁$ and $\apply₂$, respectively.
+Define an *edit δ-lens* to be a functor
+$\get : ℳ → 𝒩$ with a family of /functions/
+$\put_A : \Hom_𝒜(A, -) ← \Hom_ℬ\big((\control₁ ⨾ \get ⨾ \apply₂)\,
+A, -\big)$
+satisfying eqref:Stability, eqref:EditSectional, and the  following
+commutativity condition; i.e.,
+$\apply₁ = \get ⨾ \apply₂ ⨾ \put$.
+
+     \[\put ⨾ \control₁ ⨾ \get \quad=\quad \control₂
+        \label{EditSectional} \tag{\sc EditSectional}\]
+
+#+latex: \def\dg{black}
+#+latex: \def\g#1{{\color{\dg} #1}} % given items
+#+latex: \def\r#1{{\color{blue} #1}} % required items
+#+latex: \def\s{mapsto}
+#+latex: \def\GG#1{ {\color{gray}{#1}} }
+#+latex: \def\G{gray}
+#+latex: \usetikzlibrary{decorations.pathmorphing} % to use squiggly arrows
+#+latex: \usetikzlibrary{arrows.meta}
+#+latex: \def\midtxt#1{ \arrow[dr, phantom, "#1"] } % text to go in the middle of a square
+#+latex: \def\rr{\ar[rr, gray, bend right = -0, mapsto, near start, "\get", line width = 0.05ex]}
+\begin{tikzcd}[column sep=huge]
+                    & \g M \ar[dd,\dg,""{name=P}] \rr  &     & \GG{N} \ar[dd, \G, ""{name=Q}]
+\\ \g A  \ar[dd, blue,""{name=S}]\ar[\dg, \s,ru] &            & \GG{B} \ar[\G, dd,""{name=R}]\ar[\G, \s,ru] &
+\\    & \g M' \rr &   & \GG{N'}
+\\ \r A'  \ar[\s,blue,ru] &    & \GG{B'} \ar[\s,\G, ru] &
+\arrow[dashed, "\hspace{-2em}\get", from=P, to=Q, bend right = -20]
+\arrow[Rightarrow, from=Q, to=R]
+\arrow[dashed, "\hspace{1em}\put_A", from=R, to=S, bend right = -20]
+\arrow[Rightarrow, from=P, to=S]
+\end{tikzcd}
+
+#+end_definition
+
+# put ⨾ get = id
+
+#+attr_latex: :options {Edit Delta Lenses form a subcategory “εδ-Lens” of δ-Lens}
+#+begin_theorem
+Opfibrations are known to form a category; details can be found in cite:JacobsCLTT.
+#+end_theorem
+
+Now to the main theorem.
+
+Given a functor $F : 𝒜 → ℬ$, define the category $𝒜 / ℬ$ to have objects
+the pairs $(A : \Obj 𝒜, B : \Obj)$ with $F\, A = B$, and to have arrows
+$(A, B) → (A′, B′)$ to be pairs $(u : A →_𝒜 A′, v : B →_ℬ B′)$ such that
+the resulting square commutes; i.e., $F\, A = B, F\, A′ = B′$, and $F\, u = v$.
+Composition and identities are inherited from 𝒜 and ℬ, and the required
+conditions are met due to the functoriality of $F$.
+
+#+attr_latex: :options {εδ-Lenses are δ-Lenses between certain categories}
+#+begin_theorem org
+More precisely: If $\get$ is an εδ-lens from $\control₁ : 𝒜 → ℳ$ to $\control₂ :
+ℬ → 𝒩$, then $\get$ induces a δ-lens from $𝒜/ℳ$ to $ℬ/𝒩$.
+#+end_theorem
+
+#+latex_header: \def\BEGINstep{ \{ }
+#+latex_header: \def\ENDstep{ \} }
+#+latex_header: \newcommand{\step}[2][=]{ \\ #1 \;\; & \qquad {\BEGINstep \text{ #2 } \ENDstep} \\ & }
+#+latex_header: \newenvironment{calc}{\begin{align*} & }{\end{align*}}
+*Proof*.
+Define the functor $\get′ : 𝒜/ℳ ⟶ ℬ/ℳ$
+and family $\put′$ by the following equations:
+\[
+\get′(x, y) \quad=\quad (\apply₂\, \get\, \control₁\, x,\; \get\, y)
+\]
+#+latex: \vspace{-1em}
+\[\put′_{A, M}(x, y)
+\quad=\quad (\put_A\, x,\; \control₁\, \put_A\, \apply₂\, y) \]
+
+# - On objects, $(A, M) ↦ (\apply₂\, \get \control₁\, A,\; \get M)$,
+# - On arrows, $(u, v) ↦ (\apply₂\, \get \control₁\, u,\; \get v)$.
+#+latex: \noindent
+Functoriality of $\get'$ is inherited from $\get$.
+It remains to show that this has $\put'$ as a stable sectional lifting.
+- Stability follows from the stability of $\put_A$.
+  # \\ $\put′_{A, M}(\Id, \Id) = (\put_A \Id, \put_A (\apply₂ \Id)) = (\Id,
+  # \put_A \Id) = (\Id, \Id)$.
+- Sectional:
+
+# \begin{calc}
+\begin{align*} &
+\get′ (\put′ (x, y))
+\step{ Definition of $\put′$ }
+\get′ (\put_A\, x,\; \control₁\, \put_A\, \apply₂\, y)
+\step{ Definition of $\get′$ }
+( (\put ⨾ \control₁ ⨾ \get ⨾ \apply₂)\, x,\;
+  (\apply₂ ⨾ \put ⨾ \control₁ ⨾ \get)\, y)
+\step{ \eqref{EditSectional} axiom, twice }
+( (\control₂ ⨾ \apply₂)\, x,\;
+  (\apply₂ ⨾ \control₂)\, y)
+\step{ \eqref{Over} laws }
+( (\control₂ ⨾ \apply₂)\, x,\;
+  y)
+\step{ ??? }
+(x, y)
+\end{align*}
+# \end{calc}
+
+* COMMENT more
+
+\get′ (\put x, \put (\apply v′))
+\step{ ? }
+(\apply \get \control₁ \put u′, \get \put (\apply v′))
+\step{ ? }
+(\apply \get \control₁ \put u, \get \put (\apply v))
+
+   #+begin_src latex-as-png :file edit-lens :exports results
+\usepackage{tikz-cd} % 𝒟₁𝒟₂ar specfies an arrow going direction 𝒟₁ then 𝒟₂; the 𝒟ᵢ must be unique.
+\usepackage{amssymb} % green!70!black ⇒ The colour obtained by mixing 70% green and the remaining 30% black.
+\usepackage{amsmath} % Need to use a “bend” to have arrows between arrows!
+\def\get{\mathsf{get}}
+\def\put{\mathsf{put}}
+% \def\dg{green!70!black}
+\def\dg{black}
+\def\g#1{{\color{\dg} #1}} % given items
+\def\r#1{{\color{blue} #1}} % required items
+\def\s{mapsto}
+\def\GG#1{ {\color{gray}{#1}} }
+\def\G{gray}
+\usetikzlibrary{decorations.pathmorphing} % to use squiggly arrows
+\usetikzlibrary{arrows.meta}
+\def\midtxt#1{ \arrow[dr, phantom, "#1"] } % text to go in the middle of a square
+\def\rr{\ar[rr, gray, bend right = -0, mapsto, near start, "\get", line width = 0.05ex]}
+% in
+\begin{tikzcd}[column sep=huge]
+                    & \g M \ar[dd,\dg,""{name=P}] \rr  &     & \GG{N} \ar[dd, \G, ""{name=Q}]
+\\ \g A \rr \ar[dd, blue,""{name=S}]\ar[\dg, \s,ru] &            & \GG{B} \ar[\G, dd,""{name=R}]\ar[\G, \s,ru] &
+\\    & \g M' \rr &   & \GG{N'}
+\\ \r A' \rr \ar[\s,blue,ru] &    & \GG{B'} \ar[\s,\G, ru] &
+\arrow[dashed, "\hspace{-2em}\get", from=P, to=Q, bend right = -20]
+\arrow[Rightarrow, from=Q, to=R]
+\arrow[dashed, "\hspace{1em}\put_A", from=R, to=S, bend right = -20]
+\arrow[Rightarrow, from=P, to=S]
+\end{tikzcd}
+   #+end_src
+   #+name: edit-lens
+   #+caption: From the given green, follow the one path to get the required red
+   #+ATTR_LATEX: :width 6cm
+   #+RESULTS:
+   [[file:edit-lens.png]]
+
+If we take $\get^1 = \get^2 = \Id$, and so $𝔸 = 𝕄$ and $𝔹 = 𝕄$, then
+   an edit space lens is a functor $\get : 𝔸 → 𝔹$ with a family of functions
+   $\put_A : \Hom(A, -) ← \Hom(\get A, -)$ that is stable and PutGet; i.e., it is a delta lens!
+
+#+begin_center
+   _Zinovy, is this the required “main theorem”?_
+#+end_center
+
+--------------------------------------------------------------------------------
+
+“∂(get)(u)” - see change actions paper; can we generalise it?
+
+
+--------------------------------------------------------------------------------
+
+discuss colouring discipline
+- blueprint for deriving ⇒ blue
+- blue for lift, but different shades
+- given stuff is black.
+
+* Bib                                                                :ignore:
+
+#+LATEX_HEADER: \usepackage[citestyle=authoryear-icomp,style=alphabetic,hyperref=true,backref=true,maxcitenames=3,url=true,backend=biber,natbib=true] {biblatex}
+#+LATEX_HEADER: \addbibresource{References.bib}
+
+#+LaTeX: \addcontentsline{toc}{part}{References}
+#+LaTeX: \printbibliography
+* Footer :ignore:
+
+# Local Variables:
+# after-save-hook: (lambda nil (ignore-errors (rename-file "DeltaFibrations.pdf" "EditSpaces.pdf" t))))
+# End:
+
+* Footnotes
+
+[fn:4] For computing purposes, existence is most useful when taken
+/constructively/: It is not enough for something to merely exist,
+but rather a (computable) construction of the thing must be provided
+for an existence claim to be reasonable. As such, our opfibrations
+are cloven by default.
+
+[fn:3] The diagram suggests the name ‘lift’ since arrows in the bottom category ℬ are
+assigned to arrows in the top category 𝒜.
+
+[fn:2] This is also known as a /very-well behaved delta lens/ that lacks the
+PutPut law, which usually does not hold in applications and so we ignore it.
+
+[fn:1] In practice, an ‘environment’ or ‘system’ is a database, a monad, or a class in the
+object-oriented programming sense; and a narrowed ‘view’ would be a database
+query, a monadic comprehension, or a subclassing relation.

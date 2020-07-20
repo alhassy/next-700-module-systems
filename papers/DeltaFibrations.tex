@@ -1,0 +1,325 @@
+% Created 2020-07-20 Mon 17:52
+% Intended LaTeX compiler: pdflatex
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usepackage{minted}
+\usepackage{multicol}
+\usepackage{glossaries}
+\makeglossaries
+\usepackage{\string~"/unicode-sty/unicode"}
+\usepackage{newunicodechar}
+\newunicodechar{⨾}{\, ; \,}
+\newunicodechar{♯}{\ensuremath{\sharp}}
+\newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
+\newunicodechar{×}{\ensuremath{\times}}
+\usepackage[font=itshape]{quoting}
+\usepackage{tcolorbox}
+\usepackage[hmargin=25mm,vmargin=25mm]{geometry}
+\setlength{\parskip}{1em}
+\setlength{\parskip}{1em}
+\usepackage{xcolor} % named colours
+\usepackage{color}
+\definecolor{darkred}{rgb}{0.3, 0.0, 0.0}
+\definecolor{darkgreen}{rgb}{0.0, 0.3, 0.1}
+\definecolor{darkblue}{rgb}{0.0, 0.1, 0.3}
+\definecolor{darkorange}{rgb}{1.0, 0.55, 0.0}
+\definecolor{sienna}{rgb}{0.53, 0.18, 0.09}
+\hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkgreen}
+\def\BEGINstep{ \{ }
+\def\ENDstep{ \} }
+\newcommand{\step}[2][=]{ \\ #1 \;\; & \qquad {\BEGINstep \text{ #2 } \ENDstep} \\ & }
+\newenvironment{calc}{\begin{align*} & }{\end{align*}}
+\usepackage[citestyle=authoryear-icomp,style=alphabetic,hyperref=true,backref=true,maxcitenames=3,url=true,backend=biber,natbib=true]
+           {biblatex}
+\addbibresource{References.bib}
+\newcounter{mydefn}
+\newtcolorbox{definition}[1]{colback=red!5!white,colframe=red!75!black, title= Definition \themydefn: #1}
+\AfterEndEnvironment{definition}{\stepcounter{mydefn}}
+\newcounter{mythm}
+\newtcolorbox{theorem}[1]{colback=red!5!white, title= Theorem \themythm: #1}
+\AfterEndEnvironment{theorem}{\stepcounter{mythm}}
+\newcounter{myexmpl}
+\newtcolorbox{myexample}[1]{colback=red!5!white,colframe=red!75!black,colbacktitle=yellow!50!red,coltitle=red!25!black,title= Example \themyexmpl: #1}
+\AfterEndEnvironment{myexample}{\stepcounter{myexmpl}}
+\usepackage{tikz-cd}
+\BeforeBeginEnvironment{tikzcd}{\begin{center}}
+\AfterEndEnvironment{tikzcd}{\end{center}}
+\author{Musa Al-hassy and Zinovy Diskin}
+\date{\today}
+\title{Edit Space Lenses\\\medskip
+\large ---\emph{draft}---}
+\hypersetup{
+ pdfauthor={Musa Al-hassy and Zinovy Diskin},
+ pdftitle={Edit Space Lenses},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 28.0.50 (Org mode 9.3.7)},
+ pdflang={English}}
+\begin{document}
+
+\maketitle
+
+\tcbset{colback=green!10!white}
+
+\newtcolorbox{myexamplebox}[1]{title=#1,
+colback=red!5!white, colframe=red!75!black, colbacktitle=yellow!50!red, coltitle=red!25!black, fonttitle=\bfseries,
+subtitle style={boxrule=0.4pt, colback=yellow!50!red!25!white}}
+
+\def\labelitemi{$\diamond$}
+\def\labelitemii{$\circ$}
+\def\labelitemiii{$\star$}
+
+% Level 0                 Level 0
+% + Level 1               ⋄ Level 1
+%   - Level 2       --->      ∘ Level 2
+%     * Level 3                   ⋆ Level 3
+%
+
+\def\src{\mathsf{src}\,}
+\def\tgt{\mathsf{tgt}\,}
+\def\put{\mathsf{put}}
+\def\get{\mathsf{get}}
+\def\Hom{\mathsf{Hom}}
+\def\Mor{\mathsf{Mor}\,}
+\def\Obj{\mathsf{Obj}\,}
+\def\Id{\mathsf{Id}}
+
+
+\section{Background}
+\label{sec:orge8a6819}
+
+In this section, let 𝒜 and ℬ be categories.
+We will use the notation \(\Obj 𝒳, \Hom 𝒳, \src, \tgt, \_{}⨾\_{}, \Id\)
+to refer to the objects of a category 𝒳, its homsets, the source object
+assignment, the target object assignment, the (forward/diagrammatic)
+composition operation, and for the identity operations; respectively.
+
+\begin{definition}{Lifting}
+Let \(F : \Obj 𝒜 → \Obj ℬ\) be a \emph{function on objects}.
+Define a \textbf{lift\footnote{The diagram suggests the name ‘lift’ since arrows in the bottom category ℬ are
+assigned to arrows in the top category 𝒜.} for \(F\)} to be a \emph{family \(G_A\) of functions on arrows}, for each object \(A : 𝒜\):
+\[
+G_A : \Hom(A, -) ←_𝒜 \Hom(F\, A, -)
+\]
+\begin{tikzcd}
+   A \rar[blue, "u"{name=Q, below}] \dar[mapsto, "F"] &  {\color{blue} A'} \dar[blue, mapsto, "F"{}]
+\\ B \rar["v"{name=P}] & B' \arrow[Rightarrow, "G_A"{right}, from=P, to=Q]
+\end{tikzcd}
+\end{definition}
+
+This paper adheres to the following \emph{colouring discipline} for diagrams: Items in
+hand are coloured black, whereas \emph{derived} elements are coloured in blue.
+Intermediary elements, such as those that are output of one transformation
+but input to another, will be coloured grey.
+
+\begin{myexample}{Common Liftings}
+\begin{itemize}
+\item For \(F\) the identity function, the identity function \(α ↦ α\) is a lift.
+
+\item For \(𝒜 = ℬ = 𝒮ℯ𝓉\), the category of sets and functions,
+and \(F\) a bijective map on sets, we may take
+\(G_A(v) = F ⨾ v ⨾ F^{-1}\) where \(A′ = F^{-1}\bigg(\{v(b) \,|\, b ∈ F(A) \}\bigg)\).
+
+In general, \(F\) acts as a form of ‘query’ on 𝒜-objects that yields local,
+focused, information. Then the lift \(G\) allows us to transport the local
+transformation ---e.g., the set comprehension above--- to the global setting.
+
+\item Recall that a functor \(F\) is an \emph{obfibration}
+if given any source object \(A : 𝒜\) and an ℬ-arrow \(u : F\, A → B'\),
+there is universal 𝒜-arrow \(G_A(u) : A → A′\) with \(F\, (G_A(u)) = u\).
+
+Every opfibration is thus a lift as witnessed by the \(G_A\) arrows.
+As such, out notion of lifts generalises the idea of opfibrations
+by dropping the universality requirement.
+\end{itemize}
+\end{myexample}
+
+\begin{definition}{Stable Lifting}
+A lifting is \textbf{stable} if it preserves identities.
+     \[
+        G_A\, \big(\Id_{F\, A}\big) \quad=\quad \Id_{F\, A}
+        \label{Stability} \tag{\sc Stability}
+     \]
+\end{definition}
+
+\begin{definition}{Sectional Lifting}
+Let \(F : 𝒜 → ℬ\) be a \emph{functor},
+then a lifting for its object mapping is \textbf{sectional} if
+\(F\)'s morphism mapping is a post-inverse to each member of the family:
+     \[
+        F \left(G_A\, α\right) \quad=\quad α
+        \label{Sectional} \tag{\sc Sectional}
+     \]
+\end{definition}
+
+\begin{definition}{Delta Lens}
+A \textbf{delta lens\footnote{This is also known as a \emph{very-well behaved delta lens} that lacks the
+PutPut law, which usually does not hold in applications and so we ignore it.}} is a functor that has a stable sectional lifting.
+
+\vspace{1em}
+More explicitly, a delta lens is a tuple \((𝒜, ℬ, \get\!, \put\!)\)
+consisting of two categories 𝒜 and ℬ, along with a functor \(\get : 𝒜 → ℬ\)
+that has \(\put\) as its lifting that satisfies both \eqref{Stability}
+and \eqref{Sectional}.
+\end{definition}
+
+\begin{theorem}{Delta Lenses form a subcategory ``δ-Lens'' of 𝒞𝒶𝓉}
+The identity functor is clearly a delta lens; it remains to show that the
+composition of functors that are delta lenses is again a delta lens.  Indeed, if
+\(F₁\) and \(F₂\) are functors with stable sectional liftings \(G₁\) and \(G₂\),
+respectively, then \(F₁ ⨾ F₂\) has \(A ↦ {G₂}_A ⨾ {G₁}_A\) as a stable sectional
+lifting: Each property is immediately verified by, in the following diagram,
+starting with the given black elements then following the \(Gᵢ\)'s to obtain the
+required blue elements.
+
+\begin{tikzcd}
+   A \rar[blue, "u"{name=Q, below}] \dar[mapsto, "F_1"] &  {\color{blue} A'} \dar[blue, mapsto, "F_1"]
+\\ B \rar["v"{name=P}, "v"{below, name=P2}, gray]  \dar[mapsto, "F_2"]  & {\color{blue}B'} \arrow[Rightarrow, "{G_1}_A"{right}, from=P, to=Q] \dar[blue, mapsto, "F_2"]
+\\ C \rar["w"{name=R}] & C' \arrow[Rightarrow, "{G_2}_A"{right}, from=R, to=P2]
+\end{tikzcd}
+\end{theorem}
+
+\section{Asymmetric Edit Delta Lenses}
+\label{sec:org2ce36bd}
+
+\def\apply{\mathsf{apply}}
+\def\control{\mathsf{control}}
+
+\begin{definition}{Edit Space}
+An \textbf{edit space} is an (cloven) obfibration\footnote{For computing purposes, existence is most useful when taken
+\emph{constructively}: It is not enough for something to merely exist,
+but rather a (computable) construction of the thing must be provided
+for an existence claim to be reasonable. As such, our opfibrations
+are cloven by default.}.
+\end{definition}
+
+Formally, an edit space is a tuple \((𝒜, ℳ, \control, \apply)\)
+consisting of:
+\begin{enumerate}
+\item a category of “𝒜ctive processes”,
+\item a category of “ℳotions”, or ‘ℳechanics’, ---these delimit the
+behaviour
+    of processes; ‘contracts, metamodels, specifications’
+\item a functor \(\control : 𝒜 → ℳ\) that indicates how a process is controlled
+or behaved,
+\item a lifting \(\apply : \Hom_𝓐(A, -) ← \Hom_𝕄(\control A, -)\)
+where we interpret \\
+ \(\apply_A (ϕ : \control A → M)\) as “the execution of
+the ϕ-update to \(A\)'s permitted behaviour”.
+\item such that the lifting produces op-Cartesain arrows:
+\begin{tcolorbox}
+Given any \(v : M → M′\) and any \(A : \Obj 𝒜\) with
+\(\control\, A = M\), we have that
+\[\control (\apply_A v) \quad=\quad v
+    \label{Over} \tag{\sc Over} \]
+It is \emph{universal} with this property:
+For any other 𝒜-arrow \(u : A → A′\),
+each factorisation of \(\control\, u\) through \(v\) uniquely
+determines a factorisation of \(u\) through \(\apply_A v\).
+\end{tcolorbox}
+\end{enumerate}
+
+\begin{definition}{Edit Space Lens}
+Let \(\control₁ : 𝒜 → ℳ\) and \(\control₂ : ℬ → 𝒩\) be edit spaces
+---with liftings \(\apply₁\) and \(\apply₂\), respectively.
+Define an \textbf{edit δ-lens} to be a functor
+\(\get : ℳ → 𝒩\) with a family of \emph{functions}
+\(\put_A : \Hom_𝒜(A, -) ← \Hom_ℬ\big((\control₁ ⨾ \get ⨾ \apply₂)\,
+A, -\big)\)
+satisfying \eqref{Stability}, \eqref{EditSectional}, and the  following
+commutativity condition; i.e.,
+\(\apply₁ = \get ⨾ \apply₂ ⨾ \put\).
+
+\[\put ⨾ \control₁ ⨾ \get \quad=\quad \control₂
+        \label{EditSectional} \tag{\sc EditSectional}\]
+
+\def\dg{black}
+\def\g#1{{\color{\dg} #1}} % given items
+\def\r#1{{\color{blue} #1}} % required items
+\def\s{mapsto}
+\def\GG#1{ {\color{gray}{#1}} }
+\def\G{gray}
+\usetikzlibrary{decorations.pathmorphing} % to use squiggly arrows
+\usetikzlibrary{arrows.meta}
+\def\midtxt#1{ \arrow[dr, phantom, "#1"] } % text to go in the middle of a square
+\def\rr{\ar[rr, gray, bend right = -0, mapsto, near start, "\get", line width = 0.05ex]}
+\begin{tikzcd}[column sep=huge]
+                    & \g M \ar[dd,\dg,""{name=P}] \rr  &     & \GG{N} \ar[dd, \G, ""{name=Q}]
+\\ \g A  \ar[dd, blue,""{name=S}]\ar[\dg, \s,ru] &            & \GG{B} \ar[\G, dd,""{name=R}]\ar[\G, \s,ru] &
+\\    & \g M' \rr &   & \GG{N'}
+\\ \r A'  \ar[\s,blue,ru] &    & \GG{B'} \ar[\s,\G, ru] &
+\arrow[dashed, "\hspace{-2em}\get", from=P, to=Q, bend right = -20]
+\arrow[Rightarrow, from=Q, to=R]
+\arrow[dashed, "\hspace{1em}\put_A", from=R, to=S, bend right = -20]
+\arrow[Rightarrow, from=P, to=S]
+\end{tikzcd}
+\end{definition}
+
+\begin{theorem}{Edit Delta Lenses form a subcategory “εδ-Lens” of δ-Lens}
+Opfibrations are known to form a category; details can be found in \cite{JacobsCLTT}.
+\end{theorem}
+
+Now to the main theorem.
+
+Given a functor \(F : 𝒜 → ℬ\), define the category \(𝒜 / ℬ\) to have objects
+the pairs \((A : \Obj 𝒜, B : \Obj)\) with \(F\, A = B\), and to have arrows
+\((A, B) → (A′, B′)\) to be pairs \((u : A →_𝒜 A′, v : B →_ℬ B′)\) such that
+the resulting square commutes; i.e., \(F\, A = B, F\, A′ = B′\), and \(F\, u = v\).
+Composition and identities are inherited from 𝒜 and ℬ, and the required
+conditions are met due to the functoriality of \(F\).
+
+\begin{theorem}{εδ-Lenses are δ-Lenses between certain categories}
+More precisely: If \(\get\) is an εδ-lens from \(\control₁ : 𝒜 → ℳ\) to \(\control₂ :
+ℬ → 𝒩\), then \(\get\) induces a δ-lens from \(𝒜/ℳ\) to \(ℬ/𝒩\).
+\end{theorem}
+
+\textbf{Proof}.
+Define the functor \(\get′ : 𝒜/ℳ ⟶ ℬ/ℳ\)
+and family \(\put′\) by the following equations:
+\[
+\get′(x, y) \quad=\quad (\apply₂\, \get\, \control₁\, x,\; \get\, y)
+\]
+\vspace{-1em}
+\[\put′_{A, M}(x, y)
+\quad=\quad (\put_A\, x,\; \control₁\, \put_A\, \apply₂\, y) \]
+
+\noindent
+Functoriality of \(\get'\) is inherited from \(\get\).
+It remains to show that this has \(\put'\) as a stable sectional lifting.
+\begin{itemize}
+\item Stability follows from the stability of \(\put_A\).
+\item Sectional:
+\end{itemize}
+
+\begin{align*} &
+\get′ (\put′ (x, y))
+\step{ Definition of $\put′$ }
+\get′ (\put_A\, x,\; \control₁\, \put_A\, \apply₂\, y)
+\step{ Definition of $\get′$ }
+( (\put ⨾ \control₁ ⨾ \get ⨾ \apply₂)\, x,\;
+  (\apply₂ ⨾ \put ⨾ \control₁ ⨾ \get)\, y)
+\step{ \eqref{EditSectional} axiom, twice }
+( (\control₂ ⨾ \apply₂)\, x,\;
+  (\apply₂ ⨾ \control₂)\, y)
+\step{ \eqref{Over} laws }
+( (\control₂ ⨾ \apply₂)\, x,\;
+  y)
+\step{ ??? }
+(x, y)
+\end{align*}
+
+\addcontentsline{toc}{part}{References}
+\printbibliography
+\end{document}
