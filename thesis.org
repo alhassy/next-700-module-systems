@@ -177,11 +177,19 @@ Algebraic Data Types}
 # +LATEX_HEADER: \usepackage{papers/UnicodeSymbols}
 #+latex_header: \usepackage{newunicodechar}
 #+latex_header: \newunicodechar{⨾}{\, ; \,}
+#+latex_header: \newunicodechar{×}{\ensuremath{\times}}
 #+latex_header: \newunicodechar{♯}{\ensuremath{\sharp}}
 #+latex_header: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
 
+#+latex_header: \newunicodechar{∎}{\ensuremath{\qed}}
+#+latex_header: \newunicodechar{★}{\ensuremath{\star}}
+#+latex_header: \newunicodechar{ₓ}{\ensuremath{{}_\times}}
+
+
 #+latex_header: \usepackage[font=itshape]{quoting}
 # Now quote blocks have their contents italicised.
+
+#+latex_header_extra: \newtcolorbox{mybox}[2][]{colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black,title=#2,#1}
 
 ** Minted setup -- colouring code blocks                             :ignore:
 
@@ -865,6 +873,23 @@ The remainder of the thesis is organised as follows.
 It has been an exciting journey, I hope you enjoy the ride!
 
 * Introduction
+  /unchanged/
+* Packages and Their Parts
+  /unchanged/
+
+*Prerequisite of the reader:* Going forward, it is assumed that the reader is
+comfortable programming with Haskell, and the associated menagerie of Category
+Theory concepts that are usually present in the guise of Functional Programming.
+In particular, this includes ‘practical’ notions such as typeclasses and
+instance search, as well as ‘theoretical’ notions such categorial limits and
+colimits, lattices ---a kind of category with products--- and monoids
+---possibly in arbitrary monoidal categories, as is the case with monads.
+Moreover, we assume the reader to have *actually* worked with a dependently-typed
+language; otherwise, it /may/ be difficult to appreciate the solutions to the
+problems addressed in this thesis ---since they could not be expressed in
+languages without dependent-types and are thus ‘not problems’.
+
+* COMMENT Introduction
 
 The construction of programming libraries is managed by decomposing ideas into
 self-contained units called ‘packages’ whose relationships are then formalised
@@ -1048,7 +1073,7 @@ and termtypes. The approach followed is summarised in figure ref:fig:thesis-guid
 \end{center}
 #+end_figure
 
-* Packages and Their Parts
+* COMMENT Packages and Their Parts
 
 #+latex_header:  \usepackage{mathpartir, proof}
 #+latex_header_extra: \newunicodechar{×}{\ensuremath{\times}}
@@ -1123,7 +1148,7 @@ theory of packages, as summarised in the figure below.
 #+end_export
 #+end_parallelNB
 
-#+latex_header: \newtcolorbox{mybox}[2][]{colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black,title=#2,#1}
+
 
 #+latex: \begin{mybox}{Game-Play Analogy}
 # The contents of Figure \ref{fig:languages} may be intimidating to the
@@ -5067,6 +5092,1230 @@ contributions.
      types from contexts. Instead, one could settle for the safer 𝒲-types, if
      possible.
 
+* Motivating the problem ---Examples from the Wild
+
+<<sec:examples_from_the_wild>>
+#+latex: \label{sec:examples_from_the_wild}
+
+:Hide:
+#+begin_edcomm
+:ed: JC
+
+- you have the space here. Go for Monoid, else you'll confuse the reader.
+
+  + Musa: A magma suffices to express the problem; monoid may be more familiar
+    but it only brings extra noise ---extra symbols that do not contribute
+    to the problem addressed.
+#+end_edcomm
+:End:
+
+** Introduction :ignore:
+
+#+begin_quote
+   /Tedium is for machines; interesting problems are for people./
+#+end_quote
+
+In this section, we showcase a number of problems that occur in developing
+libraries of code /within/ dependently-typed languages. We will refer back to
+these real-world examples later on when developing our frameworks for reducing
+their tedium and size.  The examples are extracted from Agda libraries focused
+on mathematical domains, such as algebra and category theory. It is not
+important to understand the application domains, but how modules are organised
+and used. The examples will focus on readability (sections
+ref:sec:examples:readability, ref:sec:examples:renaming) and on mixing-in
+features to an existing module (sections ref:sec:examples:IsX,
+ref:sec:examples:redundancy, ref:sec:examples:extensions). In order to make the
+core concepts acceptable, we will occasionally render examples using the simple
+algebraic structures: <<<Magma>>>
+#+latex: \label{<Magma>},
+<<<Semigroup>>>, and <<<Monoid>>>
+@@latex:\label{<Semigroup>>>, and <<<Monoid>}@@[fn:4].
+
+Incidentally, the common solutions to the problems presented may be construed as
+*design patterns for dependently-typed programming*. Design patterns are
+algorithms yearning to be formalised. The power of the host language dictates
+whether design patterns remain as informal directions to be implemented in an
+ad-hoc basis then checked by other humans, or as a library methods that are
+written once and may be freely applied by users. For instance, the [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Morphism.html#1][Agda
+~Algebra.Morphism~ “library”]][fn:17] presents /only/ an example(!) of the homomorphism design
+pattern ---which shows how to form operation-preserving functions for algebraic
+structures. The documentation reads: ~An example showing how a morphism type can
+be defined~. An example, rather than a library method, is all that can be done
+since the current implementation of Agda does not have the necessary
+meta-programming utilities to construct new types in a practical way ---at
+least, not out of the box.
+# #
+# + The procedure is essentially the same for other algebraic structures.
+# + It takes time to do form these explicitly, even for the common structures.
+
+** Simplifying Programs by Exposing Invariants at the Type Level
+<<sec:examples:readability>>
+#+latex: \label{sec:examples:readability}
+# Adding Zero then Multiplying by One Results in a Type Error
+
+   In theory, lists and vectors are the same ---where the latter are essentially
+   lists indexed by their lengths. In practice, however, the additional length
+   information stated up-front as an integral part of the data structure makes
+   it not only easier to write programs that would otherwise by awkward or
+   impossible in the latter case. For instance, below we demonstrate that the
+   function ~head~, which extracts the first element of a non-empty list, not only
+   has a difficult type to read, but also requires an auxiliary relation in
+   order to be expressed. In contrast, the vector variant has a much simpler
+   type with the non-emptiness proviso expressed by requesting a positive
+   length.
+
+{{{code(Exposing Information At the Type Level)}}}
+#+BEGIN_SRC agda :tangle list-is-not-vec.agda :prologue "module list-is-not-vec where \nopen import Notation \n"
+data List (A : Set) : Set where
+  []  : List A
+  _∷_ : A → List A → List A
+
+data Vec (A : Set) : ℕ → Set where
+  []  : Vec A 0
+  _∷_ : ∀ {n} → A → Vec A n → Vec A (suc n)
+
+data not-null {A : Set} : List A → Set where
+  indeed : ∀ {x xs} → not-null (x ∷ xs)
+
+head : ∀ {A} → Σ xs ∶ List A • not-null xs → A
+head ([] , ())
+head (x ∷ xs , indeed) = x
+
+head′ : ∀ {A n} → Vec A (suc n) → A
+head′ (x ∷ xs) = x
+#+END_SRC
+
+#+latex: \noindent
+In the definition of ~head~, we pattern match on the possible ways to form a list
+---namely, ~[]~ and ~_∷_~. In the first case, we perform /case analysis/ on the shape
+of the proof of ~not-null []~, but there is no way to form such a proof and so we
+have “defined” the first clause of ~head~ using /a definition by zero-cases/ on the
+~non-null~ proof. The ‘absurd pattern’ ~()~ indicates the impossibility of a construction.
+# and is covered later in section ref:sec:absurd_pattern.
+
+This phenomenon applies not only to derived concepts such as non-emptiness, but
+also to explicit features of a datatype. A common scenario is when two instances
+of an algebraic structure share the same carrier and thus it is reasonable to
+connect the two somehow by a coherence axiom. Perhaps the most popular instance
+of this scenario is in the setting of rings: There is an additive monoid ~(R, +,
+1)~ and a multiplicative monoid ~(R, ×, 0)~ on the same underlying set ~R~, and their
+interaction is dictated by two distributivity axioms, such as $a \times (b + c) = (a
+\times b) + (a \times c)$. As with ~head~ above, depending on which features of a monoid are
+exposed upfront, such axioms may be either difficult to express or relatively
+easy.
+
+For brevity, since our interest is in expressing the aforementioned
+distributivity axiom, we shall ignore all other features of a monoid, to obtain
+a magma. {{{code(Distributivity is Difficult to Express)}}}
+#+BEGIN_SRC agda :tangle Distributivity.agda :prologue "module Distributivity where \nopen import Notation hiding (_+_) \n"
+record Magma₀ : Set₁ where
+  field
+    Carrier : Set
+    _⨾_      : Carrier → Carrier → Carrier
+
+record Distributivity₀ (Additive Multiplicative : Magma₀) : Set₁ where
+
+  open Magma₀ Additive       renaming (Carrier to R₊; _⨾_ to _+_)
+  open Magma₀ Multiplicative renaming (Carrier to Rₓ; _⨾_ to _×_)
+
+  field shared-carrier :  R₊ ≡ Rₓ
+
+  coeₓ : R₊ → Rₓ
+  coeₓ = subst id shared-carrier
+
+  coe₊ : Rₓ → R₊
+  coe₊ = subst id (sym shared-carrier)
+
+  field distribute₀ : ∀ {a : Rₓ} {b c : R₊}
+                    →   a × coeₓ (b + c)
+                      ≡ coeₓ (coe₊(a × coeₓ b) + coe₊(a × coeₓ c))
+#+END_SRC
+It is a bit of a challenge to understand the type of ~distribute₀~. Even though
+the carriers of the monoids are propositionally equal, ~R₊ ≡ Rₓ~, they are not the
+same by definition ---the notion of equality wass defined in
+section ref:sec:propositional-equality. As such, we are forced to “coe”rce back and
+forth; leaving the distributivity axiom as an exotic property of addition,
+multiplication, and coercions. Even worse, without the cleverness of declaring
+two coercion helpers, the typing of ~distribute₀~ would have been so large and
+confusing that the concept would be rendered near useless.
+
+In *theory*, parameterised structures are no different from their unparameterised,
+or “bundled”, counterparts. However, in *practice*, this is wholly untrue: Below
+we can phrase the distributivity axiom nearly as it was stated informally
+earlier since the shared carrier is declared upfront. {{{code(Distributivity is
+Expressed Easily with Unbundled Structures)}}}
+#+BEGIN_SRC agda :tangle Distributivity.agda
+record Magma₁ (Carrier : Set) : Set₁ where
+  field
+    _⨾_      : Carrier → Carrier → Carrier
+
+record Distributivity₁
+    (R : Set) {- The shared carrier -}
+    (Additive Multiplicative : Magma₁ R)  : Set₁ where
+
+  open Magma₁ Additive       renaming (_⨾_ to _+_)
+  open Magma₁ Multiplicative renaming (_⨾_ to _×_)
+
+  field distribute₁ : ∀ {a b c : R} →  a × (b + c) ≡ (a × b) + (a × c)
+#+END_SRC
+In contrast to the bundled definition of magmas, this form requires no cleverness to form coercion helpers,
+and is closer to the informal and usual distributivity statement.
+
+By the same arguments above, the simple statement relating the two units of a
+ring $1 × r + 0 = r$ ---or any units of monoids sharing the same carrier--- is
+easily phrased using an unbundled presentation and would require coercions
+otherwise. We invite the reader to pause at this moment to appreciate the
+difficulty in simply expressing this property.
+
+# Computing is filled with exciting problems; machines should help us reduce if
+# not eliminate boring tasks.
+
+#+latex: \begin{mybox}{Unbundling Design Pattern}
+If a feature of a class is shared among instances, then use an unbundled form of the class
+to avoid “coercion hell”.
+#+latex: \end{mybox}
+
+Observe that we assigned superficial renamings, aliases, to the prototypical
+binary operation ~_⨾_~ so that we may phrase the distributivity axiom in its
+expected notational form. This leads us to our next topic of discussion.
+
+** Renaming
+<<sec:examples:renaming>>
+#+latex: \label{sec:examples:renaming}
+
+The use of an idea is generally accompanied with particular notation that is
+accepted by its primary community. Even though the choice of bound names it
+theoretically irrelevant, certain communities would consider it unacceptable to
+deviate from convention. Here are a few examples:
+
+- $x(f)$ :: Using $x$ as a /function/ and $f$ as an /argument/.; likewise
+  $\frac{\partial x}{\partial f}$.
+
+  With the exception of discussions involving the Yoneda Lemma, or
+  continuations, such a notation is simply /‘wrong’/.
+
+- $a × a = a$ :: An idempotent operation denoted by multiplication; likewise for
+  commutative operations. It is more common to use addition or join, ‘⊔’.
+
+- $0 × a ≈ a$ :: The identity of “multiplicative symbols” should never resemble
+  ‘$0$’; instead it should resemble ‘$1$’ or, at least, ‘$e$’ ---the standard
+  abbreviation of the influential algebraic works of German authors who used
+  “Einheit” which means “identity”.
+
+- $f + g$ :: Even if monoids are defined with the prototypical binary operation
+  denoted ‘+’, it would be /‘wrong’/ to continue using it to denote functional
+  composition.  One would need to introduce the new name ‘∘’ or, at least, ‘·’.
+
+From the few examples above, it is immediate that to even present a prototypical
+notation for an idea, one immediately needs auxiliary notation when specialising
+to a particular instance. For example, to use ‘additive symbols’ such as $+, ⊔,
+⊕$ to denote an arbitrary binary operation leads to trouble in the function
+composition instance above, whereas using ‘multiplicative symbols’ such as $×,
+·, *$ leads to trouble in the idempotent case above.
+Regardless of prototypical choices, there will always be a need to rename.
+
+#+latex: \begin{mybox}{Renaming Design Pattern}
+Use superficial aliases to better communicate an idea; especially so, when the
+topic domain is specialised.
+#+latex: \end{mybox}
+
+Let's now turn to examples of renaming from three libraries:
+1. Agda's “standard library” cite:agda_std_lib,
+2. The “RATH-Agda” library cite:RATH, and
+3. A recent “agda-categories” library cite:copumpkin.
+
+Each will provide a workaround to the problem of renaming. In particular, the
+solutions are, respectively:
+
+1. *Rename as needed.*
+   - There is no systematic approach to account for the many common renamings.
+   - Users are encouraged to do the same, since the standard library does it this way.
+
+2. *Pack-up the /common/ renamings as modules, and invoke them when needed.*
+   - Which renamings are provided is left at the discretion of the designer
+     ---even ‘expected’ renamings may not be there since, say, there are too
+     many choices or insufficient man power to produce them.
+   - The pattern to pack-up renamings leads nicely to consistent naming.
+
+3. *Names don't matter.*
+   - Users of the library need to be intimately connected with the Agda
+     definitions and domain to use the library.
+   - Consequently, there are many inconsistencies in naming.
+
+# #
+The ~open ⋯ public ⋯ renaming ⋯~ pattern shown below will be presented later,
+section ref:sec:PF:practicality, as a library method.
+
+*** Renaming Problems from Agda's Standard Library
+
+[[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#2757][Here are four excerpts from Agda's standard library]], notice how the prototypical
+notation for monoids is renamed *repeatedly* /as needed/. Sometimes it is relabelled
+with additive symbols, other times with multiplicative symbols. The content
+itself is not important, instead the focus is on the renaming that takes place
+---as such, the fontsize is intentionally tiny.
+
+#+begin_parallelNB org
+{{{code(Additive Renaming
+---IsNearSemiring)}}}
+#+ATTR_LATEX: :options fontsize=\tiny
+#+BEGIN_SRC agda
+record IsNearSemiring {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+                      (+ * : Op₂ A) (0# : A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    +-isMonoid    : IsMonoid ≈ + 0#
+    *-isSemigroup : IsSemigroup ≈ *
+    distribʳ      : * DistributesOverʳ +
+    zeroˡ         : LeftZero 0# *
+
+  open IsMonoid +-isMonoid public
+         renaming ( assoc       to +-assoc
+                  ; ∙-cong      to +-cong
+                  ; isSemigroup to +-isSemigroup
+                  ; identity    to +-identity
+                  )
+
+  open IsSemigroup *-isSemigroup public
+         using ()
+         renaming ( assoc    to *-assoc
+                  ; ∙-cong   to *-cong
+                  )
+#+END_SRC
+
+{{{code(Additive Renaming Again ---IsSemiringWithoutOne)}}}
+#+ATTR_LATEX: :options fontsize=\tiny
+#+BEGIN_SRC agda
+record IsSemiringWithoutOne {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+                            (+ * : Op₂ A) (0# : A) : Set (a ⊔ ℓ)
+ where
+  open FunctionProperties ≈
+  field
+    +-isCommutativeMonoid : IsCommutativeMonoid ≈ + 0#
+    *-isSemigroup         : IsSemigroup ≈ *
+    distrib               : * DistributesOver +
+    zero                  : Zero 0# *
+
+  open IsCommutativeMonoid +-isCommutativeMonoid public
+         hiding (identityˡ)
+         renaming ( assoc       to +-assoc
+                  ; ∙-cong      to +-cong
+                  ; isSemigroup to +-isSemigroup
+                  ; identity    to +-identity
+                  ; isMonoid    to +-isMonoid
+                  ; comm        to +-comm
+                  )
+
+  open IsSemigroup *-isSemigroup public
+         using ()
+         renaming ( assoc       to *-assoc
+                  ; ∙-cong      to *-cong
+                  )
+#+END_SRC
+#+end_parallelNB
+# #
+#+begin_parallelNB org
+{{{code(Additive Renaming a 3ʳᵈ Time and Multiplicative Renaming ---IsSemiringWithoutAnnihilatingZero)}}}
+#+ATTR_LATEX: :options fontsize=\tiny
+#+BEGIN_SRC agda
+record IsSemiringWithoutAnnihilatingZero
+         {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+         (+ * : Op₂ A) (0# 1# : A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    +-isCommutativeMonoid : IsCommutativeMonoid ≈ + 0#
+    *-isMonoid            : IsMonoid ≈ * 1#
+    distrib               : * DistributesOver +
+
+  open IsCommutativeMonoid +-isCommutativeMonoid public
+         hiding (identityˡ)
+         renaming ( assoc       to +-assoc
+                  ; ∙-cong      to +-cong
+                  ; isSemigroup to +-isSemigroup
+                  ; identity    to +-identity
+                  ; isMonoid    to +-isMonoid
+                  ; comm        to +-comm
+                  )
+
+  open IsMonoid *-isMonoid public
+         using ()
+         renaming ( assoc       to *-assoc
+                  ; ∙-cong      to *-cong
+                  ; isSemigroup to *-isSemigroup
+                  ; identity    to *-identity
+                  )
+#+END_SRC
+{{{code(Additive Renaming a 4ᵗʰ Time and Second Multiplicative Renaming ---IsRing)}}}
+#+ATTR_LATEX: :options fontsize=\tiny
+#+BEGIN_SRC agda
+record IsRing
+         {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+         (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) : Set (a ⊔ ℓ)
+ where
+  open FunctionProperties ≈
+  field
+    +-isAbelianGroup : IsAbelianGroup ≈ _+_ 0# -_
+    *-isMonoid       : IsMonoid ≈ _*_ 1#
+    distrib          : _*_ DistributesOver _+_
+
+  open IsAbelianGroup +-isAbelianGroup public
+         renaming ( assoc               to +-assoc
+                  ; ∙-cong              to +-cong
+                  ; isSemigroup         to +-isSemigroup
+                  ; identity            to +-identity
+                  ; isMonoid            to +-isMonoid
+                  ; inverse             to -‿inverse
+                  ; ⁻¹-cong             to -‿cong
+                  ; isGroup             to +-isGroup
+                  ; comm                to +-comm
+                  ; isCommutativeMonoid to +-isCommutativeMonoid
+                  )
+
+  open IsMonoid *-isMonoid public
+         using ()
+         renaming ( assoc       to *-assoc
+                  ; ∙-cong      to *-cong
+                  ; isSemigroup to *-isSemigroup
+                  ; identity    to *-identity
+                  )
+#+END_SRC
+#+end_parallelNB
+
+At first glance, one solution would be to package up these renamings into helper modules.
+For example, consider the setting of monoids.
+
+{{{code(Original ---Prototypical--- Notations)}}}
+#+BEGIN_SRC agda
+record IsMonoid {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+                (∙ : Op₂ A) (ε : A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    isSemigroup : IsSemigroup ≈ ∙
+    identity    : Identity ε ∙
+
+record IsCommutativeMonoid {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+                           (_∙_ : Op₂ A) (ε : A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    isSemigroup : IsSemigroup ≈ _∙_
+    identityˡ   : LeftIdentity ε _∙_
+    comm        : Commutative _∙_
+
+    ⋮
+  isMonoid : IsMonoid ≈ _∙_ ε
+  isMonoid = record { ⋯ }
+#+END_SRC
+{{{code(Renaming Helper Modules)}}}
+#+BEGIN_SRC agda
+module AdditiveIsMonoid {a ℓ} {A : Set a} {≈ : Rel A ℓ}
+               {_∙_ : Op₂ A} {ε : A} (+-isMonoid : IsMonoid ≈ _∙_ ε)  where
+
+   open IsMonoid +-isMonoid public
+         renaming ( assoc       to +-assoc
+                  ; ∙-cong      to +-cong
+                  ; isSemigroup to +-isSemigroup
+                  ; identity    to +-identity
+                  )
+
+module AdditiveIsCommutativeMonoid {a ℓ} {A : Set a} {≈ : Rel A ℓ}
+               {_∙_ : Op₂ A} {ε : A} (+-isCommutativeMonoid : IsMonoid ≈ _∙_ ε)  where
+
+   open AdditiveIsMonoid (CommutativeMonoid.isMonoid +-isCommutativeMonoid) public
+   open IsCommutativeMonoid +-isCommutativeMonoid public using ()
+      renaming ( comm to +-comm
+               ; isMonoid to +-isMonoid)
+#+END_SRC
+However, one then needs to make similar modules for /additive notation/ for
+~IsAbelianGroup, IsRing, IsCommutativeRing, …~. Moreover, this still invites
+repetition: Additional notations, as used in ~IsSemiring~, would require
+additional helper modules.
+{{{code(More Necessary Renaming Helper Modules)}}}
+#+BEGIN_SRC agda
+module MultiplicativeIsMonoid {a ℓ} {A : Set a} {≈ : Rel A ℓ}
+               {_∙_ : Op₂ A} {ε : A} (*-isMonoid : IsMonoid ≈ _∙_ ε)  where
+
+   open IsMonoid *-isMonoid public
+         renaming ( assoc       to *-assoc
+                  ; ∙-cong      to *-cong
+                  ; isSemigroup to *-isSemigroup
+                  ; identity    to *-identity
+                  )
+#+END_SRC
+
+Unless carefully organised, such notational modules would bloat the standard
+library, resulting in difficulty when navigating the library. As it stands
+however, the new algebraic structures appear large and complex due to the
+“renaming hell” encountered to provide the expected conventional notation.
+*** Renaming Problems from the RATH-Agda Library
+
+The impressive [[http://relmics.mcmaster.ca/RATH-Agda/RATH-Agda-2.2.pdf][Relational Algebraic Theories in Agda]] library takes a disciplined
+approach: Copy-paste notational modules, possibly using a find-replace mechanism
+to vary the notation. The use of a find-replace mechanism leads to consistent naming
+across different notations.
+
+#+caption: Relation.Binary.Setoid.Utils
+Quoting the library,
+/For contexts where calculation in different setoids is necessary, we provide
+“decorated” versions of the ~Setoid′~ and ~SetoidCalc~ interfaces:/
+{{{code(Seotoid𝒟 Renamings ---𝒟decorated Synonyms)}}}
+#+ATTR_LATEX: :options fontsize=\tiny
+#+BEGIN_SRC agda
+module SetoidA {i j : Level} (S : Setoid i j) = Setoid′ S renaming
+    ( ℓ to ℓA ; Carrier to A₀ ; _≈_ to _≈A_ ; ≈-isEquivalence to ≈A-isEquivalence
+    ; ≈-isPreorder to ≈A-isPreorder ; ≈-preorder to ≈A-preorder
+    ; ≈-indexedSetoid to ≈A-indexedSetoid
+    ; ≈-refl to ≈A-refl ; ≈-reflexive to ≈A-reflexive ; ≈-sym to ≈A-sym
+    ; ≈-trans to ≈A-trans ; ≈-trans₁ to ≈A-trans₁ ; ≈-trans₂ to ≈A-trans₂
+    ; _⟨≈≈⟩_ to _⟨≈A≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈A≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈A˘≈⟩_
+    ; _⟨≈˘≈˘⟩_ to _⟨≈A˘≈˘⟩_; _⟨≡≈⟩_ to _⟨≡≈A⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈A˘⟩_
+    ; _⟨≡˘≈⟩_ to _⟨≡˘≈A⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈A˘⟩_ ; _⟨≈≡⟩_ to _⟨≈A≡⟩_
+    ; _⟨≈≡˘⟩_ to _⟨≈A≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈A˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈A˘≡˘⟩_
+    )
+
+module SetoidB {i j : Level} (S : Setoid i j) = Setoid′ S renaming
+    ( ℓ to ℓB ; Carrier to B₀ ; _≈_ to _≈B_ ; ≈-isEquivalence to ≈B-isEquivalence
+    ; ≈-isPreorder to ≈B-isPreorder ; ≈-preorder to ≈B-preorder
+    ; ≈-indexedSetoid to ≈B-indexedSetoid
+    ; ≈-refl to ≈B-refl ; ≈-reflexive to ≈B-reflexive ; ≈-sym to ≈B-sym
+    ; ≈-trans to ≈B-trans ; ≈-trans₁ to ≈B-trans₁ ; ≈-trans₂ to ≈B-trans₂
+    ; _⟨≈≈⟩_ to _⟨≈B≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈B≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈B˘≈⟩_
+    ; _⟨≈˘≈˘⟩_ to _⟨≈B˘≈˘⟩_ ; _⟨≡≈⟩_ to _⟨≡≈B⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈B˘⟩_
+    ; _⟨≡˘≈⟩_ to _⟨≡˘≈B⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈B˘⟩_ ; _⟨≈≡⟩_ to _⟨≈B≡⟩_
+    ; _⟨≈≡˘⟩_ to _⟨≈B≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈B˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈B˘≡˘⟩_
+    )
+
+module SetoidC {i j : Level} (S : Setoid i j) = Setoid′ S renaming
+    ( ℓ to ℓC ; Carrier to C₀ ; _≈_ to _≈C_ ; ≈-isEquivalence to ≈C-isEquivalence
+    ; ≈-isPreorder to ≈C-isPreorder ; ≈-preorder to ≈C-preorder
+    ; ≈-indexedSetoid to ≈C-indexedSetoid
+    ; ≈-refl to ≈C-refl ; ≈-reflexive to ≈C-reflexive ; ≈-sym to ≈C-sym
+    ; ≈-trans to ≈C-trans ; ≈-trans₁ to ≈C-trans₁ ; ≈-trans₂ to ≈C-trans₂
+    ; _⟨≈≈⟩_ to _⟨≈C≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈C≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈C˘≈⟩_
+    ; _⟨≈˘≈˘⟩_ to _⟨≈C˘≈˘⟩_ ; _⟨≡≈⟩_ to _⟨≡≈C⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈C˘⟩_
+    ; _⟨≡˘≈⟩_ to _⟨≡˘≈C⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈C˘⟩_ ; _⟨≈≡⟩_ to _⟨≈C≡⟩_
+    ; _⟨≈≡˘⟩_ to _⟨≈C≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈C˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈C˘≡˘⟩_
+    )
+#+END_SRC
+
+#+latex: \noindent
+This keeps going to cover the alphabet ~SetoidD, SetoidE, SetoidF, …, SetoidZ~
+then we shift to subscripted versions ~Setoid₀, Setoid₁, …, Setoid₄~.
+
+Next, RATH-Agda shifts to the need to calculate with setoids:
+{{{code(SeotoidCalc𝒟 Renamings ---𝒟decorated Synonyms)}}}
+#+ATTR_LATEX: :options fontsize=\tiny
+#+BEGIN_SRC agda
+module SetoidCalcA {i j : Level} (S : Setoid i j) where
+  open SetoidA S public
+  open SetoidCalc S public renaming
+    ( _□ to _□A
+    ; _≈⟨_⟩_ to _≈A⟨_⟩_
+    ; _≈˘⟨_⟩_ to _≈A˘⟨_⟩_
+    ; _≈≡⟨_⟩_ to _≈A≡⟨_⟩_
+    ; _≈⟨⟩_ to _≈A⟨⟩_
+    ; _≈≡˘⟨_⟩_ to _≈A≡˘⟨_⟩_
+    ; ≈-begin_ to ≈A-begin_
+    )
+module SetoidCalcB {i j : Level} (S : Setoid i j) where
+  open SetoidB S public
+  open SetoidCalc S public renaming
+    ( _□ to _□B
+    ; _≈⟨_⟩_ to _≈B⟨_⟩_
+    ; _≈˘⟨_⟩_ to _≈B˘⟨_⟩_
+    ; _≈≡⟨_⟩_ to _≈B≡⟨_⟩_
+    ; _≈⟨⟩_ to _≈B⟨⟩_
+    ; _≈≡˘⟨_⟩_ to _≈B≡˘⟨_⟩_
+    ; ≈-begin_ to ≈B-begin_
+    )
+module SetoidCalcC {i j : Level} (S : Setoid i j) where
+  open SetoidC S public
+  open SetoidCalc S public renaming
+    ( _□ to _□C
+    ; _≈⟨_⟩_ to _≈C⟨_⟩_
+    ; _≈˘⟨_⟩_ to _≈C˘⟨_⟩_
+    ; _≈≡⟨_⟩_ to _≈C≡⟨_⟩_
+    ; _≈⟨⟩_ to _≈C⟨⟩_
+    ; _≈≡˘⟨_⟩_ to _≈C≡˘⟨_⟩_
+    ; ≈-begin_ to ≈C-begin_
+    )
+#+END_SRC
+
+#+latex: \noindent
+This keeps going to cover the alphabet ~SetoidCalcD, SetoidCalcE, SetoidCalcF, …, SetoidCalcZ~
+then we shift to subscripted versions ~SetoidCalc₀, SetoidCalc₁, …, SetoidCalc₄~.
+If we ever have more than 4 setoids in hand, or prefer other decorations, then
+we would need to produce similar helper modules.
+| Each ~Setoid𝒳𝒳𝒳~ takes 10 lines, for a total of at-least 600 lines! |
+
+Indeed, such renamings bloat the library, but, unlike the Standard Library, they
+allow new records to be declared easily ---“renaming hell” has been deferred
+from the user to the library designer. However, later on, in ~Categoric.CompOp~,
+we see the variations ~LocalEdgeSetoid𝒟~ and ~LocalSetoidCalc𝒟~ where decoration
+~𝒟~ ranges over ~₀, ₁, ₂, ₃, ₄, R~. The inconsistency in not providing the other
+decorations used for ~Setoid𝒟~ earlier is understandable: These take time to
+write and maintain.
+
+# Various similar decorations can be found in RATH, such as for ~Semigroupoid𝒟~ in
+# ~Categoric.Semigroupoid~.
+
+*** Renaming Problems from the Agda-categories Library
+
+With RATH-Agda's focus on notational modules at one end of the spectrum, and the
+Standard Library's casual do-as-needed in the middle, it is inevitable that
+there are other equally popular libraries at the other end of the spectrum. The
+[[https://github.com/agda/agda-categories][Agda-categories]] library seemingly ignored the need for meaningful names
+altogether. Below are a few notable instances.
+
++ Functors have fields named ~F₀, F₁, F-resp-≈, …~.
+  - This could be considered reasonable even if one has a functor named ~G~.
+  - This [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Product.agda][leads to expressions]] such as ~< F.F₀ , G.F₀ >~.
+  - Incidentally, and somewhat inconsistently, a ~Pseudofunctor~ has fields ~P₀,
+    P₁, P-homomophism~ ---where the latter is documented /P preserves ≃/.
+
+  On the opposite extreme, RATH-Agda's focus on naming has its functor record
+  with fields named ~obj, mor, mor-cong~ instead of ~F₀, F₁, F-resp-≈~ ---which
+  refer to a functor's “obj”ect map, “mor”phism map, and the fact that the
+  “mor”phism map is a “cong”ruence.
+
++ Such lack of concern for naming might be acceptable for well-known concepts
+  such as functors, where some communities use ~Fᵢ~ to denote the object/0-cell
+  or morphism/1-cell operations. However, considering [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/SubCategory.agda][subcategories]] one sees
+  field names ~U, R, Rid, _∘R_~ which are wholly unhelpful. Instead, more
+  meaningful names such as ~embed, keep, id-kept, keep-resp-∘~ could have been
+  used.
+
++ The ~Iso, Inverse,~ and ~NaturalIsomorphism~ records have fields ~to / from, f
+  / f⁻¹,~ and ~F⇒G / F⇐G~, respectively.
+
+  #  ( ~Categories.Category~ )
+
+  Even though some of these build on one another, with Agda's namespacing
+  features, all “forward” and “backward” morphism fields could have been named,
+  say, ~to~ and ~from~. The naming may not have propagated from ~Iso~ to other records
+  possibly due to the low priority for names.
+
+  From a usability perspective, projections like ~f~ are reminiscent of the OCaml
+  community and may be more acceptable there. Since Agda is more likely to
+  attract Haskell programmers than OCaml ones, such a particular projection
+  seems completely out of place. Likewise, the field name ~F⇒G~ seems only
+  appropriate if the functors involved happen to be named ~F~ and ~G~.
+
+  These unexpected deviations are not too surprising since the Agda-categories
+  library seems to give names no priority at all. Field projections are treated
+  little more than classic array indexing with numbers.
+
+
+By largely avoiding renaming, Agda-categories has no “renaming hell” anywhere at
+the heavy price of being difficult to read: Any attempt to read code requires
+one to “squint away” the numerous projections to “see” the concepts of
+relevance. Consider the [[https://github.com/agda/agda-categories/blob/master/src/Categories/Yoneda.agda][following excerpt]].
+{{{code(Symbol Soup)}}}
+#+BEGIN_SRC agda
+helper : ∀ {F : Functor (Category.op C) (Setoids ℓ e)}
+                     {A B : Obj} (f : B ⇒ A)
+                     (β γ : NaturalTransformation Hom[ C ][-, A ] F) →
+                   Setoid._≈_ (F₀ Nat[Hom[C][-,c],F] (F , A)) β γ →
+                   Setoid._≈_ (F₀ F B) (η β B ⟨$⟩ f ∘ id) (F₁ F f ⟨$⟩ (η γ A ⟨$⟩ id))
+          helper {F} {A} {B} f β γ β≈γ = S.begin
+            η β B ⟨$⟩ f ∘ id          S.≈⟨ cong (η β B) (id-comm ○ (⟺ identityˡ)) ⟩
+            η β B ⟨$⟩ id ∘ id ∘ f     S.≈⟨ commute β f CE.refl ⟩
+            F₁ F f ⟨$⟩ (η β A ⟨$⟩ id) S.≈⟨ cong (F₁ F f) (β≈γ CE.refl) ⟩
+            F₁ F f ⟨$⟩ (η γ A ⟨$⟩ id) S.∎
+            where module S where
+                    open Setoid (F₀ F B) public
+                    open SetoidR (F₀ F B) public
+#+END_SRC
+
+#+latex: \noindent
+Here are a few downsides of not renaming:
+#+latex: \vspace{-1em}
+1. The type of the function is difficult to comprehend; though it need not be.
+   - Take ~_≈₀_ = Setoid._≈_ (F₀ Nat[Hom[C][-,c],F] (F , A))~, and
+   - Take ~_≈₁_ = Setoid._≈_ (F₀ F B)~,
+   - Then the type says: If ~β ≈₀ γ~ then {{{newline}}}
+     ~η β B ⟨$⟩ f ∘ id ≈₁ F₁ F f ⟨$⟩ (η γ A ⟨$⟩ id)~
+     ---a naturality condition!
+
+2. The short proof is difficult to read!
+   - The repeated terms such as ~η β B~ and ~η β A~ could have been renamed with
+     mnemoic-names such as ~η₁, η₂~ or ~ηₛ, ηₜ~ for ‘s’ource/1 and ‘t’arget/2.
+   - Recall that functors ~F~ have projections ~Fᵢ~, so the “mor”phism map on a
+     given morphism ~f~ becomes ~F₁ F f~, as in the excerpt above; however, using
+     RATH-Agda's naming it would have been ~mor F f~.
+
+Since names are given a lower priority, one no longer needs to perform renaming.
+Instead, one is content with projections. The downside is now there are too many
+projections, leaving code difficult to comprehend. Moreover, this leads to
+inconsistent renaming.
+
+** From ~Is𝓧~ to ~𝓧~ ---Packing away components
+
+ <<sec:examples:IsX>>
+#+latex: \label{sec:examples:IsX}
+
+ The distributivity axiom from earlier required an unbundled structure /after/ a
+ completely bundled structure was initially presented. Usually structures are
+ rather large and have libraries built around them, so building and using an
+ alternate form is not practical. However, multiple forms are usually desirable.
+
+ To accommodate the need for both forms of structure, Agda's Standard Library
+ begins with a [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#1][type-level predicate]] such as ~IsSemigroup~ below, then [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#1][packs that
+ up into a record]]. Here is an instance, along with comments from the library.
+ {{{code(From Is𝒳 to 𝒳 ---where 𝒳 is Semigroup)}}}
+ #+caption: From the [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#601][Agda Standard Library on Algebra]]
+ #+BEGIN_SRC agda
+-- Some algebraic structures (not packed up with sets, operations, etc.)
+record IsSemigroup {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+                   (∙ : Op₂ A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    isEquivalence : IsEquivalence ≈
+    assoc         : Associative ∙
+    ∙-cong        : ∙ Preserves₂ ≈ ⟶ ≈ ⟶ ≈
+
+-- Definitions of algebraic structures like monoids and rings (packed in records
+-- together with sets, operations, etc.)
+record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
+  infixl 7 _∙_
+  infix  4 _≈_
+  field
+    Carrier     : Set c
+    _≈_         : Rel Carrier ℓ
+    _∙_         : Op₂ Carrier
+    isSemigroup : IsSemigroup _≈_ _∙_
+ #+END_SRC
+
+ If we refer to the former as ~Is𝒳~ and the latter as ~𝒳~, then we can see similar
+ instances in the standard library for ~𝒳~ being: ~Monoid, Group, AbelianGroup,
+ CommutativeMonoid,~ ~SemigroupWithoutOne, NearSemiring, Semiring,
+ CommutativeSemiringWithoutOne,~ {{{newline}}} ~CommutativeSemiring,
+ CommutativeRing~.
+
+ It thus seems that to present an idea ~𝒳~, we require the same amount of space to
+ present it unpacked or packed, and so doing both *duplicates the process* and
+ only hints at the underlying principle: From ~Is𝒳~ we pack away the carriers and
+ function symbols to obtain ~𝒳~. The converse approach, starting from =𝒳= and going
+ to ~Is𝒳~ is not practical, as it leads to numerous unhelpful reflexivity proofs.
+
+ #+latex: \begin{mybox}{ Predicate Design Pattern}
+Present a concept 𝒳 first as a predicate ~Is𝒳~ on types
+ and function symbols, then as a type ~𝒳~ consisting of types, function symbols,
+ and a proof that together they satisfy the ~Is𝒳~ predicate.
+#+latex: \tcblower
+ *Σ Padding Anti-Pattern*: Starting from a bundled up type ~𝒳~ consisting of types,
+ function symbols, and how they interact, one may form the type {{{newline}}}
+ ~Σ X ∶ 𝒳 • 𝒳.f X ≡ 𝒇₀~ to specialise the feature ~𝒳.f~ to the particular
+ choice ~𝒇₀~.
+ However, nearly all uses of this type will be of the form ~(X , refl)~ where the
+ proof is unhelpful noise.
+#+latex: \end{mybox}
+
+ Since the standard library uses the predicate pattern, ~Is𝒳~, which requires all
+ sets and function symbols, the Σ-padding anti-pattern becomes a necessary evil.
+ Instead, it would be preferable to have the family ~𝒳ᵢ~ which is the same as ~Is𝒳~
+ but only takes ~𝒾~-many elements ---c.f., ~Magma₀~ and ~Magma₁~ above. However,
+ writing these variations and the necessary functions to move between them is not only tedious
+ but also error prone. Later on, also demonstrated in
+cite:DBLP:conf/gpce/Al-hassyCK19, we shall show
+ how the bundled form ~𝒳~ acts as */the/* definition, with other forms being
+ derived-as-needed.
+
+ Incidentally, the particular choice ~𝒳₁~, a predicate on one carrier, deserves
+ special attention. In Haskell, instances of such a type are generally known as
+ /typeclass instances/ and ~𝒳₁~ is known as a /typeclass/. As discussed earlier, in
+ Agda, we may mark such implementations for instance search using the keyword
+ ~instance~.
+
+ #+latex: \begin{mybox}{Typeclass Design Pattern}
+ Present a concept 𝒳 as a unary predicate ~𝒳₁~ that associates functions and
+ properties with a given type. Then, mark all implementations with ~instance~ so
+ that arbitrary ~𝒳~-terms may be written without having to specify the particular
+ instance.
+
+ #+latex: \tcblower
+As discussed in section ???, when there are multiple instance of an 𝒳-structure on a particular type, only
+ one of them may be marked for instance search in a given scope.
+#+latex: \end{mybox}
+
+** Redundancy, Derived Features, and Feature Exclusion
+<<sec:redundancy_derived_features_feature_exclusion>>
+#+latex: \label{sec:redundancy_derived_features_feature_exclusion}
+<<sec:examples:redundancy>>
+#+latex: \label{sec:examples:redundancy}
+
+ A tenet of software development is not to over-engineer solutions.  For
+ example, if we need a notion of untyped composition, we may use
+ ~Monoid~. However, at a later stage, we may realise that units are inappropriate
+ and so we need to drop them to obtain the weaker notion of ~Semigroup~ ---for
+ instance, if we wish to model finite functions as hashmaps, we need to omit the
+ identity functions since they may have infinite domains; and we cannot simply
+ enforce a convention, say, to treat empty hashmaps as the identities since then
+ we would lose the empty functions.  \iffalse Incidentally, this example, among
+ others, led to dropping the identity features from Categories to obtain
+ so-called Semigroupoids. \fi In weaker languages, we could continue to use the
+ monoid interface at the cost of “throwing an exception” whenever the identity
+ is used. However, this breaks the /Interface Segregation Principle: Users
+ should not be forced to bother with features they are not interested in/
+ cite:old-design-patterns-solid. A prototypical scenario is exposing an
+ expressive interface, possibly with redundancies, to users, but providing a
+ minimal self-contained counterpart by dropping some features for the sake of
+ efficiency or to act as a “smart constructor” that takes the least amount of
+ data to reconstruct the rich interface.
+
+ More concretely, in the Agda-categories library one finds concepts with
+ expressive interfaces, with redundant features, prototypically named ~𝒳~, along
+ with their minimal self-contained versions, prototypically named ~𝒳Helper~. In
+ particular, the [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Core.agda][Category]] type and the [[https://github.com/agda/agda-categories/blob/master/src/Categories/NaturalTransformation/NaturalIsomorphism.agda][natural isomorphism]] type are instances of
+ such a pattern. The redundant features are there to make the lives of users
+ easier; e.g., quoting Agda-categories,
+ /We add a symmetric proof of associativity so that the opposite category of the opposite category is
+ definitionally equal to the original category./
+ To underscore the intent, we present below a minimal setup needed to express the
+ issue. The semigroup definition contains a redundant associativity axiom
+ ---which can be obtained from the first one by applying symmetry of equality.
+ This is done purposefully so that the “opposite, or dual, transformer” ~_˘~ is
+ self-inverse on-the-nose; i.e., definitionally rather than propositionally
+ equal.
+ Definitionally equality does not need to be ‘invoked’, it is used silently when
+ needed, thereby making the redundant setup worth it.
+ {{{code(Redundancy can lead to silently used equalities)}}}
+ #+begin_src agda :tangle op-involutive-on-the-nose.agda :prologue module op-involutive-on-the-nose where \nopen import Notation\n
+record Semigroup : Set₁ where
+  constructor 𝒮
+  field
+    Carrier : Set
+    _⨾_     : Carrier → Carrier → Carrier
+    assocʳ : ∀ {x y z} →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+    assocˡ : ∀ {x y z} →  x ⨾ (y ⨾ z)  ≡  (x ⨾ y) ⨾ z
+
+    -- Notice:  assocˡ ≈ sym assocʳ
+
+_˘ : Semigroup → Semigroup
+(𝒮 Carrier _⨾_ assocʳ assocˡ) ˘  =  𝒮 Carrier (λ b a → a ⨾ b)  assocˡ assocʳ
+
+˘˘≈id : ∀ {S} → (S ˘) ˘ ≡ S
+˘˘≈id = refl
+ #+end_src
+
+#+latex: \begin{mybox}{On-the-nose Redundancy Design Pattern (Agda-Categories)}
+Include redundant features if they allow certain common constructions to be
+ definitionally equal, thereby requiring no overhead to use such an
+ equality. Then, provide a smart constructor so users are not forced to produce
+ the redundant features manually.
+#+latex: \end{mybox}
+
+
+ Incidentally, since this is not a library method, inconsistencies are bound to
+ arise; in particular, in the ~𝒳~ and ~𝒳Helper~ naming scheme: The
+ ~NaturalIsomorphism~ type has ~NIHelper~ as its minimised version, and the type of
+ [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Monoidal/Symmetric.agda][symmetric monoidal categories]] is oddly called ~Symmetric′~ with its helper named
+ ~Symmetric~. Such issues could be reduced, if not avoided, if library methods
+ could have been used instead.
+
+ It is interesting to note that duality forming operators, such as ~_˘~ above, are
+ a design pattern themselves. How? In the setting of algebraic structures, one
+ picks an operation to have its arguments flipped, then systematically ‘flips’
+ all proof obligations via a user-provided symmetry operator. We shall return to
+ this as a library method in a future section.
+
+ # Since names are given a low priority, the brading operation is simply called ~B~!
+ # A symbol closer to the standard model, inverses ~_⁻¹~, such as ~_˘~ may have been
+ # more suggestive.
+
+ Another example of purposefully keeping redundant features is for the sake of
+ efficiency.
+ #+latex: \vspace{-1em}
+  #+begin_quote
+ For division semi-allegories, even though right residuals, restricted residuals,
+ and symmetric quotients all can be derived from left residuals, we still assume
+ them all as primitive here, since this produces more readable goals, and also
+ makes connecting to optimised implementations easier.
+ ---RATH-Agda section 15.13
+  #+end_quote
+
+ For instance, the above semigroup type could have been augmented with an
+ ordering if we view ~_⨾_~ as a meet-operation. Instead, we lift such a derived
+ operation as a primitive field, in case the user has a better implementation.
+ {{{code(Simulating Default Implementations with Smart Constructors)}}}
+  #+begin_src agda :tangle op-involutive-on-the-nose.agda
+record Order (S : Semigroup) : Set₁ where
+  open Semigroup S public
+  field
+    _⊑_    : Carrier → Carrier → Set
+    ⊑-def  : ∀ {x y} → (x ⊑ y) ≡ (x ⨾ y ≡ x)
+
+  {- Results about _⨾_ and _⊑_ here … -}
+
+defaultOrder : ∀ S → Order S
+defaultOrder S = let open Semigroup S
+                 in record { _⊑_ = λ x y → x ⨾ y ≡ x ; ⊑-def = refl }
+  #+end_src
+
+#+latex: \begin{mybox}{ Efficient Redundancy Design Pattern (RATH-Agda section 17.1)}
+ To enable efficient implementations, replace derived operators with additional
+ fields for them and for the equalities that would otherwise be used as their
+ definitions. Then, provide instances of these fields as derived operators, so
+ that in the absence of more efficient implementations, these default
+ implementations can be used with negligible penalty over a development that
+ defines these operators as derived in the first place.
+#+latex: \end{mybox}
+
+ # Also
+ # which RATH-Agda does a number of times ---e.g., due to the converse
+ # operator, not only are division operators are inter-definable but
+ # symmetric-quotient congruence laws are derivable.
+
+** Extensions
+
+<<sec:examples:extensions>>
+#+latex: \label{sec:examples:extensions}
+
+   In our previous discussion, we needed to drop features from ~Monoid~ to get
+   ~Semigroup~. However, excluding the unit-element from the monoid also required
+   excluding the identity laws. More generally, all features reachable, via
+   occurrence relationships, must be dropped when a particular feature is
+   dropped. In some sense, a generated graph of features needs to be “ripped out”
+   from the starting type, and the generated graph may be the whole type. As
+   such, in general, we do not know if the resulting type even has any features.
+
+   Instead, in an ideal world, it is preferable to begin with a minimal interface
+   then /extend/ it with features as necessary. E.g., begin with ~Semigroup~
+   then add orthogonal features until ~Monoid~ is reached. Extensions are also
+   known as /subclassing/ or /inheritance/.
+
+ #+BEGIN_SRC mermaid :file semigroup-to-monoid.png :theme default :background-color transparent  :tangle no :tangle no :exports results
+graph LR                          %% A “L”eft to “R”ight graph
+
+Semigroup[<strong>Semigroup</strong><br>carrier <br> binary operation <br> associativity law ]
+PointedSemigroup[<strong>PointedSemigroup</strong><br>carrier <br> binary operation <br> +<i>unit-element</i> <br> associativity law ]
+LeftUnitalSemigroup[<strong>LeftUnitalSemigroup</strong><br>carrier <br> binary operation <br> unit-element <br> +<i>left-identity law</i> <br> associativity law ]
+RightUnitalSemigroup[<strong>RightUnitalSemigroup</strong><br>carrier <br> binary operation <br> unit-element <br> +<i>right-identity law</i> <br> associativity law ]
+Monoid[<strong>Monoid</strong><br>carrier <br> binary operation <br> unit-element <br> +<i>left-identity law <br> +right-identity law</i> <br> associativity law ]
+
+Semigroup --> PointedSemigroup
+
+PointedSemigroup --> LeftUnitalSemigroup
+PointedSemigroup --> RightUnitalSemigroup
+
+LeftUnitalSemigroup --> Monoid
+RightUnitalSemigroup --> Monoid
+ #+END_SRC
+
+ #+RESULTS:
+ [[file:semigroup-to-monoid.png]]
+
+ The libraries mentioned thus far generally implement extensions in this way. By
+ way of example, here is how monoids could be built directly from semigroups
+ along a particular path in the above hierarchy.
+
+ {{{code(Extending Semigroup to Obtain Monoid)}}}
+ #+begin_src agda :tangle semigroups_to_monoids.agda :prologue "module semigroups_to_monoids where \nopen import Notation\n"
+record Semigroup : Set₁ where
+  field
+    Carrier : Set
+    _⨾_     : Carrier → Carrier → Carrier
+    assoc  : ∀ {x y z} →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+
+record PointedSemigroup : Set₁ where
+  field semigroup : Semigroup
+  open  Semigroup semigroup public {- (★) -}
+  field Id : Carrier
+
+record LeftUnitalSemigroup : Set₁ where
+  field pointedSemigroup : PointedSemigroup
+  open  PointedSemigroup pointedSemigroup public {- (★) -}
+  field leftId : ∀ {x} → Id ⨾ x ≡ x
+
+record Monoid : Set₁ where
+  field leftUnitalSemigroup : LeftUnitalSemigroup
+  open LeftUnitalSemigroup leftUnitalSemigroup public {- (★) -}
+  field rightId : ∀ {x} → x ⨾ Id ≡ x
+
+open Monoid  {- (★, *) -}
+
+neato : ∀ {M} → Carrier M → Carrier M → Carrier M
+neato {M} = _⨾_ M    {- (*); Possible due to all of the (★) above -}
+ #+end_src
+
+ #+latex: \begin{mybox}{Extension Design Pattern}
+To extend a structure ~𝒳~ by new features ~f₀, …, fₙ~ which may mention features of
+ ~𝒳~, make a new structure ~𝒴~ with fields for ~𝒳, f₀, …, fₙ~. Then publicly open ~𝒳~ in
+ this new structure ---see =(★)= above--- so that the features of ~𝒳~ are visible
+ directly from ~𝒴~ to all users ---see lines marked =(*)= above.
+
+#+latex: \end{mybox}
+
+ Notice how we accessed the binary operation ~_⨾_~ feature from ~Semigroup~ as if it
+ were a native feature of ~Monoid~. Unfortunately, ~_⨾_~ is only *superficially native*
+ to ~Monoid~ ---any actual instance, such as ~woah~ below, needs to define the binary
+ operation in a ~Semigroup~ instance first, which lives in a ~PointedSemigroup~
+ instance, which lives in a ~LeftUnitalSemigroup~ instance.
+
+{{{code(Extensions are not flattened inheritance)}}}
+ #+begin_src agda :tangle semigroups_to_monoids.agda
+woah : Monoid
+woah = record { leftUnitalSemigroup
+                 = record { pointedSemigroup
+                             = record { semigroup = record { Carrier = {!!}
+                                                           ; _⨾_     = {!!}
+                                                           ; assoc   = {!!}
+                                                           } -- Nesting level 3
+                                      ; Id = {!!}
+                                      } -- Nesting level 2
+                          ; leftId = {!!}
+                          } -- Nesting level 1
+              ; rightId = {!!}
+              }  -- Nesting level 0
+#+end_src
+
+  This nesting scenario happens rather often, in one guise or another. The
+  amount of syntactic noise required to produce a simple instantiation is
+  unreasonable: *One should not be forced to work through the hierarchy if it
+  provides no immediate benefit.*
+  # It is to be noted that this issue does not
+  # generally apply to implementations of object-oriented class supporting
+  # multiple interfaces.
+  # or rephrasing the hierarchy to be horizontal and unrelated,
+  # so each piece is a typeclass, and we then use multiple class constraints.
+  #
+  # What about OCaml, F#, F*?
+
+  Even worse, pragmatically speaking, to access a field deep down in a nested
+  structure results in overtly lengthy and verbose names; as shown below.
+  Indeed, in the above example, the monoid operation lives at the top-most
+  level, we would need to access all the intermediary levels to simply refer to
+  it. Such verbose invocations would immediately give way to helper functions to
+  refer to fields lower in the hierarchy; yet another opportunity for
+  boilerplate to leak in.
+#+begin_src agda :tangle semigroups_to_monoids.agda
+{- Without the (★) “public” declarations, projections are difficult! -}
+carrier : Monoid → Set
+carrier M = Semigroup.Carrier
+              (PointedSemigroup.semigroup
+                (LeftUnitalSemigroup.pointedSemigroup
+                  (Monoid.leftUnitalSemigroup M)))
+ #+end_src
+
+ While library designers may be content to build ~Monoid~ out of ~Semigroup~, users
+ should not be forced to learn about how the hierarchy was built. Even worse,
+ when the library designers decide to incorporate, say, ~RightUnitalSemigroup~
+ instead of the left unital form, then all users' code would break. Instead, it
+ would be preferable to have a ‘flattened’ presentation for the users that “does
+ not leak out implementation details”. We shall return to this in a future
+ section.
+
+  It is interesting to note that diamond hierarchies cannot be trivially
+  eliminated when providing fine-grained hierarchies. As such, we make no rash
+  decisions regarding limiting them ---and completely forgoe the unreasonable
+  possibility of forbidding them.
+
+  A more common example from programming is that of providing monad instances in
+  Haskell. Most often users want to avoid tedious case analysis or prefer a
+  sequential-style approach to producing programs, so they want to furnish a type
+  constructor with a monad instance in order to utilise Haskell's ~do~-notation.
+  Unfortunately, this requires an applicative instances, which in turn requires a
+  functor instance. However, providing the return-and-bind interface for monads
+  allows us to obtain functor and applicative instances. Consequently, many users
+  simply provide local names for the return-and-bind interface then use that to
+  provide the default implementations for the other interfaces. In this scenario,
+  *the standard approach is side-stepped* by manually carrying out a mechanical and
+  tedious set of steps that not only wastes time but obscures the generic process
+  and could be error-prone.
+
+  Instead, it would be desirable to ‘flatten’ the hierarchy into a single
+  package, consisting of the fields throughout the hierarchy, possibly with
+  default implementations, yet still be able to view the resulting package at
+  base levels in the hierarchy ---c.f., section ref:sec:examples:redundancy. Another
+  benefit of this approach is that it allows users to utilise the package without
+  consideration of how the hierarchy was formed, thereby providing library
+  designers with the freedom to alter it in the future.
+
+** Conclusion
+
+After ‘library spelunking’, we are now in a position to summarise the problems
+encountered, when using existing[fn:5] modules systems, that need a solution.
+From our learned lessons, we can then pinpoint a necessary feature of an
+ideal module system for dependently-typed languages.
+
+*** Lessons Learned
+
+<<sec:DTL_design_patterns>>
+#+latex: \label{sec:DTL_design_patterns}
+
+   Systems tend to come with a pre-defined set of operations for built-in constructs;
+   the user is left to utilise third-party pre-processing tools, for example, to
+   provide extra-linguistic support for common repetitive scenarios they encounter.
+
+   More concretely, a large number of proofs can be discharged by merely pattern
+   matching on variables ---this works since the case analysis reduces the proof goal
+   into a trivial reflexitivity obligation, for example. The number of cases can
+   quickly grow thereby taking up space, which is unfortunate since the proof has
+   very little to offer besides verifying the claim. In such cases, a pre-process,
+   perhaps an “editor tactic”, could be utilised to produce the proof in an auxiliary
+   file, and reference it in the current file.
+
+   Perhaps more common is the renaming of package contents, by hand.
+   For example, when a notion of preorder is defined with relation named ~_≤_~,
+   one may rename it and all references to it by, say, ~_⊑_~. Again, a pre-processor
+   or editor-tactic could be utilised, but many simply perform the re-write by hand
+   ---which is tedious, error prone, and obscures the generic rewriting method.
+
+   It would be desirable to *allow packages to be treated as first-class concepts
+   that could be acted upon, in order to avoid third-party tools that*
+   *obscure generic operations and leave them out of reach for the powerful typechecker
+   of a dependently typed system.* Below is a summary of the design patterns
+   mentioned above, using monoids as the prototypical structure. Some patterns
+   we did not cover, as they will be covered in future sections.
+
+ # #  COMMENT ** Summary of Some Design Patterns in Dependently-Typed Programming :ignore:
+ #    :PROPERTIES:
+ #    :CUSTOM_ID: design-patterns
+ #    :END:
+ # #
+    # #+BEGIN_SRC mermaid  :file patterns.png :theme forest :background-color transparent
+
+
+#+BEGIN_SRC mermaid :file patterns.png :theme forest :exports results :noeval
+graph LR %% LR and TD are both also good!
+
+%% A(<h1><br><hr> Carrier : Set <br> _⨾_ : Carrier → Carrier → Carrier <br> Id : Carrier</h1>)
+A(<h1><hr> carrier <br> binary operation <br> point <br> left-identity law <br> right-identity law <br> associativity law</h1>)
+B(<h1>carrier <br> binary operation <br> point <br><hr> left-identity law <br> right-identity law <br> associativity law</h1>)
+C(<h1>carrier <br><hr> binary operation <br> point <br> left-identity law <br> right-identity law <br> associativity law</h1>)
+
+D{<h1><hr> <pre>Branch <br>Nil </pre></h1>}               %% Using verbatim environment
+E{<h1>Variables <br><hr> <pre>Embed <br>Branch <br>Nil </pre></h1>} %% Using verbatim environment
+F((<h1><hr> &ensp;carrier <br> &ensp;binary operation <br> &ensp;point</h1>))
+
+A-. <h1>Predicate  &ensp;<br></h1> .->B
+B-. <h1>Σ Padding  &ensp;<br></h1>.->A
+A-. <h1>Typeclass  &ensp;<br></h1> .-> C
+C-. <h1>Σ Padding &ensp;<br></h1> .-> A
+
+A-. <h1>Closed Termtype  &ensp;<br></h1> .-> D
+D-. <h1>Interpreter &ensp;<br></h1> .-> A
+A-. <h1>Open Termtype &ensp;<br></h1> .-> E
+E-. <h1>Interpreter  &ensp;<br></h1> .-> C
+E-. <h1>Setoid &ensp;<br></h1> .-> A
+A-. <h1>Signature &ensp;<br></h1> .-> F
+E-- <h1>Instance  &ensp;<br></h1> --> F
+
+A-. <h1>Renaming &ensp;<br></h1> .-> R
+R-. <h1>Renaming &ensp;<br></h1> .-> A
+R(<h1><hr> universe of discourse <br> composition <br> unit <br> left unital <br> right unital <br> parenthesis shift</h1>)
+
+A-- <h1>Theorem Proving &ensp;<br></h1> -->A
+
+E-- <h1>Simplifier  &ensp;<br></h1> -->E
+E-- <h1>Metaprogramming  &ensp;<br></h1> -->E
+
+UA> <h1>Universal <br> Algebra</h1> ]
+
+A-. <h1>λ Homomorphism &nbsp;<br> λ Kernel &nbsp;<br> λ Products &nbsp;<br> λ FOL termtypes &nbsp;<br> λ etc</h1> .-> UA
+C-. <h1> λ Products &nbsp;<br> λ Substructure &nbsp;<br> λ etc</h1> .-> UA
+UA-. <h1>λ Pushouts / Pullbacks &nbsp;<br> λ Extensions / Exclusions &nbsp;<br> λ Duality / Views &nbsp;<br> λ etc</h1> .-> UA
+
+subgraph  %% A subgraph environment places the legend in the top left, which is better than it being in the bottom somewhere.
+Legend[<h1><center>Legend</center>0. Parameters occur above the waist line <br> 1. Fields occur below the waist line <br> 2. Dashed lines are design patterns</h1> ]
+end
+   #+END_SRC
+
+# +latex:\includegraphics[width=\linewidth, height=20cm]{patterns.png}
+
+#+LATEX_HEADER: \usepackage{placeins}
+
+#+begin_export latex
+\begin{figure*}[h]
+\centering
+ \makebox[\textwidth]{\includegraphics[width=.9\paperwidth, height=.75\paperheight]{patterns.png}}
+\caption{PL Research is about getting free stuff: From the left-most node, we can get a lot!}
+\end{figure*}
+#+end_export
+#+latex: \FloatBarrier
+# The FloatBarrier stops floats (figures are floats) from jumping over them. I
+# will need to look into passing [tbh] options to figures from org mode further.
+
+   #+latex: \noindent
+   Remarks:
+  #+latex: \vspace{-1em}
+   0. It is important to note that the ~termtype~ constructions could also be
+      co-inductive, thereby yielding possibly infinitely branching syntax-trees.
+
+      - In the “simplify” pattern, one could use axioms as rewrite rules.
+
+   1. It is more convenient to restrict a carrier or to form products along carriers using the typeclass version.
+
+   2. As discussed earlier, the name /typeclass/ is justified not only by the fact
+      that this is the shape used by typeclasses in Haskell and Coq, but also that
+      instance search for such records is supported in Agda by using the ~instance~
+      keyword.
+
+   There are many more design patterns in dependently-typed programming. Since
+   grouping mechanisms are our topic, we have only presented those involving
+   organising data.
+
+*** One-Item Checklist for a Candidate Solution
+
+   # WK: This section is actually good! ;-)
+
+   An adequate module system for dependently-typed languages should make
+   use of dependent-types as much as possible. As such, there is essentially
+   one and only one primary goal for a module system to be considered
+   reasonable for dependently-typed languages: Needless distinctions should be
+   eliminated as much as possible.
+
+   The “write once, instantiate many” attitude is well-promoted in functional
+   communities predominately for /functions/, but we will take this approach to
+   modules as well, beyond the features of, e.g., SML functors.
+   With one package declaration, one should be able to mechanically
+   derive data, record, typeclass, product, sum formulations, among many others.
+   All operations on the generic package then should also apply to the particular
+   package instantiations.
+
+   This one goal for a reasonable solution has a number of important and difficult
+   subgoals. The resulting system should be well-defined with a coherent semantic
+   underpinning ---possibly being a conservative extension---; it should support
+   the elementary uses of pedestrian module systems; the algorithms utilised need
+   to be proven correct with a mechanical proof assistant, considerations for
+   efficiency cannot be dismissed if the system is to be usable; the interface for
+   modules should be as minimal as possible, and, finally, a large number of
+   existing use-cases must be rendered tersely using the resulting system without
+   jeopardising runtime performance in order to demonstrate its success.
+   #
+   # At least a convincing case must be made that overhead can be
+   # ``compiled away''.
+
+  :Hide:
+   During the research stage of the thesis, some of the sub-goals may be altered
+   radically, dismissed altogether, or new ones brought forth due to implementation
+   considerations. However, the one main goal will remain unchanged as it is how
+   we have chosen to measure the minimal adequacy for a module system for rich
+   settings that include dependent-types.
+  :End:
+
+*** COMMENT Why (ASTs) syntax                                  :Maybe_Delete:
+      The archetype for records and termtypes ---algebraic data types--- are
+      monoids. They describe untyped compositional structures, such as programs in
+      dynamically type-checked language. In turn, their termtype is linked lists
+      which reify a monoid value ---such as a program--- as a sequence of values
+      ---i.e., a list of language instructions--- which ‘evaluate’ to the original
+      value. The shift to syntax gives rise to evaluators, optimisers, and  constrained
+      recursion-induction principles.
+*** COMMENT Excerption
+
+  # #+latex: \noindent
+  # *Excerption*
+  # #
+  # #+latex: \noindent
+   In order to produce reusable components, theories ---i.e., packages--- are formed
+   from existing theories by adding only one new concept at a time. Such an approach
+   reduces the possibility of missing a useful structure in the hierarchy, as well
+   as provides tremendous generality ---operations can be rendered using the minimal
+   interface required rather than one that is overly expressive. This is a common
+   scheme when formalising mathematics citet:typeclasses_for_maths,coq_cat_experiences.
+
+   Unfortunately, a common scenario is when one wants to /instantiate/ such a deeply
+   nested theory ---as was the case in section ref:sec:examples:extensions for
+   fine-grained hierarchy of monoids.
 * COMMENT more TODOs
 
 + Perhaps explain why we care about DTLs?
@@ -5940,1229 +7189,6 @@ The remainder of this thesis is organised as follows.
 + Chapter 6 :: The contributions made by this thesis are highlighted and
   assessed. Conclusions are drawn and avenues for future work are suggested.
 
-* COMMENT Motivating the problem ---Examples from the Wild
-
-<<sec:examples_from_the_wild>>
-#+latex: \label{sec:examples_from_the_wild}
-
-:Hide:
-#+begin_edcomm
-:ed: JC
-
-- the idea of the section is sound (but does not 'follow' from sections 1 and 2 as written), and fits
-
-- you have the space here. Go for Monoid, else you'll confuse the reader.
-
-  + Musa: A magma suffices to express the problem; monoid may be more familiar
-    but it only brings extra noise ---extra symbols that do not contribute
-    to the problem addressed.
-#+end_edcomm
-:End:
-
-** Introduction :ignore:
-
-   /Tedium is for machines; interesting problems are for people./
-
-In this section, we showcase a number of problems that occur in developing
-libraries of code, with an eye to dependently-typed languages. We will refer
-back to these real-world examples later on when developing our frameworks for
-reducing their tedium and size.
-
-The examples are extracted from Agda libraries focused on mathematical domains,
-such as algebra and category theory. It is not important to understand the
-application domains, but how modules are organised and used. The examples will
-focus on readability (section  ref:sec:examples:readability, ref:sec:examples:renaming)
-and on mixing-in features to an existing module (section  ref:sec:examples:IsX,
-ref:sec:examples:redundancy, ref:sec:examples:extensions). In order to make the
-core concepts acceptable, we will occasionally render examples using
-the simple algebraic structures: <<<Magma>>>
-#+latex: \label{<Magma>},
-<<<Semigroup>>>, and <<<Monoid>>>
-#+latex: \label{<Semigroup>>>, and <<<Monoid>}[fn:4].
-
-Incidentally, the common solutions to the problems presented may be construed as
-“design patterns for dependently-typed programming”. Design patterns are
-algorithms yearning to be formalised. The power of the host language dictates
-whether design patterns remain as informal directions to be implemented in an
-ad-hoc basis then checked by other humans, or as a library methods that are
-written once and may be freely applied by users. For instance, the [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Morphism.html#1][Agda
-~Algebra.Morphism~ “library”]][fn:17] presents /only/ an example(!) of the homomorphism design
-pattern ---which shows how to form operation-preserving functions for algebraic
-structures. The documentation reads: ~An example showing how a morphism type can
-be defined~. An example, rather than a library method, is all that can be done
-since the current implementation of Agda does not have the necessary
-meta-programming utilities to construct new types in a practical way ---at
-least, not out of the box.
-# #
-# + The procedure is essentially the same for other algebraic structures.
-# + It takes time to do form these explicitly, even for the common structures.
-
-** Simplifying Programs by Exposing Invariants at the Type Level
-<<sec:examples:readability>>
-#+latex: \label{sec:examples:readability}
-# Adding Zero then Multiplying by One Results in a Type Error
-
-   In theory, lists and vectors are the same ---where the latter are essentially
-   lists indexed by their lengths. In practice, however, the additional length
-   information stated up-front as an integral part of the data structure makes
-   it not only easier to write programs that would otherwise by awkward or
-   impossible in the latter case. For instance, below we demonstrate that the
-   function ~head~, which extracts the first element of a non-empty list, not only
-   has a difficult type to read, but also requires an auxiliary relation in
-   order to be expressed. In contrast, the vector variant has a much simpler
-   type with the non-emptiness proviso expressed by requesting a positive
-   length.
-
-{{{code(Exposing Information At the Type Level)}}}
-#+BEGIN_SRC agda :tangle list-is-not-vec.agda :prologue "module list-is-not-vec where \nopen import Notation \n"
-data List (A : Set) : Set where
-  []  : List A
-  _∷_ : A → List A → List A
-
-data Vec (A : Set) : ℕ → Set where
-  []  : Vec A 0
-  _∷_ : ∀ {n} → A → Vec A n → Vec A (suc n)
-
-data not-null {A : Set} : List A → Set where
-  indeed : ∀ {x xs} → not-null (x ∷ xs)
-
-head : ∀ {A} → Σ xs ∶ List A • not-null xs → A
-head ([] , ())
-head (x ∷ xs , indeed) = x
-
-head′ : ∀ {A n} → Vec A (suc n) → A
-head′ (x ∷ xs) = x
-#+END_SRC
-
-#+latex: \noindent
-In the definition of ~head~, we pattern match on the possible ways to form a list
----namely, ~[]~ and ~_∷_~. In the first case, we perform /case analysis/ on the shape
-of the proof of ~not-null []~, but there is no way to form such a proof and so we
-have “defined” the first clause of ~head~ using /a definition by zero-cases/ on the
-~non-null~ proof. The ‘absurd pattern’ ~()~ indicates the impossibility of a construction
-and is covered later in section ref:sec:absurd_pattern.
-
-This phenomenon applies not only to derived concepts such as non-emptiness, but
-also to explicit features of a datatype. A common scenario is when two instances
-of an algebraic structure share the same carrier and thus it is reasonable to
-connect the two somehow by a coherence axiom. Perhaps the most popular instance
-of this scenario is in the setting of rings: There is an additive monoid ~(R, +,
-1)~ and a multiplicative monoid ~(R, ×, 0)~ on the same underlying set ~R~, and their
-interaction is dictated by two distributivity axioms, such as
-~a × (b + c) ≈ (a×b) + (a × c)~. As with ~head~ above, depending on which features of a monoid are
-exposed upfront, such axioms may be either difficult to express or relatively
-easy.
-
-For brevity, since our interest is in expressing the aforementioned
-distributivity axiom, we shall ignore all other features of a monoid, to obtain
-a magma. {{{code(Distributivity is Difficult to Express)}}}
-#+BEGIN_SRC agda :tangle Distributivity.agda :prologue "module Distributivity where \nopen import Notation hiding (_+_) \n"
-record Magma₀ : Set₁ where
-  field
-    Carrier : Set
-    _⨾_      : Carrier → Carrier → Carrier
-
-record Distributivity₀ (Additive Multiplicative : Magma₀) : Set₁ where
-
-  open Magma₀ Additive       renaming (Carrier to R₊; _⨾_ to _+_)
-  open Magma₀ Multiplicative renaming (Carrier to Rₓ; _⨾_ to _×_)
-
-  field shared-carrier :  R₊ ≡ Rₓ
-
-  coeₓ : R₊ → Rₓ
-  coeₓ = subst id shared-carrier
-
-  coe₊ : Rₓ → R₊
-  coe₊ = subst id (sym shared-carrier)
-
-  field distribute₀ : ∀ {a : Rₓ} {b c : R₊}
-                    →   a × coeₓ (b + c)
-                      ≡ coeₓ (coe₊(a × coeₓ b) + coe₊(a × coeₓ c))
-#+END_SRC
-It is a bit of a challenge to understand the type of ~distribute₀~. Even though
-the carriers of the monoids are propositionally equal, ~R₊ ≡ Rₓ~, they are not the
-same by definition ---the notion of equality is defined in
-section ref:sec:propositional-equality. As such, we are forced to “coe”rce back and
-forth; leaving the distributivity axiom as an exotic property of addition,
-multiplication, and coercions. Even worse, without the cleverness of declaring
-two coercion helpers, the typing of ~distribute₀~ would have been so large and
-confusing that the concept would be rendered near useless.
-
-In theory, parameterised structures are no different from their unparameterised,
-or “bundled”, counterparts. However, in practice, this is wholly untrue: Below
-we can phrase the distributivity axiom nearly as it was stated informally
-earlier since the shared carrier is declared upfront. {{{code(Distributivity is
-Expressed Easily with Unbundled Structures)}}}
-#+BEGIN_SRC agda :tangle Distributivity.agda
-record Magma₁ (Carrier : Set) : Set₁ where
-  field
-    _⨾_      : Carrier → Carrier → Carrier
-
-record Distributivity₁
-    (R : Set) {- The shared carrier -}
-    (Additive Multiplicative : Magma₁ R)  : Set₁ where
-
-  open Magma₁ Additive       renaming (_⨾_ to _+_)
-  open Magma₁ Multiplicative renaming (_⨾_ to _×_)
-
-  field distribute₁ : ∀ {a b c : R} →  a × (b + c) ≡ (a × b) + (a × c)
-#+END_SRC
-In contrast to the bundled definition of magmas, this form requires no cleverness to form coercion helpers,
-and is closer to the informal and usual distributivity statement.
-
-By the same arguments above, the simple statement relating the two units of a
-ring ~1 × r + 0 ≈ r~ ---or any units of monoids sharing the same carrier--- is
-easily phrased using an unbundled presentation and would require coercions
-otherwise. We invite the reader to pause at this moment to appreciate the
-difficulty in simply expressing this property.
-
-Computing is filled with exciting problems; machines should help us reduce if
-not eliminate boring tasks.
-
-#+begin_quote
-*Unbundling Design Pattern*:
-If a feature of a class is shared among instances, then use an unbundled form of the class
-to avoid “coercion hell”.
-#+end_quote
-
-Observe that we assigned superficial renamings, aliases, to the prototypical
-binary operation ~_⨾_~ so that we may phrase the distributivity axiom in its
-expected notational form. This leads us to our next topic of discussion.
-
-** Renaming
-<<sec:examples:renaming>>
-#+latex: \label{sec:examples:renaming}
-
-The use of an idea is generally accompanied with particular notation that is
-accepted by the community. Even though the choice of bound names it
-theoretically irrelevant, certain communities would consider it unacceptable to
-deviate from convention. Here are a few examples:
-
-- ~x(f)~ :: Using ~x~ as a /function/ and ~f~ as an /argument/.; likewise $\frac{\partial x}{\partial f}$.
-
-  With the exception of people familiar with the Yoneda Lemma, or continuations,
-  such a notation is simply “wrong”!
-
-- ~a × a ≈ a~ :: An idempotent operation denoted by multiplication; likewise for
-  commutative operations. It is more common to use addition or join, ~⊔~.
-
-- ~0 × a ≈ a~ :: The identity of “multiplicative symbols” should never resemble
-  “0”; instead it should resemble “1” or, at least, ~“e”~ ---the standard
-  abbreviation of the influential algebraic works of German authors who used
-  “Einheit” which means “identity”.
-
-- ~f + g~ :: Even if monoids are defined with the prototypical binary operation
-  denoted “+”, it would be “wrong” to continue using it to denote functional composition.
-  One would need to introduce the new name “∘” or, at least, “·”.
-
-From the few examples above, it is immediate that to even present a prototypical
-notation for an idea, one immediately needs auxiliary notation when specialising
-to a particular instance. For example, to use “additive symbols” such as ~+, ⊔,
-⊕~ to denote an arbitrary binary operation leads to trouble in the function
-composition instance above, whereas using “multiplicative symbols” such as ~×,
-·, *~ leads to trouble in the idempotent case above.
-
-Regardless of prototypical choices, there will always be a need to rename.
-
-#+begin_quote
-*Renaming Design Pattern*:
-Use superficial aliases to better communicate an idea;
-especially so, when the topic domain is specialised.
-#+end_quote
-
-Let's now turn to examples of renaming from three libraries:
-1. Agda's standard library,
-2. The RATH-Agda library, and
-3. A recent categories library.
-
-Each will provide a workaround to the problem of renaming. In particular, the
-solutions are, respectively:
-
-1. Rename as needed.
-   - There is no systematic approach to account for the many common renamings.
-   - Users are encouraged to do the same, since the standard library does it this way.
-
-2. Pack-up the /common/ renamings as modules, and invoke them when needed.
-   - Which renamings are provided is left at the discretion of the designer
-     ---even “expected” renamings may not be there since, say, there are too
-     many choices or insufficient man power to produce them.
-   - The pattern to pack-up renamings leads nicely to consistent naming.
-
-3. Names don't matter.
-   - Users of the library need to be intimately connected with the Agda
-     definitions and domain to use the library.
-   - Consequently, there are many inconsistencies in naming.
-
-# #
-The ~open ⋯ public ⋯ renaming ⋯~ pattern shown below will be presented later,
-section ref:sec:PF:practicality, as a library method.
-
-*** Renaming Problems from Agda's Standard Library
-
-[[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#2757][Here are four excerpts from Agda's standard library]], notice how the prototypical
-notation for monoids is renamed repeatedly /as needed/. Sometimes it is relabelled
-with additive symbols, other times with multiplicative symbols. The content
-itself is not important, instead the focus is on the renaming that takes place
----as such, the fontsize is intentionally tiny.
-
-#+begin_parallelNB org
-{{{code(Additive Renaming
----IsNearSemiring)}}}
-#+ATTR_LATEX: :options fontsize=\tiny
-#+BEGIN_SRC agda
-record IsNearSemiring {a ℓ} {A : Set a} (≈ : Rel A ℓ)
-                      (+ * : Op₂ A) (0# : A) : Set (a ⊔ ℓ) where
-  open FunctionProperties ≈
-  field
-    +-isMonoid    : IsMonoid ≈ + 0#
-    *-isSemigroup : IsSemigroup ≈ *
-    distribʳ      : * DistributesOverʳ +
-    zeroˡ         : LeftZero 0# *
-
-  open IsMonoid +-isMonoid public
-         renaming ( assoc       to +-assoc
-                  ; ∙-cong      to +-cong
-                  ; isSemigroup to +-isSemigroup
-                  ; identity    to +-identity
-                  )
-
-  open IsSemigroup *-isSemigroup public
-         using ()
-         renaming ( assoc    to *-assoc
-                  ; ∙-cong   to *-cong
-                  )
-#+END_SRC
-
-{{{code(Additive Renaming Again ---IsSemiringWithoutOne)}}}
-#+ATTR_LATEX: :options fontsize=\tiny
-#+BEGIN_SRC agda
-record IsSemiringWithoutOne {a ℓ} {A : Set a} (≈ : Rel A ℓ)
-                            (+ * : Op₂ A) (0# : A) : Set (a ⊔ ℓ)
- where
-  open FunctionProperties ≈
-  field
-    +-isCommutativeMonoid : IsCommutativeMonoid ≈ + 0#
-    *-isSemigroup         : IsSemigroup ≈ *
-    distrib               : * DistributesOver +
-    zero                  : Zero 0# *
-
-  open IsCommutativeMonoid +-isCommutativeMonoid public
-         hiding (identityˡ)
-         renaming ( assoc       to +-assoc
-                  ; ∙-cong      to +-cong
-                  ; isSemigroup to +-isSemigroup
-                  ; identity    to +-identity
-                  ; isMonoid    to +-isMonoid
-                  ; comm        to +-comm
-                  )
-
-  open IsSemigroup *-isSemigroup public
-         using ()
-         renaming ( assoc       to *-assoc
-                  ; ∙-cong      to *-cong
-                  )
-#+END_SRC
-#+end_parallelNB
-# #
-#+begin_parallelNB org
-{{{code(Additive Renaming a 3ʳᵈ Time and Multiplicative Renaming ---IsSemiringWithoutAnnihilatingZero)}}}
-#+ATTR_LATEX: :options fontsize=\tiny
-#+BEGIN_SRC agda
-record IsSemiringWithoutAnnihilatingZero
-         {a ℓ} {A : Set a} (≈ : Rel A ℓ)
-         (+ * : Op₂ A) (0# 1# : A) : Set (a ⊔ ℓ) where
-  open FunctionProperties ≈
-  field
-    +-isCommutativeMonoid : IsCommutativeMonoid ≈ + 0#
-    *-isMonoid            : IsMonoid ≈ * 1#
-    distrib               : * DistributesOver +
-
-  open IsCommutativeMonoid +-isCommutativeMonoid public
-         hiding (identityˡ)
-         renaming ( assoc       to +-assoc
-                  ; ∙-cong      to +-cong
-                  ; isSemigroup to +-isSemigroup
-                  ; identity    to +-identity
-                  ; isMonoid    to +-isMonoid
-                  ; comm        to +-comm
-                  )
-
-  open IsMonoid *-isMonoid public
-         using ()
-         renaming ( assoc       to *-assoc
-                  ; ∙-cong      to *-cong
-                  ; isSemigroup to *-isSemigroup
-                  ; identity    to *-identity
-                  )
-#+END_SRC
-{{{code(Additive Renaming a 4ᵗʰ Time and Second Multiplicative Renaming ---IsRing)}}}
-#+ATTR_LATEX: :options fontsize=\tiny
-#+BEGIN_SRC agda
-record IsRing
-         {a ℓ} {A : Set a} (≈ : Rel A ℓ)
-         (_+_ _*_ : Op₂ A) (-_ : Op₁ A) (0# 1# : A) : Set (a ⊔ ℓ)
- where
-  open FunctionProperties ≈
-  field
-    +-isAbelianGroup : IsAbelianGroup ≈ _+_ 0# -_
-    *-isMonoid       : IsMonoid ≈ _*_ 1#
-    distrib          : _*_ DistributesOver _+_
-
-  open IsAbelianGroup +-isAbelianGroup public
-         renaming ( assoc               to +-assoc
-                  ; ∙-cong              to +-cong
-                  ; isSemigroup         to +-isSemigroup
-                  ; identity            to +-identity
-                  ; isMonoid            to +-isMonoid
-                  ; inverse             to -‿inverse
-                  ; ⁻¹-cong             to -‿cong
-                  ; isGroup             to +-isGroup
-                  ; comm                to +-comm
-                  ; isCommutativeMonoid to +-isCommutativeMonoid
-                  )
-
-  open IsMonoid *-isMonoid public
-         using ()
-         renaming ( assoc       to *-assoc
-                  ; ∙-cong      to *-cong
-                  ; isSemigroup to *-isSemigroup
-                  ; identity    to *-identity
-                  )
-#+END_SRC
-#+end_parallelNB
-
-At first glance, one solution would be to package up these renamings into helper modules.
-For example, consider the setting of monoids.
-
-{{{code(Original ---Prototypical--- Notations)}}}
-#+BEGIN_SRC agda
-record IsMonoid {a ℓ} {A : Set a} (≈ : Rel A ℓ)
-                (∙ : Op₂ A) (ε : A) : Set (a ⊔ ℓ) where
-  open FunctionProperties ≈
-  field
-    isSemigroup : IsSemigroup ≈ ∙
-    identity    : Identity ε ∙
-
-record IsCommutativeMonoid {a ℓ} {A : Set a} (≈ : Rel A ℓ)
-                           (_∙_ : Op₂ A) (ε : A) : Set (a ⊔ ℓ) where
-  open FunctionProperties ≈
-  field
-    isSemigroup : IsSemigroup ≈ _∙_
-    identityˡ   : LeftIdentity ε _∙_
-    comm        : Commutative _∙_
-
-    ⋮
-  isMonoid : IsMonoid ≈ _∙_ ε
-  isMonoid = record { ⋯ }
-#+END_SRC
-{{{code(Renaming Helper Modules)}}}
-#+BEGIN_SRC agda
-module AdditiveIsMonoid {a ℓ} {A : Set a} {≈ : Rel A ℓ}
-               {_∙_ : Op₂ A} {ε : A} (+-isMonoid : IsMonoid ≈ _∙_ ε)  where
-
-   open IsMonoid +-isMonoid public
-         renaming ( assoc       to +-assoc
-                  ; ∙-cong      to +-cong
-                  ; isSemigroup to +-isSemigroup
-                  ; identity    to +-identity
-                  )
-
-module AdditiveIsCommutativeMonoid {a ℓ} {A : Set a} {≈ : Rel A ℓ}
-               {_∙_ : Op₂ A} {ε : A} (+-isCommutativeMonoid : IsMonoid ≈ _∙_ ε)  where
-
-   open AdditiveIsMonoid (CommutativeMonoid.isMonoid +-isCommutativeMonoid) public
-   open IsCommutativeMonoid +-isCommutativeMonoid public using ()
-      renaming ( comm to +-comm
-               ; isMonoid to +-isMonoid)
-#+END_SRC
-However, one then needs to make similar modules for /additive notation/ for
-~IsAbelianGroup, IsRing, IsCommutativeRing, …~. Moreover, this still invites
-repetition: Additional notations, as used in ~IsSemiring~, would require
-additional helper modules.
-{{{code(More Necessary Renaming Helper Modules)}}}
-#+BEGIN_SRC agda
-module MultiplicativeIsMonoid {a ℓ} {A : Set a} {≈ : Rel A ℓ}
-               {_∙_ : Op₂ A} {ε : A} (*-isMonoid : IsMonoid ≈ _∙_ ε)  where
-
-   open IsMonoid *-isMonoid public
-         renaming ( assoc       to *-assoc
-                  ; ∙-cong      to *-cong
-                  ; isSemigroup to *-isSemigroup
-                  ; identity    to *-identity
-                  )
-#+END_SRC
-
-Unless carefully organised, such notational modules would bloat the standard
-library, resulting in difficulty when navigating the library. As it stands
-however, the new algebraic structures appear large and complex due to the
-“renaming hell” encountered to provide the expected conventional notation.
-*** Renaming Problems from the RATH-Agda Library
-
-The impressive [[http://relmics.mcmaster.ca/RATH-Agda/RATH-Agda-2.2.pdf][Relational Algebraic Theories in Agda]] library takes a disciplined
-approach: Copy-paste notational modules, possibly using a find-replace mechanism
-to vary the notation. The use of a find-replace mechanism leads to consistent naming
-across different notations.
-
-#+caption: Relation.Binary.Setoid.Utils
-#+begin_quote
-For contexts where calculation in different setoids is necessary, we provide
-“decorated” versions of the ~Setoid′~ and ~SetoidCalc~ interfaces:
-#+end_quote
-{{{code(Seotoid𝒟 Renamings ---𝒟decorated Synonyms)}}}
-#+ATTR_LATEX: :options fontsize=\tiny
-#+BEGIN_SRC agda
-module SetoidA {i j : Level} (S : Setoid i j) = Setoid′ S renaming
-    ( ℓ to ℓA ; Carrier to A₀ ; _≈_ to _≈A_ ; ≈-isEquivalence to ≈A-isEquivalence
-    ; ≈-isPreorder to ≈A-isPreorder ; ≈-preorder to ≈A-preorder
-    ; ≈-indexedSetoid to ≈A-indexedSetoid
-    ; ≈-refl to ≈A-refl ; ≈-reflexive to ≈A-reflexive ; ≈-sym to ≈A-sym
-    ; ≈-trans to ≈A-trans ; ≈-trans₁ to ≈A-trans₁ ; ≈-trans₂ to ≈A-trans₂
-    ; _⟨≈≈⟩_ to _⟨≈A≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈A≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈A˘≈⟩_
-    ; _⟨≈˘≈˘⟩_ to _⟨≈A˘≈˘⟩_; _⟨≡≈⟩_ to _⟨≡≈A⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈A˘⟩_
-    ; _⟨≡˘≈⟩_ to _⟨≡˘≈A⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈A˘⟩_ ; _⟨≈≡⟩_ to _⟨≈A≡⟩_
-    ; _⟨≈≡˘⟩_ to _⟨≈A≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈A˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈A˘≡˘⟩_
-    )
-
-module SetoidB {i j : Level} (S : Setoid i j) = Setoid′ S renaming
-    ( ℓ to ℓB ; Carrier to B₀ ; _≈_ to _≈B_ ; ≈-isEquivalence to ≈B-isEquivalence
-    ; ≈-isPreorder to ≈B-isPreorder ; ≈-preorder to ≈B-preorder
-    ; ≈-indexedSetoid to ≈B-indexedSetoid
-    ; ≈-refl to ≈B-refl ; ≈-reflexive to ≈B-reflexive ; ≈-sym to ≈B-sym
-    ; ≈-trans to ≈B-trans ; ≈-trans₁ to ≈B-trans₁ ; ≈-trans₂ to ≈B-trans₂
-    ; _⟨≈≈⟩_ to _⟨≈B≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈B≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈B˘≈⟩_
-    ; _⟨≈˘≈˘⟩_ to _⟨≈B˘≈˘⟩_ ; _⟨≡≈⟩_ to _⟨≡≈B⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈B˘⟩_
-    ; _⟨≡˘≈⟩_ to _⟨≡˘≈B⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈B˘⟩_ ; _⟨≈≡⟩_ to _⟨≈B≡⟩_
-    ; _⟨≈≡˘⟩_ to _⟨≈B≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈B˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈B˘≡˘⟩_
-    )
-
-module SetoidC {i j : Level} (S : Setoid i j) = Setoid′ S renaming
-    ( ℓ to ℓC ; Carrier to C₀ ; _≈_ to _≈C_ ; ≈-isEquivalence to ≈C-isEquivalence
-    ; ≈-isPreorder to ≈C-isPreorder ; ≈-preorder to ≈C-preorder
-    ; ≈-indexedSetoid to ≈C-indexedSetoid
-    ; ≈-refl to ≈C-refl ; ≈-reflexive to ≈C-reflexive ; ≈-sym to ≈C-sym
-    ; ≈-trans to ≈C-trans ; ≈-trans₁ to ≈C-trans₁ ; ≈-trans₂ to ≈C-trans₂
-    ; _⟨≈≈⟩_ to _⟨≈C≈⟩_ ; _⟨≈≈˘⟩_ to _⟨≈C≈˘⟩_ ; _⟨≈˘≈⟩_ to _⟨≈C˘≈⟩_
-    ; _⟨≈˘≈˘⟩_ to _⟨≈C˘≈˘⟩_ ; _⟨≡≈⟩_ to _⟨≡≈C⟩_ ; _⟨≡≈˘⟩_ to _⟨≡≈C˘⟩_
-    ; _⟨≡˘≈⟩_ to _⟨≡˘≈C⟩_ ; _⟨≡˘≈˘⟩_ to _⟨≡˘≈C˘⟩_ ; _⟨≈≡⟩_ to _⟨≈C≡⟩_
-    ; _⟨≈≡˘⟩_ to _⟨≈C≡˘⟩_ ; _⟨≈˘≡⟩_ to _⟨≈C˘≡⟩_ ; _⟨≈˘≡˘⟩_ to _⟨≈C˘≡˘⟩_
-    )
-#+END_SRC
-
-#+latex: \noindent
-This keeps going to cover the alphabet ~SetoidD, SetoidE, SetoidF, …, SetoidZ~
-then we shift to subscripted versions ~Setoid₀, Setoid₁, …, Setoid₄~.
-
-Next, RATH-Agda shifts to the need to calculate with setoids:
-{{{code(SeotoidCalc𝒟 Renamings ---𝒟decorated Synonyms)}}}
-#+ATTR_LATEX: :options fontsize=\tiny
-#+BEGIN_SRC agda
-module SetoidCalcA {i j : Level} (S : Setoid i j) where
-  open SetoidA S public
-  open SetoidCalc S public renaming
-    ( _□ to _□A
-    ; _≈⟨_⟩_ to _≈A⟨_⟩_
-    ; _≈˘⟨_⟩_ to _≈A˘⟨_⟩_
-    ; _≈≡⟨_⟩_ to _≈A≡⟨_⟩_
-    ; _≈⟨⟩_ to _≈A⟨⟩_
-    ; _≈≡˘⟨_⟩_ to _≈A≡˘⟨_⟩_
-    ; ≈-begin_ to ≈A-begin_
-    )
-module SetoidCalcB {i j : Level} (S : Setoid i j) where
-  open SetoidB S public
-  open SetoidCalc S public renaming
-    ( _□ to _□B
-    ; _≈⟨_⟩_ to _≈B⟨_⟩_
-    ; _≈˘⟨_⟩_ to _≈B˘⟨_⟩_
-    ; _≈≡⟨_⟩_ to _≈B≡⟨_⟩_
-    ; _≈⟨⟩_ to _≈B⟨⟩_
-    ; _≈≡˘⟨_⟩_ to _≈B≡˘⟨_⟩_
-    ; ≈-begin_ to ≈B-begin_
-    )
-module SetoidCalcC {i j : Level} (S : Setoid i j) where
-  open SetoidC S public
-  open SetoidCalc S public renaming
-    ( _□ to _□C
-    ; _≈⟨_⟩_ to _≈C⟨_⟩_
-    ; _≈˘⟨_⟩_ to _≈C˘⟨_⟩_
-    ; _≈≡⟨_⟩_ to _≈C≡⟨_⟩_
-    ; _≈⟨⟩_ to _≈C⟨⟩_
-    ; _≈≡˘⟨_⟩_ to _≈C≡˘⟨_⟩_
-    ; ≈-begin_ to ≈C-begin_
-    )
-#+END_SRC
-
-#+latex: \noindent
-This keeps going to cover the alphabet ~SetoidCalcD, SetoidCalcE, SetoidCalcF, …, SetoidCalcZ~
-then we shift to subscripted versions ~SetoidCalc₀, SetoidCalc₁, …, SetoidCalc₄~.
-If we ever have more than 4 setoids in hand, or prefer other decorations, then
-we would need to produce similar helper modules.
-| Each ~Setoid𝒳𝒳𝒳~ takes 10 lines, for a total of at-least 600 lines! |
-
-Indeed, such renamings bloat the library, but, unlike the Standard Library, they
-allow new records to be declared easily ---“renaming hell” has been deferred
-from the user to the library designer. However, later on, in ~Categoric.CompOp~,
-we see the variations ~LocalEdgeSetoid𝒟~ and ~LocalSetoidCalc𝒟~ where decoration
-~𝒟~ ranges over ~₀, ₁, ₂, ₃, ₄, R~. The inconsistency in not providing the other
-decorations used for ~Setoid𝓓~ earlier is understandable: These take time to
-write and maintain.
-
-# Various similar decorations can be found in RATH, such as for ~Semigroupoid𝒟~ in
-# ~Categoric.Semigroupoid~.
-
-*** Renaming Problems from the Agda-categories Library
-
-With RATH-Agda's focus on notational modules at one end of the spectrum, and the
-Standard Library's casual do-as-needed in the middle, it is inevitable that
-there are other equally popular libraries at the other end of the spectrum. The
-[[https://github.com/agda/agda-categories][Agda-categories]] library seemingly ignored the need for meaningful names
-altogether! Below are a few notable instances.
-
-+ Functors have fields named ~F₀, F₁, F-resp-≈, …~.
-  - This could be considered reasonable even if one has a functor named ~G~.
-  - This [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Product.agda][leads to expressions]] such as ~< F.F₀ , G.F₀ >~.
-  - Incidentally, and somewhat inconsistently, a ~Pseudofunctor~ has fields ~P₀,
-    P₁, P-homomophism~ ---where the latter is documented /P preserves ≃/.
-
-  On the opposite extreme, RATH-Agda's importance on naming has its functor
-  record having fields named ~obj, mor, mor-cong~ instead of ~F₀, F₁, F-resp-≈~
-  ---which refer to a functor's “obj”ect map, “mor”phism map, and the fact that
-  the “mor”phism map is a “cong”ruence.
-
-+ Such lack of concern for naming might be acceptable for well-known concepts
-  such as functors, where some communities use ~Fᵢ~ to denote the object/0-cells
-  or morphism/1-cells operations. However, considering [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/SubCategory.agda][subcategories]] one sees
-  field names ~U, R, Rid, _∘R_~ which are wholly unhelpful. Instead, more
-  meaningful names such as ~embed, keep, id-kept, keep-resp-∘~ could have been
-  used.
-
-+ The ~Iso, Inverse,~ and ~NaturalIsomorphism~ records have fields ~to / from, f
-  / f⁻¹,~ and ~F⇒G / F⇐G~, respectively.
-
-  #  ( ~Categories.Category~ )
-
-  Even though some of these build on one another, with Agda's namespacing
-  features, all “forward” and “backward” morphism fields could have been named,
-  say, ~to~ and ~from~. The naming may not have propagated from ~Iso~ to other records
-  possibly due to the low priority for names.
-
-  From a usability perspective, projections like ~f~ are reminiscent of the OCaml
-  community and may be more acceptable there. Since Agda is more likely to
-  attract Haskell programmers than OCaml ones, such a particular projection
-  seems completely out of place. Likewise, the field name ~F⇒G~ seems only
-  appropriate if the functors involved happen to be named ~F~ and ~G~.
-
-  These unexpected deviations are not too surprising since the Agda-categories
-  library seems to give names no priority at all. Field projections are treated
-  little more than classic array indexing with numbers.
-
-
-By largely avoiding renaming, Agda-categories has no “renaming hell” anywhere at
-the heavy price of being difficult to read: Any attempt to read code requires
-one to “squint away” the numerous projections to “see” the concepts of
-relevance. Consider the [[https://github.com/agda/agda-categories/blob/master/src/Categories/Yoneda.agda][following excerpt]].
-{{{code(Symbol Soup)}}}
-#+BEGIN_SRC agda
-helper : ∀ {F : Functor (Category.op C) (Setoids ℓ e)}
-                     {A B : Obj} (f : B ⇒ A)
-                     (β γ : NaturalTransformation Hom[ C ][-, A ] F) →
-                   Setoid._≈_ (F₀ Nat[Hom[C][-,c],F] (F , A)) β γ →
-                   Setoid._≈_ (F₀ F B) (η β B ⟨$⟩ f ∘ id) (F₁ F f ⟨$⟩ (η γ A ⟨$⟩ id))
-          helper {F} {A} {B} f β γ β≈γ = S.begin
-            η β B ⟨$⟩ f ∘ id          S.≈⟨ cong (η β B) (id-comm ○ (⟺ identityˡ)) ⟩
-            η β B ⟨$⟩ id ∘ id ∘ f     S.≈⟨ commute β f CE.refl ⟩
-            F₁ F f ⟨$⟩ (η β A ⟨$⟩ id) S.≈⟨ cong (F₁ F f) (β≈γ CE.refl) ⟩
-            F₁ F f ⟨$⟩ (η γ A ⟨$⟩ id) S.∎
-            where module S where
-                    open Setoid (F₀ F B) public
-                    open SetoidR (F₀ F B) public
-#+END_SRC
-
-#+latex: \noindent
-Here are a few downsides of not renaming:
-#+latex: \vspace{-1em}
-1. The type of the function is difficult to comprehend; though it need not be.
-   - Take ~_≈₀_ = Setoid._≈_ (F₀ Nat[Hom[C][-,c],F] (F , A))~, and
-   - Take ~_≈₁_ = Setoid._≈_ (F₀ F B)~,
-   - Then the type says: If ~β ≈₀ γ~ then {{{newline}}}
-     ~η β B ⟨$⟩ f ∘ id ≈₁ F₁ F f ⟨$⟩ (η γ A ⟨$⟩ id)~
-     ---a naturality condition!
-
-2. The short proof is difficult to read!
-   - The repeated terms such as ~η β B~ and ~η β A~ could have been renamed with
-     mnemoic-names such as ~η₁, η₂~ or ~ηₛ, ηₜ~ for ‘s’ource/1 and ‘t’arget/2.
-   - Recall that functors ~F~ have projections ~Fᵢ~, so the “mor”phism map on a
-     given morphism ~f~ becomes ~F₁ F f~, as in the excerpt above; however, using
-     RATH-Agda's naming it would have been ~mor F f~.
-
-Since names are given a lower priority, one no longer needs to perform renaming.
-Instead, one is content with projections. The downside is now there are too many
-projections, leaving code difficult to comprehend. Moreover, this leads to
-inconsistent renaming.
-
-** From ~Is𝓧~ to ~𝓧~ ---Packing away components
-
- <<sec:examples:IsX>>
-#+latex: \label{sec:examples:IsX}
-
- The distributivity axiom from earlier required an unbundled structure /after/ a
- completely bundled structure was initially presented. Usually structures are
- rather large and have libraries built around them, so building and using an
- alternate form is not practical. However, multiple forms are usually desirable.
-
- To accommodate the need for both forms of structure, Agda's Standard Library
- begins with a [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#1][type-level predicate]] such as ~IsSemigroup~ below, then [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#1][packs that
- up into a record]]. Here is an instance, along with comments from the library.
- {{{code(From Is𝒳 to 𝒳 ---where 𝒳 is Semigroup)}}}
- #+caption: From the [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#601][Agda Standard Library on Algebra]]
- #+BEGIN_SRC agda
--- Some algebraic structures (not packed up with sets, operations, etc.
-record IsSemigroup {a ℓ} {A : Set a} (≈ : Rel A ℓ)
-                   (∙ : Op₂ A) : Set (a ⊔ ℓ) where
-  open FunctionProperties ≈
-  field
-    isEquivalence : IsEquivalence ≈
-    assoc         : Associative ∙
-    ∙-cong        : ∙ Preserves₂ ≈ ⟶ ≈ ⟶ ≈
-
--- Definitions of algebraic structures like monoids and rings (packed in records
--- together with sets, operations, etc.)
-record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
-  infixl 7 _∙_
-  infix  4 _≈_
-  field
-    Carrier     : Set c
-    _≈_         : Rel Carrier ℓ
-    _∙_         : Op₂ Carrier
-    isSemigroup : IsSemigroup _≈_ _∙_
- #+END_SRC
-
- If we refer to the former as ~Is𝒳~ and the latter as ~𝒳~, then we can see similar
- instances in the standard library for ~𝒳~ being: ~Monoid, Group, AbelianGroup,
- CommutativeMonoid,~ ~SemigroupWithoutOne, NearSemiring, Semiring,
- CommutativeSemiringWithoutOne,~ {{{newline}}} ~CommutativeSemiring,
- CommutativeRing~.
-
- It thus seems that to present an idea ~𝒳~, we require the same amount of space to
- present it unpacked or packed, and so doing both duplicates the process and
- only hints at the underlying principle: From ~Is𝒳~ we pack away the carriers and
- function symbols to obtain ~𝒳~. The converse approach, starting from =𝒳= and going
- to ~Is𝒳~ is not practical, as it leads to numerous unhelpful reflexivity proofs.
-
- #+begin_quote
- *Predicate Design Pattern:* Present a concept 𝓧 first as a predicate ~Is𝓧~ on types
- and function symbols, then as a type ~𝒳~ consisting of types, function symbols,
- and a proof that together they satisfy the ~Is𝒳~ predicate.
-
- *Σ Padding Anti-Pattern*: Starting from a bundled up type ~𝒳~ consisting of types,
- function symbols, and how they interact, one may form the type {{{newline}}}
- ~Σ X ∶ 𝒳 • 𝒳.f X ≡ 𝒇~ to specialise the feature ~𝒳.f~ to the particular choice ~𝒇~.
- However, nearly all uses of this type will be of the form ~(X , refl)~ where the
- proof is unhelpful noise.
- #+end_quote
-
- Since the standard library uses the predicate pattern, ~Is𝒳~, which requires all
- sets and function symbols, the Σ-padding anti-pattern becomes a necessary evil.
- Instead, it would be preferable to have the family ~𝒳ᵢ~ which is the same as ~Is𝒳~
- but only takes ~𝒾~-many elements ---c.f., ~Magma₀~ and ~Magma₁~ above. However,
- writing these variations and functions to move between them is not only tedious
- but also error prone. Later on, also demonstrated in [GPCE19], we shall show
- how the bundled form ~𝒳~ acts as /the/ definition, with other forms being
- derived-as-needed.
-
- Incidentally, the particular choice ~𝒳₁~, a predicate on one carrier, deserves
- special attention. In Haskell, instances of such a type are generally known as
- /typeclass instances/ and ~𝒳₁~ is known as a /typeclass/. As discussed earlier, in
- Agda, we may mark such implementations for instance search using the keyword
- ~instance~.
-
- #+begin_quote
- *Typeclass Design Pattern*: Present a concept 𝒳 as a unary predicate ~𝓧₁~ that
- associates functions and properties with a given type. Then, mark all
- implementations with ~instance~ so that arbitrary ~𝒳~-terms may be written without
- having to specify the particular instance.
-
- When there are multiple instance of an 𝒳-structure on a particular type, only
- one of them may be marked for instance search in a given scope.
- #+end_quote
-
-** Redundancy, Derived Features, and Feature Exclusion
-<<sec:redundancy_derived_features_feature_exclusion>>
-#+latex: \label{sec:redundancy_derived_features_feature_exclusion}
-<<sec:examples:redundancy>>
-#+latex: \label{sec:examples:redundancy}
-
- A tenet of software development is not to over-engineer solutions; e.g., we need
- a notion of untyped composition, and so use ~Monoid~. However, at a later stage,
- we may realise that units are inappropriate and so we need to drop them to
- obtain the weaker notion of ~Semigroup~ ---for instance, if we wish to model
- finite functions as hashmaps, we need to omit the identity functions since they
- may have infinite domains; and we cannot simply enforce a convention, say, to
- treat empty hashmaps as the identities since then we would lose the empty
- functions. Incidentally, this example, among others, led to dropping the
- identity features from Categories to obtain so-called Semigroupoids.
-
- In weaker languages, we could continue to use the monoid interface at the cost
- of “throwing an exception” whenever the identity is used. However, this breaks
- the Interface Segregation Principle: Users should not be forced to bother with
- features they are not interested in. A prototypical scenario is exposing an
- expressive interface, possibly with redundancies, to users, but providing a
- minimal self-contained counterpart by dropping some features for the sake of
- efficiency or to act as a “smart constructor” that takes the least amount of
- data to reconstruct the rich interface.
-
- For example, in the Agda-categories library one finds concepts with expressive
- interfaces, with redundant features, prototypically named ~𝒳~, along with their
- minimal self-contained versions, prototypically named ~𝒳Helper~. In particular,
- the [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Core.agda][Category]] type and the [[https://github.com/agda/agda-categories/blob/master/src/Categories/NaturalTransformation/NaturalIsomorphism.agda][natural isomorphism]] type are instances of such a
- pattern. The redundant features are there to make the lives of users easier;
- e.g., Agda-categories states the following.
- #+begin_quote
- We add a symmetric proof of associativity so that the opposite category of the
- opposite category is definitionally equal to the original category.
- #+end_quote
- To underscore the intent, we present below a minimal setup needed to express the
- issue. The semigroup definition contains a redundant associativity axiom
- ---which can be obtained from the first one by applying symmetry of equality.
- This is done purposefully so that the “opposite, or dual, transformer” ~_˘~ is
- self-inverse on-the-nose; i.e., definitionally rather than propositionally.
- Definitionally equality does not need to be ‘invoked’, it is used silently when
- needed, thereby making the redundant setup worth it.
- {{{code(Redundancy can lead to silently used equalities)}}}
- #+begin_src agda :tangle op-involutive-on-the-nose.agda :prologue module op-involutive-on-the-nose where \nopen import Notation\n
-record Semigroup : Set₁ where
-  constructor 𝒮
-  field
-    Carrier : Set
-    _⨾_     : Carrier → Carrier → Carrier
-    assocʳ : ∀ {x y z} →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
-    assocˡ : ∀ {x y z} →  x ⨾ (y ⨾ z)  ≡  (x ⨾ y) ⨾ z
-
-    -- Notice:  assocˡ ≈ sym assocʳ
-
-_˘ : Semigroup → Semigroup
-(𝒮 Carrier _⨾_ assocʳ assocˡ) ˘  =  𝒮 Carrier (λ b a → a ⨾ b)  assocˡ assocʳ
-
-˘˘≈id : ∀ {S} → (S ˘) ˘ ≡ S
-˘˘≈id = refl
- #+end_src
-
- #+begin_quote
- *On-the-nose Redundancy Design Pattern* [Agda-Categories]: Include redundant
- features if they allow certain common constructions to be definitionally equal,
- thereby requiring no overhead to use such an equality. Then, provide a smart
- constructor so users are not forced to produce the redundant features manually.
- #+end_quote
-
- Incidentally, since this is not a library method, inconsistencies are bound to
- arise; in particular, in the ~𝒳~ and ~𝒳Helper~ naming scheme: The
- ~NaturalIsomorphism~ type has ~NIHelper~ as its minimised version, and the type of
- [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Monoidal/Symmetric.agda][symmetric monoidal categories]] is oddly called ~Symmetric′~ with its helper named
- ~Symmetric~. Such issues could be reduced, if not avoided, if library methods
- could have been used instead.
-
- It is interesting to note that duality forming operators, such as ~_˘~ above, are
- a design pattern themselves. How? In the setting of algebraic structures, one
- picks an operation to have its arguments flipped, then systematically ‘flips’
- all proof obligations via a user-provided symmetry operator. We shall return to
- this as a library method in a future section.
-
- # Since names are given a low priority, the brading operation is simply called ~B~!
- # A symbol closer to the standard model, inverses ~_⁻¹~, such as ~_˘~ may have been
- # more suggestive.
-
- Another example of purposefully keeping redundant features is for the sake of
- efficiency.
- #+latex: \vspace{-1em}
-  #+begin_quote
- For division semi-allegories, even though right residuals, restricted residuals,
- and symmetric quotients all can be derived from left residuals, we still assume
- them all as primitive here, since this produces more readable goals, and also
- makes connecting to optimised implementations easier.
- ---RATH-Agda section 15.13
-  #+end_quote
-
- For instance, the above semigroup type could have been augmented with an
- ordering if we view ~_⨾_~ as a meet-operation. Instead, we lift such a derived
- operation as a primitive field, in case the user has a better implementation.
- {{{code(Simulating Default Implementations with Smart Constructors)}}}
-  #+begin_src agda :tangle op-involutive-on-the-nose.agda
-record Order (S : Semigroup) : Set₁ where
-  open Semigroup S public
-  field
-    _⊑_    : Carrier → Carrier → Set
-    ⊑-def  : ∀ {x y} → (x ⊑ y) ≡ (x ⨾ y ≡ x)
-
-  {- Results about _⨾_ and _⊑_ here … -}
-
-defaultOrder : ∀ S → Order S
-defaultOrder S = let open Semigroup S
-                 in record { _⊑_ = λ x y → x ⨾ y ≡ x ; ⊑-def = refl }
-  #+end_src
-
-  #+begin_quote
- *Efficient Redundancy Design Pattern* [RATH-Agda, section 17.1]: To enable efficient
- implementations, replace derived operators with additional fields for them and
- for the equalities that would otherwise be used as their definitions. Then,
- provide instances of these fields as derived operators, so that in the absence
- of more efficient implementations, these default implementations can be used
- with negligible penalty over a development that defines these operators as
- derived in the first place.
-  #+end_quote
-
- # Also
- # which RATH-Agda does a number of times ---e.g., due to the converse
- # operator, not only are division operators are inter-definable but
- # symmetric-quotient congruence laws are derivable.
-
-** Extensions
-
-<<sec:examples:extensions>>
-#+latex: \label{sec:examples:extensions}
-
-   In our previous discussion, we needed to drop features from ~Monoid~ to get
-   ~Semigroup~. However, excluding the unit-element from the monoid also required
-   excluding the identity laws. More generally, all features reachable, via
-   occurrence relationships, must be dropped when a particular feature is
-   dropped. In some sense, a generated graph of features needs to be “ripped out”
-   from the starting type, and the generated graph may be the whole type. As
-   such, in general, we do not know if the resulting type even has any features.
-
-   Instead, in an ideal world, it is preferable to begin with a minimal interface
-   then /extend/ it with features as necessary. E.g., begin with ~Semigroup~
-   then add orthogonal features until ~Monoid~ is reached. Extensions are also
-   known by /subclassing/ or /inheritance/.
-
- #+BEGIN_SRC mermaid :file semigroup-to-monoid.png :theme default :background-color transparent  :tangle no :tangle no :exports results
-graph LR                          %% A “L”eft to “R”ight graph
-
-Semigroup[<strong>Semigroup</strong><br>carrier <br> binary operation <br> associativity law ]
-PointedSemigroup[<strong>PointedSemigroup</strong><br>carrier <br> binary operation <br> <i>unit-element</i> <br> associativity law ]
-LeftUnitalSemigroup[<strong>LeftUnitalSemigroup</strong><br>carrier <br> binary operation <br> unit-element <br> <i>left-identity law</i> <br> associativity law ]
-RightUnitalSemigroup[<strong>RightUnitalSemigroup</strong><br>carrier <br> binary operation <br> unit-element <br> <i>right-identity law</i> <br> associativity law ]
-Monoid[<strong>Monoid</strong><br>carrier <br> binary operation <br> unit-element <br> <i>left-identity law <br> right-identity law</i> <br> associativity law ]
-
-Semigroup --> PointedSemigroup
-
-PointedSemigroup --> LeftUnitalSemigroup
-PointedSemigroup --> RightUnitalSemigroup
-
-LeftUnitalSemigroup --> Monoid
-RightUnitalSemigroup --> Monoid
- #+END_SRC
-
- #+RESULTS:
- [[file:semigroup-to-monoid.png]]
-
- The libraries mentioned thus far generally implement extensions in this way. By
- way of example, here is how monoids could be built directly from semigroups in
- along a particular path in the above hierarchy.
- {{{code(Extending Semigroup to Obtain Monoid)}}}
- #+begin_src agda :tangle semigroups_to_monoids.agda :prologue "module semigroups_to_monoids where \nopen import Notation\n"
-record Semigroup : Set₁ where
-  field
-    Carrier : Set
-    _⨾_     : Carrier → Carrier → Carrier
-    assoc  : ∀ {x y z} →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
-
-record PointedSemigroup : Set₁ where
-  field semigroup : Semigroup
-  open  Semigroup semigroup public {- (★) -}
-  field Id : Carrier
-
-record LeftUnitalSemigroup : Set₁ where
-  field pointedSemigroup : PointedSemigroup
-  open  PointedSemigroup pointedSemigroup public {- (★) -}
-  field leftId : ∀ {x} → Id ⨾ x ≡ x
-
-record Monoid : Set₁ where
-  field leftUnitalSemigroup : LeftUnitalSemigroup
-  open LeftUnitalSemigroup leftUnitalSemigroup public {- (★) -}
-  field rightId : ∀ {x} → x ⨾ Id ≡ x
-
-open Monoid
-
-neato : ∀ {M} → Carrier M → Carrier M → Carrier M
-neato {M} = _⨾_ M    {- Possible due to (★) above -}
- #+end_src
-
- #+begin_quote
- *Extension Design Pattern:* To extend a structure ~𝒳~ by new features ~f₀, …, fₙ~
- which may mention features of ~𝒳~, make a new structure ~𝒴~ with fields for ~𝒳, f₀,
- …, fₙ~. Then publicly open ~𝒳~ in this new structure so that the features of ~𝒳~ are
- visible directly from ~𝓨~ to all users.
- #+end_quote
-
- Notice how we accessed the binary operation ~_⨾_~ feature from ~Semigroup~ as if it
- were a native feature of ~Monoid~. Unfortunately, ~_⨾_~ is only superficially native
- to ~Monoid~ ---any actual instance, such as ~woah~ below, needs to define the binary
- operation in a ~Semigroup~ instance first, which lives in a ~PointedSemigroup~
- instance, which lives in a ~LeftUnitalSemigroup~ instance.
-
-{{{code(Extensions are not flattened inheritance)}}}
- #+begin_src agda :tangle semigroups_to_monoids.agda
-woah : Monoid
-woah = record { leftUnitalSemigroup
-                 = record { pointedSemigroup
-                             = record { semigroup = record { Carrier = {!!}
-                                                           ; _⨾_     = {!!}
-                                                           ; assoc   = {!!}
-                                                           } -- Nesting level 3
-                                      ; Id = {!!}
-                                      } -- Nesting level 2
-                          ; leftId = {!!}
-                          } -- Nesting level 1
-              ; rightId = {!!}
-              }  -- Nesting level 0
-#+end_src
-
-  This nesting scenario happens rather often, in one guise or another. The
-  amount of syntactic noise required to produce a simple instantiation is
-  unreasonable: One should not be forced to work through the hierarchy if it
-  provides no immediate benefit.
-  # It is to be noted that this issue does not
-  # generally apply to implementations of object-oriented class supporting
-  # multiple interfaces.
-  # or rephrasing the hierarchy to be horizontal and unrelated,
-  # so each piece is a typeclass, and we then use multiple class constraints.
-  #
-  # What about OCaml, F#, F*?
-
-  Even worse, pragmatically speaking, to access a field deep down in a nested
-  structure results in overtly lengthy and verbose names; as shown below.
-  Indeed, in the above example, the monoid operation lives at the top-most
-  level, we would need to access all the intermediary levels to simply refer to
-  it. Such verbose invocations would immediately give way to helper functions to
-  refer to fields lower in the hierarchy; yet another opportunity for
-  boilerplate to leak in.
-#+begin_src agda :tangle semigroups_to_monoids.agda
-{- Without the (★) “public” declarations, projections are difficult! -}
-carrier : Monoid → Set
-carrier M = Semigroup.Carrier
-              (PointedSemigroup.semigroup
-                (LeftUnitalSemigroup.pointedSemigroup
-                  (Monoid.leftUnitalSemigroup M)))
- #+end_src
-
- While library designers may be content to build ~Monoid~ out of ~Semigroup~, users
- should not be forced to learn about how the hierarchy was built. Even worse,
- when the library designers decide to incorporate, say, ~LeftUnitalSemigroup~ then
- all users' code would break. Instead, it would be preferable to have a
- ‘flattened’ presentation for the users that “does not leak out implementation
- details”. We shall return to this in a future section.
-
-  It is interesting to note that diamond hierarchies cannot be trivially
-  eliminated when providing fine-grained hierarchies. As such, we make no rash
-  decisions regarding limiting them ---and completely forgoe the unreasonable
-  possibility of forbidding them.
-
-  A more common example from programming is that of providing monad instances in
-  Haskell. Most often users want to avoid tedious case analysis or prefer a
-  sequential-style approach to producing programs, so they want to furnish a type
-  constructor with a monad instance in order to utilise Haskell's ~do~-notation.
-  Unfortunately, this requires an applicative instances, which in turn requires a
-  functor instance. However, providing the return-and-bind interface for monads
-  allows us to obtain functor and applicative instances. Consequently, many users
-  simply provide local names for the return-and-bind interface then use that to
-  provide the default implementations for the other interfaces. In this scenario,
-  the standard approach is side-stepped by manually carrying out a mechanical and
-  tedious set of steps that not only wastes time but obscures the generic process
-  and could be error-prone.
-
-  Instead, it would be desirable to ‘flatten’ the hierarchy into a single
-  package, consisting of the fields throughout the hierarchy, possibly with
-  default implementations, yet still be able to view the resulting package at
-  base levels in the hierarchy ---c.f., section ref:sec:examples:redundancy. Another
-  benefit of this approach is that it allows users to utilise the package without
-  consideration of how the hierarchy was formed, thereby providing library
-  designers with the freedom to alter it in the future.
-
-** Conclusion
-
-After ‘library spelunking’, we are now in a position to summarise the problems
-encountered, when using existing[fn:5] modules systems, that need a solution.
-From our learned lessons, we can then pinpoint a necessary feature of an
-ideal module system for dependently-typed languages.
-
-*** Lessons Learned
-
-<<sec:DTL_design_patterns>>
-#+latex: \label{sec:DTL_design_patterns}
-
-   Systems tend to come with a pre-defined set of operations for built-in constructs;
-   the user is left to utilise third-party pre-processing tools, for example, to
-   provide extra-linguistic support for common repetitive scenarios they encounter.
-
-   More concretely, a large number of proofs can be discharged by merely pattern
-   matching on variables ---this works since the case analysis reduces the proof goal
-   into a trivial reflexitivity obligation, for example. The number of cases can
-   quickly grow thereby taking up space, which is unfortunate since the proof has
-   very little to offer besides verifying the claim. In such cases, a pre-process,
-   perhaps an “editor tactic”, could be utilised to produce the proof in an auxiliary
-   file, and reference it in the current file.
-
-   Perhaps more common is the renaming of package contents, by hand.
-   For example, when a notion of preorder is defined with relation named ~_≤_~,
-   one may rename it and all references to it by, say, ~_⊑_~. Again, a pre-processor
-   or editor-tactic could be utilised, but many simply perform the re-write by hand
-   ---which is tedious, error prone, and obscures the generic rewriting method.
-
-   It would be desirable to allow packages to be treated as first-class concepts
-   that could be acted upon, in order to avoid third-party tools that obscure
-   generic operations and leave them out of reach for the powerful typechecker of
-   a dependently typed system. Below is a summary of the design patterns
-   mentioned above, using monoids as the prototypical structure. Some patterns we
-   did not cover, as they will be covered in future sections.
-
- # #  COMMENT ** Summary of Some Design Patterns in Dependently-Typed Programming :ignore:
- #    :PROPERTIES:
- #    :CUSTOM_ID: design-patterns
- #    :END:
- # #
-    # #+BEGIN_SRC mermaid  :file patterns.png :theme forest :background-color transparent
-
-
-#+BEGIN_SRC mermaid :file patterns.png :theme forest :exports results :noeval
-graph LR %% LR and TD are both also good!
-
-%% A(<h1><br><hr> Carrier : Set <br> _⨾_ : Carrier → Carrier → Carrier <br> Id : Carrier</h1>)
-A(<h1><hr> carrier <br> binary operation <br> point <br> left-identity law <br> right-identity law <br> associativity law</h1>)
-B(<h1>carrier <br> binary operation <br> point <br><hr> left-identity law <br> right-identity law <br> associativity law</h1>)
-C(<h1>carrier <br><hr> binary operation <br> point <br> left-identity law <br> right-identity law <br> associativity law</h1>)
-
-D{<h1><hr> <pre>Branch <br>Nil </pre></h1>}               %% Using verbatim environment
-E{<h1>Variables <br><hr> <pre>Embed <br>Branch <br>Nil </pre></h1>} %% Using verbatim environment
-F((<h1><hr> &ensp;carrier <br> &ensp;binary operation <br> &ensp;point</h1>))
-
-A-. <h1>Predicate  &ensp;<br></h1> .->B
-B-. <h1>Σ Padding  &ensp;<br></h1>.->A
-A-. <h1>Typeclass  &ensp;<br></h1> .-> C
-C-. <h1>Σ Padding &ensp;<br></h1> .-> A
-
-A-. <h1>Closed Termtype  &ensp;<br></h1> .-> D
-D-. <h1>Interpreter &ensp;<br></h1> .-> A
-A-. <h1>Open Termtype &ensp;<br></h1> .-> E
-E-. <h1>Interpreter  &ensp;<br></h1> .-> C
-E-. <h1>Setoid &ensp;<br></h1> .-> A
-A-. <h1>Signature &ensp;<br></h1> .-> F
-E-- <h1>Instance  &ensp;<br></h1> --> F
-
-A-. <h1>Renaming &ensp;<br></h1> .-> R
-R-. <h1>Renaming &ensp;<br></h1> .-> A
-R(<h1><hr> universe of discourse <br> composition <br> unit <br> left unital <br> right unital <br> parenthesis shift</h1>)
-
-A-- <h1>Theorem Proving &ensp;<br></h1> -->A
-
-E-- <h1>Simplifier  &ensp;<br></h1> -->E
-E-- <h1>Metaprogramming  &ensp;<br></h1> -->E
-
-UA> <h1>Universal <br> Algebra</h1> ]
-
-A-. <h1>λ Homomorphism &nbsp;<br> λ Kernel &nbsp;<br> λ Products &nbsp;<br> λ FOL termtypes &nbsp;<br> λ etc</h1> .-> UA
-C-. <h1> λ Products &nbsp;<br> λ Substructure &nbsp;<br> λ etc</h1> .-> UA
-UA-. <h1>λ Pushouts / Pullbacks &nbsp;<br> λ Extensions / Exclusions &nbsp;<br> λ Duality / Views &nbsp;<br> λ etc</h1> .-> UA
-
-subgraph  %% A subgraph environment places the legend in the top left, which is better than it being in the bottom somewhere.
-Legend[<h1><center>Legend</center>0. Parameters occur above the waist line <br> 1. Fields occur below the waist line <br> 2. Dashed lines are design patterns</h1> ]
-end
-   #+END_SRC
-
-# +latex:\includegraphics[width=\linewidth, height=20cm]{patterns.png}
-
-#+LATEX_HEADER: \usepackage{placeins}
-
-#+begin_export latex
-\begin{figure*}[h]
-\centering
- \makebox[\textwidth]{\includegraphics[width=.9\paperwidth, height=.75\paperheight]{patterns.png}}
-\caption{PL Research is about getting free stuff: From the left-most node, we can get a lot!}
-\end{figure*}
-#+end_export
-#+latex: \FloatBarrier
-# The FloatBarrier stops floats (figures are floats) from jumping over them. I
-# will need to look into passing [tbh] options to figures from org mode further.
-
-   #+latex: \noindent
-   Remarks:
-  #+latex: \vspace{-1em}
-   0. It is important to note that the ~termtype~ constructions could also be
-      co-inductive, thereby yielding possibly infinitely branching syntax-trees.
-
-      - In the “simplify” pattern, one could use axioms as rewrite rules.
-
-   1. It is more convenient to restrict a carrier or to form products along carriers using the typeclass version.
-
-   2. As discussed earlier, the name /typeclass/ is justified not only by the fact
-      that this is the shape used by typeclasses in Haskell and Coq, but also that
-      instance search for such records is supported in Agda by using the ~instance~
-      keyword.
-
-   There are many more design patterns in dependently-typed programming. Since
-   grouping mechanisms are our topic, we have only presented those involving
-   organising data.
-
-*** One-Item Checklist for a Candidate Solution
-
-   # WK: This section is actually good! ;-)
-
-   An adequate module system for dependently-typed languages should make
-   use of dependent-types as much as possible. As such, there is essentially
-   one and only one primary goal for a module system to be considered
-   reasonable for dependently-typed languages: Needless distinctions should be
-   eliminated as much as possible.
-
-   The “write once, instantiate many” attitude is well-promoted in functional
-   communities predominately for /functions/, but we will take this approach to
-   modules as well, beyond the features of, e.g., SML functors.
-   With one package declaration, one should be able to mechanically
-   derive data, record, typeclass, product, sum formulations, among many others.
-   All operations on the generic package then should also apply to the particular
-   package instantiations.
-
-   This one goal for a reasonable solution has a number of important and difficult
-   subgoals. The resulting system should be well-defined with a coherent semantic
-   underpinning ---possibly being a conservative extension---; it should support
-   the elementary uses of pedestrian module systems; the algorithms utilised need
-   to be proven correct with a mechanical proof assistant, considerations for
-   efficiency cannot be dismissed if the system is to be usable; the interface for
-   modules should be as minimal as possible, and, finally, a large number of
-   existing use-cases must be rendered tersely using the resulting system without
-   jeopardising runtime performance in order to demonstrate its success.
-   #
-   # At least a convincing case must be made that overhead can be
-   # ``compiled away''.
-
-  :Hide:
-   During the research stage of the thesis, some of the sub-goals may be altered
-   radically, dismissed altogether, or new ones brought forth due to implementation
-   considerations. However, the one main goal will remain unchanged as it is how
-   we have chosen to measure the minimal adequacy for a module system for rich
-   settings that include dependent-types.
-  :End:
-
-*** COMMENT Why (ASTs) syntax                                  :Maybe_Delete:
-      The archetype for records and termtypes ---algebraic data types--- are
-      monoids. They describe untyped compositional structures, such as programs in
-      dynamically type-checked language. In turn, their termtype is linked lists
-      which reify a monoid value ---such as a program--- as a sequence of values
-      ---i.e., a list of language instructions--- which ‘evaluate’ to the original
-      value. The shift to syntax gives rise to evaluators, optimisers, and  constrained
-      recursion-induction principles.
-*** COMMENT Excerption
-
-  # #+latex: \noindent
-  # *Excerption*
-  # #
-  # #+latex: \noindent
-   In order to produce reusable components, theories ---i.e., packages--- are formed
-   from existing theories by adding only one new concept at a time. Such an approach
-   reduces the possibility of missing a useful structure in the hierarchy, as well
-   as provides tremendous generality ---operations can be rendered using the minimal
-   interface required rather than one that is overly expressive. This is a common
-   scheme when formalising mathematics citet:typeclasses_for_maths,coq_cat_experiences.
-
-   Unfortunately, a common scenario is when one wants to /instantiate/ such a deeply
-   nested theory ---as was the case in section ref:sec:examples:extensions for
-   fine-grained hierarchy of monoids.
 * COMMENT Current Approaches
 
 <<sec:current_approaches>>
