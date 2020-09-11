@@ -21,6 +21,7 @@
 #+macro: newline @@latex: \newline@@
 # src_haskell[:exports code]{
 
+
 :DONE:
 
 + [X] you're missing a "lessons learned" section where you summarize the problems
@@ -108,6 +109,17 @@ Algebraic Data Types}
 #+end_center
 
 :End:
+
+
+# Macros to add tcolorbox title's to certain lists.
+# See  https://tex.stackexchange.com/questions/275853/adding-a-table-to-list-of-tables
+# Also: https://tex.stackexchange.com/questions/446704/addtocontents-and-minitoc
+# Also:
+#+latex: \def\TABLE#1{\addcontentsline{lot}{table}{\thesection\;\; #1} #1}
+#+latex: \def\FIGURE#1{\addcontentsline{lof}{figure}{\thesection\;\; #1} #1}
+#+latex_header: \usepackage{caption} \captionsetup[table]{labelformat=empty}
+
+# Use \caption*{text} to label tables with just “text” instead of “Table 𝓃: text”
 
 * COMMENT Proposed Outline
 1. Motivating the problem
@@ -600,6 +612,7 @@ plagiarism even comes down to one sentence.” ---Ninth Ward Goethe
 
 #  \maketitle
 #+TOC: headlines 1
+#+TOC: tables
 * COMMENT OLD Introduction ---The Thesis’ “Story”
   :PROPERTIES:
   :CUSTOM_ID: introduction
@@ -997,9 +1010,6 @@ The remainder of the thesis is organised as follows.
 # ^_^
 It has been an exciting journey, I hope you enjoy the ride!
 
-* Introduction
-  /unchanged/
-
 * COMMENT Introduction
 
 #+begin_export latex
@@ -1050,6 +1060,11 @@ See figures   \ref{fig:unbundled-distributivity}
 and    \ref{fig:bundled-distributivity} for concrete instances.
 #+end_export
 
+
+ Recall, say from Section ref:sec:PF:problem_statement, that we refer to the
+ concern of moving from a record to a parameterised record as *the unbundling
+ problem* citet:packaging_mathematical_structures.
+ ( Section ref:sec:problems .)
 
 --------------------------------------------------------------------------------
 
@@ -1234,12 +1249,7 @@ and termtypes. The approach followed is summarised in figure ref:fig:thesis-guid
  ,DTL Library}
 \end{center}
 #+end_figure
-* Packages and Their Parts
 
-<<sec:packages_and_their_parts>>
-#+latex: \label{sec:packages_and_their_parts}
-
-  /unchanged/
 
  #+latex: \begin{tcolorbox}[title = Prerequisite of the reader, colback=red!5!white, colframe=red!75!black]
 Going forward, it is assumed that the reader is comfortable programming with
@@ -1256,12 +1266,6 @@ problems addressed in this thesis ---since they could not be expressed in
 languages without dependent-types and are thus ‘not problems’.
  #+latex: \end{tcolorbox}
 
-* Examples from the Wild
-
-<<sec:examples_from_the_wild>>
-#+latex: \label{sec:examples_from_the_wild}
-
-  /unchanged/
 * COMMENT Packages and Their Parts
 
 <<sec:packages_and_their_parts>>
@@ -5119,6 +5123,8 @@ thesis. It also outlines the objectives of this thesis and discusses the
 methodology used to achieve those objectives.
 
 *** Problem Statement
+<<sec:PF:problem_statement>>
+#+latex: \label{sec:PF:problem_statement}
 
 Currently, first-class module systems for dependently-typed languages are poorly
 /supported/. Modules 𝒳 consisting of functions symbols, properties, and derived
@@ -5129,7 +5135,7 @@ having parameters $pᵢ$ at the type level and fields $p_{w + i}$ at the body le
 \[ ΠʷΣ \;=\; Π\, p₁ : τ₁ • Π\, p₂ : τ₂ • ⋯ • Π\, p_w : τ_w • Σ\, p_{w + 1} :
 τ'_{w + 1} • ⋯ • Σ\, f : τ'_n • body \] This is understandable: Function symbols
 generally vary more often than proof obligations.  (This is discussed in detail
-in Section ref:sec:examples:IsX.)  However, when users do not yet have the
+in Section ref:sec:examples:IsX and rendered in concrete Agda code in Section ref:sec:problems.)  However, when users do not yet have the
 necessary parameters =pᵢ=, they need to use a curried (or /bundled/) form of the
 module and so library developers also provide a module =𝒳= which packs up the
 parameters as necessary fields within the module; i.e., 𝒳 has the shape =Π⁰Σ= by
@@ -5233,7 +5239,6 @@ this thesis sets a number of objectives which are described below.
   :CUSTOM_ID: 1-5j
   :END:
 <<sec:contributions>>
-#+latex: \label{sec:contributions}
 #+latex: \label{sec:contributions}
 
 The fulfilment of the objectives of this thesis leads to the following
@@ -5528,6 +5533,7 @@ difficulty in simply expressing this property.
 #+latex: \begin{mybox}{Unbundling Design Pattern}
 If a feature of a class is shared among instances, then use an unbundled form of the class
 to avoid “coercion hell”.
+See Sections ref:sec:examples:IsX, ref:sec:PF:problem_statement, ref:sec:problems.
 #+latex: \end{mybox}
 
 Observe that we assigned superficial renamings, aliases, to the prototypical
@@ -9522,13 +9528,14 @@ import Relation.Binary.PropositionalEquality as ≡; open ≡ using (_≡_)
  #+latex: \begin{tcolorbox}[title = Do-it-yourself Extendability, colback=red!5!white, colframe=red!75!black]
  In order to make the editor extension immediately useful, and to substantiate
  the claim that *common module combinators can be defined using the system*, we
- have implemented a few notable ones, as described in Table
- ref:tbl:variationals-summary. The implementations, in the user manual, are
- discussed along with the associated Lisp code and use cases.
+ have implemented a few notable ones, as described in the table below. The
+ implementations, in the user manual, are discussed along with the associated
+ Lisp code and use cases.
  #+latex: \end{tcolorbox}
 
- #+name: tbl:variationals-summary
- #+caption: Summary of Sample Variationals Provided With The System
+  #+latex: \begin{tcolorbox}[title = \TABLE{Summary of Sample Variationals Provided With The System}, colback=red!5!white, colframe=red!75!black]{\footnotesize
+ # +name: tbl:variationals-summary
+ # +caption: Summary of Sample Variationals Provided With The System
      | *Name*            | *Description*                                                          |
      |----------------------+--------------------------------------------------------------------------|
      | ~record~               | Reify a PackageFormer as a valid /Agda record/                             |
@@ -9556,14 +9563,16 @@ import Relation.Binary.PropositionalEquality as ≡; open ≡ using (_≡_)
      |----------------------+--------------------------------------------------------------------------|
      | ~hom~                  | Formulate the notion of homomorphism of parent PackageFormer algebras    |
      |----------------------+--------------------------------------------------------------------------|
+  #+latex: }\end{tcolorbox}
 
-   \noindent Below, in Table ref:tbl:meta-primitives, are the *five
+   \noindent The following table has the *five
    meta-primitives* from which all variationals are borne, followed by two others
    that are useful for extending the system by making your own grouping
    mechanisms and operations on them.  Using these requires a small amount of
    Lisp.
-   #+name: tbl:meta-primitives
-   #+caption: Metaprogramming Meta-primitives for Making Modules
+    #+latex: \begin{tcolorbox}[title = \TABLE{Metaprogramming Meta-primitives for Making Modules}, colback=red!5!white, colframe=red!75!black]{\footnotesize
+   # +name: tbl:meta-primitives
+   # +caption: Metaprogramming Meta-primitives for Making Modules
    | *Name*            | *Description*                                                          |
    |-----------------+----------------------------------------------------------------------|
    | ~:waist~          | Consider the first /N/ elements as, possibly ill-formed, parameters.   |
@@ -9575,6 +9584,7 @@ import Relation.Binary.PropositionalEquality as ≡; open ≡ using (_≡_)
    | ~map~             | Map a ~Element → Element~ function over a PackageFormer.               |
    | ~generated~       | Keep the sub-PackageFormer whose elements satisfy a given predicate. |
    |-----------------+----------------------------------------------------------------------|
+  #+latex: }\end{tcolorbox}
 
 \noindent =PackageFormer= packages are an *implementation of the idea* of packages
 fleshed out in Chapter ref:sec:packages_and_their_parts.  Tersely put, a
@@ -14343,7 +14353,7 @@ of /editor extension/ to /language library/.
 # 3. Provide a semantics to the existing syntax.
 # 4. Ensure the resulting semantics is consistent with that of Agda's.
 
-* COMMENT The =Context= Library
+* The =Context= Library
 # The Third Choice: Contexts
 
 <<sec:contexts>>
@@ -14354,14 +14364,41 @@ of /editor extension/ to /language library/.
   # dashed and layered boxes.
   #+latex_header: \usepackage{dashbox}
 
+:Hide:
 
-** Introduction :ignore:
+
+ref:sec:problems - Review the main problems of the thesis:
+Unbundling and a single declaration source from which other
+packaging forms may be derived.
+
+ref:sec:monadic-notation -
+With the aiming of solving only the unbundling problem
+---i.e., conflating parameterised records with non-parameterised ones---
+We take an exploratory approach to
+finding a suitable *pragmatic* syntax that elaborates to both;
+our experience in Functional Programming suggested monads may provide a solution
+since we want to ‘keep track of the number of parameters’ throughout a package
+declaration and this is reminiscent of state monads.
+
+todo: draw a smartdiagram with records, typeclasses [link to inference section],
+and data [link to W-types], with mondic =Context= in the middle.
+
+The need to instantiate parameters (of ‘factory’ types) ahead of time
+leads to an interesting (meta-language) operator Π→λ in Section ref:sec:monadic-notation.
+
+:End:
+
+** Intro :ignore:
+# The =PackageFormer= framework is a useful tool to experiment with uncommon ways to
+# package things together, but it contradicts our initial philosophy of having a
+# singular lingua franca for a language and its tongues.
 
 The =PackageFormer= framework is a useful tool to experiment with uncommon ways to
-package things together, but it contradicts our initial philosophy of having a
-singular lingua franca for a language and its tongues.  With the lessons learned
-from developing =PackageFormer=, we go on in this section to produce =Context=, an
-/extensible do-it-yourself module system for Agda *within* Agda/.
+package things together, but is relies on shuffling (untyped) strings and lacks
+a solid semantical basis. Instead of adding semantics after-the-fact, with the
+lessons learned from developing =PackageFormer=, we go on in this section to
+produce src_haskell[:exports code]{Context}, an /extensible do-it-yourself module
+system for Agda *within* Agda/.
 
  We will show an automatic technique for unbundling data at will; thereby
  resulting in /bundling-independent representations/ and in /delayed unbundling/.
@@ -14378,30 +14415,44 @@ from developing =PackageFormer=, we go on in this section to produce =Context=, 
       records @@latex:\hbox{@@(Section [[sec:monadic-notation]]) @@latex:}@@.
       - As with ~Magma₀~, the traditional approach citet:coq_cat_experiences to
         unbundling a record requires the use of transport along propositional
-        equalities, with trivial ~refl~-exivity proofs. In Section
-        [[sec:monadic-notation]], we develop a combinator, ~_:waist_~, which removes
-        the boilerplate necessary at the type specialisation location as well as
-        at the instance declaration location.
+        equalities, with trivial src_emacs-lisp[:exports code]{refl}exivity proofs
+        ---via the Σ-padding anti-pattern of Section ref:sec:examples:IsX. In
+        Section [[sec:monadic-notation]], we develop a combinator, src_emacs-lisp[:exports
+        code]{_:waist_}, which removes the boilerplate necessary at the type
+        specialisation location as well as at the instance declaration location.
 
    3. Programming with fixed-points of unary type constructors can be made
       as simple as programming with term datatypes (Section
       [[sec:termtypes-as-fixedpoints]]).
 
-   4. Astonishingly, we mechanically regain ubiquitous data structures such as ~ℕ,
-      Maybe, List~ as the term datatypes of simple pointed and monoidal theories
-      (Section [[sec:free-datatypes]]).
+   4. Astonishingly, we mechanically regain ubiquitous data structures such as
+      src_haskell[:exports code]{ℕ, Maybe, List} as the term datatypes of simple
+      pointed and monoidal theories (Section [[sec:free-datatypes]]).
 
    As an application, in Section [[sec:related-works]] we show that the resulting
-   setup applies as a semantics for a declarative pre-processing tool that accomplishes the
-   above tasks, namely =PackageFormer=.
+   setup applies as a semantics for declarative pre-processing =PackageFormer=
+   tool ---which also accomplishes the above tasks.
 
-   For brevity, and accessibility, a number of definitions are elided and only
-   @@latex: \dbox{dashed pseudo-code}@@ is presented in this section, with the
-   understanding that such functions need to be extended homomorphically over all
-   possible term constructors of the host language.  Enough is shown to
-   communicate the techniques and ideas, as well as to make the resulting library
-   usable.  The details, which users do not need to bother with, can be found in
-   the appendices.
+   For brevity, and accessibility, the definitions in this chapter are presented
+   in an informal form alongside a concrete implementation /without/ explanation
+   of implementation details.
+   #+latex: \begin{tcolorbox}[title = A complicated Agda macro, colback=yellow!5!white, colframe=yellow!75!black]
+   @@latex: \begin{center}\dbox{\texttt{accessible dashed pseudo-code}}\end{center}@@
+   #+begin_src haskell
+   ... actual Agda implementation,
+       requiring intimate familarity with reflection in Agda ...
+   #+end_src
+   #+latex: \end{tcolorbox}
+   The informal form is presented with the understanding that such functions
+   need to be extended *homomorphically* over all possible term constructors of
+   the host language.  Enough is shown to communicate the techniques and ideas,
+   as well as to make the resulting library usable.  The details, which users do
+   not need to bother with, are nonetheless presented so as to show how
+   accessible these techniques are ---in that, they do not require more than 15
+   lines per core concept.
+
+{{{localtoc}}}
+
 ** COMMENT Why PackageFormer is not enough.
 ** COMMENT Discuss Agda macros ---need to be self-contained.
 ** COMMENT Motivate the need for a practical syntax.
@@ -14450,17 +14501,17 @@ open import Reflection hiding (name; Type) renaming (_>>=_ to _>>=ₘ_)
 Let us begin anew by briefly reviewing the main problems, but this time directly
 using Agda as the language of discourse.
 
- There are a number of problems, with the number of parameters being exposed
- being the pivotal concern. To exemplify the distinctions at the type level as
- more parameters are exposed, consider the following approaches to formalising a
- dynamical system ---a collection of states, a designated start state, and a
- transition function.
+ There are a number of problems when packaging up data, with the number of
+ parameters being exposed being the pivotal concern. To exemplify the
+ distinctions at the type level as more parameters are exposed, consider the
+ following approaches to formalising a dynamical system ---a collection of
+ states, a designated start state, and a transition function.
 
 {{{code(Dynamical Systems)}}}
  #+begin_src agda  :tangle Context_examples.agda
 record DynamicSystem₀ : Set₁ where
   field
-    State : Set
+    State  : Set
     start  : State
     next   : State → State
 
@@ -14475,14 +14526,17 @@ record DynamicSystem₂ (State : Set) (start : State) : Set where
  #+end_src
 
  #+latex: \noindent
- Each =DynamicSystemᵢ= is a type constructor of =i=-many arguments;
- but it is the types of these constructors that provide insight
- into the sort of data they contain:
+ Each =DynamicSystemᵢ= is a type constructor of =i=-many arguments; but it is
+ *the types of these constructors that provide insight into the sort of data they
+ contain* as shown in the following table and discussed in Sections
+ ref:sec:examples:IsX and ref:sec:examples:readability.
+  #+latex: \begin{tcolorbox}[colback=red!5!white, colframe=red!75!black]
  | Type           | Kind                      |
  |----------------+---------------------------|
  | =DynamicSystem₀= | =Set₁=                      |
  | =DynamicSystem₁= | =Π X ∶ Set • Set=           |
  | =DynamicSystem₂= | =Π X ∶ Set • Π x ∶ X • Set= |
+ #+latex: \end{tcolorbox}
  :AgdaCheckedEvidence:
 {{{code( ? )}}}
 #+begin_src agda  :tangle Context_examples.agda
@@ -14499,23 +14553,25 @@ _ = DynamicSystem₂
 
  # Below: (The \" here is a ``trema'', not an ``Umlaut''.)
  #+latex: \noindent
- We shall refer to the concern of moving from a record to a parameterised record
- as *the unbundling problem* citet:packaging_mathematical_structures. For example,
- moving from the /type/ ~Set₁~ to the /function type/ @@latex:\quad@@ src_agda[:exports code]{Π X ∶ Set • Set}
- @@latex:\quad@@ gets us from
+ Recall, say from Section ref:sec:PF:problem_statement, that we refer to the
+ concern of moving from a record to a parameterised record as *the unbundling
+ problem* citet:packaging_mathematical_structures. For example, moving from the
+ /type/ src_agda[:exports code]{Set₁} to the /function type/ @@latex:\quad@@
+ src_agda[:exports code]{Π X ∶ Set • Set} @@latex:\quad@@ gets us from
  ~DynamicSystem₀~ to something resembling ~DynamicSystem₁~, which we arrive at if we
  can obtain a /type constructor/ @@latex:\quad@@ src_agda[:exports code]{λ X ∶ Set
- • ⋯}. @@latex:$\,$@@
- We shall refer to the latter change
- as @@latex: \emph{re\"{\i}fication}@@ since the result is more concrete: It can
- be applied. This transformation will be
- denoted by ~Π→λ~. To clarify this subtlety, consider the following forms of the
- polymorphic identity function. Notice that $\mathsf{id}ᵢ$ /exposes/ =i=-many details at the
- type level to indicate the sort of data it consists of. However, notice that ~id₀~ is
- a type of functions whereas $\mathsf{id}₁$ is a function on types. Indeed, the latter
- two are derived from the first one: $\mathsf{id}_{i + 1} \,=\, Π\!\!→\!\!λ\, \mathsf{id}ᵢ$
- These identities are true by ~refl~-exivity ---see Appendix [[sec:identity-funcs]].
-{{{code( Polymorphic Identity Functions )}}}
+ • ⋯}. @@latex:$\,$@@ We shall refer to the latter change as @@latex:
+ \emph{re\"{\i}fication}@@ since the result is more concrete: It can be
+ applied. This transformation will be denoted by ~Π→λ~. To clarify this subtlety,
+ consider the following forms of the polymorphic identity function. Notice that
+ $\mathsf{id}ᵢ$ /exposes/ 𝒾-many details at the type level to indicate the sort of
+ data it consists of. However, notice that src_agda[:exports code]{id₀} is a
+ *type of functions* whereas src_agda[:exports code]{id₁} is a *function on
+ types*. Indeed, the latter two are derived from the first one: src_agda[:exports
+ code]{idᵢ₊₁ = Π→λ idᵢ}. These equations are true by src_emacs-lisp[:exports
+ code]{refl}exivity, as shown below.
+
+ {{{code( Polymorphic Identity Functions )}}}
  #+begin_src agda  :tangle Context_examples.agda
 id₀ : Set₁
 id₀ = Π X ∶ Set • Π e ∶ X • X
@@ -14525,13 +14581,22 @@ id₁ = λ (X : Set) → Π e ∶ X • X
 
 id₂ : Π X ∶ Set • Π e ∶ X • Set
 id₂ = λ (X : Set) (e : X) → X
- #+end_src
+
+{- Surprisingly, the latter are derivable from the former -}
+
+_ : id₁ ≡ Π→λ id₀
+_ = refl
+
+_ : id₂ ≡ Π→λ id₁
+_ = refl
+#+end_src
 
  #+latex: \noindent
- Of course, there is also the need for descriptions of values, which leads to term datatypes. We shall refer to the shift from record types to algebraic
- data types as *the termtype problem*.
- Our aim is to obtain all of these notions ---of ways to group data together---
- from a single user-friendly context declaration, using monadic notation.
+ Of course, there is also the need for descriptions of values, which leads to
+ term datatypes. We shall refer to the shift from record types to algebraic data
+ types as *the termtype problem*.  Our aim is to obtain all of these notions ---of
+ ways to group data together--- from a single user-friendly context declaration,
+ using monadic notation.
 
  :Ignore:
  Mark: Maybe a note that State = DSTerms₀ in the first one? Whereas DSTermsᵢ ∈ State for i = 1,2.
@@ -14581,11 +14646,12 @@ _ = DSTerms₂
 
    There is little use in an idea that is difficult to use in practice.  As such,
    we conflate records and termtypes by starting with an ideal syntax they would
-   share, then derive the necessary artefacts that permit it. Our choice of
-   syntax is monadic do-notation
+   share, then derive the necessary artefacts that permit it. As discussed at
+   the start of the chapter, our choice of
+   syntax is monadic src_haskell[:exports code]{do}-notation
    \cite{DBLP:journals/iandc/Moggi91,DBLP:conf/haskell/MarlowJKM16}:
 
-{{{code( ? )}}}
+{{{code( Idealised syntax for one source of truth )}}}
  #+begin_src agda :tangle no
 DynamicSystem : Context ℓ₁
 DynamicSystem = do State ← Set
@@ -14594,23 +14660,45 @@ DynamicSystem = do State ← Set
                    End
  #+end_src
   #+latex: \noindent
-  Here ~Context, End~, and the underlying monadic bind operator are unknown.  Since
-  we want to be able to /expose/ a number of fields at will, we may take ~Context~ to
-  be types indexed by a number denoting exposure.  Moreover, since records are
-  product types, we expect there to be a recursive definition whose base case
-  will be the identity of products, the unit type ~𝟙~ ---which corresponds to ~⊤~ in
-  the Agda standard library and to ~()~ in Haskell.
+  Here ~Context, End~, and the underlying monadic bind operator are unknown.
+  Since we want to be able to /expose/ a number of fields at will, we may take
+  ~Context~ to be types indexed by a number denoting exposure.  Moreover, since
+  records are product types, we expect there to be a recursive definition whose
+  base case will be the identity of products, the unit type src_haskell[:exports
+  code]{𝟙} ---which corresponds to src_agda[:exports code]{⊤} in the Agda
+  standard library and to src_haskell[:exports code]{()} in Haskell.  The
+  following table shows example exposure ‘waists’ for the =DynamicSystem= context.
 
-  #+latex: {\renewcommand{\arraystretch}{1.3}
+  # +latex: \newunicodechar{Σ}{\ensuremath{\color{red}\Sigma}}
+
+# The newunicodechar package says that a \newunicodechar{X}{Y} clause
+# can be rendered using \@namedef.
+# https://ctan.math.illinois.edu/macros/latex/contrib/newunicodechar/newunicodechar.pdf
+# Since \newunicodechar can only be used in LaTeX header, we make an org macro.
+#+macro: newunicodechar  @@latex: \makeatletter\@namedef{u8:\detokenize{$1}}{$2}\makeatother @@
+
+
+# Temporarily switch to coloured Σ,Π so the “triangles” look noticable
+{{{newunicodechar(Σ, \color{red!50!black} \!\!\!\ensuremath{\Sigma})}}}
+{{{newunicodechar(Π, \color{blue!50!black} \!\!\!\ensuremath{\Pi})}}}
+
+  #+latex: \begin{tcolorbox}[title = \centering \TABLE{Elaborations of \texttt{DynamicSystem} at various exposure levels}, colback=yellow!5!white, colframe=yellow!75!black]
+  # +latex: {\renewcommand{\arraystretch}{1.3}
   #+name: elaborations
-  #+caption: Elaborations of DynamicSystem at various exposure levels
- | Exposure |   | Elaboration                                                 |
+  # +caption: Elaborations of DynamicSystem at various exposure levels
+ |   <c>    |   |                             <c>                             |
+ | Exposure |   |                         Elaboration                         |
  |----------+---+-------------------------------------------------------------|
- |        0 |   | =Σ State ∶ Set  • Σ start ∶ X  • Σ next ∶ State → State  • 𝟙= |
- |        1 |   | =Π State ∶ Set  • Σ start ∶ X  • Σ next ∶ State → State  • 𝟙= |
- |        2 |   | =Π State ∶ Set  • Π start ∶ X  • Σ next ∶ State → State  • 𝟙= |
- |        3 |   | =Π State ∶ Set  • Π start ∶ X  • Π next ∶ State → State  • 𝟙= |
- #+latex: }
+ |    0     |   | =Σ State ∶ Set  • Σ start ∶ X  • Σ next ∶ State → State  • 𝟙= |
+ |    1     |   | =Π State ∶ Set  • Σ start ∶ X  • Σ next ∶ State → State  • 𝟙= |
+ |    2     |   | =Π State ∶ Set  • Π start ∶ X  • Σ next ∶ State → State  • 𝟙= |
+ |    3     |   | =Π State ∶ Set  • Π start ∶ X  • Π next ∶ State → State  • 𝟙= |
+ # +latex: }
+ #+latex: \end{tcolorbox}
+
+# Back to normal black colouring
+{{{newunicodechar(Σ, \!\!\ensuremath{\Sigma})}}}
+{{{newunicodechar(Π, \!\!\ensuremath{\Pi})}}}
 
  #+latex: \noindent
  With these elaborations of ~DynamicSystem~ to guide the way, we resolve
@@ -14630,12 +14718,15 @@ End = ‵ 𝟙
  #+end_src
 
  #+latex: \noindent
- It remains to identify the definition of the underlying bind operation ~>>=~.
- Usually, for a type constructor ~m~, bind is typed src_agda[:exports code]{∀ {X Y : Set} → m X → (X →
- m Y) → m Y}. It allows one to “extract an ~X~-value for later use” in the ~m Y~
- context. Since our ~m = Context~ is from levels to types, we need to slightly
- alter bind's typing.
-{{{code( Defining Bind ---First Attempt )}}}
+ It remains to identify the definition of the underlying bind operation
+ src_haskell[:exports code]{>>=}.  Usually, for a type constructor
+ src_emacs-lisp[:exports code]{m}, bind is typed src_agda[:exports code]{∀ {X
+ Y : Set} → m X → (X → m Y) → m Y}. It allows one to “extract an
+ src_haskell[:exports code]{X}-value for later use” in the src_haskell[:exports
+ code]{m Y} context. Since our src_haskell[:exports code]{m = Context} is from
+ levels to types, we need to slightly alter bind's typing.
+
+ {{{code( Defining Bind ---First Attempt )}}}
  #+begin_src agda :tangle no
 _>>=_ : ∀ {a b}
       → (Γ : Context a)
@@ -14648,8 +14739,13 @@ _>>=_ : ∀ {a b}
  The definition here accounts for the current exposure index: If zero, we have
  /record types/, otherwise /function types/. Using this definition, the above
  dynamical system context would need to be expressed using the lifting quote
- operation.  *The extensibility is provided by the definition of bind: Rather
- than Σ and Π, users may use or augment the framework in other forms.*
+ operation.
+  #+latex: \begin{tcolorbox}[colback=red!5!white, colframe=red!75!black]
+  *The extensibility of src_haskell[:exports code]{Context} is provided by the*
+  *definition of bind: Rather than Σ and Π, users may use or augment the*
+  *framework in other forms ---e.g., Πʷ, 𝓦, or let⋯in⋯ (as shown in 𝒩₁′ below)
+  *or combinations thereof.*
+ #+latex: \end{tcolorbox}
 
 #+LATEX_HEADER: \usepackage{placeins}
  # +latex: \FloatBarrier
@@ -14672,10 +14768,12 @@ do State ← ‵ Set
  #+end_src
  # See page 275.
  #+latex: \noindent
- Interestingly citet:Bird_2009,DBLP:conf/hopl/HudakHJW07, use of ~do~-notation in
- preference to bind, ~>>=~, was suggested by John Launchbury in 1993 and was first
- implemented by Mark Jones in Gofer.  Anyhow, with our goal of practicality in
- mind, we shall “build the lifting quote into the definition” of bind:
+ Interestingly citet:Bird_2009,DBLP:conf/hopl/HudakHJW07, use of
+ src_haskell[:exports code]{do}-notation in preference to bind,
+ src_haskell[:exports code]{>>=}, was suggested by John Launchbury in 1993 and
+ was first implemented by Mark Jones in Gofer.  Anyhow, with our goal of
+ practicality in mind, we shall “build the lifting quote into the definition” of
+ bind:
  #+ATTR_LaTeX: :placement [!htpb]
  #+caption: Semantics: Context do-syntax is interpreted as Π-Σ-types
 {{{code( The Definition of Bind )}}}
@@ -14700,48 +14798,58 @@ _>>=_ : ∀ {a b}
 
  #+latex: \noindent
  With this definition, the above declaration ~DynamicSystem~ typechecks.  However,
- {{{newline}}}
- ~DynamicSystem 𝒾 ≇ DynamicSystemᵢ~, instead $\mathsf{DynamicSystem}\, 𝒾$ are “factories”: Given
- =i=-many arguments, a product value is formed. What if we want to /instantiate/ some
- of the factory arguments ahead of time?
-{{{code( Factories and Instantiation )}}}
+ we do /not/ have an isomorphism ~DynamicSystem 𝒾 ≅ DynamicSystemᵢ~, instead
+ =DynamicSystem 𝒾= are “factories”: Given 𝒾-many arguments, a product value is
+ formed. What if we want to /instantiate/ some of the factory arguments ahead of
+ time?
+
+ {{{code( Factories and Instantiation ---ℕatural numbers form a dynamic system )}}}
  #+begin_src agda :tangle no
-𝒩₀ : DynamicSystem 0   {- See the elaborations in Table 1 -}
+𝒩₀ : DynamicSystem 0   {- See the above elaborations  -}
 𝒩₀ = ℕ , 0 , suc , tt
 
 𝒩₁ : DynamicSystem 1
 𝒩₁ = λ State → ??? {- Impossible to complete if “State” is empty! -}
 
-{- “Instantiaing” X to be ℕ in “DynamicSystem 1” -}
+{- “Instantiaing” State to be ℕ in “DynamicSystem 1” -}
 𝒩₁′ : let State = ℕ in Σ start ∶ State  • Σ s ∶ (State → State)  • 𝟙
 𝒩₁′ = 0 , suc , tt
  #+end_src
  #+latex: \noindent
- It seems what we need is a method, say ~Π→λ~, that takes a ~Π~-type and transforms it
- into a ~λ~-expression.  One could use a universe, an algebraic type of codes
- denoting types, to define ~Π→λ~. However, one can no longer then easily use
- existing types since they are not formed from the universe's constructors,
- thereby resulting in duplication of existing types via the universe
- encoding. This is  neither practical nor pragmatic.
-
- As such, we are left with pattern matching on the language's type formation
- primitives as the only reasonable approach. The method ~Π→λ~ is thus a
- macro @@latex: \!\!\footnote{A \emph{macro} is a function that manipulates the
- abstract syntax trees of the host language. In particular, it may take an
- arbitrary term, shuffle its syntax to provide possibly meaningless terms or
- terms that could not be formed without pattern matching on the possible
- syntactic constructions.  An up to date and gentle introduction to reflection in
- Agda can be found at \citep{gentle-intro-to-reflection} }@@ that acts on the
- syntactic term representations of types.  Below is the main transformation ---the
- details can be found in Appendix [[sec:pi-to-lambda]].
- #+begin_center
- #+begin_export latex
- \dbox{\texttt{Π→λ (Π a ∶ A • τ) = (λ a ∶ A • τ)}}
- #+end_export
+ To get from src_haskell[:exports code]{𝒩₁} to src_haskell[:exports code]{𝒩₁′},
+ it seems what we need is a method, say src_haskell[:exports code]{Π→λ}, that
+ takes a src_haskell[:exports code]{Π}-type and transforms it into a
+ src_haskell[:exports code]{λ}-expression.  One could use a universe, an
+ algebraic type of codes denoting types, to define src_haskell[:exports
+ code]{Π→λ}. However, one can no longer then easily use existing types since
+ they are not formed from the universe's constructors, thereby resulting in
+ duplication of existing types via the universe encoding. This is neither
+ practical nor pragmatic.  As such, we are left with pattern matching on the
+ language's type formation primitives as the only reasonable approach. The
+ method src_haskell[:exports code]{Π→λ} is thus a macro[fn:43] that acts on the
+ syntactic term representations of types.  Below is the main transformation.
+ #+latex: \begin{tcolorbox}[title = Π→λ, colback=yellow!5!white, colframe=yellow!75!black]
+ #+begin_center org
+ #+latex: \dbox{
+ src_haskell[:exports code]{Π→λ (Π a ∶ A • τ) = (λ a ∶ A • τ)}
+ #+latex: }
  #+end_center
+ {{{code(Source ---for the interested reader)}}}
+#+begin_src agda :tangle Context.agda
+Π→λ-helper : Term → Term
+Π→λ-helper (pi  a b)         = lam visible b
+Π→λ-helper (lam a (abs x y)) = lam a (abs x (Π→λ-helper y))
+{-# CATCHALL #-}
+Π→λ-helper x = x
+
+macro
+  Π→λ : Term → Term → TC Unit.⊤
+  Π→λ tm goal = normalise tm >>=ₘ λ tm′ → unify (Π→λ-helper tm′) goal
+#+end_src
  #+latex: \noindent
- That is, we walk along the term tree replacing occurrences of ~Π~ with ~λ~. For
- example,
+ #+latex: \end{tcolorbox}
+ That is, we walk along the term tree replacing (consecutive) occurrences of ~Π~ with
+ ~λ~; as shown in the following example.
   #+latex: {\renewcommand{\arraystretch}{1.3}
 {{{code( Example use of Π→λ )}}}
  #+begin_src agda :tangle no
@@ -14758,27 +14866,37 @@ _>>=_ : ∀ {a b}
  #+latex: }
 
  #+latex: \noindent
- For practicality, ~_:waist_~ is a macro (defined in Appendix [[sec:waist]]) acting on contexts that repeats ~Π→λ~ a number of
+ For practicality, we define a macro  ~_:waist_~ acting on contexts that /repeats/ ~Π→λ~ a number of
  times in order to lift a number of field components to the parameter level.
- #+latex: \vspace{1em}
- #+begin_center latex
- #+begin_export latex
- \dbox{\parbox{0.4\textwidth}{%
+ # +latex: \vspace{1em}
+ #+latex: \begin{tcolorbox}[title = Waist, colback=yellow!5!white, colframe=yellow!75!black]
+ #+begin_center org
+ #+latex: \dbox{\parbox{0.4\textwidth}{%
+ src_haskell[:exports code]{τ :waist n  =  Π→λⁿ (τ n)}
 
- \texttt{τ :waist n  =  Π→λⁿ (τ n)}
+ src_haskell[:exports code]{f⁰   x       =  x}
 
- \texttt{f⁰   x  \hspace{2.55em}    =  x}
-
- \texttt{fⁿ⁺¹ x  \hspace{1.4em}    =  fⁿ (f x)}
-
- }}
- #+end_export
+ src_haskell[:exports code]{fⁿ⁺¹ x    =  fⁿ (f x)}
+ #+latex:  }}
  #+end_center
+ {{{code(Source ---for the interested reader)}}}
+ #+begin_src agda :tangle Context.agda
+waist-helper : ℕ → Term → Term
+waist-helper zero t    = t
+waist-helper (suc n) t = waist-helper n (Π→λ-helper t)
+
+macro
+  _:waist_ : Term → Term → Term → TC Unit.⊤
+  _:waist_ t 𝓃 goal =      normalise (t app 𝓃)
+                      >>=ₘ λ t′ → unify (waist-helper (toℕ 𝓃) t′) goal
+#+end_src
+ #+latex: \end{tcolorbox}
 
  #+latex: \vspace{1em}\noindent
  We can now “fix arguments ahead of time”. Before such demonstration, we need to
  be mindful of our practicality goals: One declares a grouping mechanism with
- ~do … End~, which in turn has its instance values constructed with ~⟨ … ⟩~.
+ src_haskell[:exports code]{do … End}, which in turn has its instance values
+ constructed with ~⟨ … ⟩~, as defined below.
 {{{code( Syntactic Sugar for Context Values )}}}
  #+begin_src agda :tangle no
 -- Expressions of the form “⋯ , tt” may now be written “⟨ ⋯ ⟩”
@@ -14821,7 +14939,7 @@ s ⟩ = s , tt
  for being is to distinguish two common monoids: The former is for /integers with
  addition/ whereas the latter is for /integers with multiplication/.
  An orthogonal solution would be to use contexts:
-{{{code( ? )}}}
+{{{code( Monoids without commitment )}}}
  #+begin_src agda :tangle Context_examples.agda
 Monoid : ∀ ℓ → Context (ℓsuc ℓ)
 Monoid ℓ = do Carrier ← Set ℓ
@@ -14833,8 +14951,8 @@ Monoid ℓ = do Carrier ← Set ℓ
               End {ℓ}
  #+end_src
  #+latex: \noindent
- With this context, (~Monoid ℓ₀ :waist 2) M ⊕~ is the type of monoids over
- /particular/ types ~M~ and /particular/ operations ~⊕~.  Of-course, this is orthogonal,
+ With this context, (~Monoid ℓ₀ :waist 2) M _⊕_~ is the type of monoids over
+ /particular/ types ~M~ and /particular/ operations ~_⊕_~.  Of-course, this is orthogonal,
  since traditionally unification on the carrier type ~M~ is what makes typeclasses
  and canonical structures citet:coq_canonical_tutorial useful for ad-hoc
  polymorphism.
@@ -14846,49 +14964,56 @@ Monoid ℓ = do Carrier ← Set ℓ
    <<sec:termtypes-as-fixedpoints>>
 #+latex: \label{sec:termtypes-as-fixedpoints}
 
+*** Intro :ignore:
+
    We have a practical monadic syntax for possibly parameterised record types
-   that we would like to extend to termtypes. Algebraic data types are a means to
+   that we would like to extend to termtypes.
+   As discussed in the previous section, we could alter
+   the bind operator to account for 𝒲-types, but we shall
+   present a different technique so as to avoid
+   “making bind do too much”.
+   Algebraic data types are a means to
    declare concrete representations of the least fixed-point of a functor; see
    citet:DBLP:journals/jfp/Swierstra08 for more on this idea.  In particular, the
    description language ~𝔻~ for dynamical systems, below, declares concrete
-   constructors for a fixpoint of a certain functor ~F~; i.e., ~𝔻 ≅ Fix F~ where:
+   constructors for a fixpoint of a certain functor 𝒟; i.e., ~𝔻 ≅ Fix 𝒟~ where:
 {{{code( ADTs and Functors )}}}
    #+begin_src agda :tangle no
 data 𝔻 : Set where
     startD : 𝔻
     nextD  : 𝔻 → 𝔻
 
-F : Set → Set
-F = λ (D ∶ Set) → 𝟙 ⊎ D
+𝒟 : Set → Set
+𝒟 = λ (D ∶ Set) → 𝟙 ⊎ D
 
 data Fix (F : Set → Set) : Set where
   μ : F (Fix F) → Fix F
  #+end_src
  #+latex: \noindent
-  The problem is whether we can derive ~F~ from ~DynamicSystem~.
+  The problem is whether we can derive 𝒟 from ~DynamicSystem~.
   Let us attempt a quick calculation
-  sketching the necessary transformation steps (informally expressed via ``$\Rightarrow$''):
+  sketching the necessary transformation steps (informally expressed via ``⟿''):
  # Avoid overfull \hboxes. E.g., \scalebox{0.9}[1]{The whole comments}
  # +name: termtypes-guide
  # +caption: Guide to termtypes
-{{{code( From Contexts to Fixed-points )}}}
+{{{code( From Contexts to Fixed-points: A Roadmap )}}}
  #+BEGIN_SRC agda :tangle no
   do S ← Set; s ← S; n ← (S → S); End
-⇒{- Use existing interpretation to obtain a record. -}
+⟿{- Use existing interpretation to obtain a record. -}
   Σ S : Set • Σ s : S • Σ n : (S → S) • 𝟙
-⇒{- Pull out the carrier, “:waist 1”,
+⟿{- Pull out the carrier, “:waist 1”,
     to obtain a type constructor using “Π→λ”. -}
   λ S : Set • Σ s : S • Σ n : (S → S) • 𝟙
-⇒{- Termtype constructors target the declared type,
+⟿{- Termtype constructors target the declared type,
     so only their sources matter. E.g., ‘s : S’ is a
     nullary constructor targeting the carrier ‘S’.
     This introduces 𝟙 types, so any existing
     occurances are dropped via 𝟘. -}
   λ S : Set • Σ s : 𝟙 • Σ n : S • 𝟘
-⇒{- Termtypes are sums of products. -}
+⟿{- Termtypes are sums of products. -}
   λ S : Set •       𝟙   ⊎     S  ⊎ 𝟘
-⇒{- Termtypes are fixpoints of type constructors. -}
-  Fix (λ X • 𝟙 ⊎ S)  -- i.e., 𝔻
+⟿{- Termtypes are fixpoints of type constructors. -}
+  Fix (λ S • 𝟙 ⊎ S)  -- i.e., 𝒟
   #+END_SRC
  #+latex: \noindent
   Since we may view an algebraic data-type as a fixed-point of the functor
@@ -14898,33 +15023,290 @@ data Fix (F : Set → Set) : Set where
    the declared type, they are determined by their sources.  For example,
    considered as a unary constructor ~op ∶ A → B~ targets the termtype ~B~ and
    so its source is ~A~.
-   The details on the operations ~⇊, Σ→⊎~, and ~sources~
-   characterised by the pseudocode below can be found in appendices
-   [[sec:decreasing-de-brujin]], [[sec:sigma-to-sum]], and [[sec:sources]], respectively.
-   It suffices to know that ~Σ→⊎~ rewrites dependent-sums into disjoint sums,
+   Hence, we can form the src_emacs-lisp[:exports code]{termtype}  of a context
+   as the src_emacs-lisp[:exports code]{Fix}-point
+   of the sum ---using =Σ→⊎=--- of the
+   src_emacs-lisp[:exports code]{sources} of the context, as shown
+   below. Where the operation ~Σ→⊎~ rewrites dependent-sums into disjoint sums,
    which requires the second argument to lose its reference to the first argument
    which is accomplished by ~⇊~; further details can be found in the appendices.
  #+latex: \vspace{1em}
- #+begin_center latex
- #+begin_export latex
- \dbox{\parbox{0.75\textwidth}{%
+ #+begin_center org
+ #+latex: \dbox{\parbox{0.70\textwidth}{%
 
- \texttt{⇊ τ = “reduce all de Bruijn indices within τ by 1”}
+ src_haskell[:exports code]{sources (λ x ∶ (Π a ∶ A • Ba) • τ) = (λ x ∶ A • sources τ)}
 
- \vspace{2em}
- \texttt{Σ→⊎ (Σ a ∶ A • Ba) = A ⊎ Σ→⊎ (⇊ Ba)}
+ src_haskell[:exports code]{sources (λ x ∶ A               • τ) = (λ x ∶ 𝟙 •
+ sources τ)}
 
- \vspace{2em}
- \texttt{sources (λ x ∶ (Π a ∶ A • Ba) • τ) = (λ x ∶ A • sources τ)}
+#+latex: \vspace{1em}
+src_haskell[:exports code]{⇊ τ = “reduce all de-bruijn indices within τ by 1”}
 
- \texttt{sources (λ x ∶ A \hspace{5.9em} • τ) = (λ x ∶ 𝟙 • sources τ)}
+ #+latex: \vspace{1em}
+ src_haskell[:exports code]{Σ→⊎ (Σ a ∶ A • Ba) = A ⊎ Σ→⊎ (⇊ Ba)}
 
- \vspace{2em}
- \texttt{termtype τ = Fix (Σ→⊎ (sources τ))}
+#+latex: \vspace{1em}
+src_haskell[:exports code]{termtype τ = Fix (Σ→⊎ (sources τ))}
 
- }}
- #+end_export
+ #+latex: }}
  #+end_center
+
+\noindent
+Before moving to an instructive *use* of this combinator,
+let us touch a bit on the details of its *formation*.
+
+*** The =termtype= combinator
+
+ Using the guiding calculation above,
+ we shall work up to the desired functor 𝒟
+ by /implementing/ each stage 𝒾 of the calculation
+ and showing the approximation =Dᵢ= of the functor 𝒟 at
+ that stage.
+
+{{{code(Building up to the \texttt{termtype} combinator)}}}
+
+**** Stage 1: Records
+
+The first step is already possible, using the existing =Context= setup.
+ #+begin_src agda  :tangle Context_examples.agda
+D₁ = DynamicSystem 0
+
+1-records : D₁ ≡ (Σ X ∶ Set • Σ z ∶ X • Σ s ∶ (X → X) • ⊤)
+1-records = refl
+ #+end_src
+**** Stage 2: Parameterised Records
+The second step is also already implemented,
+using the existing =_:waist_= mechanism.
+
+     #+begin_src agda  :tangle Context_examples.agda
+D₂ = DynamicSystem :waist 1
+
+2-funcs : D₂ ≡ (λ (X : Set) → Σ z ∶ X • Σ s ∶ (X → X) • ⊤)
+2-funcs = refl
+ #+end_src
+
+**** Stage 3: Sources
+ <<sec:sources>>
+ #+latex: \label{sec:sources}
+
+As per the informal description of =sources= in the guiding
+calculation, we reinforce the idea with a number of
+desired test cases ---as usual, formal machine checked
+test cases and Agda code can be found on the thesis repository.
+In particular, we make a *design decision* for the resulting =termtype= combinator:
+Types starting with implicit arguments are /invariants/, not /constructors/ ---and
+so are dropped from the resulting ADT by replacing them
+with the empty type ‘𝟘’.
+
+  #+latex: \begin{tcolorbox}[title = Example uses of \texttt{sources}, colback=red!5!white, colframe=red!75!black]
+#+begin_center
+| =τ=                       |   | =sources τ=                   |
+|-------------------------+---+-----------------------------|
+|-------------------------+---+-----------------------------|
+| ~Src → Tgt~               |   | ~Src~                         |
+| ~Σ f ∶ (Src → Tgt) • Bdy~ |   | ~Σ x ∶ Src • Bdy~             |
+|-------------------------+---+-----------------------------|
+| ~τ₁ → ⋯ → τₙ~             |   | ~τ₁ × ⋯ × τₙ₋₁ × 𝟙~           |
+| ~Σ f ∶ τ₁ → ⋯ → τₙ • Bdy~ |   | ~Σ x ∶ (τ₁ × ⋯ × τₙ₋₁) • Bdy~ |
+|-------------------------+---+-----------------------------|
+| =∀ {x : ℕ} → x ≡ x=       |   | =𝟘=                           |
+| =(∀ {x y z : ℕ} → x ≡ y)= |   | =𝟘=                           |
+#+end_center
+  #+latex: \end{tcolorbox}
+
+ #+latex: \noindent
+The third stage can now be formed.
+ #+begin_src agda  :tangle Context_examples.agda
+D₃ = sources D₂
+
+3-sources : D₃ ≡ λ (X : Set) → Σ z ∶ 𝟙 • Σ s ∶ X • 𝟘
+3-sources = refl
+ #+end_src
+
+ #+latex: \noindent
+With the following definitions.
+# We now form two sources-helper utilities, although we suspect they could be
+# combined into one function.
+
+ #+latex: \begin{tcolorbox}[title = \texttt{sources} , colback=yellow!5!white, colframe=yellow!75!black]
+ #+begin_center org
+ #+latex: \dbox{\parbox{0.80\textwidth}{%
+ src_haskell[:exports code]{sources (λ x ∶ (Π a ∶ A • Ba) • τ) = (λ x ∶ A • sources τ)}
+
+ src_haskell[:exports code]{sources (λ x ∶ A               • τ) = (λ x ∶ 𝟙 • sources τ)}
+ #+latex: }}
+ #+end_center
+ #+begin_src agda :tangle Context.agda
+sources₀ : Term → Term
+sources₀ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) =
+    def (quote _×_) (vArg A
+                    ∷ vArg (def (quote _×_)
+                                (vArg (var-dec Ba)
+                                     ∷ vArg (var-dec (var-dec (sources₀ Cab))) ∷ []))
+                    ∷ [])
+sources₀ (Π[ a ∶ arg (arg-info hidden _) A ] Ba) = quoteTerm 𝟘
+sources₀ (Π[ x ∶ arg i A ] Bx) = A
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+sources₀ t = quoteTerm 𝟙
+
+{-# TERMINATING #-}
+sources₁ : Term → Term
+sources₁ (Π[ a ∶ arg (arg-info hidden _) A ] Ba) = quoteTerm 𝟘
+sources₁ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) = def (quote _×_) (vArg A ∷
+  vArg (def (quote _×_) (vArg (var-dec Ba)
+                             ∷ vArg (var-dec (var-dec (sources₀ Cab))) ∷ [])) ∷ [])
+sources₁ (Π[ x ∶ arg i A ] Bx) = A
+sources₁ (def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ τ ∷ body))
+    = def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ map-Arg sources₀ τ ∷ List.map (map-Arg sources₁) body)
+-- This function introduces 𝟙s, so let's drop any old occurances a la 𝟘.
+sources₁ (def (quote ⊤) _) = def (quote 𝟘) []
+sources₁ (lam v (abs s x))     = lam v (abs s (sources₁ x))
+sources₁ (var x args) = var x (List.map (map-Arg sources₁) args)
+sources₁ (con c args) = con c (List.map (map-Arg sources₁) args)
+sources₁ (def f args) = def f (List.map (map-Arg sources₁) args)
+sources₁ (pat-lam cs args) = pat-lam cs (List.map (map-Arg sources₁) args)
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+sources₁ t = t
+
+
+macro
+  sources : Term → Term → TC Unit.⊤
+  sources tm goal = normalise tm >>=ₘ λ tm′ → unify (sources₁ tm′) goal
+#+end_src
+  #+latex: \end{tcolorbox}
+
+**** Stage 4: ~Σ→⊎~ --Replacing Products with Sums
+     <<sec:sigma-to-sum>>
+
+As another tersely introduced utility, let us flesh-out =Σ→⊎= by means of a few
+desired unit tests ---notice that the final
+example concerns a parameterised dynamical system.
+As mentioned in the guiding calculation, we will replace
+unit types by empty types ---i.e., “empty Σ-products by empty ⊎-sums”.
+
+  #+latex: {\renewcommand{\arraystretch}{1.3} % Extra vertical space between rows in table
+ #+latex: \begin{tcolorbox}[colback=red!5!white, colframe=red!75!black]
+| ~τ~                                       |   | ~Σ→⊎ τ~                       |
+|-----------------------------------------+---+-----------------------------|
+| ~Π S ∶ Set • (S → S)~                     |   | ~Π S ∶ Set • (S → S)~         |
+| ~Π S ∶ Set • Σ n ∶ S • S~                 |   | ~Π S ∶ Set • S ⊎ S)~          |
+| ~Π S ∶ Set • Σ n ∶ (S → S) • S~           |   | ~Π S ∶ Set • (S → S) ⊎ S)~    |
+| @@latex:{\footnotesize@@ ~Π S ∶ Set • Σ s ∶ S • Σ n ∶ (S → S) • 𝟙~ @@latex: }@@   |   | ~Π S ∶ Set • S ⊎ (S → S) ⊎ 𝟘~      |
+#+latex: \end{tcolorbox} }
+
+*Decreasing de Brujin Indices:*
+Any given quantification ~(Σ x ∶ τ • fx)~ may have
+its body ~fx~ refer to the free variable
+ ~x~.  If we decrement all de Bruijn indices ~fx~ contains, then there would be no
+reference to ~x~.
+( In the repository code, =⇊= appears as =var-dec=. )
+
+ #+latex: \begin{tcolorbox}[title = ⇊, colback=yellow!5!white, colframe=yellow!75!black]
+ #+begin_src agda :tangle Context.agda
+⇊₀ : (fuel : ℕ) → Term → Term
+⇊₀ zero t  = t
+-- Let's use an “impossible” term.
+⇊₀ (suc n) (var zero args)      = def (quote ⊥) []
+⇊₀ (suc n) (var (suc x) args)   = var x args
+⇊₀ (suc n) (con c args)         = con c (map-Args (⇊₀ n) args)
+⇊₀ (suc n) (def f args)         = def f (map-Args (⇊₀ n) args)
+⇊₀ (suc n) (lam v (abs s x))    = lam v (abs s (⇊₀ n x))
+⇊₀ (suc n) (pat-lam cs args)    = pat-lam cs (map-Args (⇊₀ n) args)
+⇊₀ (suc n) (Π[ s ∶ arg i A ] B) = Π[ s ∶ arg i (⇊₀ n A) ] ⇊₀ n B
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+⇊₀ n t = t
+
+
+⇊ : Term → Term
+⇊ t = ⇊₀ (lengthₜ t) t
+ #+end_src
+   #+latex: \end{tcolorbox}
+
+ #+latex: \noindent
+ Notice that we made the decision that ~x~,
+ in the body of ~(Σ x • x)~, will reduce to ~𝟘~,
+ the empty type. Indeed, in such a situation the only Debrujin index cannot be
+ reduced further; e.g.,
+ ~⇊(quoteTerm x) ≡ quoteTerm ⊥~.
+
+ #+latex: \begin{tcolorbox}[title = Σ→⊎, colback=yellow!5!white, colframe=yellow!75!black]
+ #+begin_center org
+ #+latex: \dbox{\parbox{0.80\textwidth}{%
+src_haskell[:exports code]{⇊ τ = “reduce all de-bruijn indices within τ by 1”}
+
+src_haskell[:exports code]{Σ→⊎ (Σ a ∶ A • Ba) = A ⊎ Σ→⊎ (⇊ Ba)}
+ #+latex: }}
+ #+end_center
+
+ #+begin_src agda :tangle Context.agda
+{-# TERMINATING #-}
+Σ→⊎₀ : Term → Term
+Σ→⊎₀ (def (quote Σ) (𝒽₁ ∷ 𝒽₀ ∷ arg i A ∷ arg i₁ (lam v (abs s x)) ∷ []))
+  =  def (quote _⊎_) (𝒽₁ ∷ 𝒽₀ ∷ arg i A ∷ vArg (Σ→⊎₀ (⇊ x)) ∷ [])
+-- Interpret “End” in do-notation to be an empty, impossible, constructor.
+Σ→⊎₀ (def (quote ⊤) _) = def (quote ⊥) []
+ -- Walk under λ's and Π's.
+Σ→⊎₀ (lam v (abs s x)) = lam v (abs s (Σ→⊎₀ x))
+Σ→⊎₀ (Π[ x ∶ A ] Bx) = Π[ x ∶ A ] Σ→⊎₀ Bx
+{-# CATCHALL #-}
+Σ→⊎₀ t = t
+
+macro
+  Σ→⊎ : Term → Term → TC Unit.⊤
+  Σ→⊎ tm goal = normalise tm >>=ₘ λ tm′ → unify (Σ→⊎₀ tm′) goal
+ #+end_src
+#+latex: \end{tcolorbox}
+
+ #+latex: \vspace{0.5em} \noindent
+We can now form the fourth stage approximation of the functor 𝒟;
+in-fact we will use this form as /the definition/ of the desired
+functor 𝒟 ---since the sum with 𝟘 /essentially/ contributes nothing.
+ #+begin_src agda  :tangle Context_examples.agda
+D₄ = Σ→⊎ D₃
+
+4-unions : D₄ ≡ λ X → 𝟙 ⊎ X ⊎ 𝟘
+4-unions = refl
+ #+end_src
+**** Stage 5: Fixpoint
+
+     Since we want to define algebraic data-types as fixed-points, we are led
+     inexorably to using a recursive type that fails to be positive.
+
+     #+begin_src agda :tangle Context.agda
+{-# NO_POSITIVITY_CHECK #-}
+data Fix {ℓ} (F : Set ℓ → Set ℓ) : Set ℓ where
+  μ : F (Fix F) → Fix F
+
+𝔻 = Fix D₄
+ #+end_src
+
+ We summarise the stages together into one macro:
+ #+latex: \begin{tcolorbox}[title = Termtype, colback=yellow!5!white, colframe=yellow!75!black]
+ #+begin_center org
+ #+latex: \dbox{\parbox{0.80\textwidth}{%
+src_agda[:exports code]{termtype : UnaryFunctor → Type}
+
+src_haskell[:exports code]{termtype τ = Fix (Σ→⊎ (sources τ))}
+ #+latex: }}
+ #+end_center
+ #+begin_src agda :tangle Context.agda
+macro
+  termtype : Term → Term → TC Unit.⊤
+  termtype tm goal =
+                normalise tm
+           >>=ₘ λ tm′ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ tm′))) ∷ []))
+  #+end_src
+  #+latex: \end{tcolorbox}
+ #+latex: \noindent
+ Then, we may instead declare:
+ #+begin_src agda  :tangle Context_examples.agda
+𝔻 = termtype (DynamicSystem :waist 1)
+     #+end_src
+
+*** Instructive Example: 𝔻 ≅ ℕ
 
  #+latex: \vspace{1em}\noindent
  It is instructive to work through the process of how ~𝔻~ is obtained from ~termtype~
@@ -14956,14 +15338,30 @@ from (suc n) = nextD (from n)
 
  #+latex: \noindent
  Readers whose language does not have src_agda[:exports code]{pattern} clauses
- need not despair.  With the macro
- #+begin_center latex
- @@latex:\dbox{\quad\texttt{Inj n x = μ (inj₂ ⁿ (inj₁ x))}\quad}@@
+ need not despair.  With the following macro
+ #+latex: \begin{tcolorbox}[title = , colback=yellow!5!white, colframe=yellow!75!black]
+ #+begin_center org
+#+latex:\dbox{
+src_haskell[:exports code]{Inj n x = μ (inj₂ ⁿ (inj₁ x))}
+#+latex: }
  #+end_center
- we may define src_agda[:exports code]{startD = Inj 0 tt} and
- src_agda[:exports code]{nextD e = Inj 1 e} ---that is, constructors of termtypes
+#  It is interesting to note that in place of ~pattern~ clauses, say for languages
+# that do not support them, we would resort to “fancy injections”.
+ #+begin_src agda :tangle Context.agda
+-- 𝒾-th injection:  (inj₂ ∘ ⋯ ∘ inj₂) ∘ inj₁
+Inj₀ : ℕ → Term → Term
+Inj₀ zero c    = con (quote inj₁) (arg (arg-info visible relevant) c ∷ [])
+Inj₀ (suc n) c = con (quote inj₂) (vArg (Inj₀ n c) ∷ [])
+
+macro
+  Inj : ℕ → Term → Term → TC Unit.⊤
+  Inj n t goal = unify goal ((con (quote μ) []) app (Inj₀ n t))
+ #+end_src
+  #+latex: \end{tcolorbox}
+ we may define src_haskell[:exports code]{startD = Inj 0 tt} and
+ src_haskell[:exports code]{nextD e = Inj 1 e} ---that is, constructors of termtypes
  are particular injections into the possible summands that the termtype consists
- of.  Details on this macro may be found in appendix [[sec:inj-macro]].
+ of.
 
 ** Free Datatypes from Theories
    <<sec:free-datatypes>>
@@ -14971,22 +15369,19 @@ from (suc n) = nextD (from n)
 
  Astonishingly, useful programming datatypes arise from termtypes of theories
  (contexts). That is, if a parameterised context src_agda[:exports code]{𝒞 : Set
- → Context ℓ₀} is given, then
-{{{code( Abstract Syntax Trees )}}}
- #+begin_src agda
-ℂ = λ X → termtype (𝒞 X :waist 1)
- #+end_src
- #+latex: \noindent
+ → Context ℓ₀} is given, then \newline
+src_haskell[:exports code]{ℂ = λ X → termtype (𝒞 X :waist 1)}
  can be used to form ‘free, lawless, 𝒞-instances’. For instance, earlier we
  witnessed that the termtype of dynamical systems is essentially the natural
  numbers.
- #+label: theories-data-structures
- #+caption: Data structures as free theories
+
+  #+latex: \begin{tcolorbox}[title = \TABLE{Data structures as free theories}, colback=red!5!white, colframe=red!75!black]
  | Theory             | Termtype     |
  |--------------------+--------------|
  | Dynamical Systems  | ℕ            |
  | Pointed Structures | Maybe        |
  | Monoids            | Binary Trees |
+  #+latex: \end{tcolorbox}
 
  :Ignore:
  Similarly, by starting at “theories of
@@ -15018,15 +15413,14 @@ pattern justP e  = μ (inj₂ (inj₁ e)) -- : ℙ → ℙ
  # and leave it as an instructive exercise to the reader to present a
  # bijective pair of functions between =𝕄= and =TreeSkeleton=.
 
- #+latex: \vspace{-1.5em}\noindent
- The final entry in Table 2 is a well known correspondence that we
- can now not only formally express, but also prove to be true.
- :Hide:
-{{{code( ? )}}}
- #+begin_src agda :tangle Context_examples.agda
-module termtype[Monoid]≅TreeSkeleton where
-       #+end_src
- :End:
+ #+latex: \vspace{-0em}\noindent
+ The final entry in the above table is a well known
+ correspondence that we can now not only formally express, but also prove to be
+ true.  As we did with dynamical systems, we begin with forming 𝕄 the termtype
+ of monoids, then using src_agda[:exports code]{pattern} clauses to provide
+ compact names, and explicitly form the algebraic src_agda[:exports code]{data}
+ type of trees.
+
 {{{code( Trees from Monoids )}}}
        #+begin_src agda :tangle Context_examples.agda
   𝕄 : Set
@@ -15116,8 +15510,10 @@ module termtype[Collection]≅List where
   to ∅         = []
  #+end_src
 
- It is then little trouble to show that ~to~ is invertible.  We invite the readers
- to join in on the fun and try it out themselves!
+ It is then little trouble to show that
+ src_emacs-lisp[:exports code]{to}
+ is invertible.  We invite the readers
+ to join in on the fun and try it out themselves.
  :Hide:
 {{{code( ? )}}}
  #+begin_src agda  :tangle Context_examples.agda
@@ -15152,7 +15548,8 @@ module termtype[Collection]≅List where
    grouping mechanisms, and allows arbitrary Emacs Lisp citet:10.5555/229872 to be
    invoked in the construction of complex grouping mechanisms.
 
-   #+caption: Comparing the in-language =Context= mechanism with the =PackageFormer= editor extension
+   #+latex: \begin{tcolorbox}[title=\TABLE{Comparing the in-language Context mechanism with the PackageFormer editor extension}, colback=red!5!white, colframe=red!75!black]
+   # +caption: Comparing the in-language =Context= mechanism with the =PackageFormer= editor extension
    |                          | PackageFormer      | Contexts             |
    |--------------------------+--------------------+----------------------|
    | Type of Entity           | Preprocessing Tool | Language Library     |
@@ -15163,8 +15560,9 @@ module termtype[Collection]≅List where
    | Rapid Prototyping        | ✓                  | ✓ (Slower)           |
    | Usability Barrier        | None               | None                 |
    | Extensibility Barrier    | Lisp               | Weak Metaprogramming |
+  #+latex: \end{tcolorbox}
 
-   The =PackageFormer= paper citet:DBLP:conf/gpce/Al-hassyCK19 provided the syntax
+   The previous chapter provided the syntax of =PackageFormer=
    necessary to form useful grouping mechanisms but was shy on the semantics of
    such constructs.  We have chosen the names of the =Context= combinators to
    closely match those of =PackageFormer='s with an aim of furnishing the
@@ -15172,7 +15570,8 @@ module termtype[Collection]≅List where
    i.e., we have a shallow embedding of =PackageFormer='s constructs as Agda
    entities:
 
- #+caption: =Context= as a semantics for =PackageFormer= constructs
+ #+latex: \begin{tcolorbox}[title=\TABLE{Context as a semantics for PackageFormer constructs}, colback=red!5!white, colframe=red!75!black]
+ # +caption: =Context= as a semantics for =PackageFormer= constructs
  | Syntax          | Semantics                    |
  |-----------------+------------------------------|
  | ~PackageFormer~   | ~Context~                      |
@@ -15181,37 +15580,48 @@ module termtype[Collection]≅List where
  | ~:kind~           | ~:kind~, see below             |
  | ~:level~          | Agda built-in                |
  | ~:alter-elements~ | Agda macros                  |
-
+  #+latex: \end{tcolorbox}
  # Moreover, it is nearly as readable
  #  and is a library method, rather than an editor extension.
 
  =PackageFormer='s ~_:kind_~ meta-primitive dictates how an abstract grouping
  mechanism should be viewed in terms of existing Agda syntax.  However, unlike
- PackageFormer, all of our syntax consists of legitimate Agda terms.
+ =PackageFormer=, *all of our syntax consists of legitimate Agda terms.*
  Since language syntax is being manipulated,
- we are forced to implement the ~_:kind_~ meta-primitive as a macro
- ---further details can be found in Appendix [[sec:kind]].
-{{{code( Codes for Agda's First-class Grouping Mechanisms )}}}
- #+begin_src agda :tangle no
+ we are forced to implement the ~_:kind_~ meta-primitive as a macro.
+{{{code( Codes for Agda's first-class grouping mechanisms )}}}
+ #+latex: \begin{tcolorbox}[title = Kind, colback=yellow!5!white, colframe=yellow!75!black]
+ #+begin_center org
+ #+latex: \dbox{\parbox{0.60\textwidth}{%
+ src_haskell[:exports code]{𝒞 :kind ‵record    = 𝒞 0}
+
+ src_haskell[:exports code]{𝒞 :kind ‵typeclass = 𝒞 :waist 1}
+
+ src_haskell[:exports code]{𝒞 :kind ‵data      = termtype (𝒞 :waist 1)}
+#+latex:  }}
+ #+end_center
+   #+begin_src agda :tangle Context.agda
 data Kind : Set where
   ‵record    : Kind
   ‵typeclass : Kind
   ‵data      : Kind
- #+end_src
- #+latex: \vspace{1em}
- #+begin_center latex
- #+begin_export latex
- \dbox{\parbox{0.50\textwidth}{%
 
- \texttt{𝒞 :kind ‵record    = 𝒞 0}
-
- \texttt{𝒞 :kind ‵typeclass = 𝒞 :waist 1}
-
- \texttt{𝒞 :kind ‵data      = termtype (𝒞 :waist 1)}
-
- }}
- #+end_export
- #+end_center
+macro
+  _:kind_ : Term → Term → Term → TC Unit.⊤
+  _:kind_ t (con (quote ‵record) _)    goal
+      = normalise (t app (quoteTerm 0))
+        >>=ₘ λ t′ → unify (waist-helper 0 t′) goal
+  _:kind_ t (con (quote ‵typeclass) _) goal
+      = normalise (t app (quoteTerm 1))
+        >>=ₘ λ t′ → unify (waist-helper 1 t′) goal
+  _:kind_ t (con (quote ‵data) _) goal
+      = normalise (t app (quoteTerm 1))
+        >>=ₘ λ t′ → normalise (waist-helper 1 t′)
+        >>=ₘ λ t″ → unify goal (def (quote Fix)
+                                        ((vArg (Σ→⊎₀ (sources₁ t″))) ∷ []))
+  _:kind_ t _ goal = unify t goal
+#+end_src
+  #+latex: \end{tcolorbox}
 
  #+latex: \vspace{0.5em}\medbreak\noindent
  We did not expect to be able to define a full Agda implementation of the semantics of
@@ -15242,13 +15652,13 @@ data Kind : Set where
    #   is shown at the end of [[sec:monadic-notation]].
 
  Starting from the insight that related grouping mechanisms could be unified, we
- showed how related structures can be obtained from a single declaration using a
- practical interface. The resulting framework, based on contexts, still captures
- the familiar record declaration syntax as well as the expressivity of usual
- algebraic datatype declarations ---at the minimal cost of using src_agda[:exports code]{pattern}
- declarations to aide as user-chosen constructor names.  We believe that our
- approach to using contexts as general grouping mechanisms /with/ a practical
- interface are interesting contributions.
+ showed how *related structures can be obtained from a single declaration using
+ a practical interface.* The resulting framework, based on contexts, still
+ captures the familiar record declaration syntax as well as the expressivity of
+ usual algebraic datatype declarations ---at the minimal cost of using
+ src_agda[:exports code]{pattern} declarations to aide as user-chosen
+ constructor names.  We believe that our approach to using contexts as general
+ grouping mechanisms /with/ a practical interface are interesting contributions.
 
  We used the focus on practicality to guide the design of our context interface,
  and provided interpretations both for the rather intuitive “contexts are
@@ -15257,37 +15667,26 @@ data Kind : Set where
  explicitly form “contexts whose contents are over a given ambient context”
  ---e.g., contexts of vector spaces are usually discussed with the understanding
  that there is a context of fields that can be referenced--- which we did using
- the name binding machanism of ~do~-notation. These relationships are summarised in
- the following table.
+ the name binding machanism of src_haskell[:exports code]{do}-notation. These
+ relationships are summarised in the following table.
 
- #+caption: Contexts embody all kinds of grouping mechanisms
- | Concept            | Concrete Syntax                       | Description            |
- |--------------------+---------------------------------------+------------------------|
- | Context            | =do S ← Set; s ← S; n ← (S → S); End=   | “name-type pairs”      |
- |--------------------+---------------------------------------+------------------------|
- | Record Type        | =Σ S ∶ Set • Σ s ∶ S • Σ n ∶ S → S • 𝟙= | “bundled-up data”      |
- | Function Type      | =Π S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a type of functions”  |
- | Type constructor   | =λ S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       | “a function on types”  |
- | Algebraic datatype | ~data 𝔻 ∶ Set where s ∶ 𝔻; n ∶ 𝔻 → 𝔻~   | “a descriptive syntax” |
+# +latex_header: \tcbuselibrary{poster, skins}
+
+#+macro: IN  \hspace{-1em}
+  #+latex: \begin{tcolorbox}[title = \TABLE{Contexts embody all kinds of grouping mechanisms}, colback=red!5!white, colframe=red!75!black, left=-5pt, right=3pt]
+ # +caption: Contexts embody all kinds of grouping mechanisms
+ | Concept            | {{{IN}}}Concrete Syntax                        |  {{{IN}}} Description           |
+ |--------------------+------------------------------------------------+------------------------|
+ | Context            | {{{IN}}} =do S ← Set; s ← S; n ← (S → S); End=   |  {{{IN}}} “name-type pairs”     |
+ |--------------------+------------------------------------------------+------------------------|
+ | Record Type        | {{{IN}}} =Σ S ∶ Set • Σ s ∶ S • Σ n ∶ S → S • 𝟙= |  {{{IN}}} “bundled-up data”     |
+ | Function Type      | {{{IN}}} =Π S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       |  {{{IN}}} “a type of functions” |
+ | Type constructor   | {{{IN}}} =λ S • Σ s ∶ S • Σ n ∶ S → S • 𝟙=       |  {{{IN}}} “a function on types” |
+ | Algebraic datatype | {{{IN}}} ~data 𝔻 ∶ Set where s ∶ 𝔻; n ∶ 𝔻 → 𝔻~   |  {{{IN}}} “a descriptive syntax” |
  #+latex: \FloatBarrier
  # The FloatBarrier stops floats (figures are floats) from jumping over them. I
  # will need to look into passing [tbh] options to figures from org mode further.
-
-#+begin_edcomm
-:ed: Musa
-
-Maybe render the above table as a descriptive diagram:
-
-\smartdiagram[descriptive diagram]{
-  {Style,{Define shapes, colors, shading,
-          and line styles for nodes and arrows}},
-  {Position, {Place nodes using a matrix,
-              relative or absolute positioning}},
-  {Relation, Insert edges or arrows
-             between selected nodes},
-  {Label, Add labels on edges or arrows}}
-
-#+end_edcomm
+  #+latex: \end{tcolorbox}
 
  To those interested in exotic ways to group data together ---such as,
  mechanically deriving product types and homomorphism types of theories---
@@ -15298,13 +15697,13 @@ Maybe render the above table as a descriptive diagram:
  To Agda programmers, this offers a standard interface for grouping mechanisms
  that had been sorely missing, with an interface that is so familiar that there
  would be little barrier to its use. In particular, as we have shown, it acts as
- an in-language library for exploiting relationships between free theories and
- data structures.  As we have only presented the high-level definitions of the
- core combinators, leaving the Agda-specific details to the appendices, it is
- also straightforward to translate the library into other dependently-typed
- languages.
+ *an in-language library for exploiting relationships between free theories and
+ data structures.* As we have presented the high-level definitions of the core
+ combinators ---alongside Agda-specific details which may be safely ignored---
+ it is also straightforward to translate the library into other
+ dependently-typed languages.
 
-** COMMENT Introduction via graphs
+* TODO COMMENT Introduction via graphs :intro:conclusion:
 
  In dependently-typed programming languages, such as Agda
  citet:Norell-2007,agda_overview, there is a tendency to define concepts
@@ -16919,11 +17318,11 @@ These papers come from people!
 The appendix marker must occur before the section on appendices.
 :End:
 
-* COMMENT Context Implementation
+* TODO COMMENT Context Implementation :include_some_of_this_in_CONTEXT_Chapter:
 #+latex_header: \usepackage[toc,page]{appendix}
 
 # Appendices are for the details, and so have a smaller font.
-#+LaTeX: \setminted[agda]{fontsize=\footnotesize}
+#+LaTeX: \setminted[agda]{fontsize=\footnotesize} \clearpage\clearpage
 
 Below is the entirety of the =Context= library.
 
@@ -16940,7 +17339,7 @@ a brief case-study on graphs to demonstrate some features of the Context library
 that are necessary for practical use, such as field projections, but which did
 not receive attention in the paper proper.
 
-** Imports
+** COMMENT Imports
 #+begin_src agda :tangle Context.agda
 open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc; zero to ℓ₀)
 open import Relation.Binary.PropositionalEquality
@@ -16956,7 +17355,7 @@ open import Data.List as List using (List ; [] ; _∷_ ; _∷ʳ_; sum)
 ℓ₁   = Level.suc ℓ₀
 #+end_src
 
-** Quantifiers Π∶•/Σ∶• and Products/Sums
+** COMMENT Quantifiers Π∶•/Σ∶• and Products/Sums
 
   We shall using Z-style quantifier notation citet:10.5555/235337 in which the
   quantifier dummy variables are separated from the body by a large bullet.
@@ -16996,7 +17395,7 @@ record ⊤ {ℓ} : Set ℓ where
 𝟘 = ⊥
 #+end_src
 #+latex: \noindent
-** Reflection
+** COMMENT Reflection
 
 We form a few metaprogramming utilities we would have expected to be in the
 standard library.
@@ -17064,44 +17463,8 @@ _ : lengthₜ (quoteTerm (Σ x ∶ ℕ • x ≡ x)) ≡ 10
 _ = refl
 #+end_src
 
-*** Decreasing de Brujin Indices
-<<sec:decreasing-de-brujin>>
-#+latex: \label{sec:decreasing-de-brujin}
-Given a quantification ~(⊕ x ∶ τ • fx)~, its body ~fx~ may refer to a free variable
-~x~.  If we decrement all de Bruijn indices ~fx~ contains, then there would be no
-reference to ~x~.
 
-#+begin_src agda :tangle Context.agda
-var-dec₀ : (fuel : ℕ) → Term → Term
-var-dec₀ zero t  = t
--- Let's use an “impossible” term.
-var-dec₀ (suc n) (var zero args)      = def (quote ⊥) []
-var-dec₀ (suc n) (var (suc x) args)   = var x args
-var-dec₀ (suc n) (con c args)         = con c (map-Args (var-dec₀ n) args)
-var-dec₀ (suc n) (def f args)         = def f (map-Args (var-dec₀ n) args)
-var-dec₀ (suc n) (lam v (abs s x))    = lam v (abs s (var-dec₀ n x))
-var-dec₀ (suc n) (pat-lam cs args)    = pat-lam cs (map-Args (var-dec₀ n) args)
-var-dec₀ (suc n) (Π[ s ∶ arg i A ] B) = Π[ s ∶ arg i (var-dec₀ n A) ] var-dec₀ n B
-{-# CATCHALL #-}
--- sort, lit, meta, unknown
-var-dec₀ n t = t
-#+end_src
-#+latex: \noindent
-In the paper proper, ~var-dec~ was mentioned once under the name ~⇊~.
-#+begin_src agda :tangle Context.agda
-var-dec : Term → Term
-var-dec t = var-dec₀ (lengthₜ t) t
-#+end_src
-#+latex: \noindent
-Notice that we made the decision that ~x~, the body of ~(⊕ x • x)~, will reduce to ~𝟘~,
-the empty type. Indeed, in such a situation the only Debrujin index cannot be
-reduced further. Here is an example:
-#+begin_src agda :tangle Context.agda
-_ : ∀ {x : ℕ} → var-dec (quoteTerm x) ≡ quoteTerm ⊥
-_ = refl
-#+end_src
-
-** Context Monad
+** COMMENT Context Monad
 #+begin_src agda :tangle Context.agda
 Context = λ ℓ → ℕ → Set ℓ
 
@@ -17122,7 +17485,7 @@ _>>=_ : ∀ {a b}
 (Γ >>= f) (suc n) = (γ : Γ) → f γ n
 #+end_src
 
-** ⟨⟩ Notation
+** COMMENT ⟨⟩ Notation
 
 # As mentioned, grouping mechanisms are declared with ~do … End~, and instances of
 # them are constructed using ~⟨ … ⟩~.
@@ -17139,7 +17502,7 @@ _⟩ : ∀ {ℓ} {S : Set ℓ} → S → S × ⊤ {ℓ}
 s ⟩ = s , tt
 #+end_src
 
-** DynamicSystem Context
+** COMMENT DynamicSystem Context
 #+begin_src agda  :tangle Context_examples.agda
 DynamicSystem : Context (ℓsuc Level.zero)
 DynamicSystem = do X ← Set
@@ -17179,46 +17542,8 @@ ex : B-on-ℕ
 ex = ⟨ 0 , suc ⟩
 #+end_src
 
-** Π→λ
-   <<sec:pi-to-lambda>>
-#+latex: \label{sec:pi-to-lambda}
-#+begin_src agda :tangle Context.agda
-Π→λ-helper : Term → Term
-Π→λ-helper (pi  a b)         = lam visible b
-Π→λ-helper (lam a (abs x y)) = lam a (abs x (Π→λ-helper y))
-{-# CATCHALL #-}
-Π→λ-helper x = x
 
-macro
-  Π→λ : Term → Term → TC Unit.⊤
-  Π→λ tm goal = normalise tm >>=ₘ λ tm′ → unify (Π→λ-helper tm′) goal
-#+end_src
-
-** ~idᵢ₊₁ ≈ Π→λ idᵢ~
-<<sec:identity-funcs>>
-#+latex: \label{sec:identity-funcs}
-   #+begin_src agda  :tangle Context_examples.agda
-_ : id₁ ≡ Π→λ id₀
-_ = refl
-
-_ : id₂ ≡ Π→λ id₁
-_ = refl
-#+end_src
-** ~_:waist_~
-<<sec:waist>>
-#+latex: \label{sec:waist}
-   #+begin_src agda :tangle Context.agda
-waist-helper : ℕ → Term → Term
-waist-helper zero t    = t
-waist-helper (suc n) t = waist-helper n (Π→λ-helper t)
-
-macro
-  _:waist_ : Term → Term → Term → TC Unit.⊤
-  _:waist_ t 𝓃 goal =      normalise (t app 𝓃)
-                      >>=ₘ λ t′ → unify (waist-helper (toℕ 𝓃) t′) goal
-#+end_src
-
-** DynamicSystem :waist 𝒾
+** COMMENT DynamicSystem :waist 𝒾
 #+begin_src agda  :tangle Context_examples.agda
 A′ : Set₁
 B′ : ∀ (X : Set) → Set
@@ -17249,7 +17574,7 @@ _ : DynamicSystem 0 ≡ DynamicSystem :waist 0
 _ = refl
 #+end_src
 
-** Field projections
+** COMMENT Field projections
 #+begin_src agda :tangle Context.agda
 Field₀ : ℕ → Term → Term
 Field₀ zero c    = def (quote proj₁) (arg (arg-info visible relevant) c ∷ [])
@@ -17262,276 +17587,7 @@ macro
 
 An example usage can be found below in the setting of graphs.
 
-** Termtypes
-
-Using the guiding calculation outlined in the paper proper
-we shall form ~Dᵢ~ for each stage in the calculation.
-*** Stage 1: Records
-#+begin_src agda  :tangle Context_examples.agda
-D₁ = DynamicSystem 0
-
-1-records : D₁ ≡ (Σ X ∶ Set • Σ z ∶ X • Σ s ∶ (X → X) • ⊤)
-1-records = refl
-#+end_src
-*** Stage 2: Parameterised Records
-#+begin_src agda  :tangle Context_examples.agda
-D₂ = DynamicSystem :waist 1
-
-2-funcs : D₂ ≡ (λ (X : Set) → Σ z ∶ X • Σ s ∶ (X → X) • ⊤)
-2-funcs = refl
-#+end_src
-
-*** Stage 3: Sources
-<<sec:sources>>
-#+latex: \label{sec:sources}
-Let's begin with an example to motivate the definition of ~sources~.
-    #+begin_src agda  :tangle Context.agda
-_ :   quoteTerm (∀ {x : ℕ} → ℕ)
-    ≡ pi (arg (arg-info hidden relevant) (quoteTerm ℕ)) (abs "x" (quoteTerm ℕ))
-_ = refl
-#+end_src
-#+latex: \noindent
-We now form two sources-helper utilities, although we suspect they could be
-combined into one function.
-#+begin_src agda :tangle Context.agda
-sources₀ : Term → Term
--- Otherwise:
-sources₀ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) =
-    def (quote _×_) (vArg A
-                    ∷ vArg (def (quote _×_)
-                                (vArg (var-dec Ba)
-                                     ∷ vArg (var-dec (var-dec (sources₀ Cab))) ∷ []))
-                    ∷ [])
-sources₀ (Π[ a ∶ arg (arg-info hidden _) A ] Ba) = quoteTerm 𝟘
-sources₀ (Π[ x ∶ arg i A ] Bx) = A
-{-# CATCHALL #-}
--- sort, lit, meta, unknown
-sources₀ t = quoteTerm 𝟙
-
-{-# TERMINATING #-}
-sources₁ : Term → Term
-sources₁ (Π[ a ∶ arg (arg-info hidden _) A ] Ba) = quoteTerm 𝟘
-sources₁ (Π[ a ∶ arg i A ] (Π[ b ∶ arg _ Ba ] Cab)) = def (quote _×_) (vArg A ∷
-  vArg (def (quote _×_) (vArg (var-dec Ba)
-                             ∷ vArg (var-dec (var-dec (sources₀ Cab))) ∷ [])) ∷ [])
-sources₁ (Π[ x ∶ arg i A ] Bx) = A
-sources₁ (def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ τ ∷ body))
-    = def (quote Σ) (ℓ₁ ∷ ℓ₂ ∷ map-Arg sources₀ τ ∷ List.map (map-Arg sources₁) body)
--- This function introduces 𝟙s, so let's drop any old occurances a la 𝟘.
-sources₁ (def (quote ⊤) _) = def (quote 𝟘) []
-sources₁ (lam v (abs s x))     = lam v (abs s (sources₁ x))
-sources₁ (var x args) = var x (List.map (map-Arg sources₁) args)
-sources₁ (con c args) = con c (List.map (map-Arg sources₁) args)
-sources₁ (def f args) = def f (List.map (map-Arg sources₁) args)
-sources₁ (pat-lam cs args) = pat-lam cs (List.map (map-Arg sources₁) args)
-{-# CATCHALL #-}
--- sort, lit, meta, unknown
-sources₁ t = t
-#+end_src
-#+latex: \noindent
-We now form the macro and some unit tests.
-#+begin_src agda :tangle Context.agda
-macro
-  sources : Term → Term → TC Unit.⊤
-  sources tm goal = normalise tm >>=ₘ λ tm′ → unify (sources₁ tm′) goal
-
-_ : sources (ℕ → Set) ≡ ℕ
-_ = refl
-
-_ : sources (Σ x ∶ (ℕ → Fin 3) • ℕ) ≡ (Σ x ∶ ℕ • ℕ)
-_ = refl
-
-_ : ∀ {ℓ : Level} {A B C : Set}
-  → sources (Σ x ∶ (A → B) • C) ≡ (Σ x ∶ A • C)
-_ = refl
-
-_ : sources (Fin 1 → Fin 2 → Fin 3) ≡ (Σ _ ∶ Fin 1 • Fin 2 × 𝟙)
-_ = refl
-
-_ : sources (Σ f ∶ (Fin 1 → Fin 2 → Fin 3 → Fin 4) • Fin 5)
-  ≡ (Σ f ∶ (Fin 1 × Fin 2 × Fin 3) • Fin 5)
-_ = refl
-
-_ : ∀ {A B C : Set} → sources (A → B → C) ≡ (A × B × 𝟙)
-_ = refl
-
-_ : ∀ {A B C D E : Set} → sources (A → B → C → D → E)
-                        ≡ Σ A (λ _ → Σ B (λ _ → Σ C (λ _ → Σ D (λ _ → ⊤))))
-_ = refl
-#+end_src
-#+latex: \noindent
-Design decision: Types starting with implicit arguments are /invariants/, not /constructors/.
-#+begin_src agda :tangle Context.agda
--- one implicit
-_ : sources (∀ {x : ℕ} → x ≡ x) ≡ 𝟘
-_ = refl
-
--- multiple implicits
-_ : sources (∀ {x y z : ℕ} → x ≡ y) ≡ 𝟘
-_ = refl
-#+end_src
-#+latex: \noindent
-The third stage can now be formed.
-#+begin_src agda  :tangle Context_examples.agda
-D₃ = sources D₂
-
-3-sources : D₃ ≡ λ (X : Set) → Σ z ∶ 𝟙 • Σ s ∶ X • 𝟘
-3-sources = refl
-#+end_src
-*** Stage 4: ~Σ→⊎~ --Replacing Products with Sums
-    <<sec:sigma-to-sum>>
-#+latex: \label{sec:sigma-to-sum}
-#+begin_src agda :tangle Context.agda
-{-# TERMINATING #-}
-Σ→⊎₀ : Term → Term
-Σ→⊎₀ (def (quote Σ) (𝒽₁ ∷ 𝒽₀ ∷ arg i A ∷ arg i₁ (lam v (abs s x)) ∷ []))
-  =  def (quote _⊎_) (𝒽₁ ∷ 𝒽₀ ∷ arg i A ∷ vArg (Σ→⊎₀ (var-dec x)) ∷ [])
--- Interpret “End” in do-notation to be an empty, impossible, constructor.
-Σ→⊎₀ (def (quote ⊤) _) = def (quote ⊥) []
- -- Walk under λ's and Π's.
-Σ→⊎₀ (lam v (abs s x)) = lam v (abs s (Σ→⊎₀ x))
-Σ→⊎₀ (Π[ x ∶ A ] Bx) = Π[ x ∶ A ] Σ→⊎₀ Bx
-{-# CATCHALL #-}
-Σ→⊎₀ t = t
-
-macro
-  Σ→⊎ : Term → Term → TC Unit.⊤
-  Σ→⊎ tm goal = normalise tm >>=ₘ λ tm′ → unify (Σ→⊎₀ tm′) goal
-#+end_src
-Unit tests:
-#+begin_src agda :tangle Context.agda
-_ : Σ→⊎ (Π X ∶ Set • (X → X))     ≡ (Π X ∶ Set • (X → X)); _ = refl
-_ : Σ→⊎ (Π X ∶ Set • Σ s ∶ X • X) ≡ (Π X ∶ Set • X ⊎ X)  ; _ = refl
-_ : Σ→⊎ (Π X ∶ Set • Σ s ∶ (X → X) • X) ≡ (Π X ∶ Set • (X → X) ⊎ X)  ; _ = refl
-_ : Σ→⊎ (Π X ∶ Set • Σ z ∶ X • Σ s ∶ (X → X) • ⊤ {ℓ₀}) ≡ (Π X ∶ Set • X ⊎ (X → X) ⊎ ⊥)
-_ = refl
-#+end_src
-#+latex: \vspace{0.5em}
-#+begin_src agda  :tangle Context_examples.agda
-D₄ = Σ→⊎ D₃
-
-4-unions : D₄ ≡ λ X → 𝟙 ⊎ X ⊎ 𝟘
-4-unions = refl
-#+end_src
-
-# See above regarding macro “var-dec”
-# #
-# What happens if a occurs in Ba? Point out that in the cases that work
-# or are relevant, a does not occur in Ba, and the elimination of one binder
-# makes one application of \downarrow\downarrow necessary.
-
-*** Stage 5: Fixpoint and proof that ~𝔻 ≅ ℕ~
-
-    Since we want to define algebraic data-types as fixed-points, we are led
-    inexorably to using a recursive type that fails to be positive.
-
-    #+begin_src agda :tangle Context.agda
-{-# NO_POSITIVITY_CHECK #-}
-data Fix {ℓ} (F : Set ℓ → Set ℓ) : Set ℓ where
-  μ : F (Fix F) → Fix F
-#+end_src
-
-#+begin_src agda  :tangle Context_examples.agda
-module termtype[DynamicSystem]≅ℕ where
-
-  𝔻 = Fix D₄
-
-  -- Pattern synonyms for more compact presentation
-  pattern zeroD  = μ (inj₁ tt)       -- : 𝔻
-  pattern sucD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
-
-  to : 𝔻 → ℕ
-  to zeroD    = 0
-  to (sucD x) = suc (to x)
-
-  from : ℕ → 𝔻
-  from zero    = zeroD
-  from (suc n) = sucD (from n)
-
-  to∘from : ∀ n → to (from n) ≡ n
-  to∘from zero    = refl
-  to∘from (suc n) = cong suc (to∘from n)
-
-  from∘to : ∀ d → from (to d) ≡ d
-  from∘to zeroD    = refl
-  from∘to (sucD x) = cong sucD (from∘to x)
-#+end_src
-
-*** ~termtype~ and ~Inj~ macros
-<<sec:inj-macro>>
-#+latex: \label{sec:inj-macro}
-
-We summarise the stages together into one macro:
-~“termtype : UnaryFunctor → Type”~.
-#+begin_src agda :tangle Context.agda
-macro
-  termtype : Term → Term → TC Unit.⊤
-  termtype tm goal =
-                normalise tm
-           >>=ₘ λ tm′ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sources₁ tm′))) ∷ []))
- #+end_src
-#+latex: \noindent
-It is interesting to note that in place of ~pattern~ clauses, say for languages
-that do not support them, we would resort to “fancy injections”.
-#+begin_src agda :tangle Context.agda
-Inj₀ : ℕ → Term → Term
-Inj₀ zero c    = con (quote inj₁) (arg (arg-info visible relevant) c ∷ [])
-Inj₀ (suc n) c = con (quote inj₂) (vArg (Inj₀ n c) ∷ [])
-
--- Duality!
--- 𝒾-th projection: proj₁ ∘ (proj₂ ∘ ⋯ ∘ proj₂)
--- 𝒾-th injection:  (inj₂ ∘ ⋯ ∘ inj₂) ∘ inj₁
-
-macro
-  Inj : ℕ → Term → Term → TC Unit.⊤
-  Inj n t goal = unify goal ((con (quote μ) []) app (Inj₀ n t))
-#+end_src
-#+latex: \noindent
-With this alternative, we regain the “user chosen constructor names” for ~𝔻~:
-:Hide:
-#+begin_src agda  :tangle Context_examples.agda
-𝔻 = termtype (DynamicSystem :waist 1)
-    #+end_src
-:End:
-    #+begin_src agda :tangle Context_examples.agda
-startD : 𝔻
-startD = Inj 0 (tt {ℓ₀})
-
-nextD′ : 𝔻 → 𝔻
-nextD′ d = Inj 1 d
- #+end_src
-
-** The ~_:kind_~ meta-primitive
-<<sec:kind>>
-#+latex: \label{sec:kind}
-   #+begin_src agda :tangle Context.agda
-data Kind : Set where
-  ‵record    : Kind
-  ‵typeclass : Kind
-  ‵data      : Kind
-
-macro
-  _:kind_ : Term → Term → Term → TC Unit.⊤
-  _:kind_ t (con (quote ‵record) _)    goal = normalise (t app (quoteTerm 0))
-                      >>=ₘ λ t′ → unify (waist-helper 0 t′) goal
-  _:kind_ t (con (quote ‵typeclass) _) goal = normalise (t app (quoteTerm 1))
-                      >>=ₘ λ t′ → unify (waist-helper 1 t′) goal
-  _:kind_ t (con (quote ‵data) _) goal = normalise (t app (quoteTerm 1))
-                      >>=ₘ λ t′ → normalise (waist-helper 1 t′)
-                      >>=ₘ λ t″ → unify goal (def (quote Fix)
-                                                  ((vArg (Σ→⊎₀ (sources₁ t″))) ∷ []))
-  _:kind_ t _ goal = unify t goal
-#+end_src
-
-#+latex: \noindent
-Informally, ~_:kind_~ behaves as follows:
-#+begin_src agda :tangle no
-𝒞 :kind ‵record    = 𝒞 :waist 0
-𝒞 :kind ‵typeclass = 𝒞 :waist 1
-𝒞 :kind ‵data      = termtype (𝒞 :waist 1)
-#+end_src
-
-** COMMENT Example: ~termtype PointedSet ≅ 𝟙~
+** COMMENT :NO: Example: ~termtype PointedSet ≅ 𝟙~
    #+begin_src agda  :tangle Context_examples.agda
 One  : Context (ℓsuc ℓ₀)
 One      = do Carrier ← Set ℓ₀
@@ -17544,7 +17600,7 @@ One      = do Carrier ← Set ℓ₀
 view₁ : 𝕆𝕟𝕖 → 𝟙
 view₁ emptyM = tt
 #+end_src
-** COMMENT The Termtype of Graphs is Vertex Pairs
+** COMMENT :NO: The Termtype of Graphs is Vertex Pairs
 From simple graphs (relations) to a syntax about them:
 One describes a simple graph by presenting edges as pairs of vertices!
 #+begin_src agda  :tangle Context_examples.agda
@@ -17562,7 +17618,7 @@ view₂ : ∀ {X} → ℙ₂ X → X × X
 view₂ (x ⇌ y) = x , y
 #+end_src
 
-** COMMENT No ‘constants’, whence a type of inifinitely branching terms
+** COMMENT  :NO: No ‘constants’, whence a type of inifinitely branching terms
 #+begin_src agda :tangle Context.agda
 PointedOver₃  : Set → Context (ℓ₀)
 PointedOver₃ Ξ    = do relation ← (Ξ → Ξ → Ξ)
@@ -17572,7 +17628,7 @@ PointedOver₃ Ξ    = do relation ← (Ξ → Ξ → Ξ)
 ℙ₃ = termtype (λ X → PointedOver₃ X 0)
 #+end_src
 
-** COMMENT ℙ₂ again!
+** COMMENT  :NO: ℙ₂ again!
 #+begin_src agda :tangle Context.agda
 PointedOver₄  : Context (ℓsuc ℓ₀)
 PointedOver₄       = do Ξ ← Set
@@ -17598,7 +17654,7 @@ case₄ (x ⇌ y) = Set
 -- where P₂ : Context = do Ξ ← Set; ⋯ End
 #+end_src
 
-** COMMENT ℙ₄ again -- indexed unary algebras; i.e., “actions”
+** COMMENT  :NO: ℙ₄ again -- indexed unary algebras; i.e., “actions”
 #+begin_src agda :tangle Context.agda
 PointedOver₈  : Context (ℓsuc ℓ₀)
 PointedOver₈       = do Index     ← Set
@@ -17615,7 +17671,7 @@ view₈ : ∀ {I} → ℙ₈ I → Set₁
 view₈ (i · e) = Set
 #+end_src
 
-** COMMENT Other experiments
+** COMMENT  :NO: Other experiments
 #+begin_src agda :tangle Context.agda
 {- Yellow:
 
@@ -17693,7 +17749,7 @@ PointedOver₉       = do Carrier ← Set
 -}
 
 #+end_src
-** COMMENT ~Fix Id~
+** COMMENT  :NO: ~Fix Id~
 #+begin_src agda :tangle Context.agda
 PointedOver₁₀  : Context ℓ₁
 PointedOver₁₀       = do Carrier ← Set
@@ -17709,7 +17765,7 @@ PointedOver₁₀       = do Carrier ← Set
 
 #+end_src
 
-** TODO COMMENT What about the meta-language's parameters?
+** TODO COMMENT  :NO: What about the meta-language's parameters?
 
  Besides ~:waist~, another way to introduce parameters into a context grouping
  mechanism is to use the language's existing utility of parameterising a context
@@ -17793,7 +17849,7 @@ casingP nothingP  = inj₁ refl
 casingP (justP x) = inj₂ (x , refl)
  #+end_src
 
-** COMMENT Example: Vector Spaces
+** COMMENT  :NO: Example: Vector Spaces
 
  Consider the signature of vector spaces ~V~ over a field ~F~.
  #+begin_src agda  :tangle Context_examples.agda
@@ -17864,7 +17920,7 @@ view (xs ·ᵥ ys) = dot (view xs) (view ys)
 
  Neato.
 
-** Example: Graphs in Two Ways
+** COMMENT Example: Graphs in Two Ways
 
   There are two ways to implement the type of graphs in the
   dependently-typed language Agda: Having the vertices be a parameter or having
@@ -17927,7 +17983,7 @@ comap₁ f ⟨ edges ⟩₁ = ⟨ (λ x y → edges (f x) (f y)) ⟩₁
     familiarity with quantifier laws such as the one-point rule and quantifier
     distributivity.
 
-** Example: Graphs with Delayed Unbundling
+** COMMENT Example: Graphs with Delayed Unbundling
 The ubiquitous graph structure
     is contravariant in its collection of vertices. Recall that a multi-graph, or
     quiver, is a collection of vertices along with a collection of edges between
@@ -17973,6 +18029,14 @@ comap′ f ⟨ edgs ⟩¹ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩¹
 
 
 * Footnotes
+
+[fn:43] A /macro/ is a function that manipulates the abstract syntax trees of the
+ host language. In particular, it may take an arbitrary term, shuffle its syntax
+ to provide possibly meaningless terms or terms that could not be formed without
+ pattern matching on the possible syntactic constructions.  An up to date and
+ gentle introduction to reflection in Agda can be found at
+ cite:gentle-intro-to-reflection.
+
 
 [fn:42] The unabridged definition, on the =PackageFormer= webpage, has more
 features. In particular, it accepts additional keyword toggles that dictate
