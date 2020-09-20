@@ -21,6 +21,8 @@
 #+macro: newline @@latex: \newline@@
 # src_haskell[:exports code]{
 
+# (maybe-clone "https://github.com/armkeh/unicode-sty.git")
+# (maybe-clone "https://github.com/alhassy/ob-latex-as-png.git")
 
 :DONE:
 
@@ -96,20 +98,6 @@ No.
 E.g., sorting.
 #+end_edcomm
 :End:
-
-:Diagrasms_to_add:
-
-#+begin_center latex
-How most people use pacakges:
-\smartdiagram[sequence diagram]{Namespacing}
-
-How /we/ think they should be used:
-\smartdiagram[sequence diagram]{Definition Silo (Namspacing), Record Types,
-Algebraic Data Types}
-#+end_center
-
-:End:
-
 
 # Macros to add tcolorbox title's to certain lists.
 # See  https://tex.stackexchange.com/questions/275853/adding-a-table-to-list-of-tables
@@ -190,10 +178,12 @@ Algebraic Data Types}
 
 # +LATEX_HEADER: \usepackage{papers/UnicodeSymbols}
 #+latex_header: \usepackage{newunicodechar}
-#+latex_header: \newunicodechar{⨾}{\, ; \,}
 #+latex_header: \newunicodechar{×}{\ensuremath{\times}}
 #+latex_header: \newunicodechar{♯}{\ensuremath{\sharp}}
 #+latex_header: \newunicodechar{⨾}{\ensuremath{\mathop{\fatsemi}}}
+#+latex_header: \newunicodechar{′}{\ensuremath{'}}
+#+latex_header: \newunicodechar{″}{\ensuremath{''}}
+#+latex_header: \newunicodechar{‵}{\ensuremath{`}}
 
 #+latex_header: \newunicodechar{∎}{\ensuremath{\qed}}
 #+latex_header: \newunicodechar{★}{\ensuremath{\star}}
@@ -1010,63 +1000,9 @@ The remainder of the thesis is organised as follows.
 # ^_^
 It has been an exciting journey, I hope you enjoy the ride!
 
-* COMMENT Introduction
+* Introduction
 
-#+begin_export latex
-\begin{figure}
-  \caption{Bundled forms: Two solid arrows to get one dashed arrow}
-  \begin{center}
-  \begin{tikzpicture}
-  \filldraw[color=red!60, fill=red!5, very thick](-5.25,-2) ellipse (1cm and 1cm);
-  \node at (-5.25, -1.9) {\tiny Ambient };
-  \node at (-5.25, -2.1) {\tiny Structure};
-
-  \filldraw[color=teal!60, fill=teal!5, very thick](-0.25,-2) ellipse (1cm and 1cm);
-  \node at (-.25, -2) {\tiny New Concept};
-
-  \filldraw[color=green!60, fill=green!5, very thick](-5.25,2) ellipse (1cm and 1cm);
-  \node at (-5.25, 2.1) {\tiny Referenced};
-  \node at (-5.25, 1.9) {\tiny Sub-structure};
-
-  \draw[ultra thick, dashed, ->] (-4.25, -2) to (-1.25,-2);
-  \draw[ultra thick, ->] (-4.3, 1.7) to (-0.8,-1.2);
-  \draw[ultra thick, ->] (-5.25, 1) to (-5.25,-1);
-\end{tikzpicture}
-\end{center}
-\end{figure}
-
-Then,
-
-\begin{figure}
-  \caption{Unbundled forms: Obtain the dashed arrow explicitly}
-  \begin{center}
-  \begin{tikzpicture}
-  \filldraw[color=red!60, fill=red!5, very thick](-5.25,-2) ellipse (1cm and 1cm);
-  \node at (-5.25, -1.2) {\tiny Given };
-  \node at (-5.25, -1.4) {\tiny Structure};
-
-  \filldraw[color=green!60, fill=green!5, very thick](-5.25,-2.2) ellipse (0.75cm and 0.5cm);
-  \node at (-5.25, -2.0) {\tiny Chosen};
-  \node at (-5.25, -2.2) {\tiny Sub-structure};
-
-  \filldraw[color=teal!60, fill=teal!5, very thick](-0.25,-2) ellipse (1cm and 1cm);
-  \node at (-.25, -2) {\tiny New Concept};
-
-  \draw[ultra thick, dashed, ->] (-4.25, -2) to (-1.25,-2);
-\end{tikzpicture}
-\end{center}
-\end{figure}
-See figures   \ref{fig:unbundled-distributivity}
-and    \ref{fig:bundled-distributivity} for concrete instances.
-#+end_export
-
-
- Recall, say from Section ref:sec:PF:problem_statement, that we refer to the
- concern of moving from a record to a parameterised record as *the unbundling
- problem* citet:packaging_mathematical_structures.
- ( Section ref:sec:problems .)
-
---------------------------------------------------------------------------------
+** Intro :ignore:
 
 The construction of programming libraries is managed by decomposing ideas into
 self-contained units called ‘packages’ whose relationships are then formalised
@@ -1101,7 +1037,7 @@ the relationships between them.
 ,{\footnotesize Terms \\ (Trees with variables)}
 ,{\footnotesize Monoids \emph{over} a setoid}
 % ,Universal Algebra constructions
-,{\scriptsize Monoids \emph{with} carrier \texttt{C} and operation $\oplus$}
+,{\scriptsize Monoids \emph{with} carrier \texttt{C} and operation $\_{}\oplus\_{}$}
 }
 
 \end{center}
@@ -1110,48 +1046,271 @@ the relationships between them.
 The framework developed in this thesis is motivated by the following concerns
 when developing libraries in the dependently-typed language (DTL) Agda, such as
 cite:RATH.
-1. *Practical₁: Renaming* There is excessive repetition in the simplest of tasks
-   when working with packages; e.g., to /uniformly/ decorate the names in a
-   package with subscripts ~₀, ₁, ₂~ requires the package's contents be listed
-   thrice.  It would be more economical to /apply/ a renaming /function/ to a
-   package.
 
-2. *Practical₂: Unbundling* In general, in a DTL, /packages behave like functions/
-   in that they may have a subset of their contents designated as /parameters
-   exposed at the type-level/ which users can /instantiate/. Unfortunately, library
-   developers generally provide only a few /variations/ on /a/ package; such as
-   having no parameters or having only /functional symbols/ as parameters ---c.f.,
-   the carrier ~C~ and operation ~⊕~ in figure ref:fig:monoid-derivatives.  Whereas
-   functions can /bundle-up/ or /unbundle/ their parameters using currying and
-   uncurrying, only the latter is generally supported and, even then, not in an
-   elegant fashion.  Rather than provide /several variations/ on a package, it
-   would be more economical to provide one singular fully-bundled package and
-   have an operator that allows users to /declaratively/, “on the fly”, expose
-   package constituents as parameters.
 
-3. *Theoretical₁: Exceptionality* DTLs blur the distinguish between expressions and
-   types, treating them as the same thing: /Terms/. This collapses a number of
-   seemingly different language constructs into the same thing ---e.g., programs
-   and proofs are essentially the same thing.  Unfortunately, packages are
-   treated as /exceptional/ values that differ from /usual/ values ---such as
-   functions and numbers--- in that the former are ‘second-class citizens’ which
-   only serve to collect the latter ‘first-class citizens’.  This forces users
-   to learn two families of ‘sub-languages’ ---one for each citizen class.
-   There is essentially no /theoretical/ reason why packages do not deserve
-   first-class citizenship, and so receive the same treatment as other
-   /unexceptional/ values. Another advantage of giving packages equal treatment is
-   that we are inexorably led to wonder what *computable algebraic structure* they
-   have and how they relate to other constructs in a language; e.g., packages
-   are essentially record-valued functions.
+#+latex: \clearpage
+** Practical Concern ♯1: Renaming and Remembering Relationships
+   There is excessive repetition in the simplest of tasks when working with
+   packages; e.g., to /uniformly/ decorate the names in a package with subscripts
+   ~₀, ₁, ₂~ requires the package's contents be listed thrice.  It would be more
+   economical to /apply/ a renaming /function/ to a package.  Even worse, as show in
+   Figure ref:fig:renaming-example, sometimes we want to perform a renaming to
+   view an idea in a more natural, concrete, setting; but shallow renaming
+   mechanisms /lose the relationships/ to the original parent package and so ‘do
+   nothing’ coercions have to be written by hand.
 
-4. *Theoretical₂: Syntax* It is well known that sequences of declarations may be
+   #+latex_header: \usepackage{my-tikz-cats}
+#+begin_export latex
+\begin{figure}[h!]
+  \label{fig:renaming-example}
+  \caption{Given green, derive cyan candidate constructions, require red relationships}
+\begin{center}
+  \begin{tikzpicture}
+\setlength{\unit}{4cm}
+\def\arrowthickness{thick}
+\def\nodethickness{thick}
+\def\textoffset{0cm}
+\def\arrowtype{<->}
+
+\mknode{Num}{x = 1, y = 1, candidate color, text = \texttt{Numeric \\  \_{}+\_{}}}
+\mknode{Set}{x = 3, y = 1, candidate color, text = \texttt{Sets \\  $\_{}\cup\_{}$}}
+\mknode{Lis}{x = 2, y = 0, candidate color, text = \texttt{Lists \\ \_{}++\_{} \\[-0.2ex] {\footnotesize (Catenation)} }}
+\mknode{Pro}{x = 2, y = 2, candidate color,
+  text =  \texttt{Programs \\ \_{};\_{} \\[-0.2ex] {\footnotesize (Sequencing)} }}
+\mknode{Mag}{x = 2, y = 1, given color, text = \fbox{Magma} \\[0.8ex] \texttt{Carrier \\ op}}
+
+
+\mkline{left = Mag}{right = Num, required color, label = ???, location = above}
+\mkline{right = Mag}{left = Set, required color, label = ???, location = below}
+
+\mkline[bend left]{left = Lis}{bot = Num, label = ???, sloped, location = below,   required color}
+\mkline[bend right]{right = Lis}{bot = Set, label = ???, sloped, location = below, required color}
+
+\mkline[bend left]{top = Num}{left = Pro, required color, label = ???, sloped, location = above}
+\mkline[bend right]{top = Set}{right = Pro, required color, label = ???, sloped, location = above}
+\mkline{bot = Pro}{top = Mag, label = ???, location = right,  required color}
+\mkline{bot = Mag}{top = Lis, label = ???, location = left,  required color}
+\end{tikzpicture}
+\end{center}
+\end{figure}
+#+end_export
+
+
+
+The need to ‘remember relationships’ is shared by the other concerns discussed in
+this section.
+** Practical Concern ♯2: Unbundling
+   In general, in a DTL, /packages behave like functions/ in that they may have a
+   subset of their contents designated as /parameters exposed at the type-level/
+   which users can /instantiate/. The shift between the two forms is known as *the
+   unbundling problem* citet:packaging_mathematical_structures.  Unfortunately,
+   library developers generally provide only a few /variations/ on /a/ package; such
+   as having no parameters or having only /functional symbols/ as parameters
+   ---c.f., the carrier ~C~ and operation ~_⊕_~ in Figure
+   ref:fig:monoid-derivatives.  Whereas functions can /bundle-up/ or /unbundle/
+   their parameters using currying and uncurrying, only the latter is generally
+   supported and, even then, not in an elegant fashion.  Rather than provide
+   /several variations/ on a package, it would be more economical to provide one
+   singular fully-bundled package and have an operator that allows users to
+   /declaratively/, “on the fly”, expose package constituents as parameters.
+
+   Let us clarify this subtlety.
+
+#+latex: \def\Type{\mathsf{Type}}
+
+At its core, the unbundling problem is well-known as ‘(un)currying’: The
+restructuring of record consuming functions as ‘parameterised families of
+functions’ as follows.
+#+latex: \begin{tcolorbox}[colframe=red!75!black]
+#+begin_export  latex
+\vspace{-2em}
+\begin{align*}
+   I &: \Type
+\\ X &: \Type
+\\ Y &: \Type
+\end{align*}
+
+\vspace{-1.5em}
+\centerline{\rule{30em}{1pt}}
+
+\vspace{-1em}
+\[ I × X → Y \quad≅\quad I → (X → Y) \]
+#+end_export
+#+latex: \end{tcolorbox}
+The right side
+brings a number of /practical conveniences/ in the form of simplified concrete
+syntax ---e.g., reduced parenthesise for function arguments--- and in terms of
+auxiliary combinators to ‘fix’ an /I/-value ahead of time ---i.e., ‘partial
+function application’. The unbundling problem replaces simple product and
+function types with their /dependent/ generalisations (to be defined and discussed
+in Chapter 2, the background):
+
+#+latex: \begin{tcolorbox}[colframe=red!75!black]
+#+begin_export  latex
+\vspace{-2em}
+\begin{align*}
+   I &: \Type
+\\ X &: I → \Type
+\\ Y &: (Σ i : I • X\, i) → \Type
+\end{align*}
+
+\vspace{-1.5em}
+\centerline{\rule{30em}{1pt}}
+
+\vspace{-1em}
+\[ Π p ∶ (Σ i ∶ I • X\, i) • Y\, p \quad≅\quad Π i ∶ I • Π x ∶ X\, i • Y\, (i, x) \]
+#+end_export
+#+latex: \end{tcolorbox}
+
+As with currying, the right side here is
+preferable at times since it immediately lets one ‘fix’ ---i.e., select--- a
+value $i₀ : I$ to obtain the specialised type \[ Π x ∶ X\, i₀ • Y\, (i₀, x) \]
+In contrast, the left side can only be controted to simulate the idea of fixing
+a field ahead of time; e.g.: \[ Π p ∶ (Σ i ∶ I • X\, i) • Z\, p \quad\text{ where }\quad
+Z\, p \;=\; Y\, p × (\mathsf{fst}\, p \,≡\, i₀) \]
+The verbosity of this
+formulation is what we wish to mitigate.
+
+The dependent nature of DTLs means that this problem is not solely about
+functions ---and so, we cannot simply insist on formulations similar to the
+right side; i.e., omitting the record former ‘Σ’.  Since types can /depend on the
+values/ of other types, this now becomes a problem about types as well. In
+particular, we may view the parameterised type family $Z$ as being a new concept
+that is formed around a chosen substructure $i₀ : X$ ---which must be referenced
+from ‘outside’ using the ambient structure $Y$. It would be far more practical
+to treat the structure we actually care about as if it were a ‘top level item’
+rather than ‘something to be hunted down’. These situation is captured nicely by
+informal diagrams[fn:44] of Figures ref:fig:bundled and ref:fig:unbundled; concrete
+instances of these diagrams are presented later on, as Figures
+ref:fig:unbundled-distributivity and ref:fig:bundled-distributivity.
+
+#+begin_export latex
+\begin{figure}
+  \caption{Bundled forms: Two solid arrows to get one dashed arrow}
+  \label{fig:bundled}
+  \begin{center}
+  \begin{tikzpicture}
+  \filldraw[color=red!60, fill=red!5, very thick](-5.25,-2) ellipse (1cm and 1cm);
+  \node at (-5.25, -1.9) {\tiny Ambient };
+  \node at (-5.25, -2.1) {\tiny Structure};
+
+  \filldraw[color=teal!60, fill=teal!5, very thick](-0.25,-2) ellipse (1cm and 1cm);
+  \node at (-.25, -2) {\tiny New Concept};
+
+  \filldraw[color=green!60, fill=green!5, very thick](-5.25,2) ellipse (1cm and 1cm);
+  \node at (-5.25, 2.1) {\tiny Referenced};
+  \node at (-5.25, 1.9) {\tiny Sub-structure};
+
+  \draw[ultra thick, dashed, ->] (-4.25, -2) to (-1.25,-2);
+  \draw[ultra thick, ->] (-4.3, 1.7) to (-0.8,-1.2);
+  \draw[ultra thick, ->] (-5.25, 1) to (-5.25,-1);
+\end{tikzpicture}
+\end{center}
+\end{figure}
+
+\begin{figure}
+  \caption{Unbundled forms: Obtain the dashed arrow explicitly}
+  \label{fig:unbundled}
+  \begin{center}
+  \begin{tikzpicture}
+  \filldraw[color=red!60, fill=red!5, very thick](-5.25,-2) ellipse (1cm and 1cm);
+  \node at (-5.25, -1.2) {\tiny Given };
+  \node at (-5.25, -1.4) {\tiny Structure};
+
+  \filldraw[color=green!60, fill=green!5, very thick](-5.25,-2.2) ellipse (0.75cm and 0.5cm);
+  \node at (-5.25, -2.0) {\tiny Chosen};
+  \node at (-5.25, -2.2) {\tiny Sub-structure};
+
+  \filldraw[color=teal!60, fill=teal!5, very thick](-0.25,-2) ellipse (1cm and 1cm);
+  \node at (-.25, -2) {\tiny New Concept};
+
+  \draw[ultra thick, dashed, ->] (-4.25, -2) to (-1.25,-2);
+\end{tikzpicture}
+\end{center}
+\end{figure}
+
+#+end_export
+# \noindent Concrete instances of these diagrams are presented later on, as
+# Figures ref:fig:unbundled-distributivity and ref:fig:bundled-distributivity.
+
+It is interesting to note that the unbundling problem appears in a number of
+guises within the setting of programming language design. We briefly mention two
+scenarios.
+1. “De-structuring” or “Pattern Matching”: Instead of writing ~f p = ⋯fst p⋯~ to
+   define a function ~f~ working on pairs ~p~ that makes a reference to the first
+   field, we may instead write ~f (x, y) = ⋯x⋯~ and access the first field
+   directly. This pattern is popular in modern languages, such as Haskell and
+   JavaScript.
+
+   The shift from ~p~ being *explicitly* a /packaging mechanism/ to
+   to it *silently* disappearing in the /presentation/ of the function definition
+   is one of the pragmatic aims that we strive for with our system.
+
+2. “Quantifier Nesting”: Instead of writing ~λ p • ⋯ fst p ⋯ snd p ⋯~ for a
+   functional expression operating on a pair, some languages permit writing ~λ x
+   • λ y • ⋯ x ⋯ y ⋯~. The problem is that many languages treat these differently
+   and require a combinator to shift between the two; the former being more
+   conventional in functional settings whereas the latter is more common in
+   imperative and object-oriented settings.
+
+   For λ, the idea is to curry; but when one speaks about types and so replaces
+   the λ with ∀ ---i.e., Π--- then things are not as clear cut and there is no
+   accepted combinator to switch between the two forms. This is what our system
+   aims to rectify.
+
+** Theoretical Concern ♯1: Exceptionality
+
+   DTLs blur the distinction between expressions and types, treating them as the
+   same thing: /Terms/. This collapses a number of seemingly different language
+   constructs into the same thing ---e.g., programs and proofs are essentially
+   the same thing.  Unfortunately, packages are treated as /exceptional/ values
+   that differ from /usual/ values ---such as functions and numbers--- in that the
+   former are ‘second-class citizens’ which only serve to collect the latter
+   ‘first-class citizens’.  This forces users to learn two families of
+   ‘sub-languages’ ---one for each citizen class.  There is essentially no
+   /theoretical/ reason why packages do not deserve first-class citizenship, and
+   so receive the same treatment as other /unexceptional/ values. Another
+   advantage of giving packages equal treatment is that we are inexorably led to
+   wonder what *computable algebraic structure* they have and how they relate to
+   other constructs in a language; e.g., packages are essentially record-valued
+   functions.
+
+   Perhaps the most famous instance of how the promotion of a second-class
+   concept to first-class status comes from linear algebra, and subsequently,
+   the theory of vector spaces.  When there are a number of relationships
+   involving a number of unknowns, the relationships could be ‘massaged
+   algebraically’ to produce simper constraints on the unknowns, possibly
+   providing ‘solutions’ to the system of relationships directly.  The shift
+   from /systems of equations/ that serve to collect relationships, to /matrices/
+   gave way to the treatment of such systems as algebraic entities unto
+   themselves: They can be treated with nearly the same interface as that of
+   integers, say, that of rings.  As such, ‘component-wise addition of equations
+   in system $A$ with system $B$” becomes more tractable as $A + B$ and
+   satisfies the many familiar properties of numeric addition.  Even more
+   generally, for any theory of ‘individuals’ one can consider the associated
+   matrix theory ---e.g., if $M$ is a monoid, then the matrices whose elements
+   are drawn from $M$ /inherits/ the monoidal structure--- and so gives a
+   construction of /system of equations/ on that theory.  To investigate the
+   algebraic nature of packaging mechanisms is another aim of this thesis.
+
+   #+begin_center
+   #+latex: \smartdiagram[priority descriptive diagram]{System (collection) of relationships, Matrices, Linear Transformations}
+   #+end_center
+
+   An interesting aside is that a /collection/ mechanism gave rise to the abstract
+   /matrix/ concept, which is then seen as a reification of the even more abstract
+   notion of linear transformation between vector spaces ----which are in turn,
+   packages paramterised over fields (and, in practice, over basis).
+
+** Theoretical Concern ♯2: Syntax
+   It is well known that sequences of declarations may be
    grouped together within a /package/. If any declarations are opaque, not fully
    undefined, they become /parameters/ of the package ---which may then be
    identified as a /record type/ with the opaque declarations called /fields/.
    However, when a declaration is /intentionally opaque/ not because it is missing
    an implementation, but rather it acts as a value construction itself then one
    uses /algebraic data types/, or ‘termtypes’. Such types share the general
-   structure of a package, and so it would be interesting to illuminate the
+   structure of a package, as shown in the codeblock below, and so it would be interesting to illuminate the
    exact difference between the concepts ---/if any/. In practice, one forms a
    record type to model an interface, instances of which are actual
    implementations, and forms an /associated/ termtype to /describe computations/
@@ -1165,6 +1324,51 @@ cite:RATH.
    economical to extract /both/ record types and termtypes from a single package
    declaration.
 
+   #+latex_header: \newunicodechar{⍮}{;}
+    #+latex: \begin{tcolorbox}[title = Spot the difference, colback=red!5!white, colframe=red!75!black]
+#+begin_parallelNB
+{{{code(Theory of monoids)}}}
+#+begin_src agda
+record Monoid : Set₁ where
+    C : Set
+    -- function symbols
+    _⍮_ : C → C → C
+    Id : C
+    -- axioms
+    lid : ∀ x → Id ⍮ x ≡ x
+    rid : ∀ x → x ⍮ Id ≡ x
+    assoc : ∀ x y z
+            →   (x ⍮ y) ⍮ z
+               ≡ x ⍮ (y ⍮ z)
+#+end_src
+:columnbreak:
+
+{{{code(Terms over ‘variables’ \texttt{C})}}}
+#+begin_src agda
+data Term (C : Set) : Set where
+    -- injection
+    embed : C → Term C
+    -- function symbols
+    _⍮_  : Term C → Term C → Term C
+    Id : Term C
+#+end_src
+
+{{{code(Binary trees with leaf labels drawn from \texttt{C})}}}
+#+begin_src agda
+data Trees (C : Set) : Set where
+    Nil    : Tree C
+    Leaf   : C → Tree C
+    Branch : Tree C
+             → Tree C → Tree C
+#+end_src
+
+#+end_parallelNB
+
+ #+latex: \end{tcolorbox}
+
+
+** Guiding Principle: Practical Usability
+
 In this thesis, we aim to mitigate the above concerns with a focus on
 *practicality*. A theoretical framework may address the concerns, but it would be
 incapable of accommodating /real-world use-cases/ when it cannot be applied to
@@ -1174,8 +1378,18 @@ likely result in name clashes which could be avoided in a number of ways but the
 /user-defined names/ are important and so a result that is “unique up to
 isomorphism” is not practical. As such, we will implement a framework to show
 that the above concerns can be addressed in a way that *actually works*.
+A concrete example is demonstrated later on, such as in Figure ref:fig:pushout-example.
 
 ** Thesis Overview
+
+#+begin_center
+/How most people use packages/
+#+latex: \\ \smartdiagram[sequence diagram]{Namespacing}
+
+/Alternative usage paths/
+#+latex: \\ \smartdiagram[sequence diagram]{Definition Silo (Namspacing), Record Types, Algebraic Data Types}
+#+end_center
+#+latex: \FloatBarrier
 
 The remainder of the thesis is organised as follows.
 
@@ -1183,12 +1397,12 @@ The remainder of the thesis is organised as follows.
   contributions of the thesis.
 
   A review of dependently-typed programming with Agda is presented, with a focus
-  on its packaging constructs: Namespacing with =module=, record types with
-  =record=, and as contexts with Σ-padding. The interdefinability of the
-  aforementioned three packaging constructs is demonstrated.  After-which is a
-  quick review of other DTLs that shows the idea of a unified notion of package
-  is promising ---Agda is only a presentation language, but the ideas transfer
-  to other DTLs.
+  on its packaging constructs: Namespacing with src_agda[:exports code]{module},
+  record types with src_agda[:exports code]{record}, and as contexts with
+  Σ-padding. The interdefinability of the aforementioned three packaging
+  constructs is demonstrated.  After-which is a quick review of other DTLs that
+  shows the idea of a unified notion of package is promising ---Agda is only a
+  presentation language, but the ideas transfer to other DTLs.
 
   With sufficient preliminaries reviewed, the reader is in a position to
   appreciate a survey of package systems in DTLs and the contributions of this
@@ -1237,7 +1451,7 @@ The remainder of the thesis is organised as follows.
 
 The underlying motivation for the research is the conviction that packages play
 /the/ crucial role for forming compound computations, subsuming /both/ record types
-and termtypes. The approach followed is summarised in figure ref:fig:thesis-guidline.
+and termtypes. The approach followed is summarised in Figure ref:fig:thesis-guidline.
 
 #+caption: Approach for a *practical* framework
 #+begin_figure latex
@@ -1250,23 +1464,30 @@ and termtypes. The approach followed is summarised in figure ref:fig:thesis-guid
 \end{center}
 #+end_figure
 
-
- #+latex: \begin{tcolorbox}[title = Prerequisite of the reader, colback=red!5!white, colframe=red!75!black]
-Going forward, it is assumed that the reader is comfortable programming with
-Haskell, and the associated menagerie of Category Theory concepts that are
-usually present in the guise of Functional Programming.  In particular, this
-includes ‘practical’ notions such as typeclasses and instance search, as well as
-‘theoretical’ notions such categorial limits and colimits, lattices ---a kind of
-category with products--- and monoids ---possibly in arbitrary monoidal
-categories, as is the case with monads.
-#+latex: \tcblower
-Moreover, we assume the reader to have *actually* worked with a dependently-typed
-language; otherwise, it /may/ be difficult to appreciate the solutions to the
-problems addressed in this thesis ---since they could not be expressed in
-languages without dependent-types and are thus ‘not problems’.
+ #+latex: \begin{tcolorbox}[title = How accessible is this thesis?, colback=red!5!white, colframe=red!75!black]
+ + Chapter 1, this section, is presented from a high-level overview and tries to
+   be accessible to a computer scientist exposed to fundamental functional programming.
+ + Chapter 2 tries to be *accessible to the layman*. It goes out of its way to
+   explain basic ideas using analogies and ‘real-life (non-computing) examples’.
+   /The effort placed therein is so that ‘almost anyone’ can pick up this thesis
+   and have ‘an idea’ of the problems it targets./
+ + Chapter 3 may be tough reading for readers not familiar with Category Theory
+   or having actually written any Agda code.
+ + Chapter 4 may be less daunting than Chapter 3, as it has line-by-line
+   explanations of code fragments as well as accompanying diagrams.
+ + Chapter 5 tries to leave it to the reader on “how to read the chapter”.  The
+   exposition of core ideas is presented in a box consisting of the main insight
+   (operation definition) along with its realisation using Agda's
+   metaprogramming mechanism. As such, readers could read the high level idea or
+   the implementation ---which, unlike Chapter 4, we have included so as to
+   demonstrate that we are speaking of ideas whose implementations are not ‘so
+   difficult’ that they apply to other DTLs besides Agda.
+ + Chapter 6, the final section, is a high-level overview of what has been
+   accomplished and what we can look forward to achieving in the future.  It may
+   be slightly less accessible than Chapter 1.
  #+latex: \end{tcolorbox}
 
-* COMMENT Packages and Their Parts
+* Packages and Their Parts
 
 <<sec:packages_and_their_parts>>
 #+latex: \label{sec:packages_and_their_parts}
@@ -2669,7 +2890,7 @@ are term descriptions, possibly the “null” description “$-$”.
  <<sec:what_is_DTL>>
  #+latex: \label{sec:what_is_DTL}
 
- <<sec:agda_tour>>
+ <<secuse:agda_tour>>
  #+latex: \label{sec:agda_tour}
 
 #+latex: \tcbset{colback=green!10!white}
@@ -3191,7 +3412,7 @@ a ∶ A • B a)= for each one of the elements =b= of =B a=.
 Unlike generalised signatures which do not possess a singular
 semantics, Agda =data= declarations are pleasant way to write 𝒲-types.
 
-*** COMMENT Calculational Proofs ---Making Use of Unicode Mixfix Lexemes
+*** COMMENT ⟨𝑵𝑶⟩ Calculational Proofs ---Making Use of Unicode Mixfix Lexemes
    School math classes show calculations as follows.
    # #
    #+begin_parallelNB
@@ -3292,8 +3513,8 @@ use′₀ = B.y 3
 
 module C = B 3
 
-use″ : ℕ
-use″ = C.y
+use : ℕ
+use = C.y
 
 use′₁ : ℕ
 use′₁ = y
@@ -3476,7 +3697,7 @@ use⁴ (MkIt C x)
 
   So much for records.
 
-*** COMMENT Interacting with the real world ---Compilation, Haskell, and IO
+*** COMMENT ⟨𝑵𝑶⟩ Interacting with the real world ---Compilation, Haskell, and IO
     :PROPERTIES:
     :header-args: :tangle "CompilingAgda.agda" :comments org
     :CUSTOM_ID: agda-interacting-with-the-real-world
@@ -3625,7 +3846,7 @@ NAME=CompilingAgda; time agda --compile $NAME.agda; ./$NAME
 cabal install ieee754
    #+END_SRC
 
-*** COMMENT Absurd Patterns
+*** COMMENT ⟨𝑵𝑶⟩ Absurd Patterns
 
     <<sec:absurd_pattern>>
  #+latex: \label{sec:absurd_pattern}
@@ -3684,7 +3905,7 @@ magic ()
     result(ing right side), since there's no way to make an element of an empty
     type.
 
-*** COMMENT Other Agda features
+*** COMMENT ⟨𝑵𝑶⟩ Other Agda features
 
    #+begin_tiny
  {{{code( ??? )}}}
@@ -5282,7 +5503,23 @@ contributions.
      types from contexts. Instead, one could settle for the safer 𝒲-types, if
      possible.
 
-* COMMENT Motivating the problem ---Examples from the Wild
+* Disclaimer about going forward :ignore:
+ #+latex: \begin{tcolorbox}[title = Prerequisite of the reader, colback=red!5!white, colframe=red!75!black]
+Going forward, it is assumed that the reader is comfortable programming with
+Haskell, and the associated menagerie of Category Theory concepts that are
+usually present in the guise of Functional Programming.  In particular, this
+includes ‘practical’ notions such as typeclasses and instance search, as well as
+‘theoretical’ notions such categorial limits and colimits, lattices ---a kind of
+category with products--- and monoids ---possibly in arbitrary monoidal
+categories, as is the case with monads.
+#+latex: \tcblower
+Moreover, we assume the reader to have *actually* worked with a dependently-typed
+language; otherwise, it /may/ be difficult to appreciate the solutions to the
+problems addressed in this thesis ---since they could not be expressed in
+languages without dependent-types and are thus ‘not problems’.
+ #+latex: \end{tcolorbox}
+
+* Motivating the problem ---Examples from the Wild
 
 <<sec:examples_from_the_wild>>
 #+latex: \label{sec:examples_from_the_wild}
@@ -6243,7 +6480,8 @@ defaultOrder S = let open Semigroup S
    then add orthogonal features until ~Monoid~ is reached. Extensions are also
    known as /subclassing/ or /inheritance/.
 
- #+BEGIN_SRC mermaid :file semigroup-to-monoid.png :theme default :background-color transparent  :tangle no :tangle no :exports results
+:NO_mermaid:
+ #+BEGIN_SRC NOmermaid :file semigroup-to-monoid.png :theme default :background-color transparent  :tangle no :tangle no :exports results
 graph LR                          %% A “L”eft to “R”ight graph
 
 Semigroup[<strong>Semigroup</strong><br>carrier <br> binary operation <br> associativity law ]
@@ -6260,6 +6498,7 @@ PointedSemigroup --> RightUnitalSemigroup
 LeftUnitalSemigroup --> Monoid
 RightUnitalSemigroup --> Monoid
  #+END_SRC
+:End:
 
  #+RESULTS:
  [[file:semigroup-to-monoid.png]]
@@ -6454,10 +6693,10 @@ ideal module system for dependently-typed languages.
  #    :CUSTOM_ID: design-patterns
  #    :END:
  # #
-    # #+BEGIN_SRC mermaid  :file patterns.png :theme forest :background-color transparent
+ # #+BEGIN_SRC mermaid  :file patterns.png :theme forest :background-color transparent
 
-
-#+BEGIN_SRC mermaid :file patterns.png :theme forest :exports results :noeval
+:NO_mermaid:
+#+BEGIN_SRC NOmermaid :file patterns.png :theme forest :exports results :noeval
 graph LR %% LR and TD are both also good!
 
 %% A(<h1><br><hr> Carrier : Set <br> _⨾_ : Carrier → Carrier → Carrier <br> Id : Carrier</h1>)
@@ -6501,6 +6740,8 @@ subgraph  %% A subgraph environment places the legend in the top left, which is 
 Legend[<h1><center>Legend</center>0. Parameters occur above the waist line <br> 1. Fields occur below the waist line <br> 2. Dashed lines are design patterns</h1> ]
 end
    #+END_SRC
+:END:
+[[file:patterns.png]]
 
 # +latex:\includegraphics[width=\linewidth, height=20cm]{patterns.png}
 
@@ -6599,7 +6840,7 @@ end
    Unfortunately, a common scenario is when one wants to /instantiate/ such a deeply
    nested theory ---as was the case in section ref:sec:examples:extensions for
    fine-grained hierarchy of monoids.
-* COMMENT Current Approaches :to_be_incorporated_into_ch2:
+* COMMENT ⟨𝑵𝑶⟩ Current Approaches               :to_be_incorporated_into_ch2:
 
 <<sec:current_approaches>>
 #+latex: \label{sec:current_approaches}
@@ -7881,10 +8122,12 @@ console.log( maximal instanceof Object // ⇒ false
   So objects do more than just hold their own properties. They have prototypes,
   which are other objects. They’ll act as if they have properties they don’t have
   as long as their prototype has that property.
-* COMMENT latex-as-png
+* COMMENT ⟨𝑵𝑶⟩ latex-as-png
 #+latex: \begin{tcolorbox}[title = ?, colback=red!5!white, colframe=red!75!black]
  #+latex: \tcblower
  #+latex: \end{tcolorbox}
+
+(add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images)
 
   #+begin_src latex-as-png :file put-lifting :exports results
 \usepackage{tikz-cd} % 𝒟₁𝒟₂ar specfies an arrow going direction 𝒟₁ then 𝒟₂; the 𝒟ᵢ must be unique.
@@ -7923,37 +8166,38 @@ console.log( maximal instanceof Object // ⇒ false
 % \end{tikzcd}
 
 \begin{figure}
-  \label{fig:group-diamong}
-  \caption{Given green, yield yellow, require red, form fuchsia}
+  \label{fig:renaming-example}
+  \caption{Given green, derive cyan candidate constructions, require red relationships}
 \begin{center}
   \begin{tikzpicture}
-    \setlength{\unit}{3cm}
-\setlength{\unit}{3cm}
+\setlength{\unit}{4cm}
 \def\arrowthickness{thick}
 \def\nodethickness{thick}
 \def\textoffset{0cm}
+\def\arrowtype{<->}
 
-\mknode{Add}{x = 1, y = 1, color = green!40!orange, text = \texttt{Carrier \\  \_{}+\_{}}}
-\mknode{Mul}{x = 3, y = 1, color = green!40!orange, text = \texttt{Carrier \\  $\_{}\times\_{}$}}
-\mknode{Car}{x = 2, y = 0, color = green!40!orange, text = \texttt{Carrier}}
-\mknode{Two}{x = 2, y = 2, required color,
-  text =  \fbox{Two} \\[0.3ex] \texttt{Carrier \\  \_{}+\_{} \\  \_{}$\times$\_{}}}
+\mknode{Num}{x = 1, y = 1, candidate color, text = \texttt{Numeric \\  \_{}+\_{}}}
+\mknode{Set}{x = 3, y = 1, candidate color, text = \texttt{Sets \\  $\_{}\cup\_{}$}}
+\mknode{Lis}{x = 2, y = 0, candidate color, text = \texttt{Lists \\ \_{}++\_{} \\[-0.2ex] {\footnotesize (Catenation)} }}
+\mknode{Pro}{x = 2, y = 2, candidate color,
+  text =  \texttt{Programs \\ \_{};\_{} \\[-0.2ex] {\footnotesize (Sequencing)} }}
 \mknode{Mag}{x = 2, y = 1, given color, text = \fbox{Magma} \\[0.8ex] \texttt{Carrier \\ op}}
 
-% Given green,
-\mkline[bend right]{left = Mag}{right = Add, given color, label = $\substack{\texttt{:renaming$_1$} \\ \\ \\}$, location = above}
-\mkline[bend left]{right = Mag}{left = Mul, given color, label = $\substack{\texttt{:renaming$_2$} \\ \\ \\}$, location = above}
 
-\mkline[bend left]{left = Car}{bot = Add, label = inclusion, sloped, location = below, color = green!40!orange}
-\mkline[bend right]{right = Car}{bot = Mul, label = inclusion, sloped, location = below, color = green!40!orange}
-% Require red,
-\mkline[bend left]{top = Add}{left = Two, required color, label = inclusion, sloped, location = above}
-\mkline[bend right]{top = Mul}{right = Two, required color, label = inclusion, sloped, location = above}
-\mkline[bend right]{bot = Two, dx = -0.2cm}{top = Mag, dx = -0.1cm, color = pink!40!purple, label = \texttt{left}, location = left}
-\mkline[bend left]{bot = Two, dx = +0.2cm}{top = Mag, dx = +0.1cm, color = pink!40!purple, label = \texttt{right}, location = right}
+\mkline{left = Mag}{right = Num, required color, label = ???, location = above}
+\mkline{right = Mag}{left = Set, required color, label = ???, location = below}
+
+\mkline[bend left]{left = Lis}{bot = Num, label = ???, sloped, location = below,   required color}
+\mkline[bend right]{right = Lis}{bot = Set, label = ???, sloped, location = below, required color}
+
+\mkline[bend left]{top = Num}{left = Pro, required color, label = ???, sloped, location = above}
+\mkline[bend right]{top = Set}{right = Pro, required color, label = ???, sloped, location = above}
+\mkline{bot = Pro}{top = Mag, label = ???, location = right,  required color}
+\mkline{bot = Mag}{top = Lis, label = ???, location = left,  required color}
 \end{tikzpicture}
 \end{center}
 \end{figure}
+
 #+end_src
 
 #+RESULTS:
@@ -8091,6 +8335,7 @@ console.log( maximal instanceof Object // ⇒ false
 % \mkline{loc₁ = Src}{loc₂ = Tgt}
 % At any point we may prefix \mkline with calls “\def\d𝑨𝑨{⋯}”
 % where 𝑨 is either x,y,xx,yy to denote offsets to source x,y or target x,y.
+\def\arrowtype{->}
 \newcommand{\mkline}[3][]{
   % execute the calls in 2 and 4
   \pgfkeys{/src/.cd, left/.code  = \def\src{##1} \def\dx{-\the\unit/3},
@@ -8102,7 +8347,7 @@ console.log( maximal instanceof Object // ⇒ false
   \def\y{\pgfkeysvalueof{/\src/y}}   % \def\dy{\pgfkeysvalueof{/src/dy}}
   \def\xx{\pgfkeysvalueof{/\tgt/x}}
   \def\yy{\pgfkeysvalueof{/\tgt/y}}
-  \draw[\arrowthickness, ->, \arrowdashed, \mycolor]
+  \draw[\arrowthickness, \arrowtype, \arrowdashed, \mycolor]
     (\x * \unit + \dx, \y * \unit + \dy)
     to  [#1] node[\mylabellocation, \mylabelsloped, \mycolor] {\mylabel}
     (\xx * \the\unit + \dxx, \yy * \the\unit + \dyy);
@@ -8150,7 +8395,7 @@ console.log( maximal instanceof Object // ⇒ false
 + In either case, the syntax is \pgfkeys{k₁ = v₁, …, kₙ = vₙ}
   where the values vᵢ are optional.
 
-* COMMENT more TODOs
+* COMMENT ⟨𝑵𝑶⟩ more TODOs
 
 + Perhaps explain why we care about DTLs?
 
@@ -8173,7 +8418,7 @@ Now that we have formal underpinnings for opaque elements,
 we turn to permitting definitions alongside typing declarations
 then to semantics.
 
-* COMMENT Diagrams
+* COMMENT ⟨𝑵𝑶⟩ Diagrams
 The concepts related to this thesis include:
 #+begin_center latex
 \smartdiagram[bubble diagram]{this thesis,
@@ -8198,7 +8443,7 @@ arrow color=gray!50!black,
  }
 #+end_center
 
-* COMMENT [OLD] Introduction
+* COMMENT ⟨𝑵𝑶⟩ [OLD] Introduction
   :PROPERTIES:
   :CUSTOM_ID: Introduction-new
   :END:
@@ -9228,6 +9473,9 @@ were *implicitly encouraged* to seek meta-primitives for making modules.
 <<sec:PF_scrap_repetition>>
 #+latex: \label{sec:PF_scrap_repetition}
 
+# README: C-c C-v C-t  ⇒  M-Sets.agda
+# Then open and load it with PF  ⇒  M-Sets-generated.agda
+
 Programming Language research is summarised, in essence, by the question: /If 𝒳
 is written manually, what information 𝒴 can be derived for free?/ Perhaps the
 most popular instance is /type inference/: From the syntactic structure of an
@@ -9972,7 +10220,7 @@ IdempotentMagma  = Magma renaming "_·_ to _⊔_" ⟴ postulating "_⊔_" "idemp
 𝒱-renaming′ by = renaming 'by :adjoin-retract nil
 𝒱-postulating′ p bop (using) = postulating 'p 'bop :using 'using :adjoin-retract nil
 
-IdempotentMagma″ = Magma postulating′ "_⊔_" "idempotent" ⟴ renaming′ "_·_ to _⊔_" ⟴ record
+IdempotentMagma′ = Magma postulating′ "_⊔_" "idempotent" ⟴ renaming′ "_·_ to _⊔_" ⟴ record
 -}
 #+END_SRC
 
@@ -10450,7 +10698,7 @@ record AlmostNearSemiRing : Set₁ where
     field distˡ      : ∀ x y z → _×_ x (_+_ y z) ≡ _+_ (_×_ x y) (_×_ x z)
  #+END_SRC
 
-*** COMMENT Pullbacks
+*** COMMENT 𝑵𝑶 Pullbacks
  Following the reasoning for pushouts, we implement pullbacks in the same way with the same optional arguments.
  Here's an example use:
  {{{code()}}}
@@ -10633,11 +10881,11 @@ CommutativeMagma = Magma extended-by "comm : {x y : Carrier} →  x · y  ≡  y
  {{{code(Extracting Substrata from a Monolithic Construction)}}}
  #+BEGIN_SRC agda
 {-700
-Empty″        = Monoid keeping ""
-Type″         = Monoid keeping "Carrier"
-Magma″        = Monoid keeping "_·_"
-Semigroup″    = Monoid keeping "assoc"
-PointedMagma″ = Monoid keeping "𝕀; _·_"
+Empty′        = Monoid keeping ""
+Type′         = Monoid keeping "Carrier"
+Magma′        = Monoid keeping "_·_"
+Semigroup′    = Monoid keeping "assoc"
+PointedMagma′ = Monoid keeping "𝕀; _·_"
                 -- This is just keeping: Carrier; _·_; 𝕀
 -}
  #+END_SRC
@@ -14354,6 +14602,7 @@ of /editor extension/ to /language library/.
 # 4. Ensure the resulting semantics is consistent with that of Agda's.
 
 * The =Context= Library
+  CLOSED: [2020-09-15 Tue 09:54]
 # The Third Choice: Contexts
 
 <<sec:contexts>>
@@ -14437,7 +14686,9 @@ system for Agda *within* Agda/.
    in an informal form alongside a concrete implementation /without/ explanation
    of implementation details.
    #+latex: \begin{tcolorbox}[title = A complicated Agda macro, colback=yellow!5!white, colframe=yellow!75!black]
-   @@latex: \begin{center}\dbox{\texttt{accessible dashed pseudo-code}}\end{center}@@
+   @@latex: \begin{center}\dbox{\texttt{accessible dashed
+   pseudo-code}}\end{center}@@
+   {{{code(Code)}}}
    #+begin_src haskell
    ... actual Agda implementation,
        requiring intimate familarity with reflection in Agda ...
@@ -15617,8 +15868,8 @@ macro
   _:kind_ t (con (quote ‵data) _) goal
       = normalise (t app (quoteTerm 1))
         >>=ₘ λ t′ → normalise (waist-helper 1 t′)
-        >>=ₘ λ t″ → unify goal (def (quote Fix)
-                                        ((vArg (Σ→⊎₀ (sources₁ t″))) ∷ []))
+        >>=ₘ λ tt → unify goal (def (quote Fix)
+                                        ((vArg (Σ→⊎₀ (sources₁ tt))) ∷ []))
   _:kind_ t _ goal = unify t goal
 #+end_src
   #+latex: \end{tcolorbox}
@@ -15703,7 +15954,7 @@ macro
  it is also straightforward to translate the library into other
  dependently-typed languages.
 
-* TODO COMMENT Introduction via graphs :intro:conclusion:
+* TODO COMMENT ⟨𝑵𝑶⟩ Introduction via graphs :intro:conclusion:
 
  In dependently-typed programming languages, such as Agda
  citet:Norell-2007,agda_overview, there is a tendency to define concepts
@@ -15855,7 +16106,7 @@ comap f ⟨ edgs ⟩₁ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩₁
    allow arbitrary grouping mechanisms to be derived, such as obtaining the
    homomorphism type of a given record.
  #+end_abstract
-* COMMENT Discussion, Conclusion, and Future Work
+* COMMENT ⟨𝑵𝑶⟩ Discussion, Conclusion, and Future Work
 
 <<sec:conclusion>>
 #+latex: \label{sec:conclusion}
@@ -16108,7 +16359,7 @@ always enforce a disciplined and fine-grained approach to developing software.
 Instead, the prototype allows /after the fact/ library refactoring by specifying
 relationships between grouping mechanisms ---as demonstrated in Section ref:sec:PF:extracting_little_theories.
 # See the example on the PF website for extracting a proof for Id²≈Id
-* COMMENT Conclusion
+* COMMENT ⟨𝑵𝑶⟩ Conclusion
 ** What we have done
 ** How it is useful to others, now.
 
@@ -16196,7 +16447,7 @@ relationships between grouping mechanisms ---as demonstrated in Section ref:sec:
      a previous entity to be top-level functions in their own right?
 
  Lots to do, so little time.
-* COMMENT PROPOSAL ∷ The Next 700 Module Systems
+* COMMENT ⟨𝑵𝑶⟩ PROPOSAL ∷ The Next 700 Module Systems
 
 ** Approach and Timeline
    :PROPERTIES:
@@ -16444,7 +16695,7 @@ relationships between grouping mechanisms ---as demonstrated in Section ref:sec:
 
  eval (progn (org-babel-goto-named-src-block "make-reports-class") (org-babel-execute-src-block) (outline-hide-sublevels 1))
  compile-command (progn (org-babel-tangle) (org-latex-export-to-pdf) (async-shell-command "open thesis-proposal.pdf"))
-* COMMENT Thesis Checklist
+* COMMENT ⟨𝑵𝑶⟩ Thesis Checklist
 ** What's a thesis? [0%]
    + [ ] The argument
      - What is it? Is it being argued clearly?
@@ -16538,7 +16789,7 @@ relationships between grouping mechanisms ---as demonstrated in Section ref:sec:
   + [ ] Discussion of Results
   + [ ] Future Work
 
-* COMMENT Leftovers
+* COMMENT ⟨𝑵𝑶⟩ Leftovers
 
 ** Let us conclude by attempting to justify the title of this thesis.
 
@@ -16750,7 +17001,7 @@ data Π (A : Set) (B : A → Set) : Set where
 Γ ⊢ proj₂ e : B[x ≔ proj₁ e]
  #+END_SRC
 
-* COMMENT [!] section 4? curapr ← Solution Requirements
+* COMMENT ⟨𝑵𝑶⟩ [!] section 4? curapr ← Solution Requirements
    :PROPERTIES:
    :CUSTOM_ID: solution_requirements
    :END:
@@ -17074,7 +17325,7 @@ translate₀ {B} AS f surj inj = record { Carrier = B ; _⨾_ = _⨾_ ; assoc = 
    meta-programming thereby leaving the realm of types altogether.
    Possible limitations on these features may result in the thesis efforts
    to implement them in a dependently-typed system, such as Agda.
-* COMMENT Semantics Continued ← the second choice
+* COMMENT ⟨𝑵𝑶⟩ Semantics Continued ← the second choice
 
  *Intuitively, the nature of the meta-primitives:*
  1. A ~PackageFormer~ is a context, a signature, an essentially algebraic theory of Freyd, or a generalised algebraic theory of Cartmell.
@@ -17128,7 +17379,7 @@ translate₀ {B} AS f surj inj = record { Carrier = B ; _⨾_ = _⨾_ ; assoc = 
  - ⟦Γ A ⟴ B⟧ = ⟦ ⟦Γ A⟧ B ⟧ -- get a context, then apply B to that.
  :end:
 
-* COMMENT Glossary :ignore:
+* Glossary :ignore:
 
 #+LaTeX: \addcontentsline{toc}{part}{Glossary}
 
@@ -17136,7 +17387,7 @@ translate₀ {B} AS f surj inj = record { Carrier = B ; _⨾_ = _⨾_ ; assoc = 
 # +latex_header: \usepackage{glossaries}
 # +latex_header: \makeglossaries
 
-#+BEGIN_SRC emacs-lisp :exports results :results replace
+#+BEGIN_SRC emacs-lisp :exports none :results replace
 (setq words '(
 module-systems "Module Systems"
 "Module systems parameterise programs, proofs, and tactics over structures.
@@ -17318,7 +17569,7 @@ These papers come from people!
 The appendix marker must occur before the section on appendices.
 :End:
 
-* TODO COMMENT Context Implementation :include_some_of_this_in_CONTEXT_Chapter:
+* TODO COMMENT ⟨𝑵𝑶⟩ Context Implementation :include_some_of_this_in_CONTEXT_Chapter:
 #+latex_header: \usepackage[toc,page]{appendix}
 
 # Appendices are for the details, and so have a smaller font.
@@ -18027,8 +18278,10 @@ comap′ f ⟨ edgs ⟩¹ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩¹
     #+latex: \vspace{1em}\noindent
     Excellent, we can unbundle at will.
 
-
 * Footnotes
+
+[fn:44] In these diagrams, the arrows are used to denote a dependency
+relationship.
 
 [fn:43] A /macro/ is a function that manipulates the abstract syntax trees of the
  host language. In particular, it may take an arbitrary term, shuffle its syntax
