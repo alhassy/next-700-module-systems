@@ -24,14 +24,10 @@
 # (maybe-clone "https://github.com/armkeh/unicode-sty.git")
 # (maybe-clone "https://github.com/alhassy/ob-latex-as-png.git")
 
-:DONE:
 
-+ [X] you're missing a "lessons learned" section where you summarize the problems
-  that have been encountered that need a solution.
-
-
-
-:END:
+# ‼! Meta point: communicate the items that are true, justifiable, and needed to
+# understand the rest. If any of the 3 conditions is false, seriously question
+# why you're trying to communicate it in your thesis.
 
 :SOL_modules:
 @InProceedings{DBLP:conf/slp/Chen87,
@@ -184,6 +180,9 @@ E.g., sorting.
 #+latex_header: \newunicodechar{′}{\ensuremath{'}}
 #+latex_header: \newunicodechar{″}{\ensuremath{''}}
 #+latex_header: \newunicodechar{‵}{\ensuremath{`}}
+
+#+latex_header: \newunicodechar{ ̇}{\ensuremath{{}^.}}
+
 
 #+latex_header: \newunicodechar{∎}{\ensuremath{\qed}}
 #+latex_header: \newunicodechar{★}{\ensuremath{\star}}
@@ -2203,6 +2202,9 @@ the following figure.
 
 ** Presentations of Signatures ---Π and Σ
 
+<<sec:packages_and_their_parts:sigma_pi>>
+#+latex: \label{sec:packages_and_their_parts:sigma_pi}
+
 Since a signature's types also have a grammar, we can present a signature in the
 natural style of “name ∶ type-term” pairs.  That is, a signature may be
 presented as a context; i.e., sequence of declarations ~δ₀, δ₁, …, δₙ~ /such that/
@@ -2890,7 +2892,7 @@ are term descriptions, possibly the “null” description “$-$”.
  <<sec:what_is_DTL>>
  #+latex: \label{sec:what_is_DTL}
 
- <<secuse:agda_tour>>
+ <<sec:agda_tour>>
  #+latex: \label{sec:agda_tour}
 
 #+latex: \tcbset{colback=green!10!white}
@@ -3033,6 +3035,8 @@ syntax Π∶• A (λ x → B) = Π x ∶ A • B -- The ‘∶’ is Ghost colo
   in Agda.
 
 *** Dependent Datatypes --- ADTs
+ <<sec:agda_tour:ADTs>>
+ #+latex: \label{sec:agda_tour:ADTs}
 
 Recall that grammars permit a method to discuss “possible scenarios”, such as a
 verb clause or a noun clause; in programming, it is useful to be able to have
@@ -5521,20 +5525,42 @@ languages without dependent-types and are thus ‘not problems’.
 
 * Motivating the problem ---Examples from the Wild
 
+  #+latex_header: \newunicodechar{∥}{\ensuremath{\mid\mid}}
+
+#+latex: \newcounter{QAndA}[section]
+# +latex: \newenvironment{definition}[1][]{\refstepcounter{definition}\par\medskip
+#+latex_header: \newunicodechar{⇨}{  JC \theQAndA\refstepcounter{QAndA} }
+#+latex_header: \newunicodechar{⇦}{  MA \theQAndA }
+
+#+latex_header: \newunicodechar{ ̀}{MA}
+
 <<sec:examples_from_the_wild>>
 #+latex: \label{sec:examples_from_the_wild}
 
-:Hide:
-#+begin_edcomm
-:ed: JC
+:To_consider_futher:
+Also, I think your analysis of what “problem” is highlighted by each example is
+not refined enough. Your shallow analysis makes it seem like “unbundle
+everything” is ‘the’ solution (which is more-or-less the choice made in Unimath
+BTW), but that is also not true. The analysis of the ‘bundling’ problem by
+Spitters et al. is much more refined here.
+:end:
 
-- you have the space here. Go for Monoid, else you'll confuse the reader.
+:TODO:
+3. each (sub-sub-)section should first show an example of (real) code that is
+   ‘problematic’, with an explanation of what the code does / tries to do,
+   followed by an analysis of what is, in fact, wrong with it [with references
+   to the literature to others who have commented on the same already], and a
+   summary of ‘the problem that needs solved’.
 
-  + Musa: A magma suffices to express the problem; monoid may be more familiar
-    but it only brings extra noise ---extra symbols that do not contribute
-    to the problem addressed.
-#+end_edcomm
-:End:
+      ⇦ That does sound like a good approach; “here's a problem you might want to
+        solve, oh no somethings is wrong”. :-)
+
+6. your explanations should be more fine-grained
+
+7. keep your editorializing to a minimum! Point out the problems for which you
+   will provide a solution in the text. If you feel you must editorialize, then
+   put them in side-notes instead of in the text itself.
+:END:
 
 ** Introduction :ignore:
 
@@ -5583,65 +5609,313 @@ least, not out of the box.
 #+latex: \label{sec:examples:readability}
 # Adding Zero then Multiplying by One Results in a Type Error
 
-   In theory, lists and vectors are the same ---where the latter are essentially
-   lists indexed by their lengths. In practice, however, the additional length
-   information stated up-front as an integral part of the data structure makes
-   it not only easier to write programs that would otherwise by awkward or
-   impossible in the latter case. For instance, below we demonstrate that the
-   function ~head~, which extracts the first element of a non-empty list, not only
-   has a difficult type to read, but also requires an auxiliary relation in
-   order to be expressed. In contrast, the vector variant has a much simpler
-   type with the non-emptiness proviso expressed by requesting a positive
-   length.
+In this section, we want to discuss how “unbundled (possibly
+value-parameterised) presentations” can be used to simplify programs and
+statements about elements of shared types. In particular, this section is about
+“how a user may wish things were bundled” and a suggestion to “how a library
+designer should bundle data”.
 
-{{{code(Exposing Information At the Type Level)}}}
+We begin with a ubqutious problem[fn:48] that happens in practice: Given a list
+~[x₀, x₁, …, xₙ₋₁]~, how do we get the $k^{th}$ element of the list?  Unless $0 ≤
+k < n$, we will have an error. The issue is clearly at the ‘bounds’, $0$ and
+$n$, and so, for brevity, we focus on the problem of extracting the first
+element of a list ---i.e., the first bound.  The resulting unbundling solution
+has its own problems, so afterward, we consider how to phrase composition of
+programs in general and abstract that to phrasing distributivity laws.  Finally,
+from the previous two discussions, we conclude with a promising suggestion that
+may improve library design.
+
+*** Avoiding “Out-of-bounds” Errors
+
+<<sec:examples:safe_head>>
+#+latex: \label{sec:examples:safe_head}
+
+
+Let us “see the problem” by writing a function ~head~ that gets the first element
+of a list ---a very useful and commonly used operation.
+
+A list ~[x₀, x₁, …, xₙ₋₁]~ is composed by repeatedly prepending new elements to
+the front of existing lists, starting from an empty list.  That is, the informal
+notation ~[x₀, x₁, …, xₙ₋₁]~ is represented formally as ~x₀ ∷ (x₁ ∷ (⋯ ∷ (xₙ ∷
+[])))~ using a prepending constructor ~_∷_~ and an empty list constructor ~[]~.
+
+{{{code(Lists as Algebraic Data Types)}}}
 #+BEGIN_SRC agda :tangle list-is-not-vec.agda :prologue "module list-is-not-vec where \nopen import Notation \n"
 data List (A : Set) : Set where
   []  : List A
   _∷_ : A → List A → List A
+#+END_SRC
 
+\noindent
+With lists in-hand, we can try to define the ~head~ function.
+{{{code(Partially defined \texttt{head})}}}
+#+BEGIN_SRC agda :tangle no
+head : ∀ {A} → List A → A
+head []       = {! !}
+head (x ∷ xs) = x
+#+END_SRC
+\noindent To define ~head l~ for any list ~l~, we consider the possible shape of the
+list ~l~. The two possible shapes are an empty list ~[]~ and a prepending of an
+element ~x~ to another list ~xs~. In the second case, the the list has ~x~ as the
+first element and so we yield that. Unfortunately, in the scenario of an empty
+list, there is no first element to return! However, =head= is typed =List A → A= and
+so it must somehow produce an =A= value from any given ~List A~ value.  In general,
+this is not possible: If ~A~ is an empty type, having no values at all, then ~[]~ is
+the only possible list of ~A~'s, and so ~head []~ is a value of ~A~, which contradicts
+the fact that ~A~ is empty. Hence, either ~head~ remains a partially-defined
+function ---leaving users the burden of ensuring that any call ~head l~ never
+happens with ~l = []~--- or one has to “add fictitious elements to every type”
+such as $undefined_A : A$ ---thereby having no empty types at all, (roughly put,
+this is what Haskell does). Agda allows empty types and we can ~postulate~
+ficitious values, or parameterise our function by a “default value”, but instead
+we can /add the non-emptiness condition/ ~l ≠ []~ to the type level and have it
+/checked at compile-time by the machine rather than by the user/.
+
+We define the /predicate/ ~l ≠[]~ as a data-type whose values /witness/ the truth of
+the statement “\texttt{l} is not an empty list”. As with ~head~, it suffices to consdier
+the possible shapes of ~l~. When ~l~ is a non-empty list ~x ∷ xs~, then we shall
+include a constructor, call it, ~indeed~ whose type is ~(x ∷ xs) ≠[]~; i.e., ~indeed~
+is a ‘proof’ that the predicate holds for ~_∷_~ constructions.  Since ~[]~ is an
+empty list, we do not include any constructors of the type ~[] ≠[]~, since that
+would not capture the non-emptiness predicate.
+
+{{{code(Non-emptiness Predicate)}}}
+#+BEGIN_SRC agda :tangle list-is-not-vec.agda
+data _≠[] {A : Set} : List A → Set where
+  indeed : ∀ {x xs} → (x ∷ xs) ≠[]
+#+END_SRC
+
+\noindent
+With the non-emptiness predicate/type, we can now form ~head~ as a totally defined
+function.
+
+{{{code(Non-emptiness proviso at the type level ---Using an auxilary type)}}}
+#+BEGIN_SRC agda :tangle list-is-not-vec.agda :prologue "module list-is-not-vec where \nopen import Notation \n"
+head : ∀ {A}  →  Σ l ∶ List A • l ≠[]  →  A
+head ([] , ())
+head (x ∷ xs , indeed) = x
+#+END_SRC
+
+#+latex: \noindent
+In this definition, we pattern match on the possible ways to form a list
+---namely, ~[]~ and ~_∷_~. In the first case, we perform /case analysis/ on the shape
+of the proof of ~[] ≠[]~, but there is no way to form such a proof and so we have
+“defined” the first clause of ~head~ using /a definition by zero-cases/ on the ~[]
+≠[]~ proof. The ‘absurd pattern’ ~()~ indicates the impossibility of a
+construction. The second clause is as before in the previous attempt to define
+~head~. This approach to “padding” the list type with auxiliary constraints /after
+the fact/ is known as ‘Σ-padding’ and is discussed in section
+ref:sec:examples:IsX.
+# and is covered later in section ref:sec:absurd_pattern.
+
+The need to introduce an auxiliary type was to “keep track” of the fact that the
+given list's length is not 0 and so it has an element to extract.  Indeed, some
+popular languages have list types that “know their own length” but it is a /value
+field/ of the type that is not observable at the type level.  In a
+dependently-typed language, we can form a type of lists that “document the
+length” of the list /at the type level/ ---these are ‘vectors’.
+
+{{{code(Exposing Information At the Type Level)}}}
+#+BEGIN_SRC agda :tangle list-is-not-vec.agda :prologue "module list-is-not-vec where \nopen import Notation \n"
 data Vec (A : Set) : ℕ → Set where
   []  : Vec A 0
   _∷_ : ∀ {n} → A → Vec A n → Vec A (suc n)
+#+END_SRC
 
-data not-null {A : Set} : List A → Set where
-  indeed : ∀ {x xs} → not-null (x ∷ xs)
+\noindent Our type of vectors[fn:49] is defined intentionally using the same
+constructor names as that of lists, which Agda allows.  Notice that the first
+constructor is declared to be a member of the type ~Vec A 0~, whereas the second
+declares ~x ∷ xs~ to be in ~Vec A (suc n)~ when ~xs~ is in ~Vec A n~, and so ~l : Vec A n~
+implies that the length of ~l~ is ~n~. In particular, if ~l : Vec A (suc n)~ then ~l~
+has a postive length and so is non-empty; i.e., non-emptiness can be expressed
+directly in the type of ~l~.
 
-head : ∀ {A} → Σ xs ∶ List A • not-null xs → A
-head ([] , ())
-head (x ∷ xs , indeed) = x
-
+{{{code(Non-emptiness proviso at the type level)}}}
+#+BEGIN_SRC agda :tangle list-is-not-vec.agda :prologue "module list-is-not-vec where \nopen import Notation \n"
 head′ : ∀ {A n} → Vec A (suc n) → A
 head′ (x ∷ xs) = x
 #+END_SRC
 
-#+latex: \noindent
-In the definition of ~head~, we pattern match on the possible ways to form a list
----namely, ~[]~ and ~_∷_~. In the first case, we perform /case analysis/ on the shape
-of the proof of ~not-null []~, but there is no way to form such a proof and so we
-have “defined” the first clause of ~head~ using /a definition by zero-cases/ on the
-~non-null~ proof. The ‘absurd pattern’ ~()~ indicates the impossibility of a construction.
-# and is covered later in section ref:sec:absurd_pattern.
+\noindent As usual, this function is defined on the shape of its argument.
+Since its argument is a value of ~Vec A (suc n)~, only the prepending constructor
+~_∷_~ of the ~Vec~ type is possible, and so the definition has only one clause; from
+which we immediately extract an ~A~-value, namely ~x~.
 
-This phenomenon applies not only to derived concepts such as non-emptiness, but
-also to explicit features of a datatype. A common scenario is when two instances
-of an algebraic structure share the same carrier and thus it is reasonable to
-connect the two somehow by a coherence axiom. Perhaps the most popular instance
-of this scenario is in the setting of rings: There is an additive monoid ~(R, +,
-1)~ and a multiplicative monoid ~(R, ×, 0)~ on the same underlying set ~R~, and their
-interaction is dictated by two distributivity axioms, such as $a \times (b + c) = (a
-\times b) + (a \times c)$. As with ~head~ above, depending on which features of a monoid are
-exposed upfront, such axioms may be either difficult to express or relatively
-easy.
+Before we conclude this section, it is interesting to note that we could have
+used a type src_agda[:exports code]{Vec′ : (A : Set) (empty-or-not : 𝔹) → Set}
+that only documents whether a list is empty or not. However, this option is less
+useful than the one that keeps track of a list's length. Indeed, a list's length
+is useful as a “quick sanity check” when defining operations on lists, and so
+having this simple correctness test embedded at the (/machine-checkable!/) type
+level results in a form of “simple specfication” of functions. For example, the
+types of common list operations can have some of their behaviour reflected in
+their type via lengths of lists:
 
-For brevity, since our interest is in expressing the aforementioned
-distributivity axiom, we shall ignore all other features of a monoid, to obtain
-a magma. {{{code(Distributivity is Difficult to Express)}}}
+{{{code(Simple Partial Specfications of List Operations)}}}
+#+begin_src agda
+{- Neither length nor value type changes -}
+reverse : ∀ {A n} → Vec A n → Vec A n
+
+{- Only the type changes, the length stays the same -}
+map     : ∀ {A B n} → (A → B) → Vec A n → Vec B n
+
+{- Length of the result is sum of lengths of inputs -}
+_++_    : ∀ {A m n} → Vec A m → Vec A n → Vec A (m + n)
+
+                      #+end_src
+
+In theory, lists and vectors are the same[fn:47] ---where the latter are
+essentially lists indexed by their lengths. In practice, however, the additional
+length information stated up-front as an integral part of the data structure
+makes it not only easier to write programs that would otherwise be awkward or
+impossible[fn:50] in the latter case. For instance, above we demonstrated that
+the function ~head~, which extracts the first element of a non-empty list, not
+only has a difficult type to read, but also requires an auxiliary relation/type
+in order to be expressed. In contrast, the vector variant has a much simpler
+type with the non-emptiness proviso expressed by requesting a positive length.
+
+\noindent It seems that vectors are the way to go ---but that depends on where
+one is /going/. For example, if we want to keep only elements of a vector that
+satisfy a predicate ~p~, as shown below. To type such an operation we need to
+either know how many elements =m= satisfy the predicate ahead of time, and so the
+return type is ~Vec A m~; or we ‘Σ-pad’ the length parameter to essentially demote
+it from the type level to the body level of the program.
+
+{{{code(Eek!)}}}
+#+begin_src agda
+filter : ∀ {A n} → (A → 𝔹) → Vec A n → Σ m ∶ ℕ • Vec A m
+filter p [] = 0 , []
+filter p (x ∷ xs) with p x
+...| true  = let (m , ys) = filter p xs in 1 + m , x ∷ ys
+...| false = filter p xs
+#+end_src
+
+#+begin_center
+/Equivalent structures, but different usability profiles./
+#+end_center
+
+*** “Obviously sharing the same type” requires ‘do-nothing’ conversion functions! ---Unbundling
+
+The phenomenon of exposing attributes at the type level to gain flexibility
+applies not only to derived concepts such as non-emptiness, but also to explicit
+features of a datatype. A common scenario is when two instances of an algebraic
+structure share the same carrier and thus it is reasonable to connect the two
+somehow by a coherence axiom.  That is, the “same problem” arises when, for
+example, discussing the interaction between sequential program composition ~_⨾_~
+and parallel program composition ~_∥_~: The /simultaneous/ execution of programs
+~P~-then-~P′~ and ~Q~-then-~Q′~ results in the same behaviour as the /sequential/
+execution of ~P~-and-simultaneously-~Q~ then ~P′~-and-simultaneously-~Q′~.  That is, ~(P
+⨾ P′) ∥ (Q ⨾ Q′) = (P ∥ Q) ⨾ (P′ ⨾ Q′)~.  But for this equation to be well-typed,
+we need to /know/ that the composition operators work on the /same kind/ of programs
+phrases ---it is surprisingly not enough to know that each combines certain
+kinds of program phrases that happen to be the same kind.
+
+For brevity, rather than consider program language phrases and operators on
+them, let us abstract and consider what is perhaps the most popular instance of
+structure-sharing known to many from childhood, in the setting of rings: We have
+an additive structure ~(R, +)~ and a multiplicative structure ~(R, ×)~ on the same
+underlying set ~R~, and their interaction is dictated by distributivity axioms,
+such as $a \times (b + c) = (a \times b) + (a \times c)$. As with ~head~ above,
+depending on which features of the structure are exposed upfront, such axioms
+may be either difficult to express or relatively easy. Below are the two
+possible ways to present a structure admiting a type and a binary operation on
+that type.
+
+{{{code(To bundle or to not bundle?)}}}
 #+BEGIN_SRC agda :tangle Distributivity.agda :prologue "module Distributivity where \nopen import Notation hiding (_+_) \n"
+{- A magma₀ is a pair ⟨C, op⟩ of a type C and an operation ‘op’ on that type -}
 record Magma₀ : Set₁ where
+  constructor ⟨_,_⟩₀
   field
     Carrier : Set
-    _⨾_      : Carrier → Carrier → Carrier
+    _⨾_ : Carrier → Carrier → Carrier
+
+{- A magma₁ “on” a given type C is a one-tuple ⟨op⟩
+   consisting of a binary operation on that type -}
+record Magma₁ (Carrier : Set) : Set₁ where
+  constructor ⟨_⟩₁
+  field
+    _⨾_ : Carrier → Carrier → Carrier
+#+END_SRC
+
+\noindent In *theory*, parameterised structures are no different from their
+unparameterised, or “bundled”, counterparts. Indeed, we can easily prove
+src_agda[:exports code]{Magma₀ ≅ (Σ C ∶ Set • Magma₁ C)} by “packing away the
+parameters” and src_agda[:exports code]{∀ (C : Set) → Magma₁ C ≡ (Σ M : Magma₀ •
+M.Carrier ≡ C)} by “abstracting a field as if it were a parameter” ---this is
+known as ‘Σ-padding’. Below is a proof in Agda of the first isomorphism; the
+other isomorphism is proven just as easily but suffers from excess noise
+introduced by the Σ-padding, namely extra phrases “ ~, refl~ ” that serve to keep
+track of important facts, but are otherwise unhelpful.  The proofs generalise
+easily on a case-by-case basis to other kinds of structures, but they cannot be
+proven internally to Agda in full generality.
+#+begin_src agda :exports none
+{- An algebraic structure of a type and an operation on that type -}
+record Magma₀ : Set₁ where
+  constructor ⟨_,_⟩₀
+  field
+    Carrier : Set
+    _⨾_ : Carrier → Carrier → Carrier
+
+{- A magma “on” a given type is a binary operation on that type -}
+record Magma₁ (Carrier : Set) : Set₁ where
+  constructor ⟨_⟩₁
+  field
+    _⨾_ : Carrier → Carrier → Carrier
+
+open import Data.Product
+open import Relation.Binary.PropositionalEquality
+
+to : ∀ {C} → Magma₁ C → Σ Magma₀ (λ M → Magma₀.Carrier M ≡ C)
+to {C} ⟨ _⨾_ ⟩₁ = ⟨ C , _⨾_ ⟩₀ , refl
+
+from : ∀ {C} → Σ Magma₀ (λ M → Magma₀.Carrier M ≡ C) → Magma₁ C
+from (⟨ Carrier , _⨾_ ⟩₀ , refl) = ⟨ _⨾_ ⟩₁
+
+to∘from : ∀ {C} (M : Magma₁ C) → from (to M) ≡ M
+to∘from ⟨ _⨾_ ⟩₁ = refl
+
+from∘to : ∀ {C}  (M : Σ Magma₀ (λ M → Magma₀.Carrier M ≡ C)) → to (from M) ≡ M
+from∘to (⟨ Carrier , _⨾_ ⟩₀ , refl) = refl
+
+{-
+to : Magma₀ → Σ Set (λ C → Magma₁ C)
+to M = Magma₀.Carrier M , ⟨ Magma₀._⨾_ M ⟩₁
+
+from : Σ Set (λ C → Magma₁ C) → Magma₀
+from (C , ⟨ _⨾_ ⟩₁) = ⟨ C , _⨾_ ⟩₀
+
+to∘from : ∀ M → from (to M) ≡ M
+to∘from ⟨ Carrier , _⨾_ ⟩₀ = refl
+
+from∘to : ∀ M → to (from M) ≡ M
+from∘to (C , ⟨ _⨾_ ⟩₁) = refl
+-}
+#+end_src
+#+BEGIN_SRC agda
+{- Abstract out a field -}
+to   :  Magma₀  →  Σ C ∶ Set • Magma₁ C
+to M = Magma₀.Carrier M , ⟨ Magma₀._⨾_ M ⟩₁
+
+{- Pack away a parameter -}
+from  :  Σ C ∶ Set • Magma₁ C  →  Magma₀
+from (C , ⟨ _⨾_ ⟩₁) = ⟨ C , _⨾_ ⟩₀
+
+-- These are inverse by “definition chasing” (normalisation).
+
+to∘from : ∀ M → from (to M) ≡ M
+to∘from ⟨ Carrier , _⨾_ ⟩₀ = refl
+
+from∘to : ∀ M → to (from M) ≡ M
+from∘to (C , ⟨ _⨾_ ⟩₁) = refl
+#+END_SRC
+
+Let us consider /using/ the first presentation.  When structures “pack away” all
+their features, the simple distributivity property becomes a bit of a challenge
+to write and to read.
+
+{{{code(Distributivity is Difficult to Express)}}}
+#+BEGIN_SRC agda :tangle Distributivity.agda :prologue "module Distributivity where \nopen import Notation hiding (_+_) \n"
 
 record Distributivity₀ (Additive Multiplicative : Magma₀) : Set₁ where
 
@@ -5650,26 +5924,26 @@ record Distributivity₀ (Additive Multiplicative : Magma₀) : Set₁ where
 
   field shared-carrier :  R₊ ≡ Rₓ
 
-  coeₓ : R₊ → Rₓ
+  coeₓ :R₊ →Rₓ
   coeₓ = subst id shared-carrier
 
-  coe₊ : Rₓ → R₊
+  coe₊ :Rₓ →R₊
   coe₊ = subst id (sym shared-carrier)
 
   field distribute₀ : ∀ {a : Rₓ} {b c : R₊}
-                    →   a × coeₓ (b + c)
+                    →    a × coeₓ (b + c)
                       ≡ coeₓ (coe₊(a × coeₓ b) + coe₊(a × coeₓ c))
 #+END_SRC
 It is a bit of a challenge to understand the type of ~distribute₀~. Even though
-the carriers of the monoids are propositionally equal, ~R₊ ≡ Rₓ~, they are not the
-same by definition ---the notion of equality wass defined in section
+the carriers of the structures are propositionally equal, ~R₊ ≡ Rₓ~, they are not
+the same by definition ---the notion of equality was defined in section
 ref:sec:propositional-equality. As such, we are forced to “coe”rce back and
 forth; leaving the distributivity axiom as an exotic property of addition,
 multiplication, and coercions. Even worse, without the cleverness of declaring
 two coercion helpers, the typing of ~distribute₀~ would have been so large and
 confusing that the concept would be rendered near useless.  In particular, the
-*cleverness* is captured by the solid curved arrows in the following diagram ---where
-the dashed lines denote inclusions.
+*cleverness* is captured by the solid curved arrows in the following /informal/ diagram
+---where the dashed lines denote inclusions or dependency relationships.
 #+begin_export latex
 \begin{figure}
   \caption{Bundled forms require (curved) coercisions}
@@ -5701,12 +5975,18 @@ the dashed lines denote inclusions.
  # The FloatBarrier stops floats (figures are floats) from jumping over them. I
  # will need to look into passing [tbh] options to figures from org mode further.
 
-In *theory*, parameterised structures are no different from their unparameterised,
-or “bundled”, counterparts. However, in *practice*, this is wholly untrue: Below
-we can phrase the distributivity axiom nearly as it was stated informally
-earlier since the shared carrier is declared upfront. {{{code(Distributivity is
-Expressed Easily with Unbundled Structures)}}}
+Again, in theory, parameterised structures are no different from their
+unparameterised, or “bundled”, counterparts. However, in *practice*, even when
+multiple presentations of an idea are /equivalent/ in some sense, there may be
+specfic presentations that are /useful/ for particular purposes[fn:51].  That is,
+in a depeendely-typed language, equivalence of structures and their usability
+profiles do not necessairly go hand-in-hand.  Indeed, below we can phrase the
+distributivity axiom nearly as it was stated informally earlier since the shared
+carrier is declared upfront.
+
+{{{code(Distributivity is Expressed Easily with Unbundled Structures)}}}
 #+BEGIN_SRC agda :tangle Distributivity.agda
+{- A magma “on” a given type is a binary operation on that type -}
 record Magma₁ (Carrier : Set) : Set₁ where
   field
     _⨾_      : Carrier → Carrier → Carrier
@@ -5773,12 +6053,130 @@ to avoid “coercion hell”.
 See Sections ref:sec:examples:IsX, ref:sec:PF:problem_statement, ref:sec:problems.
 #+latex: \end{mybox}
 
-Observe that we assigned superficial renamings, aliases, to the prototypical
-binary operation ~_⨾_~ so that we may phrase the distributivity axiom in its
-expected notational form. This leads us to our next topic of discussion.
+*** From ~Is𝓧~ to ~𝓧~ ---Packing away components
+
+  <<sec:examples:IsX>>
+ #+latex: \label{sec:examples:IsX}
+
+  The distributivity axiom from required an unbundled structure /after/ a
+  completely bundled structure was initially presented. Usually structures are
+  rather large and have libraries built around them, so building and using an
+  alternate form is not practical. However, multiple forms are usually desirable.
+
+  To accommodate the need for both forms of structure, Agda's Standard Library
+  begins with a [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#1][type-level predicate]] such as ~IsSemigroup~ below, then [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#1][packs that
+  up into a record]]. Here is an instance, along with comments from the library.
+  {{{code(From Is𝒳 to 𝒳 ---where 𝒳 is Semigroup)}}}
+  # +caption: From the [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#601][Agda Standard Library on Algebra]]
+  #+BEGIN_SRC agda
+-- Some algebraic structures (not packed up with sets, operations, etc.)
+record IsSemigroup {a ℓ} {A : Set a} (≈ : Rel A ℓ)
+                   (∙ : Op₂ A) : Set (a ⊔ ℓ) where
+  open FunctionProperties ≈
+  field
+    isEquivalence : IsEquivalence ≈
+    assoc         : Associative ∙
+    ∙-cong        : ∙ Preserves₂ ≈ ⟶ ≈ ⟶ ≈
+#+END_SRC
+
+#+BEGIN_SRC agda
+-- Definitions of algebraic structures like monoids and rings
+-- (packed in records together with sets, operations, etc.)
+record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
+  infixl 7 _∙_
+  infix  4 _≈_
+  field
+    Carrier     : Set c
+    _≈_         : Rel Carrier ℓ
+    _∙_         : Op₂ Carrier
+    isSemigroup : IsSemigroup _≈_ _∙_
+  #+END_SRC
+
+  If we refer to the former as ~Is𝒳~ and the latter as ~𝒳~, then we can see similar
+  instances in the standard library for ~𝒳~ being: ~Monoid, Group, AbelianGroup,
+  CommutativeMonoid,~ ~SemigroupWithoutOne, NearSemiring, Semiring,
+  CommutativeSemiringWithoutOne,~ {{{newline}}} ~CommutativeSemiring,
+  CommutativeRing~.
+
+  It thus seems that to present an idea ~𝒳~, we require the same amount of space
+  to present it unpacked or packed, and so doing both *duplicates the process* and
+  only hints at the underlying principle: From ~Is𝒳~ we pack away the carriers and
+  function symbols to obtain ~𝒳~. The converse approach, starting from =𝒳= and going
+  to ~Is𝒳~ is not practical, as it leads to numerous unhelpful reflexivity proofs
+  ---c.f., the ~indeed~ proof of the ~_≠[]~ type for lists, from section
+  ref:sec:examples:safe_head.
+
+  #+latex: \begin{mybox}{ Predicate Design Pattern}
+ Present a concept 𝒳 first as a predicate ~Is𝒳~ on types
+  and function symbols, then as a type ~𝒳~ consisting of types, function symbols,
+  and a proof that together they satisfy the ~Is𝒳~ predicate.
+ #+latex: \tcblower
+  *Σ-Padding Anti-Pattern*: Starting from a bundled up type ~𝒳~ consisting of types,
+  function symbols, and how they interact, one may form the type {{{newline}}}
+  ~Σ X ∶ 𝒳 • 𝒳.f X ≡ 𝒇₀~ to specialise the feature ~𝒳.f~ to the particular
+  choice ~𝒇₀~.
+  However, nearly all uses of this type will be of the form ~(X , refl)~ where the
+  proof is unhelpful noise.
+ #+latex: \end{mybox}
+
+  Since the standard library uses the predicate pattern, ~Is𝒳~, which requires all
+  sets and function symbols, the Σ-padding anti-pattern becomes a necessary evil.
+  Instead, it would be preferable to have the family ~𝒳ᵢ~ which is the same as ~Is𝒳~
+  but only takes ~𝒾~-many elements ---c.f., ~Magma₀~ and ~Magma₁~ above. However,
+  writing these variations and the necessary functions to move between them is not only tedious
+  but also error prone. Later on, also demonstrated in
+ cite:DBLP:conf/gpce/Al-hassyCK19, we shall show
+  how the bundled form ~𝒳~ acts as */the/* definition, with other forms being
+  derived-as-needed.
+
+ In summary, as the previous two discussions have shown, bundled presentations
+ (as in 𝒳₀) suffer from the inability to declare /shared/ components between
+ structures ---thereby necessitating some form of Σ-padding--- and makes working
+ with shared components is non-trivial due to the need to rewrite along
+ propositional equalities, as was the case with simply stating the
+ distributivity law using ~Magma₀~. Another problem with fully bundled structures
+ is that accessing deeply nested components requires length projection paths,
+ which is not only cumbersome but also exposes the hierarchical design of the
+ structure, thereby limiting library designers from reorganising such
+ hierarchies in the future.  In constrast, unbundled presentations (as in /𝒳ₙ/,
+ for /n/ the number of sort and function symbols of the structure) are flexible in
+ theory, but in practice one must enumerate all components to actually state and
+ apply results about such structures.
+
+  Incidentally, the particular choice ~𝒳₁~, a predicate on one carrier, deserves
+  special attention. In Haskell, instances of such a type are generally known as
+  /typeclass instances/ and ~𝒳₁~ is known as a /typeclass/. As discussed earlier, in
+  Agda, we may mark such implementations for instance search using the keyword
+  ~instance~.
+
+  #+latex: \begin{mybox}{Typeclass Design Pattern}
+  Present a concept 𝒳 as a unary predicate ~𝒳₁~ that associates functions and
+  properties with a given type. Then, mark all implementations with ~instance~ so
+  that arbitrary ~𝒳~-terms may be written without having to specify the particular
+  instance.
+
+  #+latex: \tcblower
+ As discussed in section ref:sec:module_interdefinability, when there are
+  multiple instance of an 𝒳-structure on a particular type, only one of them may
+  be marked for instance search in a given scope.
+ #+latex: \end{mybox}
+
+ /Type Classes for Mathematics in Type Theory/ cite:typeclasses_for_maths
+ discusses the numerous problems of bundled presentations as well as the issues
+ of unbundled presentations and settles on using typeclasses along with their
+ tremnously useful instance search mechanism. Since we view 𝒳₁ as a particular
+ choice in the family $(𝒳_w)_{w ∈ ℕ}$, our approach is to instead have library
+ designers define 𝒳₀ and let users /easily, mechanically, declaratvely,/ produce
+ $𝒳_w$ for any ‘parameterisation waist’ $w : ℕ$.  This idea is implemented for
+ Agda, as an in-language library, and discussed in chapter ref:sec:contexts.
+
+Notice that to phrase the distirbutivy law we assigned superficial renamings,
+aliases, to the prototypical binary operation ~_⨾_~ so that we may phrase the
+distributivity axiom in its expected notational form. This leads us to our next
+topic of discussion.
 
 ** Renaming
-<<sec:examples:renaming>>
+   <<sec:examples:renaming>>
 #+latex: \label{sec:examples:renaming}
 
 The use of an idea is generally accompanied with particular notation that is
@@ -6244,95 +6642,6 @@ Since names are given a lower priority, one no longer needs to perform renaming.
 Instead, one is content with projections. The downside is now there are too many
 projections, leaving code difficult to comprehend. Moreover, this leads to
 inconsistent renaming.
-
-** From ~Is𝓧~ to ~𝓧~ ---Packing away components
-
- <<sec:examples:IsX>>
-#+latex: \label{sec:examples:IsX}
-
- The distributivity axiom from earlier required an unbundled structure /after/ a
- completely bundled structure was initially presented. Usually structures are
- rather large and have libraries built around them, so building and using an
- alternate form is not practical. However, multiple forms are usually desirable.
-
- To accommodate the need for both forms of structure, Agda's Standard Library
- begins with a [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Structures.html#1][type-level predicate]] such as ~IsSemigroup~ below, then [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#1][packs that
- up into a record]]. Here is an instance, along with comments from the library.
- {{{code(From Is𝒳 to 𝒳 ---where 𝒳 is Semigroup)}}}
- #+caption: From the [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.html#601][Agda Standard Library on Algebra]]
- #+BEGIN_SRC agda
--- Some algebraic structures (not packed up with sets, operations, etc.)
-record IsSemigroup {a ℓ} {A : Set a} (≈ : Rel A ℓ)
-                   (∙ : Op₂ A) : Set (a ⊔ ℓ) where
-  open FunctionProperties ≈
-  field
-    isEquivalence : IsEquivalence ≈
-    assoc         : Associative ∙
-    ∙-cong        : ∙ Preserves₂ ≈ ⟶ ≈ ⟶ ≈
-
--- Definitions of algebraic structures like monoids and rings (packed in records
--- together with sets, operations, etc.)
-record Semigroup c ℓ : Set (suc (c ⊔ ℓ)) where
-  infixl 7 _∙_
-  infix  4 _≈_
-  field
-    Carrier     : Set c
-    _≈_         : Rel Carrier ℓ
-    _∙_         : Op₂ Carrier
-    isSemigroup : IsSemigroup _≈_ _∙_
- #+END_SRC
-
- If we refer to the former as ~Is𝒳~ and the latter as ~𝒳~, then we can see similar
- instances in the standard library for ~𝒳~ being: ~Monoid, Group, AbelianGroup,
- CommutativeMonoid,~ ~SemigroupWithoutOne, NearSemiring, Semiring,
- CommutativeSemiringWithoutOne,~ {{{newline}}} ~CommutativeSemiring,
- CommutativeRing~.
-
- It thus seems that to present an idea ~𝒳~, we require the same amount of space to
- present it unpacked or packed, and so doing both *duplicates the process* and
- only hints at the underlying principle: From ~Is𝒳~ we pack away the carriers and
- function symbols to obtain ~𝒳~. The converse approach, starting from =𝒳= and going
- to ~Is𝒳~ is not practical, as it leads to numerous unhelpful reflexivity proofs.
-
- #+latex: \begin{mybox}{ Predicate Design Pattern}
-Present a concept 𝒳 first as a predicate ~Is𝒳~ on types
- and function symbols, then as a type ~𝒳~ consisting of types, function symbols,
- and a proof that together they satisfy the ~Is𝒳~ predicate.
-#+latex: \tcblower
- *Σ Padding Anti-Pattern*: Starting from a bundled up type ~𝒳~ consisting of types,
- function symbols, and how they interact, one may form the type {{{newline}}}
- ~Σ X ∶ 𝒳 • 𝒳.f X ≡ 𝒇₀~ to specialise the feature ~𝒳.f~ to the particular
- choice ~𝒇₀~.
- However, nearly all uses of this type will be of the form ~(X , refl)~ where the
- proof is unhelpful noise.
-#+latex: \end{mybox}
-
- Since the standard library uses the predicate pattern, ~Is𝒳~, which requires all
- sets and function symbols, the Σ-padding anti-pattern becomes a necessary evil.
- Instead, it would be preferable to have the family ~𝒳ᵢ~ which is the same as ~Is𝒳~
- but only takes ~𝒾~-many elements ---c.f., ~Magma₀~ and ~Magma₁~ above. However,
- writing these variations and the necessary functions to move between them is not only tedious
- but also error prone. Later on, also demonstrated in
-cite:DBLP:conf/gpce/Al-hassyCK19, we shall show
- how the bundled form ~𝒳~ acts as */the/* definition, with other forms being
- derived-as-needed.
-
- Incidentally, the particular choice ~𝒳₁~, a predicate on one carrier, deserves
- special attention. In Haskell, instances of such a type are generally known as
- /typeclass instances/ and ~𝒳₁~ is known as a /typeclass/. As discussed earlier, in
- Agda, we may mark such implementations for instance search using the keyword
- ~instance~.
-
- #+latex: \begin{mybox}{Typeclass Design Pattern}
- Present a concept 𝒳 as a unary predicate ~𝒳₁~ that associates functions and
- properties with a given type. Then, mark all implementations with ~instance~ so
- that arbitrary ~𝒳~-terms may be written without having to specify the particular
- instance.
-
- #+latex: \tcblower
-As discussed in section ???, when there are multiple instance of an 𝒳-structure on a particular type, only
- one of them may be marked for instance search in a given scope.
-#+latex: \end{mybox}
 
 ** Redundancy, Derived Features, and Feature Exclusion
 <<sec:redundancy_derived_features_feature_exclusion>>
@@ -15954,6 +16263,224 @@ macro
  it is also straightforward to translate the library into other
  dependently-typed languages.
 
+* Conclusion
+  :PROPERTIES:
+  :CUSTOM_ID: Conclusion
+  :END:
+
+** Intro :ignore:
+  The initial goal of this work was to explore how investigations into
+  packaging-up-data ---and language extension in general--- could benefit from
+  mechanising tedious patterns, thereby reinvigorating the position of universal
+  algebra within computing. Towards that goal, we have decided to create an
+  editor extension that can be used, for instance, to quickly introduce
+  universal algebra constructions for the purposes of “getting things done” in a
+  way that does not force users of an interface to depend on features they do
+  not care about ---the so-called Interface Segregation Principle.  Moreover, we
+  have repositioned the prototype from being an auxiliary editor extension to
+  instead being an in-language library and have presented its key insights so
+  that can be developed in other dependently-typed settings besides Agda.
+
+  Based on the results ---such as the 750% line savings in the MathScheme
+  library--- we are convinced that the (one-line) specification of common
+  theories (data-structures) can indeed be used to reinvigorate the position of
+  universal algebra in computing, as far as DTLs are concerned. The focus on the
+  modular nature of algebraic structures, for example, allows for the
+  /mechanical/ construction of novel and unexpected structures in a practical and
+  elegant way ---for instance, using the src_emacs-lisp[:exports code]{keeping}
+  combinator to extract the /minimal/ interface for an operation, or proof, to be
+  valid. Also, we believe that the correspondence between abstract mathematical theories
+  and data structures in computing only strengthens the need for a mechanised
+  approach for the under-utilised constructions available on the the mathematical
+  side of the correspondence.
+
+  Some preliminary experiences show that the approach used in this thesis can be
+  used with immediate success. For example, the editor extension allows a host
+  of renamings to be done, along with the relevant relationship mappings, and so
+  allow proofs to be written in a more readable fashion.  As another example,
+  the in-language library allows one to show that the free algebra associated
+  with a theory is a particular useful and practical data-structure ---such as
+  src_haskell[:exports code]{ℕ, Maybe,} and src_haskell[:exports
+  code]{List}. These two examples are more than encouraging, for the continual
+  of this effort. Also, the success claimed by related work like cite:Arend and
+  cite:that-group makes us believe that we can have a positive impact.
+
+  This thesis has focused on various aspects of furnishing packages with a
+  status resemebling that of a first-class citizen in a dependently-typed
+  language. Where possible, we will give an indication of future work which has
+  still to be done to get more insight in this direction.
+
+** Questions, Old and New
+
+#+latex_header: \newunicodechar{̇}{\ensuremath{\!\!\!{}^.}}
+
+   Herein we revisit the research questions posed in the introductory chapter,
+   summarise our solutions to each, and discuss future work.
+
+  *Practical Concern ♯1: Renaming & Remembering Relationships.* A given structure
+  may naturally give rise to various ‘children structures’, such as by
+  adding-new/dropping-old/renaming componenets, and it is useful to have a
+  (possibly non-symmetric) coercision between the child and the original parent.
+
+  We have succeeded to demonstrate that ubquitious constructions can be
+  mechanised and the coercisions can also be requested by a simple keyword in
+  the specification of the child structure. As far as this particular problem is
+  concerned, we see no missing feature and are content with the success that the
+  PackageFormer prototype has achieved. However, the in-language Context library
+  does leave room for improvement, but this is a limitation of the current Agda
+  reflection mechanism rather than of the approach outlined by PackageFormer.
+
+  *Practical Concern ♯2: Unbundling.* A given structure may need to have some of
+  its components ‘fixed ahead of time’.  For instance, if we have a type =Graph=
+  of graphs but we happen to be discussing only graphs with natural numbers as
+  nodes, then we need to work with =Σ G ∶ Graph • G.Node ≡ ℕ= and so work with
+  pairs =(G, refl)= whose second component is a necessarily technical burden, but
+  is otherwise insightful.
+
+  Our framework(s) achieve this goal, joyously so.  An improvement would be not
+  to blindly lift the first /n/-many componenets to the type level but instead to
+  expose the induced depenencdy subgraph of a given set of componenets. The
+  PackageFormer already does this for the src_emacs-lisp[:exports code]{keeping}
+  combinator and the same code could be altered for the src_emacs-lisp[:exports
+  code]{waist} combinator. At first, it would seem that a similar idea would
+  work for the in-language library, however this is not the case.  The Context
+  library, unlike PackageFormer, does not work with flat strings but instead
+  transforms the inner nodes of abstract syntax trees ---such as replacing Πs by
+  λs or Σs--- and so the need to lift a subgraph of a structure's signature no
+  longer becomes a linear operation that alters inner nodes.
+
+  Perhaps an example would illuminate the problem.
+  Consider the following signature.
+
+  {{{code(PSGwId² ---‘P’ointed ‘S’emi‘g’roup ‘w’ith ‘Id²’ ≈ Id)}}}
+  #+begin_src agda
+  record PSGwId² : Set₁ where
+    field
+      -- We have a semigroup
+      C     : Set
+      _⊕_   : C → C → C
+      assoc : ∀ x y z  →  (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
+      -- with a selected point
+      id    : C
+
+    twice : C → C
+    twice = λ x → x ⊕ x
+
+    -- Such that the point is idempotent
+    field
+      id² : twice id ≡ id
+  #+end_src
+  Suppose we want to have the field =id²= at the type level, then we must also
+  expose the parts of the signature that make it well-defined; namely, =C, _⊕_, id,
+  twice=.  At a first pass, =id²= only needs =id= and the operation =twice=; however,
+  if we look at each of these in-turn we see that we also need =C= and =_⊕_=. As
+  such, in the worst case, this operation is quadratic.  Moving on, as the
+  signature is traversed, we can mark fields to be lifted but we need a
+  combinator to “shift leftward (upward)” the names that are to be at the type
+  level ---in this case, we need to move =id²= and =id= to come before =assoc=.  This
+  is essentially the algorithm implemented in PackageFormer's
+  src_emacs-lisp[:exports code]{keeping} combinator.  However, for Context's
+  src_haskell[:exports code]{do}-notation, this may not be possible since
+  inner-nodes are no longer replaced, linearly, according to a single toggle.
+  Furture work would be to investigate whether it would be possible and, if so,
+  how to do so in a /pragmattic and usable/ fashion.
+
+  *Theoretical Concern ♯1: Exceptionality.* If an integer $m$ divides an integer
+  $n$, then division $n ÷ m$ yields an integer witnessing $n$ as a multiple of
+  $m$; likewise, if a package $p$ is structurally (nominally) contained in a
+  package $q$, then we can form a pacakge, say, $q -̇ p$ that contains the extra
+  matter and it is parameterised by an instance of $p$ ---e.g., =Monoid= is
+  contained in =Group= and so =Group -̇ Monoid = λ (M : Monoid) → (_⁻¹ : ⋯,
+  left-inverse : ⋯, right-inverse: ⋯)= is the paramterised pacakage that can
+  adjoin inverses to monoids. As such, packages are like numbers ---compare with
+  the idea that a list is like a number, the latter being a list of unit
+  (trivial) information.
+
+  Our goal was to determined the /feasiblility/ of this idea /within/
+  dependently-typed settings. The implementation of the the Context in-language
+  library yields a resounding positive. As mentioned already, limitations of the
+  host DTL's reflection mechanism are inherited by our approach.
+
+  Furture work would focus on the precise relationship between features of the
+  host language and a library treating packages as first-class. Moreover, it
+  would be useful to investigate how packages can be promoted to first-class
+  /after/ the construction of a language. Such an investigation would bring to
+  light the interplay of how packages actually influence other parts of a
+  language ---which is sorely lacking from our work.
+
+  Perhaps the most pressing concern would be how the promotion of packages would
+  influence typechecking.  At first, for instance, the package =PSGwId²= from
+  above could be typed as =Set₁= but that would be wildely inappropriate since we
+  cannot apply arbitrary package combinators, such as ~_-̇_~, to arbitrary types
+  ---just as we cannot apply ~_÷_~ to arbitrary types.  Instead, we would need a
+  dedicated type, say, ~Package~. Things now become exceedingly hairy.  Do we need
+  a hierarchy or avoid paradoxes, as is the case with =Setₙ=?  A parameterised
+  type is a Π-type, but a paramterised package /is a/ package ---so do Π-types get
+  ‘absorped’ into =Package=? What are the types of the package combinators
+  introduced in this thesis, such as unbundliungs Π→λ?
+
+  These questions are not only interesting by themselves but we also would
+  be a stepping stone in having full-fledged first-class pacakages in dependently-typed
+  languages.
+
+  *Theoretical Concern ♯2: Syntax.* The theories-as-data-structures lens presented
+  in this work showcases how a theory (a record type, signature, admitting
+  instances) can have useful data-structures (algebraic data types) associated
+  with it.  For instance, monoids give rise to binary trees whose leaf values
+  are drawn from a given carrier (variable) set. One can then encode a sentence
+  of a model structure using the syntax, perform a syntactic optimisation,
+  then interpret the sentence using the given instance.
+
+  We are delighted with the rather unexpected success of this aspect of our work.
+  The formal methods community is well-aware that monoids are related to binary trees
+  and that pointed sets are related to maybe (nullable) types, yet we have had the
+  honour of being the first to actually derive the latter from the former /mechanically/.
+
+  Future work would focus on the treatment non-function-symbols.  For instance,
+  instead of discarding properties from a theory, one could keep them thereby
+  obtaining ‘higher-order datatypes’ cite:cubical_agda or could have them lifted
+  as parameters in a (mechanically generated) subsequent module.  Moreover, the
+  current implementation of Context has a basic predicate determining what
+  consitutes a function-symbol, it would be interesting to make that a parameter
+  of the theories-as-data-structures src_emacs-lisp[:exports code]{termtype}
+  construction.
+
+  *Proof.*
+  Finally, there are essentially no formal theorems proven in this work.  The
+  constructions presented rely on /typechecking/: One can phrase a desired
+  construction and typechecking determines whether it is meaningful or not.  It
+  would be useful to determine the necessary conditions that guarantee the
+  well-definedness of the constructions ---so that we may then “go up another
+  level” and produce meta-constructions that invoke our current constructions
+  mechanically and “wholesale”.
+
+** Concluding Remarks
+
+ In dependently-typed settings (DTS), it is common practice to operate on
+ packages ---by renaming them, hiding parts, adding new parts, etc.--- and the
+ frameworks presented in this thesis show that it is indeed possible to treat
+ packages nearly as first-class citizens “after the fact” even when a language
+ does not assign them such a status. The techniques presented show that this
+ approach is feasible as an in-language library for DTS as well as for the any
+ highly customisable and extensible text editor.
+
+ The combinators presented in this thesis were guided not by theoretical
+ concerns on the algebraic nature of containers but rather on the practical
+ needs of actual users working in DTS. We legitimately believe that that our
+ stance on packages as first-class citizens should ---and hopefully one day
+ would--- be an integral part of any DTS. The Context library is a promising
+ approach to promoting the status of packages, to reducing the gap between
+ different “sub-languages” in a language, and allowing users to benefit from a
+ streamlined and familiar approach to packages ---as if they were the ‘fancy
+ numbers’ abstracted by rings, fields, and vector spaces.
+
+ Finally, even though we personally believe in the import of packages, we do not
+ expect the same belief to trickle-down to mainstream languages immediately
+ since they usually do not have sufficiently sophisticated[fn:46] type systems
+ to permit the treatment of packages as first-class citizens, on the same
+ footing as numbers.  Nonetheless, we believe that the work in this thesis is
+ yet another stepping-stone on the road of /DRY[fn:45]/ endeavours.
+
 * TODO COMMENT ⟨𝑵𝑶⟩ Introduction via graphs :intro:conclusion:
 
  In dependently-typed programming languages, such as Agda
@@ -18280,6 +18807,47 @@ comap′ f ⟨ edgs ⟩¹ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩¹
 
 * Footnotes
 
+[fn:51] In theory, numbers can be presented equivalently using Arabic or Roman
+numerals.  In practice, doing arithmetic is much more efficient using the former
+presentation.
+
+[fn:50] For example, to find how many elements are in a list, a function
+src_agda[:exports code]{length : ∀ {A} → List A → ℕ} must “walk along each
+prepending constructor until it reaches the empty constructor” and so it
+requires as many steps to compute as there are elements in the list. As such, it
+is impossible to write a function that requires a constant amount of steps to
+obtain the length of a list.  In contrast, a function src_agda[:exports
+code]{length : ∀ {A n} → Vec A n → ℕ} requires /zero steps/ to compute its result
+---namely, src_agda[:exports code]{length {A} {n} l = n}--- and so this
+function, for vectors, is rather facetious.
+
+[fn:49] The definition of this type, and the subsequent ~head~ function, have been
+discussed in section ref:sec:agda_tour:ADTs, in the introduction to
+dependently-typed programming with Agda.
+
+[fn:48] A variation of this problem is discussed in section
+ref:sec:packages_and_their_parts:sigma_pi.
+
+[fn:47] Formally, one could show, for instance, that every list corresponds to a
+vector, src_agda[:exports code]{List X ≅ (Σ n : ℕ • Vec X n)}. Informally, any
+list src_agda[:exports code]{x₁ ∷ x₂ ∷ … ∷ xₙ ∷ []} can be treated as a vector
+(since we are using the same /overloaded/ constructors for both types) of /length/
+~n~; conversely, given a vector in =Vec X n=, we “forget” the length to obtain a
+list.
+
+
+[fn:46]
+The static typing of some languages, such as C, is so pitiful that is makes type
+systems seem more like a burden then anything useful ---in C, one often uses
+void pointers to side-step the type system's limitations, thereby essentially
+going untyped.  The dynamically typed languages, however, could be an immediate
+test-bed for package combinators ---indeed, Lisp, Python, and JavaScript use
+‘splicing’ operators to wholesale include structures in other structures, within
+the core language.
+
+
+[fn:45] /Don't Repeat Yourself!/
+
 [fn:44] In these diagrams, the arrows are used to denote a dependency
 relationship.
 
@@ -18574,10 +19142,15 @@ Also known as “the principle of explosion”.
 [fn:5] A comparison of module systems of other dependently-typed languages
 is covered in section ref:sec:module_existing.
 
-[fn:4] A /magma/ =(C, ⨾)= is a set =C= and a binary operation =_⨾_ ∶ C → C → C= on it;
-a /semigroup/ is a magma whose operation is associative, ~∀ x, y, z • (x ⨾ y) ⨾ z = x ⨾ (y ⨾ z)~;
-and a /monoid/ is a semigroup that has a point ~Id ∶ C~ acting as the identity of the binary operation:
-~∀ x • x ⨾ Id = x = Id ⨾ x~.
+[fn:4] A /magma/ =(C, ⨾)= is a set =C= and a binary operation =_⨾_ ∶ C → C → C= on it; a
+/semigroup/ is a magma whose operation is associative, ~∀ x, y, z • (x ⨾ y) ⨾ z = x
+⨾ (y ⨾ z)~; and a /monoid/ is a semigroup that has a point ~Id ∶ C~ acting as the
+identity of the binary operation: ~∀ x • x ⨾ Id = x = Id ⨾ x~.  For example, real
+numbers with subtraction ~(ℝ, -)~ are only a magma whereas numbers with addition
+~(ℝ, _+_, 0)~ form a monoid.  The /canonical models/ of magma, semigroup, and monoid
+are trees (with branching), non-empty lists (with catenation), and possibly
+empty lists, respectively ---these are discussed again in section
+ref:sec:free-datatypes.
 
 [fn:3] Records let us put things in a bag and run around with them, whereas
 telescopes amount to us running around with all of our things in our hands
