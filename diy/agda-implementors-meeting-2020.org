@@ -1,0 +1,2351 @@
+#+MACRO: code     #+LaTeX: \def\mytitle{$1}
+
+# f7 preview changes
+# (local-set-key (kbd "<f7>") (lambda () (interactive) (suspend-frame) (disable-theme 'spacemacs-light) (org-reveal-export-to-html-and-browse) (load-theme 'spacemacs-light)))
+# (local-set-key (kbd "<f7>") (lambda () (interactive) (disable-theme 'spacemacs-light) (org-reveal-export-to-html-and-browse) (load-theme 'spacemacs-light)))
+
+#+TITLE: Do-it-yourself Module Systems
+#+DESCRIPTION: Unbundling on the fly and mechanically obtaining termtypes from theories
+#+TITLE: @@html:<small style="color:green">@@Unbundling   on   the   fly   and   mechanically   obtaining   termtypes   from   theories@@html:</small>@@
+#+AUTHOR: [[https://alhassy.github.io/][Musa Al-hassy]]
+#+EMAIL: alhassy@gmail.com
+#+OPTIONS: html-postamble:nil
+#+PROPERTY: header-args:agda2 :tangle aim-2020.agda
+
+#+OPTIONS: timestamp:nil
+#+OPTIONS: toc:nil d:nil
+
+#+OPTIONS: reveal_center:t reveal_progress:t reveal_history:t reveal_control:t
+#+OPTIONS: reveal_rolling_links:t reveal_keyboard:t reveal_overview:t num:nil
+# OPTIONS: reveal_width:1200 reveal_height:800
+#+OPTIONS: reveal_height:800
+
+#+REVEAL_MARGIN: 0.1
+#+REVEAL_MIN_SCALE: 0.5
+#+REVEAL_MAX_SCALE: 2.5
+
+# Available transitions are: default|cube|page|concave|zoom|linear|fade|none.
+#+REVEAL_TRANS: fade
+# Available transitions are: default(black)|white|league|sky|beige|simple|serif|blood|night|moon|solarized
+#+REVEAL_THEME: sky
+# REVEAL_THEME: blood
+
+#+REVEAL_HLEVEL: 2
+# REVEAL_HEAD_PREAMBLE: <meta name="description" content="Org-Reveal Introduction.">
+#+REVEAL_POSTAMBLE:
+#+REVEAL_PLUGINS: (markdown notes)
+#+REVEAL_EXTRA_CSS: ./local.css
+#
+# See here for examples of how fragments look
+# https://revealjs.com/#/fragments
+#
+# Here for what themes look like
+# https://revealjs.com/#/themes
+
+#+MACRO: myfrag  #+ATTR_REVEAL: :frag (appear)
+
+#+MACRO: begin-columns  #+REVEAL_HTML: <div style="width:50%;float:left">
+#+MACRO: break-columns  #+REVEAL_HTML: </div> <div style="width:50%;float: left">
+#+MACRO: end-columns #+REVEAL_HTML: </div>
+
+# Place item in a 1×1 table then center the table.
+# This works nicely for preformatted code whose indentation is important.
+#
+#+MACRO: begin-center #+REVEAL_HTML: <center><table width="50%" border="0""><tr><td>
+#+MACRO: end-center  #+REVEAL_HTML: </td><tr></table></center>
+
+
+
+:Info:
+
+Title: Do-it-yourself Module Systems: Unbundling on the fly and mechanically
+obtaining termtypes from theories
+
+Terse Abstract: We show how a bit of reflection can be used to achieve on the
+fly unbundling to lift record fields to the type level as parameters, and we use
+monadic do-notation to make the resulting setup practical and pragmatic for
+experimentation. It is well known in the folklore that record types are contexts
+(i.e., sequences of name-type pairs), we go on to show that termtypes (GADTs)
+are also contexts. Moreover, since records and termtypes are both contexts, we
+show how to derive the latter from the former *mechanically* via a macro; e.g., we
+mechanically ask for the termtype of dynamic systems, monoids, pointed sets,
+collections and find the results to be that of the natural numbers, tree
+skeletons, the maybe type, and the list type.  Surprisingly, the entire
+development is under 300 lines of Agda.
+
+Project webpage: https://alhassy.github.io/next-700-module-systems/
+
+:end:
+
+:Remarks:
++ live demo instead of video, quality was poor. ლ(ಠ益ಠ)
+
++ Give concrete examples.
+
++ Skip slides like toc and slides you ignore.
+  - or, during the toc slide, set the stage
+    for what's coming up.
+
+    Give a background on the problem, quickly.
+
++ Don't stand in front of the slides. ─use the laser pointer‼
+
++ Use the NOTES to make speaker notes.
+
++ Say what is the approach I'm using to ensure that the problem is feasible.
+  - Communicate that its doable and that I can do it.
+
++ Dicuss how even going to attempt doing this, the research
+
+1. catchy subtitle: reptition means we're doing something wrong.
+
+   A language has many languages, whence repetitive.
+
+   Maybe show a proof or something that
+   shows a DTL making use of the first
+   five pieces together. ;-)
+   Show the problem.
+
++ make it clear what I'm doing in 2 sentences:
+  Providing primitives that minimise repetition
+  for manipulaiting grouping mechanisms,
+  without the end-user utilising preprocessing.
+
+:End:
+:How_to_enable_PDF_print_capabiility:
+
+1. Open your presentation with print-pdf included in the query string i.e. http://localhost:8000/?print-pdf. You can test this with revealjs.com?print-pdf.
+   - If you want to include speaker notes in your export, you can append showNotes=true to the query string: http://localhost:8000/?print-pdf&showNotes=true
+2. Open the in-browser print dialog (CTRL/CMD+P).
+3. Change the Destination setting to Save as PDF.
+4. Change the Layout to Landscape.
+5. Change the Margins to None.
+6. Enable the Background graphics option.
+7. Click Save.
+
+:End:
+:FragmentStyles:
+The ATTR_REVEAL part must be immediately preceding the first item in a list, no new line;
+other items may be freely spaced.
+
+Available fragment styles are:
+#+ATTR_REVEAL: :frag t
+    * grow
+    * shrink
+    * roll-in
+    * fade-out
+    * highlight-red
+    * highlight-green
+    * highlight-blue
+    * appear
+
+    Fragment sequence can be changed by assigning adding ~:frag_idx~
+    property to each fragmented element.
+
+#+ATTR_REVEAL: :frag t :frag_idx 3
+    And, this paragraph shows at last.
+
+#+ATTR_REVEAL: :frag t :frag_idx 2
+    This paragraph shows secondly.
+
+#+ATTR_REVEAL: :frag t :frag_idx 1
+    This paragraph shows at first.
+
+~#+ATTR_REVEAL: :frag frag-style~ above a list defines fragment style for the list as a whole.
+To define fragment styles for every list item, please enumerate each item's style in a lisp list.
+
+When there is :frag_idx specified, insufficient fragment style list will be extended by its last element. So a :frag (appear) assigns each item of a list the appear fragment style.
+
+#+BEGIN_SRC emacs-lisp
+#+ATTR_REVEAL: :frag (appear)
+   * I appear.
+   * I appear.
+   * I appear.
+#+END_SRC
+
+Nb: Org-reveal supports /editable code blocks/ using klipsify.
+
+  # :frag_idx (5 4 3 2 1)
+#+ATTR_REVEAL: :frag (grow shrink roll-in fade-out none)
++ I will grow.
++ I will shrink.
++ I rolled in.
++ I will fade out.
++ I don't fragment.
+
+  EXPORT CURRENT SUBTREE
+Use menu entry " C-c C-e R S" to export only current subtree, without the title slide and the table of content, for a quick preview of your current edition.
+:End:
+
+# Imports
+#+begin_src agda2 :exports none
+open import Relation.Binary.PropositionalEquality
+open import Data.Nat
+open import Data.Nat.Properties
+#+end_src
+
+:IGNORE:
+#+begin_export html
+<div style="position: absolute; bottom: 0px; color: green; text-align: center;">
+Unbundling on the fly and mechanically obtaining termtypes from theories
+</div>
+#+end_export
+:END:
+
+* css :ignore:
+
+# For the most part, I “view page source” to inspect what div or whatever it is I want
+# to alter, then I lookup the css to do so and that gives me the following ^_^
+
+# Bigger & redish (ff2d00) page numbers; max vertical and  horizontal size
+# Also reasonable ?print-pdf url extension ^_^
+#+BEGIN_EXPORT html
+<style>
+
+.reveal .slide-number {
+  font-size: 34pt;
+  color: #ff2D00; }
+
+.reveal .slides {
+  height: 100%;
+  width: 100% !important ;
+  top: 0;
+  margin-top: 0;
+}
+
+.reveal .slides>section {
+  min-height: 90%;
+  min-width:  90%;
+}
+
+.reveal .slides>section>section {
+  min-height: 100%;
+}
+
+.print-pdf .reveal .slides > section.present, .print-pdf .reveal .slides > section > section.present {
+  min-height: 770px !important;
+  position: relative !important;
+}
+
+.reveal table th, .reveal table td {
+    text-align: left;
+    border: none;
+    border-left: 1px solid transparent;
+    border-right: 1px solid transparent;
+}
+#+END_EXPORT
+# Last one above is so that tables have no border; c.f. {{{begin-center}}}
+# border:none ⇒ no bottom, top, inner borders
+# border-left/right transparent ⇒ no “edge” borders
+
+# Increase vertical spacing between reveal's unnumbered & ordered listings; also definition listings, “p”aragraphs, and “pre”formatted code blocks.
+# Also the preformatted code blocks needn't have a border.
+#+BEGIN_EXPORT html
+.reveal ul {
+    line-height: 200%
+}
+
+.reveal ol {
+    line-height: 200%
+}
+
+.reveal dl {
+    line-height: 200%
+}
+
+.reveal p {
+    line-height: 200%
+}
+
+.reveal pre {
+    font-size: 1em;
+    box-shadow:none;
+}
+
+</style>
+#+END_EXPORT
+
+#
+# !important everywhere forces my suggestions.
+#
+
+* COMMENT Columns test
+
+{{{begin-columns}}}
+hello
+
+{{{break-columns}}}
+
+nice
+{{{end-columns}}}
+
+* COMMENT Configuration
+
+** Set the location of Reveal.js
+
+   Org-reveal must know where Reveal.js is on your computer before
+   exporting Org contents. The location of Reveal.js is the path to
+   the top directory of the Reveal.js packages, the directory which contains
+   file *README.md*, but *not* the one that contains the file reveal.js.
+
+   The default location is =./reveal.js=, relative to the Org file.
+
+   Changing =org-reveal-root= 's value will change the location
+   globally. For example, add the following statement to your .emacs
+   file:
+#+BEGIN_SRC lisp
+(setq org-reveal-root "file:///d:/reveal.js")
+#+END_SRC
+   *IMPORTANT*: the absolute path to Reveal.js should be in URL form,
+   "file:///path_to_reveal.js", as illustrated above.  By setting
+   option =REVEAL_ROOT=, the location is only affected within the Org
+   file.
+
+   #+BEGIN_SRC org
+   ,#+REVEAL_ROOT: file:///d:/reveal.js
+   #+END_SRC
+
+   Set your =REVEAL_ROOT= to the following URL to download reveal.js from
+   a CDN instead of downloading a local copy.
+
+   #+BEGIN_SRC org
+   ,#+REVEAL_ROOT: http://cdn.jsdelivr.net/reveal.js/3.0.0/
+   #+END_SRC
+
+
+*** Url form for file location
+
+    For example if you cloned this repository to your home directory,
+    this file in Mac OS X would be referred to as
+    "file:///Users/username/org-reveal/readme.org".  This file in
+    Ubuntu would be "file:///home/username/org-reveal/readme.org" and
+    in Windows this file would be
+    "file:///c:/Users/username/org-reveal/readme.org".  For more
+    detail on this standard please refer to
+    [[http://en.wikipedia.org/wiki/File_URI_scheme]]
+
+** First Try
+
+   To load Org-reveal, type "M-x load-library", then type
+   "ox-reveal".
+
+   Now you can export this manual into Reveal.js presentation by
+   typing "C-c C-e R R".
+
+   Open the generated "Readme.html" in your browser and enjoy the
+   cool slides.
+
+** The HLevel
+
+   Org-reveal maps each heading and its contents to one Reveal.js
+   slide. Since Reveal.js arranges slides into a 2-dimensional matrix,
+   Org-reveal use a *HLevel* value to decide whether to map headings to horizontal
+   or vertical slides.
+
+   * Headings of level less than or equal to *HLevel* are mapped to horizontal
+     slides.
+   * Headings with a deeper level are mapped to vertical slides.
+
+   HLevel's default value is 1, means only level 1 headings are arranged
+   horizontally. Deeper headings are mapped to vertical slides below their
+   parent level 1 heading.
+
+*** HLevel's Effects on Slides Layout
+
+    Assume we have a simple Org file as below:
+#+BEGIN_SRC org
+,* H1
+,* H2
+,** H2.1
+,*** H2.1.1
+,* H3
+#+END_SRC
+
+    If HLevel is 1, the default value, headings H2.1 and H2.1.1 will
+    be mapped to vertical slides below the slides of heading H2.
+
+    [[./images/hlevel.png]]
+
+    If HLevel is changed to 2, slides of heading H2.1 will be changed
+    to the main horizontal queue, and slides of heading H2.1.1 will be
+    a vertical slide below it.
+
+    [[./images/hlevel2.png]]
+
+*** Configure HLevel's Value
+
+    * Change variable =org-reveal-hlevel='s value to set HLevel globally.\\
+      For example, add the following statement to your =.emacs= file.
+#+BEGIN_SRC lisp
+(setq org-reveal-hlevel 2)
+#+END_SRC
+
+    * Setting Org files local HLevel to option =REVEAL_HLEVEL=.
+#+BEGIN_SRC org
+,#+REVEAL_HLEVEL: 2
+#+END_SRC
+
+** Force Split
+
+   If one heading has too many things to fit into one slide, you can
+   split the contents into multiple vertical slides manually, by inserting
+
+#+BEGIN_SRC org
+,#+REVEAL: split
+#+END_SRC
+
+#+REVEAL: split
+
+   Now a new slide begins after =#+REVEAL= keyword.
+
+** Select Theme and Transition
+
+    Themes and transition styles are set globally throughout the whole
+    file by setting options =REVEAL_THEME=, =REVEAL_TRANS=, and =REVEAL_SPEED=.
+
+    For an example, please check the heading part of this document.
+
+    Available themes can be found in "css/theme/" in the reveal.js directory.
+
+    Available transitions are: default|cube|page|concave|zoom|linear|fade|none.
+** Set The Title Slide
+   By default, Org-reveal generates a title slide displaying the
+   title, the author, the Email, the date and the time-stamp of the
+   Org document, controlled by Org's [[http://orgmode.org/org.html#Export-settings][export settings]].
+
+   To avoid a title slide, please set variable
+   ~org-reveal-title-slide~ to ~nil~, or add ~reveal_title_slide:nil~ to
+   ~#+OPTIONS:~ line.
+
+   To restore the default title slide, please set variable
+   ~org-reveal-title-slide~ to ~'auto~.
+
+*** Customize the Title Slide
+
+    To customize the title slide, please set ~org-reveal-title-slide~
+    to a string of HTML markups. The following escaping character can
+    be used to retrieve document information:
+    | ~%t~ | Title     |
+    | ~%a~ | Author    |
+    | ~%e~ | Email     |
+    | ~%d~ | Date      |
+    | ~%%~ | Literal % |
+
+** Set Slide Background
+
+   Slide background can be set to a color, an image or a repeating image
+   array by setting heading properties.
+
+*** Single Colored Background
+   :PROPERTIES:
+   :reveal_background: #543210
+   :END:
+
+    Set property =reveal_background= to either an RGB color value, or any
+    supported CSS color format.
+
+#+BEGIN_SRC org
+,*** Single Colored Background
+   :PROPERTIES:
+   :reveal_background: #123456
+   :END:
+#+END_SRC
+
+*** Single Image Background
+    :PROPERTIES:
+    :reveal_background: ./images/whale.jpg
+    :reveal_background_trans: slide
+    :END:
+
+    Set property =reveal_background= to an URL of background image.
+    Set property =reveal_background_trans= to =slide= to make background image
+    sliding rather than fading.
+#+BEGIN_SRC org
+,*** Single Image Background
+    :PROPERTIES:
+    :reveal_background: ./images/whale.jpg
+    :reveal_background_trans: slide
+    :END:
+#+END_SRC
+
+*** Repeating Image Background
+    :PROPERTIES:
+    :reveal_background: ./images/whale.jpg
+    :reveal_background_size: 200px
+    :reveal_background_repeat: repeat
+    :END:
+
+    Resize background image by setting property
+    =reveal_background_size= to a number.
+
+    Set property =reveal_background_repeat= to =repeat= to repeat
+    image on the background.
+#+BEGIN_SRC org
+,*** Repeating Image Background
+    :PROPERTIES:
+    :reveal_background: ./images/whale.jpg
+    :reveal_background_size: 200px
+    :reveal_background_repeat: repeat
+    :END:
+#+END_SRC
+
+*** Title Slide Background Image
+
+    To set the title slide's background image, please specify the
+    following options:
+
+    * =REVEAL_TITLE_SLIDE_BACKGROUND=: A URL to the background image.
+    * =REVEAL_TITLE_SLIDE_BACKGROUND_SIZE=: HTML size specification, e.g. ~200px~.
+    * =REVEAL_TITLE_SLIDE_BACKGROUND_REPEAT=: set to ~repeat~ to repeat the image.
+
+** Slide Size
+
+   Reveal.js scales slides to best fit the display resolution, but you can
+   also specify the desired size by settings the option tags =width= and =height=.
+
+   The scaling behavior can also be constrained by setting following
+   options:
+   * =#+REVEAL_MARGIN:= :: a float number, the factor of empty area
+    surrounding slide contents.
+   * =#+REVEAL_MIN_SCALE:= :: a float number, the minimum scaling down
+    ratio.
+   * =#+REVEAL_MAX_SCALE:= :: a float number, the maximum scaling up
+    ratio.
+
+** Slide Numbering
+
+   By default, a flatten slide number is showed at the lower-right corner of each slide.
+
+   To disable slide numbering, please add ~reveal_slide_number:nil~ to
+   ~#+OPTIONS:~ line.
+
+   From Reveal.js 3.1.0, slide numbering can have several custom
+   formats. To choose one format, please set ~reveal_slide_number~ to
+   its proper string. For example, ~reveal_slide_number:h/v~.
+
+   Supported format string can be found in [[https://github.com/hakimel/reveal.js/#slide-number][Reveal.js manual]].
+
+
+** Slide Header/Footer
+   Specify Slide header/footer by =#+REVEAL_SLIDE_HEADER:= and
+   =#+REVEAL_SLIDE_FOOTER:=. The option content will be put into
+   divisions of class =slide-header= and =slide-footer=, so you can
+   control their appearance in custom CSS file(see [[Extra Stylesheets]]).
+   By default header/footer content will only display on content
+   slides. To show them also on the title and toc slide you can add
+   ~reveal_global_header:t~ and ~reveal_global_footer:t~ to
+   ~#+OPTIONS:~ line.
+
+** Fragmented Contents
+
+    Make contents fragmented (show up one-by-one) by setting option
+    =ATTR_REVEAL= with property ":frag frag-style", as illustrated
+    below.
+
+    See here for examples of them: https://revealjs.com/#/fragments
+
+#+ATTR_REVEAL: :frag roll-in
+    Paragraphs can be fragmented.
+
+#+ATTR_REVEAL: :frag roll-in
+    - Lists can
+    - be fragmented.
+
+#+ATTR_REVEAL: :frag roll-in
+    Pictures, tables and many other HTML elements can be fragmented.
+
+*** Fragment Styles
+    Available fragment styles are:
+#+ATTR_REVEAL: :frag t
+    * grow
+    * shrink
+    * roll-in
+    * fade-out
+    * highlight-red
+    * highlight-green
+    * highlight-blue
+    * appear
+
+    Setting ~:frag t~ will use Reveal.js default fragment style, which
+    can be overridden by local option ~#+REVEAL_DEFAULT_FRAG_STYLE~ or
+    global variable ~org-reveal-default-frag-style~.
+
+*** Fragment Index
+    Fragment sequence can be changed by assigning adding ~:frag_idx~
+    property to each fragmented element.
+
+#+ATTR_REVEAL: :frag t :frag_idx 3
+    And, this paragraph shows at last.
+
+#+ATTR_REVEAL: :frag t :frag_idx 2
+    This paragraph shows secondly.
+
+#+ATTR_REVEAL: :frag t :frag_idx 1
+    This paragraph shows at first.
+
+*** List Fragments
+
+    ~#+ATTR_REVEAL: :frag frag-style~ above a list defines fragment
+    style for the list as a whole.
+#+ATTR_REVEAL: :frag grow
+    1. All items grow.
+    2. As a whole.
+
+    To define fragment styles for every list item, please enumerate
+    each item's style in a lisp list.
+
+    ~none~ in the style list will disable fragment for the
+    corresponding list item.
+
+    Custom fragment sequence should also be enumerated for each list
+    item.
+
+#+REVEAL: split
+    An example:
+
+#+BEGIN_SRC org
+,#+ATTR_REVEAL: :frag (grow shrink roll-in fade-out none) :frag_idx (4 3 2 1 -)
+   * I will grow.
+   * I will shrink.
+   * I rolled in.
+   * I will fade out.
+   * I don't fragment.
+#+END_SRC
+
+#+ATTR_REVEAL: :frag (grow shrink roll-in fade-out none) :frag_idx (4 3 2 1 -)
+   * I will grow.
+   * I will shrink.
+   * I rolled in.
+   * I will fade out.
+   * I don't fragment.
+#+REVEAL: split
+   When there is ~:frag_idx~ specified, insufficient fragment style
+   list will be extended by its last element. So a ~:frag (appear)~
+   assigns each item of a list the ~appear~ fragment style.
+#+BEGIN_SRC org
+,#+ATTR_REVEAL: :frag (appear)
+   * I appear.
+   * I appear.
+   * I appear.
+#+END_SRC
+#+ATTR_REVEAL: :frag (appear)
+   * I appear.
+   * I appear.
+   * I appear.
+
+
+** Data State
+   :PROPERTIES:
+   :reveal_data_state: alert
+   :END:
+
+   Set property =reveal_data_state= to headings to change this slide's
+   display style, as illustrated above.
+
+   Available data states are: alert|blackout|soothe.
+
+** Plug-ins
+
+   Reveal.js provides several plug-in functions.
+
+   - reveal-control : Show/hide browsing control pad.
+   - reveal-progress : Show/hide progress bar.
+   - reveal-history : Enable/disable slide history track.
+   - reveal-center : Enable/disable slide centering.
+   - multiplex : Enable audience to view presentation on secondary devices.
+
+*** Configure Plug-ins
+
+    Each plugin can be toggled on/off by adding =#+OPTIONS= tags or
+    by setting custom variables.
+
+    - =#+OPTIONS= tags:\\
+      =reveal_control=, =reveal_progress=, =reveal_history=,
+      =reveal_center=, =reveal_rolling_links=, =reveal_keyboard=, =reveal_overview=
+    - Custom variables:\\
+      =org-reveal-control=, =org-reveal-progress=,
+      =org-reveal-history=, =org-reveal-center=, =org-reveal-rolling-links=, =org-reveal-keyboard=, =org-reveal-overview=
+
+    For an example, please refer to the heading part of this document.
+
+** Third-Party Plugins
+Reveal.js is also extensible through third-party plugins. Org-reveal now includes a mechanism to load these as well. It's a little more complicated, because we need to store the specific javascript loading code in a defcustom.
+
+Store the names and loading instructions for each plugin in the defcustom ~org-reveal-external-plugins~. This defcustom is an associative list. The first element of each Assoc cell is a symbol -- the name of the plugin -- and the second is a string that will be expanded by the ~format~ function when the plugin is loaded. So, this second element should have the form ~" {src: \"%srelative/path/toplugin/from/reveal/root.js\"}'.  If you need the async or callback parameters, include those too.  Ox-reveal will add the plugin to the dependencies parameter when Reveal is initialized.
+
+** Highlight Source Code
+
+   There are two ways to highlight source code.
+   1. Use your Emacs theme
+   2. Use highlight.js
+
+
+   To Use your Emacs theme, please make sure ~htmlize.el~ is
+   installed. Then no more setup is necessary.
+
+   Below is an example. Codes are copied from [[http://www.haskell.org/haskellwiki/The_Fibonacci_sequence][Haskell Wiki]].
+   #+BEGIN_SRC haskell
+   fibs = 0 : 1 : next fibs
+       where next (a : t@(b:_)) = (a+b) : next t
+   #+END_SRC
+
+   If you saw odd indentation, please set variable =org-html-indent=
+   to =nil= and export again.
+
+*** Using highlight.js
+
+    You can also use [[https://highlightjs.org][highlight.js]], by adding ~highlight~ to the Reveal.js
+    plugin list.
+    #+BEGIN_SRC org
+      ,#+REVEAL_PLUGINS: (highlight)
+    #+END_SRC
+
+    The default highlighting theme is ~zenburn.css~ brought with
+    Reveal.js. To use other themes, please specify the CSS file name by
+    ~#+REVEAL_HIGHLIGHT_CSS~ or the variable ~org-reveal-highlight-css~.
+
+    The "%r" in the given CSS file name will be replaced by Reveal.js'
+    URL.
+
+** Editable Source Code
+It is now possible to embed code blocks in a codemirror instance in order to edit code during a presentation.  At present, this capacity is turned on or off at time export using these defcustoms:
+- ~org-reveal-klipsify-src~
+- ~org-reveal-klipse-css~
+- ~org-reveal-klipse-js~
+This feature is turned off by default and needs to be switched on with ~org-reveal-klipsify-src~.  At present code editing is supported in javacript, clojure, php, ruby, scheme, and python only.
+
+** MathJax
+  :PROPERTIES:
+  :CUSTOM_ID: my-heading
+  :END:
+
+
+   ${n! \over k!(n-k)!} = {n \choose k}$
+
+   LateX equation are rendered in native HTML5 contents.
+
+   *IMPORTANT*: Displaying equations requires internet connection to
+   [[http://mathjax.org/][mathjax.org]] or local MathJax installation. For local MathJax
+   installation, set option =REVEAL_MATHJAX_URL= to the URL pointing
+   to the local MathJax location.
+
+   *Note*: Option ~reveal_mathjax~ is obsolete now. Org-reveal
+   exports necessary MathJax configurations when there is Latex
+   equation found.
+
+** Preamble and Postamble
+
+   You can define preamble and postamble contents which will not be
+   shown as slides, but will be exported into the body part of the
+   generated HTML file, at just before and after the slide contents.
+
+   Change preamble and postamble contents globally by setting variable
+   =org-reveal-preamble= and =org-reveal-postamble=.
+
+   Change preamble and postamble contents locally by setting options
+   =REVEAL_PREAMBLE= and =REVEAL_POSTAMBLE=, as illustrated at the
+   heading part of this document.
+
+   To add custom contents into HTML =<head>= parts, set contents to
+   variable =org-reveal-head-preamble= or option
+   =REVEAL_HEAD_PREAMBLE=.
+
+*** Generating Pre/Postamble by Emacs-Lisp Functions
+
+    If the contents of pre/postamble is the name of an evaluated
+    Emacs-Lisp function, which must accept an argument of Org-mode
+    info and return a string, the returned string will be taken
+    as pre/postamble contents.
+
+    So you can embed the Emacs-Lisp function as an Org-Babel source
+    block and mark it to be evaluated when exporting the document.
+
+** Raw HTML in Slides
+
+   Besides the Org contents, you can embed raw HTML contents
+   into slides by placing a =#+REVEAL_HTML= keyword.
+
+   The famous cat jump fail:
+#+REVEAL_HTML: <iframe width="420" height="315" src="https://www.youtube.com/embed/Awf45u6zrP0" frameborder="0" allowfullscreen></iframe>
+** Speaker Notes
+   Reveal.js supports speaker notes, which are displayed in a separate
+   browser window. Pressing 's' on slide's windows will pop up a window
+   displaying the current slide, the next slide and the speaker notes on the current
+   slide.
+
+   Org-reveal recognize texts between =#+BEGIN_NOTES= and =#+END_NOTES=
+   as speaker notes. See the example below.
+
+#+BEGIN_SRC org
+,* Heading 1
+   Some contents.
+,#+BEGIN_NOTES
+  Enter speaker notes here.
+,#+END_NOTES
+#+END_SRC
+
+#+REVEAL: split
+   Speaker notes requires the ~notes~ plug-in. If you changed default
+   plug-in setting by specifying =#+REVEAL_PLUGINS= or by setting
+   variable =org-reveal-plugins=, please make sure ~notes~ is in the
+   plug-in list to enable speaker notes.
+
+#+REVEAL: split
+
+   Due to a bug in Reveal.js, sometimes the speaker notes window
+   shows only blank screens. A workaround to this issue is to put
+   the presentation HTML file into the Reveal.js root directory and
+   reopen it in the browser.
+
+*** Easy-Template for Speaker Notes
+
+    Org-reveal registers 'n' as the key for speaker notes easy-template.
+    So you can press '<' followed by 'n' and then press TAB, the ~#+BEGIN_NOTES~
+    and ~#+END_NOTES~ pair is inserted automatically.
+
+    Customize ~org-reveal-note-key-char~ to change the default key
+    'n'. set it to nil will forbid the auto-completion for speaker notes.
+
+** Multiplexing
+   Reveal.js supports multiplexing, which allows allows your audience to view
+   the slides of the presentation you are controlling on their own phone, tablet
+   or laptop. As the master presentation navigates the slides, all client
+   presentations will update in real time. See a demo at
+   http://revealjs.jit.su/.
+
+   You can enable multiplexing for your slide generation by including the
+   following options:
+#+BEGIN_SRC org
+#+REVEAL_MULTIPLEX_ID: [Obtained from the socket.io server. ]
+#+REVEAL_MULTIPLEX_SECRET: [Obtained from socket.io server. Gives the master control of the presentation.]
+#+REVEAL_MULTIPLEX_URL: http://revealjs.jit.su:80 [Location of socket.io server]
+#+REVEAL_MULTIPLEX_SOCKETIO_URL: http://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.10/socket.io.min.js
+#+REVEAL_PLUGINS: ([any other plugins you are using] multiplex)
+#+END_SRC
+
+   You must generate unique values for the =REVEAL_MULTIPLEX_ID= and
+   =REVEAL_MULTIPLEX_SECRET= options, obtaining these from the socket.io server
+   you are using.
+
+   If you include these options in your .org file, reveal-org will enable your
+   .html file as the master file for multiplexing and will generate a file named
+   in the form =[filename]_client.html= in the same directory as the client
+   .html file. Provide your audience with a link to the client file to allow
+   them to track your presentation on their own device.
+
+** Extra Stylesheets
+
+   Set =REVEAL_EXTRA_CSS= to a stylesheet file path in order to load extra custom
+   styles after loading a theme.
+
+#+BEGIN_SRC org
+,#+REVEAL_EXTRA_CSS: url-to-custom-stylesheet.css
+#+END_SRC
+
+** Select Built-In Scripts
+
+   Set option =REVEAL_PLUGINS= or variable =org-reveal-plugins= to a
+   lisp list to select built-in scripts.
+
+   Available built-in scripts are:
+   classList/markdown/highlight/zoom/notes/search/remotes.
+
+   Default built-ins are: classList/markdown/highlight/zoom/notes/multiplex.
+
+   The following examples select /markdown/ and /highlight/ only.
+#+BEGIN_SRC org
+,#+REVEAL_PLUGINS: (markdown highlight)
+#+END_SRC
+
+** Extra Dependent Script
+
+   Set =REVEAL_EXTRA_JS= to the url of extra reveal.js dependent
+   script if necessary.
+#+BEGIN_SRC org
+,#+REVEAL_EXTRA_JS: url-to-custom-script.js
+#+END_SRC
+
+** Extra Slide Attribute
+
+   Set property =reveal_extra_attr= to headings to add any necessary attributes
+   to slides.
+
+** Export into Single File
+
+   By setting option =reveal_single_file= to ~t~, images and necessary
+   Reveal.js scripts will be embedded into the exported HTML file, to make
+   a portable HTML. Please note that remote images will /not/ be included in the
+   single file, so presentations with remote images will still require an Internet
+   connection.
+
+   Attention: This needs locally available reveal.js files!
+
+   #+BEGIN_SRC org
+   ,#+OPTIONS: reveal_single_file:t
+   #+END_SRC
+
+   When exporting into single file, functions provided by Reveal.js
+   libraries will be disabled due to limitation, including PDF export,
+   Markdown support, zooming, speaker notes and remote control.
+
+   Code highlight by highlight.js is also disabled. But *code
+   highlight by Emacs is not effected.*
+
+** Export Current Subtree
+
+  Use menu entry " C-c C-e R S" to export only current subtree,
+  without the title slide and the table of content, for a quick preview
+  of your current edition.
+
+* COMMENT Tips
+
+** Disable Heading Numbers
+
+   Add =num:nil= to =#+OPTIONS=
+#+BEGIN_SRC org
+,#+OPTIONS: num:nil
+#+END_SRC
+
+** Disable Table of Contents
+
+   Add =toc:nil= to =#+OPTIONS=
+#+BEGIN_SRC org
+,#+OPTIONS: toc:nil
+#+END_SRC
+
+   This is actually an option recognized by =org-export=. It is only mentioned
+   here because slide decks often do not need a TOC.
+
+** Internal Links
+
+   Reveal.js supports only jump between slides, but not between
+   elements on slides. Thus, we can only link to headlines in an Org
+   document.
+
+   You can create links pointing to a headline's text, or its
+   custom-id, as the examples below:
+
+   * [[Tips]].
+   * [[#my-heading][Heading]] with a =CUSTOM_ID= property.
+
+** Custom JS
+
+   To pass custom JS code to ~Reveal.initialize~, state the code by
+   ~#+REVEAL_INIT_SCRIPT~ (multiple statements are concatenated) or by
+   custom variable ~org-reveal-init-script~.
+
+** Executable Source Blocks
+To allow live execution of code in some languages, enable the klipse plugin by setting ~org-reveal-klipsify-src~ to non-nil.  Src blocks with the languages ~js~, ~clojure~, ~html~, ~python~, ~ruby~, ~scheme~, ~php~ will be executed with output shown in a console-like environment.  See the source code of ~org-reveal-src-block~ for more details.
+
+*** HTML Src Block
+#+BEGIN_SRC html
+<h1 class="whatever">hello, what's your name</h1>
+#+END_SRC
+
+*** Javascript Src Block
+#+BEGIN_SRC js
+console.log("success");
+var x='string using single quote';
+x
+#+END_SRC
+
+*** Perl Src Block (not klipsified)
+#+BEGIN_SRC perl
+I don't know perl!
+#+END_SRC
+* COMMENT Abstract and toc                                                   :ignore:
+
+# Use:  x vs.{{{null}}} ys
+# This informs LaTeX not to put the normal space necessary after a period.
+#
+#+MACRO: null  @@latex:\null{}@@
+
+#+begin_abstract
+
+Structuring-mechanisms, such as Java's ~package~ and Haskell's ~module~, are often
+afterthought secondary citizens whose primary purpose is to act as namespace delimiters,
+while relatively more effort is given to their abstraction encapsulation counterparts,
+e.g., Java's classes and Haskell's typeclasses.
+A /dependently-typed language/ (DTL) is a typed language
+where we can write /types/ that depend on /terms/; thereby blurring conventional
+distinctions between a variety of concepts.
+In contrast, languages with non-dependent type systems tend to distinguish
+/external vs.{{{null}}} internal/ structuring-mechanisms ---as in
+Java's ~package~ for namespacing vs.{{{null}}} ~class~ for abstraction encapsulation---
+with more dedicated attention and power for the internal case ---as it is
+expressible within the type theory.
+
+\vspace{1em}
+
+# \parencite{ocaml_website, maude_module_algebra, B_reuse}
+To our knowledge, relatively few languages ---such as OCaml, Maude, and the B Method---
+allow for the manipulation of
+external structuring-mechanisms as they do for internal ones.
+Sufficiently expressive type systems, such as those of dependently typed
+languages, allow for the internalisation of many concepts
+thereby conflating a number of traditional programming notions.
+Since DTLs permit types that depend on terms, the types may require
+non-trivial term calculation in order to be determined.
+Languages without such expressive type systems necessitate certain constraints
+on its constructs according to their intended usage.
+It is not clear whether such constraints have been brought to more expressive
+languages out of necessity or out of convention.
+Hence we propose a systematic exploration of the structuring-mechanism
+design space for dependently typed languages to understand
+/what are the module systems for DTLs?/
+
+\vspace{1em}
+
+First-class structuring-mechanisms have values and types of their own
+which need to be subject to manipulation by the user, so it is reasonable
+to consider manipulation combinators for them from the beginning.
+Such combinators would correspond to the many generic operations that one
+naturally wants to perform on structuring-mechanisms
+---e.g., combining them, hiding components, renaming components---
+some of which, in the external case, are impossible to perform in any DTL
+without resorting to third-party tools for pre-processing.
+Our aim is to provide a sound footing for systems of structuring-mechanisms
+so that structuring-mechanisms become another common feature in dependently typed languages.
+An important contribution
+of this work will be an implementation, as an extension of the current Agda implementation, of our module combinators
+---which we hope to be accepted into a future release of Agda.
+
+If anything, our aim is practical ---to save developers from ad hoc copy-paste
+preprocessing hacks.
+#+end_abstract
+
+\newpage
+\thispagestyle{empty}
+\tableofcontents
+\newpage
+
+* Overview
+
+With a bit of reflection, we can obtain
+
+#+ATTR_REVEAL: :frag (appear)
+1. a uniform, and *practical*, syntax for both /records/ (semantics) and /termtypes/ (syntax)
+2. on-the-fly unbundling; and,
+3. *mechanically* obtain data structures from theories
+   #+ATTR_REVEAL: :frag (appear)
+   | ‘theory’ τ     | ‘data structure’ ~termtype τ~ |
+   |----------------+-----------------------------|
+   | pointed set    | 𝟙                           |
+   | dynamic system | ℕ                           |
+   | monoid         | tree skeletons              |
+   | collections    | lists                       |
+   | graphs         | (homogeneous) pairs         |
+   | actions        | infinite streams            |
+
+* Unbundling Problem
+
+** Monoid ---“Untyped Composition”
+
+#+ATTR_REVEAL: :frag (appear)
+- We have things, called src_haskell[:exports code]{Carrier},
+- … and we want to ‘combine’ them via some operation src_haskell[:exports code]{_⨾_}
+- … which has a ‘do nothing’ value src_haskell[:exports code]{Id}.
+
+** Typeclass approach, as in Haskell
+#+begin_src agda2
+record MonoidOn (Carrier : Set) : Set where
+    field
+      _⨾_ : Carrier → Carrier → Carrier
+      Id  : Carrier
+      leftId : ∀ x → Id ⨾ x ≡ x
+      rightId : ∀ x → x ⨾ Id ≡ x
+      assoc   : ∀ x y z →   (x ⨾ y) ⨾ z
+                            ≡  x ⨾ (y ⨾ z)
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src agda2
+open MonoidOn {{...}}
+#+end_src
+
+** Examples
+#+ATTR_REVEAL: :frag (appear)
+- Programs and sequential (or parallel) composition
+- *Numbers and addition (or multiplication)*
+- Writing words on a page ---i.e., lists and catenation
+
+** What is “the” monoid on the natural numbers?
+
+*** Additive?
+#+begin_src agda2
+instance
+  ℕ₊ : MonoidOn ℕ
+  ℕ₊ = record { _⨾_     = _+_
+              ; Id      = 0
+              ; leftId  = +-identityˡ
+              ; rightId = +-identityʳ
+              ;  assoc  = +-assoc }
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src agda2
+ex : ∀ (m n : ℕ) → m ⨾ n  ≡  n ⨾ m
+ex = +-comm
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+⇨ src_haskell[:exports code]{__⨾__} is determined to be src_haskell[:exports
+code]{_+_}by *instance search* ⇦
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src agda2
+likewise : ∀ (m : ℕ) → m ⨾ Id ≡ m
+likewise = rightId
+#+end_src
+
+*** … or Multiplicative?
+#+begin_src agda2
+instance
+  ℕₓ : MonoidOn ℕ
+  ℕₓ = record { _⨾_     = _*_
+              ; Id      = 1
+              ; leftId  = *-identityˡ
+              ; rightId = *-identityʳ
+              ; assoc   = *-assoc }
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src agda2
+-- whoops : ∀ {m : ℕ} → m ⨾ Id ≡ m
+-- whoops = {!!}
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+⇨ ℕ₊ and ℕₓ are both candidates! *No unique solution!* ⇦
+
+*** Haskell's Solution
+
+Make *two isomorphic copies* of numbers …
+
+#+begin_quote
+Some types can be viewed as a monoid in more than one way, e.g. both addition
+and multiplication on numbers. In such cases we often define newtypes and make
+those instances of Monoid, e.g. Sum and Product.
+---[[https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-Monoid.html#t:Monoid][Hackage Data.Monoid]]
+#+end_quote
+
+#+begin_src haskell
+Sum α ≅ α  {- and -} Product α ≅ α
+#+end_src
+For src_haskell[:exports code]{Num α} they have different monoid instances.
+
+* Unbundling in Agda
+** Alternate Solution to Multiple Monoid Instance Problem
+
+#+ATTR_REVEAL: :frag (appear)
+*Start* with /fully bundled/ src_haskell[:exports code]{Monoid}
+#+ATTR_REVEAL: :frag (appear)
+*then* /expose fields as parameters/ *on the fly*.
+
+** How?
+
+#+ATTR_REVEAL: :frag (appear)
+*Reflection!*
+
+#+ATTR_REVEAL: :frag (appear)
+- Unfortunately, current mechanism cannot touch
+  src_agda2[:exports code]{record}-s /directly/.
+- But every record is a Σ-type (•̀ᴗ•́)و
+
+** Records as ΠΣ-types
+
+#+ATTR_REVEAL: :frag (appear)
+- Instead of the nice /syntactic sugar/
+  #+begin_src agda2 :tangle no
+record R (ε¹ : τ¹) ⋯ (εʷ : τʷ) : Set _
+  where
+    field
+      εʷ⁺¹ : τʷ⁺¹
+      ⋮
+      εʷ⁺ᵏ : τʷ⁺ᵏ
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+- Use a more raw form  ---/eek!/
+  #+begin_src agda2 :tangle no
+R  ≅  Π ε¹ : τ¹ • ⋯ • Π εʷ : τʷ
+      • Σ εʷ⁺¹ : τʷ⁺¹ • ⋯ • Σ εʷ⁺ᵏ : τʷ⁺ᵏ
+        • 𝟙
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+⇨ /“R is a ΠʷΣ type”/  ---a *(partitioned) context*
+#+ATTR_REVEAL: :frag (appear)
+⇨ It has *parameters* ~ρ⁰, …, ρʷ~ and *fields* ~ρʷ⁺¹, …, ρʷ⁺ᵏ~
+#+ATTR_REVEAL: :frag (appear)
+⇨ $w$ is the *“waist”*
+
+#+ATTR_REVEAL: :frag (appear)
+E.g., src_haskell[:exports code]{MonoidOn} is a Π¹Σ type
+
+** Shucks, the Unbundling Problem Strikes Again
+
+If we encode a record as a ΠʷΣ type, what if we want
+to /instantiate, fix,/ a field ---instead of a parameter?
+
+#+ATTR_REVEAL: :frag (appear)
+We thus need a way to *lift parameters to fields*!
+#+ATTR_REVEAL: :frag (appear)
+( Teaser: src_haskell[:exports code]{Π→λ} ! )
+
+** *Pragmatic* Notation for Contexts
+
+Instead of src_agda2[:exports code]{Set}, use src_agda2[:exports code]{(waist :
+ℕ) → Set}
+
+#+begin_src agda2 :exports none
+open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc; zero to ℓ₀)
+open import Data.Product
+open import Context -- Gives us Σ∶•, Π∶•, >>=, ⟨⋯⟩
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+0. “Contexts” are exposure-indexed types -}
+   #+begin_src agda2 :tangle no
+Context = λ ℓ → ℕ → Set ℓ
+#+end_src
+1. The “empty context” is the unit type
+   #+begin_src agda2 :tangle no
+End : ∀ {ℓ} → Context ℓ
+End {ℓ} = ‵ 𝟙 {ℓ}
+#+end_src
+2. do-notation!
+#+begin_src agda2 :tangle no
+_>>=_ : ∀ {a b}
+      → (Γ : Context a)
+      → (∀ {n} → Γ n → Context b)
+      → Context (a ⊍ b)
+(Γ >>= f) zero    = Σ γ ∶ Γ 0 • f γ 0
+(Γ >>= f) (suc n) = Π γ ∶ Γ n • f γ n
+#+end_src
+999. [@999] The *“DIY”* lies at ~>>=~, permitting Σ, Π, 𝒲, ~let~, … !
+
+*** Example Context ---Monoids
+
+ #+begin_src agda2
+Monoid : Context ℓ₁
+Monoid = do Carrier ← Set
+            _⨾_     ← (Carrier → Carrier → Carrier)
+            Id      ← Carrier
+            leftId  ← ∀ (x : Carrier) → x ⨾ Id ≡ x
+            rightId ← ∀ (x : Carrier) → Id ⨾ x ≡ x
+            assoc   ← ∀ (x y z) → (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+            End {ℓ}
+#+end_src
+
+*** Example Instance ---Additive Naturals
+#+begin_src agda2
+ℕ₊′ : (Monoid ℓ₀ :waist 1) ℕ  -- ≅ MonoidOn ℕ
+ℕ₊′ = ⟨ _+_           -- _⨾_
+      , 0             -- Id
+      , +-identityˡ
+      , +-identityʳ
+      , +-assoc
+      ⟩
+ #+end_src
+
+* src_agda2[:exports code]{Π→λ} ---or src_agda2[:exports code]{_:waist_}
+
+
+#+ATTR_REVEAL: :frag (appear)
++   :: src_haskell[:exports code]{record}
++ ≈ :: src_agda2[:exports code]{Context}
++ ≈ :: exposure-indexed type
+
+** /Using/   Contexts ---‘reification’
+
+#+ATTR_REVEAL: :frag (appear)
+1. If src_agda2[:exports code]{C : Context ℓ₀} then src_agda2[:exports code]{C w :
+  Πʷ ⋯ • Set}, but we want to *apply* ~C w~ to /w/-many /parameters/?
+
+2. @@html: <small>@@ ~(Πʷ x • τ)~ is /w/-many Π's binding variables to be used in
+    type τ. @@html: </small>@@ @@remark: τ does not start with a Π@@
+
+3. So we need a combinator...
+    #+begin_src agda2
+ Π→λ  “Πʷ x • τ”  =  “λʷ x • τ”
+#+end_src
+   with an infix form for contexts in particular ...
+   #+begin_src agda2
+ C :waist w   =ᵈᵉᶠ  Π→λ (C w)
+ #+end_src
+
+** Example
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src agda2 :tangle no
+Monoid : Context
+Monoid = do C ← Set; _⨾_ : C → C → C; Id ← C; …
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+0. [@0] With no parameters, we have a Π⁰Σ-type
+   #+begin_src agda2 :tangle no
+Monoid :waist 0  : Set₁
+Monoid :waist 0  ≡  Σ C : Set • Σ _⨾_ : C → C → C • Σ Id : C • …
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+1. [@1] With *one* parameter, we regain ~MonoidOn~
+   #+begin_src agda2 :tangle no
+Monoid :waist 1  :  Π C : Set • Set
+Monoid :waist 1  =  λ C : Set • Σ _⨾_ : C → C → C • Σ Id : C • …
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+2. [@2] With *two* parameters, we have a /‘solution’/ to the
+  additive-or-multiplicative-monoid-problem!
+   #+begin_src agda2 :tangle no
+Monoid :waist 2  :  Π C : Set) • Π _⨾_ : C → C → C • Set
+Monoid :waist 2  =  λ C : Set • λ _⨾_ : C → C → C • Σ Id : C • …
+#+end_src
+
+** Relationships between various forms
+
+#+begin_src agda2 :tangle no
+Monoid : Context -- i.e., (w : ℕ) → Set
+
+Monoid :waist 𝓌   :  Πʷ ⋯ • Set
+Monoid :waist 𝓌   =  λʷ “parameters” • “fields”
+#+end_src
+
+** 11 Line Implementation ---thanks Ulf!
+
+*** The Core _Syntactic_ Transformation
+
+#+begin_src agda2 :tangle no
+--  Π a : A • B a   ↦   λ a : A • B a
+
+Π→λ-helper : Term → Term
+Π→λ-helper (pi a (abs x b)) = lam visible (abs x (Π→λ-helper b))
+Π→λ-helper x = x
+#+end_src
+
+*** Keeping Track of Types
+
+src_agda2[:exports code]{Term} denotes untyped λ-terms,
+so let's keep track of the types when we convert Πs to λs.
+
+#+begin_src agda2 :tangle no
+Π→λ-type : Term → Term
+Π→λ-type (pi a (abs x b)) = pi a  (abs x (Π→λ-type b))
+Π→λ-type x = unknown
+#+end_src
+
+*** Putting them together
+
+#+begin_src agda2 :tangle no
+macro
+  Π→λ : Term → Term → TC Unit.⊤
+  Π→λ tm goal =  normalise tm
+                 >>=ₜₑᵣₘ λ tm′ → checkType goal (Π→λ-type tm′)
+                 >>=ₜₑᵣₘ λ _ →  unify goal (Π→λ-helper tm′)
+#+end_src
+
+
+** Lesson Learned
+
+On-the-fly unbundling can be implemented as an in-language library in a
+dependently-typed language with sufficient reflection capabilities (•̀ᴗ•́)و
+
+* GADTs are Contexts too!
+
+** From Contexts to GADTS
+
+#+ATTR_REVEAL: :frag (appear)
++   :: src_agda2[:exports code]{Monoid}
+   # + ⟿ :: @@html: <small>@@ definition@@html: </small>@@
++ ⟿ :: src_agda2[:exports code]{do C ← Set; _⨾_ : C → C → C; Id : C; …}
+   # + ⟿ :: @@html: <small>@@ go to waist 1 to get a parameterised record@@html: </small>@@
++ ⟿ :: src_agda2[:exports code]{λ C : Set • Σ _⨾_ : C → C → C • Σ Id : C • …}
+   # + ⟿ :: @@html: <small>@@ Termtype constructors all target the same type, say ~C~, so drop all others@@html: </small>@@
++ ⟿ :: src_agda2[:exports code]{λ C : Set • Σ _⨾_ : C → C → C • Σ Id : C • 𝟙}
+   # + ⟿ :: @@html: <small>@@ Termtype are sums of products@@html: </small>@@
++ ⟿ :: src_agda2[:exports code]{λ C : Set •       C × C    ⊍         C ⊍ 𝟙}
+   # + ⟿ :: @@html: <small>@@ Termtypes are fixpoints of type constructors@@html: </small>@@
++ ⟿ :: src_agda2[:exports code]{μ C : Set •       C × C    ⊍         C ⊍ 𝟙}
+
+** As a macro!
+
+
+#+begin_example agda2 :tangle no
+termtype : UnaryFunctor → Type
+termtype τ = Fix (Σ→⊎ (sources τ))
+             #+end_example
+
+--------------------------------------------------------------------------------
+
+             #+begin_src agda2 :tangle no
+macro
+  termtype : Term → Term → TC Unit.⊤
+  termtype tm goal =
+                normalise tm
+           >>=ₜₑᵣₘ λ tm′ → unify goal (def (quote Fix) ((vArg (Σ→⊎₀ (sourcesₜₑᵣₘ tm′))) ∷ []))
+#+end_src
+
+** Monoids give rise to tree skeletons
+
+*** Context
+#+begin_src agda2 :tangle no
+Monoid : ∀ ℓ → Context (ℓsuc ℓ)
+Monoid ℓ = do Carrier ← Set ℓ
+              _⊕_     ← (Carrier → Carrier → Carrier)
+              Id      ← Carrier
+              leftId  ← ∀ {x : Carrier} → Id ⊕ x ≡ x
+              rightId ← ∀ {x : Carrier} → x ⊕ Id ≡ x
+              assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
+              End {ℓ}
+#+end_src
+
+*** Termtype
+
+#+begin_src agda2
+  𝕄 : Set
+  𝕄 = termtype (Monoid ℓ₀ :waist 1)
+
+  that-is : 𝕄 ≡ Fix (λ X → X × X × 𝟙 -- _⊕_, branch
+                          ⊎ 𝟙        -- Id, nil leaf
+                          ⊎ 𝟘        -- invariant leftId
+                          ⊎ 𝟘        -- invariant rightId
+                          ⊎ 𝟘        -- invariant assoc
+                          ⊎ 𝟘)       --  the “End {ℓ}”
+  that-is = refl
+            #+end_src
+
+*** Pattern synonyms for more compact presentation
+            #+begin_src agda2
+  pattern emptyM      = μ (inj₂ (inj₁ tt))              -- : 𝕄
+  pattern branchM l r = μ (inj₁ (l , r , tt))           -- : 𝕄 → 𝕄 → 𝕄
+  pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a)))) -- absurd 𝟘-values
+#+end_src
+
+*** ~termtype Monoid ≅ TreeSkeleton~
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src agda2
+  data TreeSkeleton : Set where
+    empty  : TreeSkeleton
+    branch : TreeSkeleton → TreeSkeleton → TreeSkeleton
+#+end_src
+
+
+#+ATTR_REVEAL: :frag (appear)
+- “doing nothing”
+   #+begin_src agda2
+  to : 𝕄 → TreeSkeleton
+  to emptyM        = empty
+  to (branchM l r) = branch (to l) (to r)
+  to (absurdM (inj₁ ()))
+  to (absurdM (inj₂ ()))
+#+end_src
+
+
+#+ATTR_REVEAL: :frag (appear)
+- “doing nothing”
+   #+begin_src agda2
+  from : TreeSkeleton → 𝕄
+  from empty        = emptyM
+  from (branch l r) = branchM (from l) (from r)
+#+end_src
+
+** Dynamical Systems give rise to ℕ
+*** Context
+
+#+begin_src agda2
+    DynamicSystem : Context ℓ₁
+    DynamicSystem = do State ← Set
+                       start ← State
+                       next  ← (State → State)
+                       End {ℓ₀}
+                           #+end_src
+
+*** Termtype
+                           #+begin_src agda2
+    𝔻 = termtype (DynamicSystem :waist 1)
+
+    -- Pattern synonyms for more compact presentation
+    pattern startD  = μ (inj₁ tt)       -- : 𝔻
+    pattern nextD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
+#+end_src
+
+*** ~termtype 𝔻 ≅ ℕ~
+#+begin_src agda2
+    to : 𝔻 → ℕ
+    to startD    = 0
+    to (nextD x) = suc (to x)
+
+    from : ℕ → 𝔻
+    from zero    = startD
+    from (suc n) = nextD (from n)
+#+end_src
+
+** Pointed Sets give rise to terminal types
+
+#+begin_src agda2
+PSet  : Context (ℓsuc ℓ₀)
+PSet  = do Carrier ← Set ℓ₀
+           point  ← Carrier
+           End {ℓ₀}
+#+end_src
+
+#+begin_src agda2
+ℙ𝕊𝕖𝕥 : Set
+ℙ𝕊𝕖𝕥 = termtype (PSet :waist 1)
+#+end_src
+
+#+begin_src agda2
+to : ℙ𝕊𝕖𝕥 → 𝟙 {ℓ₀}; to emptyM = tt
+from : 𝟙 {ℓ₀} → ℙ𝕊𝕖𝕥; from _ = μ (inj₁ tt)
+#+end_src
+
+** (Directed multi-)Graphs give rise to pairs
+
+#+begin_src agda2
+Graph  : Context (ℓsuc ℓ₀)
+Graph = do Node ← Set
+           Edge ← Set
+           adjacency ← (Node → Node → Edge)
+           End {ℓ₀}
+#+end_src
+
+#+begin_src agda2
+𝔾𝕣𝕒𝕡𝕙 : Set → Set
+𝔾𝕣𝕒𝕡𝕙 X = termtype ((Graph :waist 2) X)
+#+end_src
+
+#+begin_src agda2
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+view : ∀ {X} → 𝔾𝕣𝕒𝕡𝕙 X → X × X
+view (x ⇌ y) = x , y
+#+end_src
+
+** Indexed unary algebras (“actions”) give rise to streams
+
+*** Context
+#+begin_src agda2
+Action  : Context ℓ₁
+Action  = do Value    ← Set
+             Program  ← Set
+             run      ← (Program → Value → Value)
+             End {ℓ₀}
+#+end_src
+*** Termtype
+#+begin_src agda2
+𝔸𝕔𝕥𝕚𝕠𝕟 : Set → Set
+𝔸𝕔𝕥𝕚𝕠𝕟 X = termtype ((Action :waist 2) X)
+
+pattern _·_ head tail = μ (inj₁ (tail , head , tt))
+#+end_src
+
+*** … to stream
+#+begin_src agda2
+record Stream (X : Set) : Set   where
+  coinductive
+  field
+    hd : X
+    tl : Stream X
+
+open Stream
+
+view : ∀ {I} → 𝔸𝕔𝕥𝕚𝕠𝕟 I → Stream I
+hd (view (t · h)) = t
+tl (view (t · h)) = view h
+#+end_src
+
+** Collection theories give rise to lists
+
+#+begin_src agda2
+Collection : ∀ ℓ → Context (ℓsuc ℓ)
+Collection ℓ = do Elem      ← Set ℓ
+                  Container ← Set ℓ
+                  insert    ← (Elem → Container → Container)
+                  ∅         ← Container
+                  End {ℓ}
+#+end_src
+
+#+begin_src agda2
+ℂ : Set → Set
+ℂ Elem = termtype ((Collection ℓ₀ :waist 2) Elem)
+
+pattern _::_ x xs = μ (inj₁ (x , xs , tt))
+pattern  ∅        = μ (inj₂ (inj₁ tt))
+#+end_src
+
+** Summary
+
+| ‘theory’ τ     | ‘data structure’ ~termtype τ~ |
+|----------------+-----------------------------|
+| pointed set    | 𝟙                           |
+| dynamic system | ℕ                           |
+| monoid         | tree skeletons              |
+| collections    | lists                       |
+| graphs         | (homogeneous) pairs         |
+| actions        | infinite streams            |
+
+#+begin_quote
+/Many more theories τ to explore and see what data structures arise!/
+#+end_quote
+
+* Bye!
+
+/Thanks for listening in!/
+
+* COMMENT Overview
+:PROPERTIES:
+# (use-package toc-org :after org :demand t)
+# (use-package toc-org)
+
+Enable toc-org, then whenever you save, this toc is updated.
+:END:
+
+- Introduction ---The Proposal's Story
+    1. A Programming Language Has Many Tongues
+    2. Exploring Grouping Mechanisms
+    3. Problem Statement
+
+- Solution Requirements
+    1. Desirable Features
+    2. Related Works
+    2. Visualisation of Parts of the Proposed “Package Polymorphism”
+
+- Approach
+- Timeline
+
+#+BEGIN_NOTES
+*Goal* ::   Provide primitives that minimise repetition
+  for manipulating grouping mechanisms,
+  without the end-user utilising any preprocessing.
+#+END_NOTES
+
+* COMMENT Introduction ---The Proposal's Story  :ignore:
+
+** COMMENT A Language Has Many Tongues :unreadable:
+
+1. Expression language; e.g., ~cond ? this : that~.
+2. Statement, or control flow, language; e.g., ~if (cond) {this} {that}~.
+3. Type language; e.g., ~Functor f => () → f ()~.
+4. Specification language; e.g., ~\forall ℤ i; A[i] ≤ \old(A[i])~.
+5. Proof language; e.g., ~begin ⋯ ≡⟨ ? ⟩ ⋯ ∎~.
+6. Module language; e.g., ~module, class, interface~.
+7. Meta-programming languages; e.g., Coq tactics, C preprocessor, Haskell pragmas.
+
+The first five languages telescope down into one uniform language
+within the dependently-typed language Agda. *So why not the module language?*
+
+** A Programming Language Has Many Tongues
+
+#+ATTR_REVEAL: :frag (appear)
+1. Expression
+2. Statement
+3. Type
+4. Specification
+5. Proof
+6. Module
+7. Meta-programming
+
+#+ATTR_REVEAL: :frag t
+The first five collapse into one uniform language
+within the dependently-typed language Agda.
+ #
+# Not so, e.g., with Coq where proofs are via Ltac.
+
+#+ATTR_REVEAL: :frag t
+*So why not the module language?*
+
+#+BEGIN_NOTES
++ Let's set the stage for what's coming up.
+
++ Can modules be treated the same way as the others?
+
++ First question then is what is a module?
+#+END_NOTES
+
+** What is a Module?
+
+#+ATTR_REVEAL: :frag (appear)
+   *Definition:* A typed /module, context, telescope, package former, record, typeclass/
+   is a sequence of tuples:
+{{{begin-center}}}
+#+ATTR_REVEAL: :frag appear
+#+BEGIN_SRC haskell
+   Name  :  Type  :=  Optional_Definition
+#+END_SRC
+{{{end-center}}}
+
+#+ATTR_REVEAL: :frag appear
+   Without types, we obtain essentially JSON Objects.
+   # Akin to a JSON Object, which is an untyped module.
+
+#+ATTR_REVEAL: :frag (appear)
+   *Purpose:* Group related concepts together as single /semantic/ units.
+
+** Expectations of Module Systems
+
+#+ATTR_REVEAL: :frag (appear)
++ Namespacing :: New unique local scopes ⇒ de-coupling
+
++ Information Hiding :: Inaccessibility ⇒ Implementation independence
+
++ Citizenship :: Grouping mechanisms should be treated like ordinary values
+
++ Polymorphism :: Grouping mechanisms should group all kinds of things without prejudice
+
++ Object-Orientation :: Generative modules & Subtyping
+# Object-oriented notions of encapsulation
+
+# Implementation aspect, unrelated to the others. Relocate.
+#
+# + Sharing :: Module parameter computations shared across constituents.
+
+** What about ⋯
+
+ {{{myfrag}}}
+    |    | Packages          |
+    | ≈? | modules           |
+    | ≈? | theories          |
+    | ≈? | contexts          |
+    | ≈? | typeclasses       |
+    | ≈? | ⋯                 |
+    | ≈? | dependent records |
+
+ #+ATTR_REVEAL: :frag t
+   #+begin_quote
+ Differences  ≈?⇒  Uses & Implementations
+ #+end_quote
+
+** Facets of Structuring Mechanisms: An Agda Rendition
+    # Look at the good readon why using agda, see proposal.pdf.
+
+    Different ways one would encode monoid definitions in their
+    code for different purposes
+
+    | ⇒ | Monoids with a dynamically known carrier  |
+    | ⇒ | Monoids with a statically known carrier  |
+    | ⇒ | Monoids as raw tuples                   |
+    | ⇒ | Monoids as telescopes                   |
+    | ⇄ | Derived operations                      |
+
+    #+BEGIN_NOTES
+    Give idea of what's coming up, so we have a mental strucutre of
+    where to put things, what holes fill what expectations.
+    #+END_NOTES
+
+*** Monoids as Agda Records
+
+#+REVEAL_HTML: <div style="font-size: 95%;">
+{{{begin-center}}}
+ #+BEGIN_SRC haskell
+record Monoid-Record : Set₁ where
+  infixl 5 _⨾_
+  field
+    -- Interface
+    Carrier  : Set
+    Id       : Carrier
+    _⨾_      : Carrier → Carrier → Carrier
+
+    -- Constraints
+    lid   : ∀{x} → (Id ⨾ x) ≡ x
+    rid   : ∀{x} → (x ⨾ Id) ≡ x
+    assoc : ∀ x y z → (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+
+  -- derived result
+  pop-Idᵣ : ∀ x y  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
+  pop-Idᵣ x y = cong (_⨾ y) rid
+#+END_SRC
+⇨ Carrier sets, functions, and axioms /all/ are record fields.
+{{{end-center}}}
+#+REVEAL_HTML: </div>
+
+*** Monoids as Typeclasses
+#+REVEAL_HTML: <div style="font-size: 95%;">
+{{{begin-center}}}
+ #+BEGIN_SRC haskell
+record HasMonoid (Carrier : Set) : Set₁ where
+  infixl 5 _⨾_
+  field
+    Id    : Carrier
+    _⨾_   : Carrier → Carrier → Carrier
+    lid   : ∀{x} → (Id ⨾ x) ≡ x
+    rid   : ∀{x} → (x ⨾ Id) ≡ x
+    assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+  pop-Id-tc : ∀ x y →  x ⨾ Id ⨾ y  ≡  x ⨾ y
+  pop-Id-tc x y = cong (_⨾ y) rid
+
+{- We make this record type available
+   to instance search, “typeclass”. -}
+open HasMonoid {{...}} using (pop-Id-tc)
+#+END_SRC
+
+⇨ Only functions and axioms are record fields ---the carrier set is a /parameter/.
+{{{end-center}}}
+#+REVEAL_HTML: </div>
+
+*** These are the ‘Same’
+
+#+REVEAL_HTML: <div style="font-size: 70%;">
+{{{begin-columns}}}
+
+⇨ Monoids as Agda Records
+ #+BEGIN_SRC haskell
+record Monoid-Record : Set₁ where
+  field
+    -- Interface
+    Carrier  : Set
+    Id       : Carrier
+    _⨾_      : Carrier → Carrier → Carrier
+
+    -- Constraints
+    lid   : ∀{x} → (Id ⨾ x) ≡ x
+    rid   : ∀{x} → (x ⨾ Id) ≡ x
+    assoc : ∀ x y z → (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+
+  -- derived result
+  pop-Idᵣ : ∀ x y  →  x ⨾ Id ⨾ y  ≡  x ⨾ y
+  pop-Idᵣ x y = cong (_⨾ y) rid
+
+{-  Monoid-Record  ≅  Σ C ∶ Set • HasMonoid C  -}
+#+END_SRC
+
+{{{break-columns}}}
+
+⇨ Monoids as Typeclasses
+ #+BEGIN_SRC haskell
+record HasMonoid (Carrier : Set) : Set₁ where
+  field
+    -- Interface
+    {- Notice that “Carrier” is a parameter. -}
+    Id    : Carrier
+    _⨾_   : Carrier → Carrier → Carrier
+
+    -- Constraints
+    lid   : ∀{x} → (Id ⨾ x) ≡ x
+    rid   : ∀{x} → (x ⨾ Id) ≡ x
+    assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)
+
+  -- derived result
+  pop-Id-tc : ∀ x y →  x ⨾ Id ⨾ y  ≡  x ⨾ y
+  pop-Id-tc x y = cong (_⨾ y) rid
+
+{-  HasMonoid  ≅  λ C → Σ M ∶ Monoid-Record • M.Carrier ≡ C  -}
+#+END_SRC
+
+{{{end-columns}}}
+#+REVEAL_HTML: </div>
+
+*** Monoids as Direct Dependent Sums
+
+{{{begin-columns}}}
+
+ #+BEGIN_SRC haskell
+Monoid-Σ  :  Set₁
+Monoid-Σ  =    Σ Carrier ∶ Set
+         • Σ Id ∶ Carrier
+         • Σ _⨾_ ∶ (Carrier → Carrier → Carrier)
+         • Σ lid ∶ (∀{x} → Id ⨾ x ≡ x)
+         • Σ rid ∶ (∀{x} → x ⨾ Id ≡ x)
+         • (∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z))
+
+pop-Id-Σ : ∀{{M : Monoid-Σ}}
+               (let Id  = proj₁ (proj₂ M))
+               (let _⨾_ = proj₁ (proj₂ (proj₂ M)))
+           →  ∀ (x y : proj₁ M)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
+pop-Id-Σ {{M}} x y = cong (_⨾ y) (rid {x})
+             where  _⨾_    = proj₁ (proj₂ (proj₂ M))
+                rid    = proj₁ (proj₂ (proj₂ (proj₂ (proj₂ M))))
+ #+END_SRC
+
+{{{break-columns}}}
+
+#+ATTR_REVEAL: :frag (appear)
+⇨ The navigational feature of record fields is /replaced/ by projections
+---i.e., it's just a different encoding.
+
+#+REVEAL_HTML: <div style="font-size: 80%;">
+#+ATTR_REVEAL: :frag (appear)
+#+BEGIN_SRC haskell
+           {- Boilerplate -}
+           Carrier′  : Monoid-Σ → Set
+           Carrier′ = proj₁
+#+END_SRC
+#+REVEAL_HTML: </div>
+
+{{{end-columns}}}
+
+*** A Missing Polymorphism
+
+#+REVEAL_HTML: <div style="font-size: 90%;">
+{{{begin-columns}}}
+     #+BEGIN_SRC haskell
+ℕ-record : Monoid-Record
+ℕ-record = record { Carrier = ℕ; Id = 0; _⨾_ = _+_; ⋯ }
+
+instance
+   ℕ-tc : HasMonoid ℕ
+   ℕ-tc = record { Id = 0; _⨾_ = _+_; ⋯ }
+
+   ℕ-Σ : Monoid-Σ
+   ℕ-Σ = ℕ , 0 , _+_ , ⋯
+
+ℕ-pop-0ᵣ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
+ℕ-pop-0ᵣ = pop-Idᵣ ℕ-record
+
+ℕ-pop-0-tc : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
+ℕ-pop-0-tc = pop-Id-tc
+
+ℕ-pop-0-Σ : ∀ (x y : ℕ) → x + 0 + y  ≡  x + y
+ℕ-pop-0-Σ = pop-Id-Σ
+ #+END_SRC
+{{{break-columns}}}
+#+REVEAL_HTML: </div>
+
+#+REVEAL_HTML: <br> <br> <br> <br> <br>
+#+ATTR_REVEAL: :frag (appear)
+⇨ One would expect these ~pop-0~ programs \\
+to be instances of /one/ polymorphic function.
+
+#+REVEAL_HTML: <br>
+#+ATTR_REVEAL: :frag (appear)
+⇨ Instead, we currently have three programs that are \\
+instances of /three/ different polymorphic functions.
+
+{{{end-columns}}}
+
+*** Monoids as Telescopes
+
+{{{begin-columns}}}
+ #+BEGIN_SRC haskell
+module Monoid-Telescope-User
+     (Carrier : Set			 )
+     (Id    : Carrier			 )
+     (_⨾_   : Carrier → Carrier → Carrier )
+     (lid   : ∀ {x}    →  Id ⨾ x  ≡  x	 )
+     (rid   : ∀ {x}    →  x ⨾ Id  ≡  x	 )
+     (assoc : ∀ x y z  →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z))
+  where
+
+  pop-Id-tel : ∀(x y : Carrier)  →  (x ⨾ Id) ⨾ y  ≡  x ⨾ y
+  pop-Id-tel x y = cong (_⨾ y) (rid {x})
+
+open Monoid-Telescope-User ℕ 0 _+_ …
+
+ℕ-pop-tel : ∀(x y : ℕ)  →  x + 0 + y  ≡  x + y
+ℕ-pop-tel =   pop-Id-tel
+ #+END_SRC
+
+{{{break-columns}}}
+#+REVEAL_HTML: <br>
+
+| ◈ | Carrier sets, functions, and axioms /all/ are parameters. |
+|   |                                                         |
+| ◈ | This parameter listing constitutes a ‘telescope’.       |
+
+{{{end-columns}}}
+
+*** Interdefinability
+
+     | ⇨ | Different notions are thus interdefinable |
+     | ⇨ | Use-cases /distinguish/ packages |
+     | ⇨ | Distinctions ⇒ duplication of efforts |
+
+#+ATTR_REVEAL: :frag (appear)
+     *Generalise!* Use a ‘package former’, rather than
+     a particular variation.
+
+*** Foundational Basis: MMT-Style Theory Presentations
+
+ #+BEGIN_SRC haskell
+-- Contexts
+Γ  ::= ·                       -- empty context
+     | x : T [:= T], Γ         -- context with declaration, optional definition
+     | includes X, Γ           -- theory inclusion
+
+-- Terms
+T ::= x | T₁ T₂ | λ x : T' • T -- variables, application, lambdas
+    | Π x : T' • T             -- dependent product
+    | [Γ] | ⟨Γ⟩ | T.x          -- record “[type]” and “⟨element⟩” formers, projections
+    | Mod X                    -- contravariant “theory to record” internalisation
+
+-- Theory, external grouping, level
+Θ ::= .                        -- empty theory
+    | X := Γ, Θ                -- a theory can contain named contexts
+    | (X : (X₁ → X₂)) := Γ     -- a theory can be a first-class theory morphism
+ #+END_SRC
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_quote org
+ A knowledge-capture mechanism
+ ─not a programming environment.
+#+end_quote
+
+#+BEGIN_NOTES org
++ Theoretical foundations;
+  we're not inventing from the ground up but want a concrete system.
+
++ It is not that it doesn't do what we want,
+  rather it captures knowledge similar to Wikipedia.
+
++ Their setting is more generic than DTLs
+  and so what we're doing may not even be
+  feasible there.
+
++ It's a theoretical foundation, we intend
+  to provide concrete tool.
+#+END_NOTES
+
+** Problem Summary
+
+# Variation on {{{begin-center}}}
+#+REVEAL_HTML: <center><table width="80%" border="0""><tr><td>
+
+#+ATTR_REVEAL: :frag (appear)
+   😧 :: Coders have to copy-paste-modify packaging structures to obtain
+   different perspectives.
+   #+ATTR_REVEAL: :frag (appear)
+   - E.g., lifting fields to parameters to
+      ensure correct-by-construction invariants.
+   - Infrastructure is either rewritten for the new perspective,
+     or conversion functions are used.
+
+   #+BEGIN_NOTES
+   Conversely, one may want to demote parameters to fields so as to be
+   able to treat a structure heterogeneously.
+
+   E.g., One may speak of “graphs on” a fixed type, but to speak of
+   graphs in general, the type cannot be fixed and must be allowed to
+   vary. One instance of this is constructing a category of graphs.
+   #+END_NOTEs
+
+#+ATTR_REVEAL: :frag (appear)
+  😄 :: A package should be written /once/.
+#+ATTR_REVEAL: :frag (appear)
+   - Desired perspectives are declared on demand.
+   - Code is written polymorphically along the package, not
+     a particular perspective.
+
+#+REVEAL_HTML: </td><tr></table></center>
+
+* COMMENT Solution Requirements  :ignore:
+
+** Desirable Features
+
+#+ATTR_REVEAL: :frag (appear)
++ Uniformity :: Treat different notions of packaging the same way.
++ Genericity :: Polymorphism along packages types / package formers.
++ First-class Extensiblity :: Primitives to form new package combinators
+     /using/ the host language.
+
+** We can then have better …
+
+   + Expressivity
+     ⇒ “Package Polymorphism”
+   + Excerption
+     ⇒ “flattening”
+
+*** Expressivity ─Select Bundling Level
+
+{{{begin-center}}}
+Which aspects of a structure should be exposed?
+#+begin_src haskell
+record Semigroup0 : Set₁ where …
+
+record Semigroup1 (Carrier : Set) : Set₁ where …
+
+record Semigroup2
+ (Carrier : Set)
+ (_⨾_     : Carrier → Carrier → Carrier) : Set where …
+
+record Semigroup3
+ (Carrier : Set)
+ (_⨾_ : Carrier → Carrier → Carrier)
+ (assoc : ∀ x y z → (x ⨾ y) ⨾ z ≡ x ⨾ (y ⨾ z)) : Set where
+  -- no fields
+#+end_src
+{{{end-center}}}
+
+#+BEGIN_NOTES
++ Haskell /with/ existential types extension allows Semigroup0.
+#+END_NOTES
+
+*** Expressivity ─Code along one type, use for another
+
+{{{begin-center}}}
+We want to code along Semigroup1 and use for ~Semigroup0~.
+#+begin_src haskell
+{- Recall -}
+record Semigroup0 : Set₁ where …
+record Semigroup1 (Carrier : Set) : Set₁ where …
+
+{- Write elegantly along Semigroup1 -}
+translate1 : ∀{A B} → (f : A → B) → Bijection f
+       → Semigroup1 A → Semigroup1 B
+
+{- Be able to use the previous for Semigroup0 -}
+translate0 : ∀{B : Set} (AS : Semigroup0)
+         (f : Semigroup0.Carrier AS → B)
+       → Bijection f → Semigroup0
+#+end_src
+{{{end-center}}}
+
+*** Excerption ─Instantiating Deeply Nested Theories
+
+Can we /please/ just declare a ~Monad~ without having to declare
+/redundant/ ~Applicative~ and ~Functor~ instances.
+#+REVEAL_HTML: <br><br>
+#+BEGIN_SRC haskell
+{- (0) -} instance Monad M       where …  -- (0) needs (1), which needs (2)
+{- (1) -} instance Applicative M where …  -- (1, 2) redundant if (0) is given
+ {- (2) -} instance Functor M     where …
+#+END_SRC
+
+#+BEGIN_NOTES
+Monad′ ≔ Monad flattenedAlong Applicative
+#+END_NOTES
+
+*** Excerption ─Instantiating Deeply Nested Theories
+
+Accessing deeply nested fields; e.g., ~Monoid.Semigroup.Magma.Carrier M~.
+
+#+HTML: <a href="example_hierarchy.png"><img src="example_hierarchy.png" alt="Example Hierarchy" width="900" height="580"></a> <br> ⇒ flatten hierarchies!
+
+** Related Works
+
+{{{begin-columns}}}
+
++ C-family :: Records, JSON modules ─everything is explicit
+
++ Haskell :: Single instance typeclasses ─an ‘inference’ mechanism.
+
++ OCaml :: First-class modules are essentially glorified parameters;
+       enforces a “functor vs. function” dichotomy
+
++ [Shields, Peyton Jones 2016] ::
+     [[https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/first_class_modules.pdf][First-Class Modules for Haskell]] \\
+     Slightly beyond OCaml, but not far enough.
+
+{{{break-columns}}}
+
++ Agda :: Dependently-typed typeclasses ─solves diamond problem
+
++ Coq   :: Typeclasses with unification;
+       canonical stuctures triggered by projections
+
++ Category Theory :: Pullbacks! Declared coercions are found
+     by inference then used in seemingly ill-typed expressions.
+
+#+BEGIN_NOTES org
+Random notes:
+
++ A canonical structure is a declaration of a particular
+  instance of a record to be used by the type checker
+  to solve unification problems.
+
++ OCaml functors are more or less functions on records in Agda.
+
++ Typeclasses are tremendously helpful for having derived constructions
+  be inferrable, e.g., in Haskell ~instance f a => f (a ,a)~ to
+  produce Cartesian products for some structure ~f~ on ~a~ provided
+  there is such a structure on ~a~.
+
+  One now uses ~f~ methods, that act on a homogeneously-typed pair,
+  and it is inferred that an instance of ~f a~ is what is desired
+  --even though no explicit instance for such a pair type was declared!
+  Neato ^_^
+
++ Coq's unification is essentially Prolog in disguise.
+
++ In some sense, I intend to produce Agda package combinators that
+  are essentially Lisp in disguise.
+
++ Solve Diamond Problem using dependent types as follows:
+  #+BEGIN_SRC haskell
+  record X : Set where field doit : Set
+  record Y : Set where field x : X
+  record Z : Set where field x : X
+
+  record Ω : Set where filed y : Y, z : Z
+  {- We now can refer to two X's, possibly different -}
+
+  {- Instead, using typeclasses -}
+  record X         : Set where field doit : Set
+  record Y (x : X) : Set where
+  record Z (x : X) : Set where
+
+  record Ω : Set where filed x : X, y : Y x, z : Z x
+  #+END_SRC
+
+  With dependent types, ~X~ can be lifted to be any telescope of functions
+  that cold conflict ^_^
+
+#+END_NOTES
+
+    #+BEGIN_NOTES org
+#+BEGIN_SRC haskell
+   x * (y + z) well-typed
+⇐  Group._*_ ?G x (Monoid._+_ ?M y z) well-typed
+⇐  Group.Carrier ?G  ≡ Monoid.Carrier ?M
+⇐  ?G = Ring.Group ?R)  ∧ ?M ≡ Ring.Monoid ?R
+#+END_SRC
+#+END_NOTES
+{{{end-columns}}}
+
+** Competing works?
+
+#+REVEAL_HTML: <h3>
+     #+ATTR_REVEAL: :frag (appear)
+     /There are none!/
+#+REVEAL_HTML: </h3>
+
+** Visualisation of Parts of the Proposed “Package Polymorphism”
+
+# REVEAL_HTML: <iframe width="420" height="315" src="https://www.youtube.com/embed/NYOOF9xKBz8" frameborder="0" allowfullscreen></iframe>
+
+#+REVEAL_HTML: <iframe width="1000" height="700" src="https://www.youtube.com/embed/NYOOF9xKBz8?version=3&autoplay=1&mute=1&loop=1" frameborder="0" allowfullscreen></iframe>
+
+
+# Note that “embed” in the url! ─no “?v=”, instead insert “?version=3”.
+# Note autoplay, loop, etc settings are seperated by &'s.
+# Other options: "controls=0" and "showinfo=0"
+#
+# See here for more: https://developers.google.com/youtube/player_parameters#autoplay
+
+#+BEGIN_NOTES
+
++ One writes the ‘red’ code with the intent that it will
+  /behave/ like the ‘blue’ code.
+
++ Unless requested, no code is ‘generated’.
+
++ This' akin to ~deriving~ in Haskell.
+
+#+END_NOTES
+
+** Why can't this be done now?
+
+| ⇨ | Agda has a tremendously weak reflection mechanism             |
+| ⇨ | Package formers need to be introduced into the back-end       |
+| ⇨ | Unclear semantics of package formers                          |
+| ⇨ | Unclear whether semantics don't break other language features  |
+
+#+BEGIN_NOTES
+The language, Agda, currently does not possess the sufficient abstraction
+mechanisms to make this endeavour feasible within the core language.
+#+END_NOTES
+
+* COMMENT Approach  :ignore:
+** Proposed Contributions
+
+   #+ATTR_REVEAL: :frag (appear)
+     1. Module system for DTLs: Modules are ordinary values
+    - Enables rather than inhibits efficiency
+    - Well-defined denotational semantics
+
+     2. Use-cases contrasting resulting system with previous approaches
+
+     3. Replace metaprogramming processing with module primitives
+
+     4. An implementation to obtain validation that our system ‘works’
+
+** COMMENT Choice of Language
+
+#   *TODO* Look at the good readon why using agda, see proposal.pdf.
+
+#+ATTR_REVEAL: :frag (appear)
++ More than ‘research quality’ ⇒ ready for a broad audience
++ Dependent types
++ Existing industrial-strength compiler?
++ Reasoning and proofs?
+
+#+begin_center org
+#+ATTR_REVEAL: :frag (appear)
+ *Agda* as the proof-of-concept language
+#+end_center
+
+* COMMENT Timeline :ignore:
+** Next Steps
+
+#+ATTR_REVEAL: :frag (appear)
+1. Distill the /true/ requirements for a solution
+
+2. Deepen understanding of the opportunities given by DTL
+
+3. Demonstrate the power of the system
+
+4. Evaluate the mechanisms
+
+   - Additions actually contribute to program design?
+
+5. Ensure a denotational semantics for the mechanisms
+
+6. Refine above until elegance, or deadline, is reached, whichever comes first
+
+** Timeline
+
+#+ATTR_REVEAL: :frag (appear appear appear)
++ The First Pass: May-October 2019 :: Thorough familiarity with
+      approaches, Agda internals, begun thesis writing
+
++ The Middle Pass: November 2019 - February 2020 ::
+   Implement module formation primitives
+   from the thesis proposal, while forming & extending
+   semantics
+
++ The Final Pass: March - April 2020 ::
+   Implementations meet requirements; mechanise proofs
+
+* COMMENT Conclusion ─Intended Outcomes
+
+# Intended outcomes include:
+
+#+begin_quote org
+/Copy-paste-modify is almost always a mistake!/
+
+--- Wolfram Kahl (•̀ᴗ•́)و
+#+end_quote
+
+#+ATTR_REVEAL: :frag (appear)
+  1. A clean module system for DTLs
+
+  2. Utility Objectives: A variety of use-cases contrasting the resulting system with previous
+     approaches
+
+  3. Demonstrate that module features usually requiring meta-programming can be brought
+     to the data-value level
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_quote
+/No more preprocessing for the end-user!/
+#+end_quote
+
+* COMMENT Thank-you
+
+  /Questions?/
+
+* COMMENT a correspondence
+
+#+LaTeX: \begin{tcolorbox}[title=\hfill Muliple Forms of the Template-Instantiation Duality]
+#+BEGIN_CENTER
+| *Template*            | $\qquad\text{has a}\qquad$ | *Instance*           |
+| ≈ class             |                            | ≈ object           |
+| ≈ type              |                            | ≈ value            |
+| ≈ theorem statement |                            | ≈ witnessing proof |
+| ≈ specification     |                            | ≈ implementation   |
+| ≈ interface         |                            | ≈ implementation   |
+| ≈ signature         |                            | ≈ algebra          |
+| ≈ logic             |                            | ≈ theory           |
+#+END_CENTER
+#+LaTeX: \end{tcolorbox}
+
+* COMMENT footer                                                     :ignore:
+
+# Local Variables:
+# eval: (progn (org-babel-goto-named-src-block "make-reports-class") (org-babel-execute-src-block) (outline-hide-sublevels 1))
+# eval: (progn (org-babel-goto-named-src-block "make-readme") (org-babel-execute-src-block) (outline-hide-sublevels 1))
+# compile-command: (progn (org-babel-tangle) (org-latex-export-to-pdf) (async-shell-command "open thesis-proposal.pdf"))
+# End:
