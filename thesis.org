@@ -21093,6 +21093,102 @@ translate₀ {B} AS f surj inj = record { Carrier = B ; _⨾_ = _⨾_ ; assoc = 
  - ⟦Γ A ⟴ B⟧ = ⟦ ⟦Γ A⟧ B ⟧ -- get a context, then apply B to that.
  :end:
 
+* COMMENT to add: termtype 𝒳 ≅ ⋯
+
+**  ~termtype PointedSet ≅ 𝟙~
+
+PSet  : Context (ℓsuc ℓ₀)
+PSet  = do Carrier ← Set ℓ₀
+           point  ← Carrier
+           End {ℓ₀}
+
+ℙ𝕊𝕖𝕥 : Set
+ℙ𝕊𝕖𝕥 = termtype (PSet :waist 1)
+
+to : ℙ𝕊𝕖𝕥 → 𝟙 {ℓ₀}
+to emptyM = tt
+
+from : 𝟙 {ℓ₀} → ℙ𝕊𝕖𝕥
+from _ = μ (inj₁ tt)
+
+** termtype relations ≅ pairs
+
+From simple graphs (relations) to a syntax about them:
+One describes a simple graph by presenting edges as pairs of vertices!
+
+{- discussion session or footnote
+RSetsOn  : Set → Context (ℓsuc ℓ₀)
+RSetsOn Elem = do TruthValues ← Set ℓ₀
+                  relation ← (Elem → Elem → TruthValues)
+                  End {ℓ₀}
+-}
+
+
+{- discussion / footnote
+GraphOn  : Set → Context (ℓsuc ℓ₀)
+GraphOn Node = do Edge ← Set ℓ₀
+                  adjacency ← (Node → Node → Edge)
+                  End {ℓ₀}
+
+𝔾𝕣𝕒𝕡𝕙 : Set → Set
+𝔾𝕣𝕒𝕡𝕙 X = termtype (GraphOn X :waist 1)
+
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+view : ∀ {X} → 𝔾𝕣𝕒𝕡𝕙 X → X × X
+view (x ⇌ y) = x , y
+
+-
+}
+
+Graph  : Context (ℓsuc ℓ₀)
+Graph = do Node ← Set
+           Edge ← Set
+           adjacency ← (Node → Node → Edge)
+           End {ℓ₀}
+
+-- The current implementation of “termtype” only allows for one “Set” in the body.
+-- So we lift both out; thereby regaining ℙ₂!
+
+𝔾𝕣𝕒𝕡𝕙 : Set → Set
+𝔾𝕣𝕒𝕡𝕙 X = termtype ((Graph :waist 2) X)
+
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+view : ∀ {X} → 𝔾𝕣𝕒𝕡𝕙 X → X × X
+view (x ⇌ y) = x , y
+
+-- Claim: Mention in paper.
+--
+--    P₁ : Set → Context = λ Ξ → do ⋯ End
+-- ≅  P₂ :waist 1
+-- where P₂ : Context = do Ξ ← Set; ⋯ End
+
+** indexed unary algebras (“actions”) give rise to streams
+
+Action  : Context ℓ₁
+Action  = do Value    ← Set
+             Program  ← Set
+             run      ← (Program → Value → Value)
+             End {ℓ₀}
+
+𝔸𝕔𝕥𝕚𝕠𝕟 : Set → Set
+𝔸𝕔𝕥𝕚𝕠𝕟 X = termtype ((Action :waist 2) X)
+
+pattern _·_ head tail = μ (inj₁ (tail , head , tt))
+
+record Stream (X : Set) : Set   where
+  coinductive
+  field
+    hd : X
+    tl : Stream X
+
+open Stream
+
+view : ∀ {I} → 𝔸𝕔𝕥𝕚𝕠𝕟 I → Stream I
+hd (view (t · h)) = t
+tl (view (t · h)) = view h
+
 * Glossary :ignore:
 
 #+LaTeX: \addcontentsline{toc}{part}{Glossary}
@@ -21552,37 +21648,6 @@ macro
 
 An example usage can be found below in the setting of graphs.
 
-** COMMENT :NO: Example: ~termtype PointedSet ≅ 𝟙~
-   #+begin_src agda  :tangle Context_examples.agda
-One  : Context (ℓsuc ℓ₀)
-One      = do Carrier ← Set ℓ₀
-              point  ← Carrier
-              End {ℓ₀}
-
-𝕆𝕟𝕖 : Set
-𝕆𝕟𝕖 = termtype (One :waist 1)
-
-view₁ : 𝕆𝕟𝕖 → 𝟙
-view₁ emptyM = tt
-#+end_src
-** COMMENT :NO: The Termtype of Graphs is Vertex Pairs
-From simple graphs (relations) to a syntax about them:
-One describes a simple graph by presenting edges as pairs of vertices!
-#+begin_src agda  :tangle Context_examples.agda
-PointedOver₂  : Set → Context (ℓsuc ℓ₀)
-PointedOver₂ Ξ    = do Carrier ← Set ℓ₀
-                       relation ← (Ξ → Ξ → Carrier)
-                       End {ℓ₀}
-
-ℙ₂ : Set → Set
-ℙ₂ X = termtype (PointedOver₂ X :waist 1)
-
-pattern _⇌_ x y = μ (inj₁ (x , y , tt))
-
-view₂ : ∀ {X} → ℙ₂ X → X × X
-view₂ (x ⇌ y) = x , y
-#+end_src
-
 ** COMMENT  :NO: No ‘constants’, whence a type of inifinitely branching terms
 #+begin_src agda :tangle Context.agda
 PointedOver₃  : Set → Context (ℓ₀)
@@ -21591,49 +21656,6 @@ PointedOver₃ Ξ    = do relation ← (Ξ → Ξ → Ξ)
 
 ℙ₃ : Set
 ℙ₃ = termtype (λ X → PointedOver₃ X 0)
-#+end_src
-
-** COMMENT  :NO: ℙ₂ again!
-#+begin_src agda :tangle Context.agda
-PointedOver₄  : Context (ℓsuc ℓ₀)
-PointedOver₄       = do Ξ ← Set
-                        Carrier ← Set ℓ₀
-                        relation ← (Ξ → Ξ → Carrier)
-                        End {ℓ₀}
-
--- The current implementation of “termtype” only allows for one “Set” in the body.
--- So we lift both out; thereby regaining ℙ₂!
-
-ℙ₄ : Set → Set
-ℙ₄ X = termtype ((PointedOver₄ :waist 2) X)
-
-pattern _⇌_ x y = μ (inj₁ (x , y , tt))
-
-case₄ : ∀ {X} → ℙ₄ X → Set₁
-case₄ (x ⇌ y) = Set
-
--- Claim: Mention in paper.
---
---    P₁ : Set → Context = λ Ξ → do ⋯ End
--- ≅  P₂ :waist 1
--- where P₂ : Context = do Ξ ← Set; ⋯ End
-#+end_src
-
-** COMMENT  :NO: ℙ₄ again -- indexed unary algebras; i.e., “actions”
-#+begin_src agda :tangle Context.agda
-PointedOver₈  : Context (ℓsuc ℓ₀)
-PointedOver₈       = do Index     ← Set
-                        Carrier   ← Set
-                        Operation ← (Index → Carrier → Carrier)
-                        End {ℓ₀}
-
-ℙ₈ : Set → Set
-ℙ₈ X = termtype ((PointedOver₈ :waist 2) X)
-
-pattern _·_ x y = μ (inj₁ (x , y , tt))
-
-view₈ : ∀ {I} → ℙ₈ I → Set₁
-view₈ (i · e) = Set
 #+end_src
 
 ** COMMENT  :NO: Other experiments

@@ -6,11 +6,44 @@
 
 #+TITLE: Do-it-yourself Module Systems
 #+DESCRIPTION: Unbundling on the fly and mechanically obtaining termtypes from theories
-#+TITLE: @@html:<small style="color:green">@@Unbundling   on   the   fly   and   mechanically   obtaining   termtypes   from   theories@@html:</small>@@
+
 #+AUTHOR: [[https://alhassy.github.io/][Musa Al-hassy]]
 #+EMAIL: alhassy@gmail.com
 #+OPTIONS: html-postamble:nil
 #+PROPERTY: header-args:agda2 :tangle aim-2020.agda
+
+# +TITLE: @@html:<div style="color:green; font-size: 70px">@@Unbundling   on   the   fly   and   mechanically   obtaining   termtypes   from   theories@@html:</div>@@
+#+begin_src emacs-lisp :exports none
+(make-local-variable 'org-reveal-title-slide)
+(setq org-reveal-title-slide "<h2>%t</h2>
+<h5 style=\"color: green\">Unbundling on the fly and mechanically obtaining termtypes from theories</h5>
+<br><br>
+<h4 style=\"color: rose\"><emph>Agda Implementors Meeting 2020</emph></h4>
+<br>
+<h>%a</h3>
+<br>
+<font size=\"1\">
+<a href=\"?print-pdf&showNotes=true\">
+⟪ Flattened View ; Press <code>?</code> for Help ⟫
+</a>
+</font>")
+#+end_src
+
+#+RESULTS:
+#+begin_example
+<h2>%t</h2>
+<h5 style="color: green">Unbundling on the fly and mechanically obtaining termtypes from theories</h5>
+<br><br>
+<h4 style="color: rose"><emph>Agda Implementors Meeting 2020</emph></h4>
+<br>
+<h>%a</h3>
+<br>
+<font size="1">
+<a href="?print-pdf&showNotes=true">
+⟪ Flattened View ; Press <code>?</code> for Help ⟫
+</a>
+</font>
+#+end_example
 
 #+OPTIONS: timestamp:nil
 #+OPTIONS: toc:nil d:nil
@@ -1028,6 +1061,7 @@ With a bit of reflection, we can obtain
 2. on-the-fly unbundling; and,
 3. *mechanically* obtain data structures from theories
    #+ATTR_REVEAL: :frag (appear)
+   #+html: <small>
    | ‘theory’ τ     | ‘data structure’ ~termtype τ~ |
    |----------------+-----------------------------|
    | pointed set    | 𝟙                           |
@@ -1036,7 +1070,7 @@ With a bit of reflection, we can obtain
    | collections    | lists                       |
    | graphs         | (homogeneous) pairs         |
    | actions        | infinite streams            |
-
+   #+html: </small>
 * Unbundling Problem
 
 ** Monoid ---“Untyped Composition”
@@ -1048,14 +1082,15 @@ With a bit of reflection, we can obtain
 
 ** Typeclass approach, as in Haskell
 #+begin_src agda2
-record MonoidOn (Carrier : Set) : Set where
-    field
-      _⨾_ : Carrier → Carrier → Carrier
-      Id  : Carrier
-      leftId : ∀ x → Id ⨾ x ≡ x
-      rightId : ∀ x → x ⨾ Id ≡ x
-      assoc   : ∀ x y z →   (x ⨾ y) ⨾ z
-                            ≡  x ⨾ (y ⨾ z)
+record MonoidOn (Carrier : Set) : Set
+ where
+  field
+    _⨾_ : Carrier → Carrier → Carrier
+    Id  : Carrier
+    leftId : ∀ x → Id ⨾ x ≡ x
+    rightId : ∀ x → x ⨾ Id ≡ x
+    assoc   : ∀ x y z →  (x ⨾ y) ⨾ z
+                       ≡  x ⨾ (y ⨾ z)
 #+end_src
 
 #+ATTR_REVEAL: :frag (appear)
@@ -1111,8 +1146,8 @@ instance
 
 #+ATTR_REVEAL: :frag (appear)
 #+begin_src agda2
--- whoops : ∀ {m : ℕ} → m ⨾ Id ≡ m
--- whoops = {!!}
+whoops : ∀ {m : ℕ} → m ⨾ Id ≡ m
+whoops = {!!}
 #+end_src
 
 #+ATTR_REVEAL: :frag (appear)
@@ -1135,7 +1170,7 @@ Sum α ≅ α  {- and -} Product α ≅ α
 For src_haskell[:exports code]{Num α} they have different monoid instances.
 
 * Unbundling in Agda
-** Alternate Solution to Multiple Monoid Instance Problem
+** Alternate Solution to Multiple Monoid Instance Problem :ignore:
 
 #+ATTR_REVEAL: :frag (appear)
 *Start* with /fully bundled/ src_haskell[:exports code]{Monoid}
@@ -1157,7 +1192,7 @@ For src_haskell[:exports code]{Num α} they have different monoid instances.
 #+ATTR_REVEAL: :frag (appear)
 - Instead of the nice /syntactic sugar/
   #+begin_src agda2 :tangle no
-record R (ε¹ : τ¹) ⋯ (εʷ : τʷ) : Set _
+record R (ε¹ : τ¹) ⋯ (εʷ : τʷ) : Set
   where
     field
       εʷ⁺¹ : τʷ⁺¹
@@ -1169,14 +1204,22 @@ record R (ε¹ : τ¹) ⋯ (εʷ : τʷ) : Set _
 - Use a more raw form  ---/eek!/
   #+begin_src agda2 :tangle no
 R  ≅  Π ε¹ : τ¹ • ⋯ • Π εʷ : τʷ
-      • Σ εʷ⁺¹ : τʷ⁺¹ • ⋯ • Σ εʷ⁺ᵏ : τʷ⁺ᵏ
-        • 𝟙
+    • Σ εʷ⁺¹ : τʷ⁺¹ • ⋯ • Σ εʷ⁺ᵏ : τʷ⁺ᵏ
+    • 𝟙
+#+end_src
+
+** Terminology
+# intentionally repeated
+  #+begin_src agda2 :tangle no
+R  ≅  Π ε¹ : τ¹ • ⋯ • Π εʷ : τʷ
+    • Σ εʷ⁺¹ : τʷ⁺¹ • ⋯ • Σ εʷ⁺ᵏ : τʷ⁺ᵏ
+    • 𝟙
 #+end_src
 
 #+ATTR_REVEAL: :frag (appear)
 ⇨ /“R is a ΠʷΣ type”/  ---a *(partitioned) context*
 #+ATTR_REVEAL: :frag (appear)
-⇨ It has *parameters* ~ρ⁰, …, ρʷ~ and *fields* ~ρʷ⁺¹, …, ρʷ⁺ᵏ~
+⇨ It has *parameters* ~ε⁰, …, εʷ~ and *fields* ~εʷ⁺¹, …, εʷ⁺ᵏ~
 #+ATTR_REVEAL: :frag (appear)
 ⇨ $w$ is the *“waist”*
 
@@ -1205,7 +1248,7 @@ open import Context -- Gives us Σ∶•, Π∶•, >>=, ⟨⋯⟩
 #+end_src
 
 #+ATTR_REVEAL: :frag (appear)
-0. “Contexts” are exposure-indexed types -}
+0. “Contexts” are exposure-indexed types
    #+begin_src agda2 :tangle no
 Context = λ ℓ → ℕ → Set ℓ
 #+end_src
@@ -1215,7 +1258,7 @@ End : ∀ {ℓ} → Context ℓ
 End {ℓ} = ‵ 𝟙 {ℓ}
 #+end_src
 2. do-notation!
-#+begin_src agda2 :tangle no
+   #+begin_src agda2 :tangle no
 _>>=_ : ∀ {a b}
       → (Γ : Context a)
       → (∀ {n} → Γ n → Context b)
@@ -1240,13 +1283,18 @@ Monoid = do Carrier ← Set
 
 *** Example Instance ---Additive Naturals
 #+begin_src agda2
-ℕ₊′ : (Monoid ℓ₀ :waist 1) ℕ  -- ≅ MonoidOn ℕ
+ℕ₊′ : (Monoid ℓ₀ :waist 1) ℕ
 ℕ₊′ = ⟨ _+_           -- _⨾_
       , 0             -- Id
       , +-identityˡ
       , +-identityʳ
       , +-assoc
       ⟩
+#+end_src
+
+Notice...
+#+begin_src agda2
+(Monoid ℓ₀ :waist 1) ℕ  ≅  MonoidOn ℕ
  #+end_src
 
 * src_agda2[:exports code]{Π→λ} ---or src_agda2[:exports code]{_:waist_}
@@ -1260,46 +1308,58 @@ Monoid = do Carrier ← Set
 ** /Using/   Contexts ---‘reification’
 
 #+ATTR_REVEAL: :frag (appear)
-1. If src_agda2[:exports code]{C : Context ℓ₀} then src_agda2[:exports code]{C w :
++ If src_agda2[:exports code]{C : Context ℓ₀} then src_agda2[:exports code]{C w :
   Πʷ ⋯ • Set}, but we want to *apply* ~C w~ to /w/-many /parameters/?
 
-2. @@html: <small>@@ ~(Πʷ x • τ)~ is /w/-many Π's binding variables to be used in
+   #+ATTR_REVEAL: :frag (appear)
+   @@html: <small>@@ ~(Πʷ x • τ)~ is /w/-many Π's binding variables to be used in
     type τ. @@html: </small>@@ @@remark: τ does not start with a Π@@
 
-3. So we need a combinator...
++ So we need a combinator...
     #+begin_src agda2
- Π→λ  “Πʷ x • τ”  =  “λʷ x • τ”
+ Π→λ  “Πʷ x • τ”   =   “λʷ x • τ”
 #+end_src
-   with an infix form for contexts in particular ...
-   #+begin_src agda2
- C :waist w   =ᵈᵉᶠ  Π→λ (C w)
- #+end_src
++ with an infix form for contexts in particular ...
+  #+begin_src agda2
+C :waist w   =   Π→λ (C w)
+#+end_src
 
 ** Example
 
 #+ATTR_REVEAL: :frag (appear)
+#+html:<small>
 #+begin_src agda2 :tangle no
 Monoid : Context
 Monoid = do C ← Set; _⨾_ : C → C → C; Id ← C; …
 #+end_src
+#+html:</small>
 
-#+ATTR_REVEAL: :frag (appear)
-0. [@0] With no parameters, we have a Π⁰Σ-type
-   #+begin_src agda2 :tangle no
+#+html:<small>
+#+ATTR_REVEAL: :frag appear
+With no parameters, we have a Π⁰Σ-type
+#+html:</small>
+#+ATTR_REVEAL: :frag appear
+#+begin_src agda2 :tangle no
 Monoid :waist 0  : Set₁
 Monoid :waist 0  ≡  Σ C : Set • Σ _⨾_ : C → C → C • Σ Id : C • …
 #+end_src
 
-#+ATTR_REVEAL: :frag (appear)
-1. [@1] With *one* parameter, we regain ~MonoidOn~
-   #+begin_src agda2 :tangle no
+#+html:<small>
+#+ATTR_REVEAL: :frag appear
+With *one* parameter, we regain ~MonoidOn~
+#+html:</small>
+#+ATTR_REVEAL: :frag appear
+#+begin_src agda2 :tangle no
 Monoid :waist 1  :  Π C : Set • Set
 Monoid :waist 1  =  λ C : Set • Σ _⨾_ : C → C → C • Σ Id : C • …
 #+end_src
 
-#+ATTR_REVEAL: :frag (appear)
-2. [@2] With *two* parameters, we have a /‘solution’/ to the
+#+html:<small>
+#+ATTR_REVEAL: :frag appear
+With *two* parameters, we have a /‘solution’/ to the
   additive-or-multiplicative-monoid-problem!
+#+html:</small>
+#+ATTR_REVEAL: :frag appear
    #+begin_src agda2 :tangle no
 Monoid :waist 2  :  Π C : Set) • Π _⨾_ : C → C → C • Set
 Monoid :waist 2  =  λ C : Set • λ _⨾_ : C → C → C • Σ Id : C • …
@@ -1322,8 +1382,12 @@ Monoid :waist 𝓌   =  λʷ “parameters” • “fields”
 --  Π a : A • B a   ↦   λ a : A • B a
 
 Π→λ-helper : Term → Term
-Π→λ-helper (pi a (abs x b)) = lam visible (abs x (Π→λ-helper b))
-Π→λ-helper x = x
+
+Π→λ-helper (pi a (abs x b))
+  = lam visible (abs x (Π→λ-helper b))
+
+Π→λ-helper x
+  = x
 #+end_src
 
 *** Keeping Track of Types
@@ -1333,20 +1397,26 @@ so let's keep track of the types when we convert Πs to λs.
 
 #+begin_src agda2 :tangle no
 Π→λ-type : Term → Term
-Π→λ-type (pi a (abs x b)) = pi a  (abs x (Π→λ-type b))
-Π→λ-type x = unknown
+
+Π→λ-type (pi a (abs x b))
+ = pi a  (abs x (Π→λ-type b))
+
+Π→λ-type x
+ = unknown
 #+end_src
 
 *** Putting them together
 
+#+html:<small>
 #+begin_src agda2 :tangle no
 macro
   Π→λ : Term → Term → TC Unit.⊤
-  Π→λ tm goal =  normalise tm
-                 >>=ₜₑᵣₘ λ tm′ → checkType goal (Π→λ-type tm′)
-                 >>=ₜₑᵣₘ λ _ →  unify goal (Π→λ-helper tm′)
+  Π→λ τ goal
+   =  normalise τ
+       >>=ₜₑᵣₘ λ τ′ → checkType goal (Π→λ-type τ′)
+       >>=ₜₑᵣₘ λ _ →  unify goal (Π→λ-helper τ′)
 #+end_src
-
+#+html:</small>
 
 ** Lesson Learned
 
@@ -1355,8 +1425,9 @@ dependently-typed language with sufficient reflection capabilities (•̀ᴗ•�
 
 * GADTs are Contexts too!
 
-** From Contexts to GADTS
+** From Contexts to GADTS :ignore:
 
+#+html:<small>
 #+ATTR_REVEAL: :frag (appear)
 +   :: src_agda2[:exports code]{Monoid}
    # + ⟿ :: @@html: <small>@@ definition@@html: </small>@@
@@ -1369,7 +1440,7 @@ dependently-typed language with sufficient reflection capabilities (•̀ᴗ•�
 + ⟿ :: src_agda2[:exports code]{λ C : Set •       C × C    ⊍         C ⊍ 𝟙}
    # + ⟿ :: @@html: <small>@@ Termtypes are fixpoints of type constructors@@html: </small>@@
 + ⟿ :: src_agda2[:exports code]{μ C : Set •       C × C    ⊍         C ⊍ 𝟙}
-
+#+html:</small>
 ** As a macro!
 
 
@@ -1394,11 +1465,11 @@ macro
 #+begin_src agda2 :tangle no
 Monoid : ∀ ℓ → Context (ℓsuc ℓ)
 Monoid ℓ = do Carrier ← Set ℓ
-              _⊕_     ← (Carrier → Carrier → Carrier)
+              _⨾_     ← (Carrier → Carrier → Carrier)
               Id      ← Carrier
-              leftId  ← ∀ {x : Carrier} → Id ⊕ x ≡ x
-              rightId ← ∀ {x : Carrier} → x ⊕ Id ≡ x
-              assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
+              leftId  ← ∀ {x : Carrier} → Id ⨾ x ≡ x
+              rightId ← ∀ {x : Carrier} → x ⨾ Id ≡ x
+              assoc   ← ∀ {x y z} → (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
               End {ℓ}
 #+end_src
 
@@ -1407,21 +1478,43 @@ Monoid ℓ = do Carrier ← Set ℓ
 #+begin_src agda2
   𝕄 : Set
   𝕄 = termtype (Monoid ℓ₀ :waist 1)
+#+end_src
 
-  that-is : 𝕄 ≡ Fix (λ X → X × X × 𝟙 -- _⊕_, branch
-                          ⊎ 𝟙        -- Id, nil leaf
-                          ⊎ 𝟘        -- invariant leftId
-                          ⊎ 𝟘        -- invariant rightId
-                          ⊎ 𝟘        -- invariant assoc
-                          ⊎ 𝟘)       --  the “End {ℓ}”
+#+begin_src agda2
+  that-is : 𝕄
+          ≡ Fix (λ X →
+                -- _⊕_, branch
+                X × X × 𝟙
+                -- Id, nil leaf
+              ⊎ 𝟙
+                -- invariant leftId
+              ⊎ 𝟘
+                -- invariant rightId
+              ⊎ 𝟘
+                -- invariant assoc
+              ⊎ 𝟘
+                --  the “End {ℓ}”
+              ⊎ 𝟘)
   that-is = refl
             #+end_src
 
 *** Pattern synonyms for more compact presentation
             #+begin_src agda2
-  pattern emptyM      = μ (inj₂ (inj₁ tt))              -- : 𝕄
-  pattern branchM l r = μ (inj₁ (l , r , tt))           -- : 𝕄 → 𝕄 → 𝕄
-  pattern absurdM a   = μ (inj₂ (inj₂ (inj₂ (inj₂ a)))) -- absurd 𝟘-values
+-- : 𝕄
+pattern emptyM
+    = μ (inj₂ (inj₁ tt))
+#+end_src
+
+#+begin_src agda2
+-- : 𝕄 → 𝕄 → 𝕄
+pattern branchM l r
+    = μ (inj₁ (l , r , tt))
+#+end_src
+
+#+begin_src agda2
+-- absurd 𝟘-values
+pattern absurdM a
+    = μ (inj₂ (inj₂ (inj₂ (inj₂ a))))
 #+end_src
 
 *** ~termtype Monoid ≅ TreeSkeleton~
@@ -1457,20 +1550,25 @@ Monoid ℓ = do Carrier ← Set ℓ
 *** Context
 
 #+begin_src agda2
-    DynamicSystem : Context ℓ₁
-    DynamicSystem = do State ← Set
-                       start ← State
-                       next  ← (State → State)
-                       End {ℓ₀}
-                           #+end_src
+DynamicSystem : Context ℓ₁
+DynamicSystem = do State ← Set
+                   start ← State
+                   next  ← (State → State)
+                   End {ℓ₀}
+                       #+end_src
 
 *** Termtype
                            #+begin_src agda2
-    𝔻 = termtype (DynamicSystem :waist 1)
+𝔻 = termtype (DynamicSystem :waist 1)
+#+end_src
+Pattern synonyms for more compact presentation
+#+begin_src agda2
+-- : 𝔻
+pattern startD
+    = μ (inj₁ tt)
 
-    -- Pattern synonyms for more compact presentation
-    pattern startD  = μ (inj₁ tt)       -- : 𝔻
-    pattern nextD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
+-- : 𝔻 → 𝔻
+pattern nextD e = μ (inj₂ (inj₁ e))
 #+end_src
 
 *** ~termtype 𝔻 ≅ ℕ~
@@ -1493,17 +1591,23 @@ PSet  = do Carrier ← Set ℓ₀
            End {ℓ₀}
 #+end_src
 
+#+ATTR_REVEAL: :frag appear
 #+begin_src agda2
 ℙ𝕊𝕖𝕥 : Set
 ℙ𝕊𝕖𝕥 = termtype (PSet :waist 1)
 #+end_src
 
+#+ATTR_REVEAL: :frag appear
 #+begin_src agda2
-to : ℙ𝕊𝕖𝕥 → 𝟙 {ℓ₀}; to emptyM = tt
-from : 𝟙 {ℓ₀} → ℙ𝕊𝕖𝕥; from _ = μ (inj₁ tt)
+to : ℙ𝕊𝕖𝕥 → 𝟙 {ℓ₀}
+to emptyM = tt
+
+from : 𝟙 {ℓ₀} → ℙ𝕊𝕖𝕥
+from _ = μ (inj₁ tt)
 #+end_src
 
-** (Directed multi-)Graphs give rise to pairs
+** (Simple) Graphs give rise to pairs
+
 
 #+begin_src agda2
 Graph  : Context (ℓsuc ℓ₀)
@@ -1513,11 +1617,13 @@ Graph = do Node ← Set
            End {ℓ₀}
 #+end_src
 
+#+ATTR_REVEAL: :frag appear
 #+begin_src agda2
 𝔾𝕣𝕒𝕡𝕙 : Set → Set
 𝔾𝕣𝕒𝕡𝕙 X = termtype ((Graph :waist 2) X)
 #+end_src
 
+#+ATTR_REVEAL: :frag appear
 #+begin_src agda2
 pattern _⇌_ x y = μ (inj₁ (x , y , tt))
 
@@ -1539,8 +1645,12 @@ Action  = do Value    ← Set
 #+begin_src agda2
 𝔸𝕔𝕥𝕚𝕠𝕟 : Set → Set
 𝔸𝕔𝕥𝕚𝕠𝕟 X = termtype ((Action :waist 2) X)
+#+end_src
 
-pattern _·_ head tail = μ (inj₁ (tail , head , tt))
+#+begin_src agda2
+-- : X → 𝔸𝕔𝕥𝕚𝕠𝕟 X → 𝔸𝕔𝕥𝕚𝕠𝕟 X
+pattern _∷_ head tail
+         = μ (inj₁ (tail , head , tt))
 #+end_src
 
 *** … to stream
@@ -1552,10 +1662,12 @@ record Stream (X : Set) : Set   where
     tl : Stream X
 
 open Stream
-
+#+end_src
+#+ATTR_REVEAL: :frag appear
+#+begin_src agda2
 view : ∀ {I} → 𝔸𝕔𝕥𝕚𝕠𝕟 I → Stream I
-hd (view (t · h)) = t
-tl (view (t · h)) = view h
+hd (view (h ∷ t)) = h
+tl (view (h ∷ t)) = view t
 #+end_src
 
 ** Collection theories give rise to lists
@@ -1569,12 +1681,20 @@ Collection ℓ = do Elem      ← Set ℓ
                   End {ℓ}
 #+end_src
 
+#+ATTR_REVEAL: :frag appear
 #+begin_src agda2
 ℂ : Set → Set
 ℂ Elem = termtype ((Collection ℓ₀ :waist 2) Elem)
+#+end_src
+#+ATTR_REVEAL: :frag appear
+#+begin_src agda2
+-- : X → ℂ X → ℂ X
+pattern _::_ x xs
+         = μ (inj₁ (x , xs , tt))
 
-pattern _::_ x xs = μ (inj₁ (x , xs , tt))
-pattern  ∅        = μ (inj₂ (inj₁ tt))
+-- : ℂ X
+pattern  ∅
+    = μ (inj₂ (inj₁ tt))
 #+end_src
 
 ** Summary
@@ -1596,6 +1716,21 @@ pattern  ∅        = μ (inj₂ (inj₁ tt))
 
 /Thanks for listening in!/
 
+#+html:<small>
+- The src_agda2[:exports code]{Context} Library:
+
+   https://alhassy.github.io/next-700-module-systems/diy/Context.agda
+
+- Examples to play with:
+
+  https://alhassy.github.io/next-700-module-systems/diy/Examples.agda
+
+- Project homepage: https://alhassy.github.io/next-700-module-systems/
+
+These slides:
+
+https://alhassy.github.io/next-700-module-systems/diy/agda-implementors-meeting-2020
+#+html:</small>
 * COMMENT Overview
 :PROPERTIES:
 # (use-package toc-org :after org :demand t)

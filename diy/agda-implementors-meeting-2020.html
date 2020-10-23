@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>Do-it-yourself Module Systems <small style="color:green">Unbundling   on   the   fly   and   mechanically   obtaining   termtypes   from   theories</small></title>
+<title>Do-it-yourself Module Systems</title>
 <meta name="author" content="((link (:type https :path //alhassy.github.io/ :format bracket :raw-link https://alhassy.github.io/ :application nil :search-option nil :begin 1 :end 46 :contents-begin 31 :contents-end 44 :post-blank 0 :parent #0) Musa Al-hassy))"/>
 <meta name="description" content="Unbundling on the fly and mechanically obtaining termtypes from theories"/>
 <style type="text/css">
@@ -96,7 +96,13 @@
 <body>
 <div class="reveal">
 <div class="slides">
-<section id="sec-title-slide"><h1>Do-it-yourself Module Systems <small style="color:green">Unbundling   on   the   fly   and   mechanically   obtaining   termtypes   from   theories</small></h1> <h3><a href="https://alhassy.github.io/">Musa Al-hassy</a></h3>
+<section id="sec-title-slide"><h2>Do-it-yourself Module Systems</h2>
+<h5 style="color: green">Unbundling on the fly and mechanically obtaining termtypes from theories</h5>
+<br><br>
+<h4 style="color: rose"><emph>Agda Implementors Meeting 2020</emph></h4>
+<br>
+<h><a href="https://alhassy.github.io/">Musa Al-hassy</a></h3>
+<br>
 <font size="1">
 <a href="?print-pdf&showNotes=true">
 ⟪ Flattened View ; Press <code>?</code> for Help ⟫
@@ -162,8 +168,8 @@
 </style>
 
 <section>
-<section id="slide-orge36f080">
-<h2 id="orge36f080"><a href="#orge36f080">Overview</a></h2>
+<section id="slide-orge441456">
+<h2 id="orge441456"><a href="#orge441456">Overview</a></h2>
 <p>
 With a bit of reflection, we can obtain
 </p>
@@ -174,7 +180,8 @@ With a bit of reflection, we can obtain
 <li class="fragment appear"><p>
 <b>mechanically</b> obtain data structures from theories
 </p>
-<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides" class="fragment (appear)">
+<small>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
 <colgroup>
@@ -219,22 +226,22 @@ With a bit of reflection, we can obtain
 <td class="org-left">infinite streams</td>
 </tr>
 </tbody>
-</table></li>
+</table>
+</small></li>
 
 </ol>
-
 </section>
 </section>
 <section>
-<section id="slide-org46794c0">
-<h2 id="org46794c0"><a href="#org46794c0">Unbundling Problem</a></h2>
-<div class="outline-text-2" id="text-org46794c0">
+<section id="slide-orga676f75">
+<h2 id="orga676f75"><a href="#orga676f75">Unbundling Problem</a></h2>
+<div class="outline-text-2" id="text-orga676f75">
 </div>
 </section>
 </section>
 <section>
-<section id="slide-org267f33b">
-<h3 id="org267f33b"><a href="#org267f33b">Monoid &#x2014;“Untyped Composition”</a></h3>
+<section id="slide-orgc32c821">
+<h3 id="orgc32c821"><a href="#orgc32c821">Monoid &#x2014;“Untyped Composition”</a></h3>
 <ul>
 <li class="fragment appear">We have things, called <code class="src src-haskell"><span style="color: #ba2f59; font-weight: bold;">Carrier</span></code>,</li>
 <li class="fragment appear">… and we want to ‘combine’ them via some operation <code class="src src-haskell"><span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #6c3163; font-weight: bold;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span></code></li>
@@ -245,18 +252,19 @@ With a bit of reflection, we can obtain
 </section>
 </section>
 <section>
-<section id="slide-org541e92a">
-<h3 id="org541e92a"><a href="#org541e92a">Typeclass approach, as in Haskell</a></h3>
+<section id="slide-org4660a3c">
+<h3 id="org4660a3c"><a href="#org4660a3c">Typeclass approach, as in Haskell</a></h3>
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim><span style="color: #6c3163; font-weight: bold;">record</span> <span style="color: #ba2f59; font-weight: bold;">MonoidOn</span> (<span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>) <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #3a81c3; font-weight: bold;">where</span>
-    field
-      <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>
-      <span style="color: #ba2f59; font-weight: bold;">Id</span>  <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>
-      leftId <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#10814;</span> x <span style="color: #715ab1;">&#8801;</span> x
-      rightId <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x <span style="color: #715ab1;">&#8594;</span> x <span style="color: #715ab1;">&#10814;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#8801;</span> x
-      assoc   <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x y z <span style="color: #715ab1;">&#8594;</span>   (x <span style="color: #715ab1;">&#10814;</span> y) <span style="color: #715ab1;">&#10814;</span> z
-                            <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">&#10814;</span> (y <span style="color: #715ab1;">&#10814;</span> z)
+<pre  class="src src-agda2"><code trim><span style="color: #6c3163; font-weight: bold;">record</span> <span style="color: #ba2f59; font-weight: bold;">MonoidOn</span> (<span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>) <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
+ <span style="color: #3a81c3; font-weight: bold;">where</span>
+  field
+    <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>
+    <span style="color: #ba2f59; font-weight: bold;">Id</span>  <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>
+    leftId <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#10814;</span> x <span style="color: #715ab1;">&#8801;</span> x
+    rightId <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x <span style="color: #715ab1;">&#8594;</span> x <span style="color: #715ab1;">&#10814;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#8801;</span> x
+    assoc   <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> x y z <span style="color: #715ab1;">&#8594;</span>  (x <span style="color: #715ab1;">&#10814;</span> y) <span style="color: #715ab1;">&#10814;</span> z
+                       <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">&#10814;</span> (y <span style="color: #715ab1;">&#10814;</span> z)
 </code></pre>
 </div>
 
@@ -269,8 +277,8 @@ With a bit of reflection, we can obtain
 </section>
 </section>
 <section>
-<section id="slide-org42fb750">
-<h3 id="org42fb750"><a href="#org42fb750">Examples</a></h3>
+<section id="slide-org60fc8ec">
+<h3 id="org60fc8ec"><a href="#org60fc8ec">Examples</a></h3>
 <ul>
 <li class="fragment appear">Programs and sequential (or parallel) composition</li>
 <li class="fragment appear"><b>Numbers and addition (or multiplication)</b></li>
@@ -281,13 +289,13 @@ With a bit of reflection, we can obtain
 </section>
 </section>
 <section>
-<section id="slide-orgbf0a32d">
-<h3 id="orgbf0a32d"><a href="#orgbf0a32d">What is “the” monoid on the natural numbers?</a></h3>
-<div class="outline-text-3" id="text-orgbf0a32d">
+<section id="slide-orgfb1b479">
+<h3 id="orgfb1b479"><a href="#orgfb1b479">What is “the” monoid on the natural numbers?</a></h3>
+<div class="outline-text-3" id="text-orgfb1b479">
 </div>
 </section>
-<section id="slide-orgbb01b02">
-<h4 id="orgbb01b02"><a href="#orgbb01b02">Additive?</a></h4>
+<section id="slide-orgb773467">
+<h4 id="orgb773467"><a href="#orgb773467">Additive?</a></h4>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #3a81c3; font-weight: bold;">instance</span>
@@ -319,8 +327,8 @@ With a bit of reflection, we can obtain
 </div>
 
 </section>
-<section id="slide-org2292b9d">
-<h4 id="org2292b9d"><a href="#org2292b9d">… or Multiplicative?</a></h4>
+<section id="slide-org16a3a69">
+<h4 id="org16a3a69"><a href="#org16a3a69">… or Multiplicative?</a></h4>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #3a81c3; font-weight: bold;">instance</span>
@@ -335,8 +343,8 @@ With a bit of reflection, we can obtain
 
 <div class="org-src-container">
 
-<pre  class="fragment (appear)"><code trim><span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">whoops : &#8704; {m : &#8469;} &#8594; m &#10814; Id &#8801; m</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">whoops = {!!}</span>
+<pre  class="fragment (appear)"><code trim>whoops <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> {m <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span>} <span style="color: #715ab1;">&#8594;</span> m <span style="color: #715ab1;">&#10814;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#8801;</span> m
+<span style="color: #6c3163; font-weight: bold;">whoops</span> <span style="color: #715ab1;">=</span> {<span style="color: #715ab1;">!!</span>}
 </code></pre>
 </div>
 
@@ -345,8 +353,8 @@ With a bit of reflection, we can obtain
 </p>
 
 </section>
-<section id="slide-org667f328">
-<h4 id="org667f328"><a href="#org667f328">Haskell's Solution</a></h4>
+<section id="slide-org2d78a8a">
+<h4 id="org2d78a8a"><a href="#org2d78a8a">Haskell's Solution</a></h4>
 <p>
 Make <b>two isomorphic copies</b> of numbers …
 </p>
@@ -372,15 +380,8 @@ For <code class="src src-haskell"><span style="color: #ba2f59; font-weight: bold
 </section>
 </section>
 <section>
-<section id="slide-orge8e7169">
-<h2 id="orge8e7169"><a href="#orge8e7169">Unbundling in Agda</a></h2>
-<div class="outline-text-2" id="text-orge8e7169">
-</div>
-</section>
-</section>
-<section>
-<section id="slide-org6f54d8f">
-<h3 id="org6f54d8f"><a href="#org6f54d8f">Alternate Solution to Multiple Monoid Instance Problem</a></h3>
+<section id="slide-orgb541f2e">
+<h2 id="orgb541f2e"><a href="#orgb541f2e">Unbundling in Agda</a></h2>
 <p class="fragment (appear)">
 <b>Start</b> with <i>fully bundled</i> <code class="src src-haskell"><span style="color: #ba2f59; font-weight: bold;">Monoid</span></code>
 </p>
@@ -391,8 +392,8 @@ For <code class="src src-haskell"><span style="color: #ba2f59; font-weight: bold
 </section>
 </section>
 <section>
-<section id="slide-orgba61c95">
-<h3 id="orgba61c95"><a href="#orgba61c95">How?</a></h3>
+<section id="slide-org831f276">
+<h3 id="org831f276"><a href="#org831f276">How?</a></h3>
 <p class="fragment (appear)">
 <b>Reflection!</b>
 </p>
@@ -407,15 +408,15 @@ For <code class="src src-haskell"><span style="color: #ba2f59; font-weight: bold
 </section>
 </section>
 <section>
-<section id="slide-org654df4d">
-<h3 id="org654df4d"><a href="#org654df4d">Records as ΠΣ-types</a></h3>
+<section id="slide-org7edfa2e">
+<h3 id="org7edfa2e"><a href="#org7edfa2e">Records as ΠΣ-types</a></h3>
 <ul>
 <li class="fragment appear"><p>
 Instead of the nice <i>syntactic sugar</i>
 </p>
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim><span style="color: #6c3163; font-weight: bold;">record</span> <span style="color: #ba2f59; font-weight: bold;">R</span> (&#949;&#185; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#185;) <span style="color: #715ab1;">&#8943;</span> (&#949;&#695; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#695;) <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #3a81c3; font-weight: bold;">_</span>
+<pre  class="src src-agda2"><code trim><span style="color: #6c3163; font-weight: bold;">record</span> <span style="color: #ba2f59; font-weight: bold;">R</span> (&#949;&#185; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#185;) <span style="color: #715ab1;">&#8943;</span> (&#949;&#695; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#695;) <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
   <span style="color: #3a81c3; font-weight: bold;">where</span>
     field
       &#949;&#695;<span style="color: #715ab1;">&#8314;</span>&#185; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#695;<span style="color: #715ab1;">&#8314;</span>&#185;
@@ -433,18 +434,31 @@ Use a more raw form  ---<i>eek!</i>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">R</span>  <span style="color: #6c3163; font-weight: bold;">&#8773;</span>  <span style="color: #ba2f59; font-weight: bold;">&#928;</span> &#949;&#185; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#185; <span style="color: #715ab1;">&#8226;</span> <span style="color: #715ab1;">&#8943;</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#928;</span> &#949;&#695; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#695;
-      <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> &#949;&#695;<span style="color: #715ab1;">&#8314;</span>&#185; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#695;<span style="color: #715ab1;">&#8314;</span>&#185; <span style="color: #715ab1;">&#8226;</span> <span style="color: #715ab1;">&#8943;</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> &#949;&#695;<span style="color: #715ab1;">&#8314;</span>&#7503; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#695;<span style="color: #715ab1;">&#8314;</span>&#7503;
-        <span style="color: #715ab1;">&#8226;</span> &#120793;
+    <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> &#949;&#695;<span style="color: #715ab1;">&#8314;</span>&#185; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#695;<span style="color: #715ab1;">&#8314;</span>&#185; <span style="color: #715ab1;">&#8226;</span> <span style="color: #715ab1;">&#8943;</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> &#949;&#695;<span style="color: #715ab1;">&#8314;</span>&#7503; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#695;<span style="color: #715ab1;">&#8314;</span>&#7503;
+    <span style="color: #715ab1;">&#8226;</span> &#120793;
 </code></pre>
 </div></li>
 
 </ul>
 
+</section>
+</section>
+<section>
+<section id="slide-orgf5d7d07">
+<h3 id="orgf5d7d07"><a href="#orgf5d7d07">Terminology</a></h3>
+<div class="org-src-container">
+
+<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">R</span>  <span style="color: #6c3163; font-weight: bold;">&#8773;</span>  <span style="color: #ba2f59; font-weight: bold;">&#928;</span> &#949;&#185; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#185; <span style="color: #715ab1;">&#8226;</span> <span style="color: #715ab1;">&#8943;</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#928;</span> &#949;&#695; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#695;
+    <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> &#949;&#695;<span style="color: #715ab1;">&#8314;</span>&#185; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#695;<span style="color: #715ab1;">&#8314;</span>&#185; <span style="color: #715ab1;">&#8226;</span> <span style="color: #715ab1;">&#8943;</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> &#949;&#695;<span style="color: #715ab1;">&#8314;</span>&#7503; <span style="color: #ba2f59; font-weight: bold;">:</span> &#964;&#695;<span style="color: #715ab1;">&#8314;</span>&#7503;
+    <span style="color: #715ab1;">&#8226;</span> &#120793;
+</code></pre>
+</div>
+
 <p class="fragment (appear)">
 ⇨ <i>“R is a ΠʷΣ type”</i>  &#x2014;a <b>(partitioned) context</b>
 </p>
 <p class="fragment (appear)">
-⇨ It has <b>parameters</b> <code>ρ⁰, …, ρʷ</code> and <b>fields</b> <code>ρʷ⁺¹, …, ρʷ⁺ᵏ</code>
+⇨ It has <b>parameters</b> <code>ε⁰, …, εʷ</code> and <b>fields</b> <code>εʷ⁺¹, …, εʷ⁺ᵏ</code>
 </p>
 <p class="fragment (appear)">
 ⇨ \(w\) is the <b>“waist”</b>
@@ -457,8 +471,8 @@ E.g., <code class="src src-haskell"><span style="color: #ba2f59; font-weight: bo
 </section>
 </section>
 <section>
-<section id="slide-org4257c0d">
-<h3 id="org4257c0d"><a href="#org4257c0d">Shucks, the Unbundling Problem Strikes Again</a></h3>
+<section id="slide-org801b878">
+<h3 id="org801b878"><a href="#org801b878">Shucks, the Unbundling Problem Strikes Again</a></h3>
 <p>
 If we encode a record as a ΠʷΣ type, what if we want
 to <i>instantiate, fix,</i> a field &#x2014;instead of a parameter?
@@ -474,15 +488,15 @@ We thus need a way to <b>lift parameters to fields</b>!
 </section>
 </section>
 <section>
-<section id="slide-orgf22f61f">
-<h3 id="orgf22f61f"><a href="#orgbed68da"><b>Pragmatic</b> Notation for Contexts</a></h3>
+<section id="slide-org33fe105">
+<h3 id="org33fe105"><a href="#org36c1ae5"><b>Pragmatic</b> Notation for Contexts</a></h3>
 <p>
 Instead of <code class="src src-agda2"><span style="color: #ba2f59; font-weight: bold;">Set</span></code>, use <code class="src src-agda2">(waist <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span>) <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span></code>
 </p>
 
 <ol>
 <li class="fragment appear"><p>
-“Contexts” are exposure-indexed types -}
+“Contexts” are exposure-indexed types
 </p>
 <div class="org-src-container">
 
@@ -498,9 +512,9 @@ The “empty context” is the unit type
 <span style="color: #ba2f59; font-weight: bold;">End</span> {&#8467;} <span style="color: #715ab1;">=</span> <span style="color: #715ab1;">&#8245;</span> &#120793; {&#8467;}
 </code></pre>
 </div></li>
-<li class="fragment appear">do-notation!</li>
-
-</ol>
+<li class="fragment appear"><p>
+do-notation!
+</p>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #6c3163; font-weight: bold;">&gt;&gt;=</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> {a b}
@@ -510,15 +524,14 @@ The “empty context” is the unit type
 (<span style="color: #ba2f59; font-weight: bold;">&#915;</span> <span style="color: #715ab1;">&gt;&gt;=</span> f) zero    <span style="color: #715ab1;">=</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> &#947; <span style="color: #715ab1;">&#8758;</span> <span style="color: #ba2f59; font-weight: bold;">&#915;</span> 0 <span style="color: #715ab1;">&#8226;</span> f &#947; 0
 (<span style="color: #ba2f59; font-weight: bold;">&#915;</span> <span style="color: #715ab1;">&gt;&gt;=</span> f) (suc n) <span style="color: #715ab1;">=</span> <span style="color: #ba2f59; font-weight: bold;">&#928;</span> &#947; <span style="color: #715ab1;">&#8758;</span> <span style="color: #ba2f59; font-weight: bold;">&#915;</span> n <span style="color: #715ab1;">&#8226;</span> f &#947; n
 </code></pre>
-</div>
-<ol>
-<li value="999">The <b>“DIY”</b> lies at <code>&gt;&gt;=</code>, permitting Σ, Π, 𝒲, <code>let</code>, … !</li>
+</div></li>
+<li class="fragment appear" value="999">The <b>“DIY”</b> lies at <code>&gt;&gt;=</code>, permitting Σ, Π, 𝒲, <code>let</code>, … !</li>
 
 </ol>
 
 </section>
-<section id="slide-org393d22e">
-<h4 id="org393d22e"><a href="#org393d22e">Example Context &#x2014;Monoids</a></h4>
+<section id="slide-org9753cb8">
+<h4 id="org9753cb8"><a href="#org9753cb8">Example Context &#x2014;Monoids</a></h4>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Context</span> &#8467;&#8321;
@@ -533,11 +546,11 @@ The “empty context” is the unit type
 </div>
 
 </section>
-<section id="slide-orga47c69d">
-<h4 id="orga47c69d"><a href="#orga47c69d">Example Instance &#x2014;Additive Naturals</a></h4>
+<section id="slide-org1d9f649">
+<h4 id="org1d9f649"><a href="#org1d9f649">Example Instance &#x2014;Additive Naturals</a></h4>
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">&#8330;&#8242;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> (<span style="color: #ba2f59; font-weight: bold;">Monoid</span> &#8467;&#8320; <span style="color: #ba2f59; font-weight: bold;">:</span>waist 1) <span style="color: #ba2f59; font-weight: bold;">&#8469;</span>  <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#8773; MonoidOn &#8469;</span>
+<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">&#8330;&#8242;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> (<span style="color: #ba2f59; font-weight: bold;">Monoid</span> &#8467;&#8320; <span style="color: #ba2f59; font-weight: bold;">:</span>waist 1) <span style="color: #ba2f59; font-weight: bold;">&#8469;</span>
 <span style="color: #ba2f59; font-weight: bold;">&#8469;</span><span style="color: #715ab1;">&#8330;&#8242;</span> <span style="color: #715ab1;">=</span> &#10216; <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">+</span><span style="color: #3a81c3; font-weight: bold;">_</span>           <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">_&#10814;_</span>
       , 0             <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Id</span>
       , <span style="color: #715ab1;">+-</span>identity&#737;
@@ -547,11 +560,20 @@ The “empty context” is the unit type
 </code></pre>
 </div>
 
+<p>
+Notice&#x2026;
+</p>
+<div class="org-src-container">
+
+<pre  class="src src-agda2"><code trim>(<span style="color: #ba2f59; font-weight: bold;">Monoid</span> &#8467;&#8320; <span style="color: #ba2f59; font-weight: bold;">:</span>waist 1) <span style="color: #ba2f59; font-weight: bold;">&#8469;</span>  <span style="color: #715ab1;">&#8773;</span>  <span style="color: #ba2f59; font-weight: bold;">MonoidOn</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span>
+</code></pre>
+</div>
+
 </section>
 </section>
 <section>
-<section id="slide-orga51cd82">
-<h2 id="orga51cd82"><a href="#orgbed68da"><code class="src src-agda2"><span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;</code> &#x2014;or <code class="src src-agda2"><span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #6c3163; font-weight: bold;">:</span>waist_</code></a></h2>
+<section id="slide-org43feed1">
+<h2 id="org43feed1"><a href="#org36c1ae5"><code class="src src-agda2"><span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;</code> &#x2014;or <code class="src src-agda2"><span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #6c3163; font-weight: bold;">:</span>waist_</code></a></h2>
 <dl>
 <dt class="fragment appear"> </dt><dd class="fragment appear"><code class="src src-haskell">record</code></dd>
 <dt class="fragment appear">≈</dt><dd class="fragment appear"><code class="src src-agda2"><span style="color: #ba2f59; font-weight: bold;">Context</span></code></dd>
@@ -562,90 +584,93 @@ The “empty context” is the unit type
 </section>
 </section>
 <section>
-<section id="slide-org68359d3">
-<h3 id="org68359d3"><a href="#orgbed68da"><i>Using</i>   Contexts &#x2014;‘reification’</a></h3>
-<ol>
-<li class="fragment appear">If <code class="src src-agda2"><span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Context</span> &#8467;&#8320;</code> then <code class="src src-agda2"><span style="color: #ba2f59; font-weight: bold;">C</span> w <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#928;&#695;</span> <span style="color: #715ab1;">&#8943;</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span></code>, but we want to <b>apply</b> <code>C w</code> to <i>w</i>-many <i>parameters</i>?</li>
+<section id="slide-org49a5e45">
+<h3 id="org49a5e45"><a href="#org36c1ae5"><i>Using</i>   Contexts &#x2014;‘reification’</a></h3>
+<ul>
+<li class="fragment appear"><p>
+If <code class="src src-agda2"><span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Context</span> &#8467;&#8320;</code> then <code class="src src-agda2"><span style="color: #ba2f59; font-weight: bold;">C</span> w <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#928;&#695;</span> <span style="color: #715ab1;">&#8943;</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span></code>, but we want to <b>apply</b> <code>C w</code> to <i>w</i>-many <i>parameters</i>?
+</p>
 
-<li class="fragment appear"><small> <code>(Πʷ x • τ)</code> is <i>w</i>-many Π's binding variables to be used in
-type τ.  </small></li>
+<p class="fragment (appear)">
+ <small> <code>(Πʷ x • τ)</code> is <i>w</i>-many Π's binding variables to be used in
+ type τ.  </small>
+</p></li>
 
 <li class="fragment appear"><p>
 So we need a combinator&#x2026;
 </p>
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim> <span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;  &#8220;<span style="color: #ba2f59; font-weight: bold;">&#928;&#695;</span> x <span style="color: #715ab1;">&#8226;</span> &#964;&#8221;  <span style="color: #715ab1;">=</span>  &#8220;&#955;&#695; x <span style="color: #715ab1;">&#8226;</span> &#964;&#8221;
+<pre  class="src src-agda2"><code trim> <span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;  &#8220;<span style="color: #ba2f59; font-weight: bold;">&#928;&#695;</span> x <span style="color: #715ab1;">&#8226;</span> &#964;&#8221;   <span style="color: #715ab1;">=</span>   &#8220;&#955;&#695; x <span style="color: #715ab1;">&#8226;</span> &#964;&#8221;
 </code></pre>
-</div>
-<p>
+</div></li>
+<li class="fragment appear"><p>
 with an infix form for contexts in particular &#x2026;
 </p>
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #ba2f59; font-weight: bold;">:</span>waist w   <span style="color: #715ab1;">=</span>&#7496;&#7497;&#7584;  <span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955; (<span style="color: #ba2f59; font-weight: bold;">C</span> w)
+<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #6c3163; font-weight: bold;">:</span>waist w   <span style="color: #715ab1;">=</span>   <span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955; (<span style="color: #ba2f59; font-weight: bold;">C</span> w)
 </code></pre>
 </div></li>
 
-</ol>
+</ul>
 
 </section>
 </section>
 <section>
-<section id="slide-orgb3c1d27">
-<h3 id="orgb3c1d27"><a href="#orgb3c1d27">Example</a></h3>
+<section id="slide-org1381fe2">
+<h3 id="org1381fe2"><a href="#org1381fe2">Example</a></h3>
+<small>
 <div class="org-src-container">
 
-<pre  class="fragment (appear)"><code trim><span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Context</span>
+<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Context</span>
 <span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #715ab1;">=</span> <span style="color: #3a81c3; font-weight: bold;">do</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8592;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>; <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span>; <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#8592;</span> <span style="color: #ba2f59; font-weight: bold;">C</span>; <span style="color: #715ab1;">&#8230;</span>
 </code></pre>
 </div>
+</small>
 
-<ol>
-<li class="fragment appear" value="0"><p>
+<small>
+<p class="fragment appear">
 With no parameters, we have a Π⁰Σ-type
 </p>
+</small>
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span>waist 0  <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>&#8321;
+<pre  class="fragment appear"><code trim><span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span>waist 0  <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>&#8321;
 <span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span>waist 0  <span style="color: #715ab1;">&#8801;</span>  <span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #715ab1;">&#8230;</span>
 </code></pre>
-</div></li>
+</div>
 
-</ol>
-
-<ol>
-<li class="fragment appear" value="1"><p>
+<small>
+<p class="fragment appear">
 With <b>one</b> parameter, we regain <code>MonoidOn</code>
 </p>
+</small>
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span>waist 1  <span style="color: #ba2f59; font-weight: bold;">:</span>  <span style="color: #ba2f59; font-weight: bold;">&#928;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
+<pre  class="fragment appear"><code trim><span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span>waist 1  <span style="color: #ba2f59; font-weight: bold;">:</span>  <span style="color: #ba2f59; font-weight: bold;">&#928;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
 <span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span>waist 1  <span style="color: #715ab1;">=</span>  &#955; <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #715ab1;">&#8230;</span>
 </code></pre>
-</div></li>
+</div>
 
-</ol>
-
-<ol>
-<li class="fragment appear" value="2"><p>
+<small>
+<p class="fragment appear">
 With <b>two</b> parameters, we have a <i>‘solution’</i> to the
-additive-or-multiplicative-monoid-problem!
+  additive-or-multiplicative-monoid-problem!
 </p>
+</small>
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span>waist 2  <span style="color: #ba2f59; font-weight: bold;">:</span>  <span style="color: #ba2f59; font-weight: bold;">&#928;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>) <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#928;</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
+<pre  class="fragment appear"><code trim><span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span>waist 2  <span style="color: #ba2f59; font-weight: bold;">:</span>  <span style="color: #ba2f59; font-weight: bold;">&#928;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>) <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#928;</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
 <span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span>waist 2  <span style="color: #715ab1;">=</span>  &#955; <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8226;</span> &#955; <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #ba2f59; font-weight: bold;">&#931;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8226;</span> <span style="color: #715ab1;">&#8230;</span>
 </code></pre>
-</div></li>
-
-</ol>
+</div>
 
 </section>
 </section>
 <section>
-<section id="slide-org7fd4cba">
-<h3 id="org7fd4cba"><a href="#org7fd4cba">Relationships between various forms</a></h3>
+<section id="slide-org5a55f25">
+<h3 id="org5a55f25"><a href="#org5a55f25">Relationships between various forms</a></h3>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Context</span> <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">i.e., (w : &#8469;) &#8594; Set</span>
@@ -658,26 +683,30 @@ additive-or-multiplicative-monoid-problem!
 </section>
 </section>
 <section>
-<section id="slide-orgaf2d7f9">
-<h3 id="orgaf2d7f9"><a href="#orgaf2d7f9">11 Line Implementation &#x2014;thanks Ulf!</a></h3>
-<div class="outline-text-3" id="text-orgaf2d7f9">
+<section id="slide-org4433126">
+<h3 id="org4433126"><a href="#org4433126">11 Line Implementation &#x2014;thanks Ulf!</a></h3>
+<div class="outline-text-3" id="text-org4433126">
 </div>
 </section>
-<section id="slide-orgeaa8332">
-<h4 id="orgeaa8332"><a href="#orgeaa8332">The Core <span class="underline">Syntactic</span> Transformation</a></h4>
+<section id="slide-org477af38">
+<h4 id="org477af38"><a href="#org477af38">The Core <span class="underline">Syntactic</span> Transformation</a></h4>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #2aa1ae; background-color: #ecf3ec;">--  </span><span style="color: #2aa1ae; background-color: #ecf3ec;">&#928; a : A &#8226; B a   &#8614;   &#955; a : A &#8226; B a</span>
 
 <span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span>helper <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Term</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Term</span>
-<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span>helper (pi a (abs x b)) <span style="color: #715ab1;">=</span> lam visible (abs x (<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span>helper b))
-<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span>helper x <span style="color: #715ab1;">=</span> x
+
+<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span>helper (pi a (abs x b))
+  <span style="color: #715ab1;">=</span> lam visible (abs x (<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span>helper b))
+
+<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span>helper x
+  <span style="color: #715ab1;">=</span> x
 </code></pre>
 </div>
 
 </section>
-<section id="slide-org2f21e05">
-<h4 id="org2f21e05"><a href="#org2f21e05">Keeping Track of Types</a></h4>
+<section id="slide-orgd050a2b">
+<h4 id="orgd050a2b"><a href="#orgd050a2b">Keeping Track of Types</a></h4>
 <p>
 <code class="src src-agda2"><span style="color: #ba2f59; font-weight: bold;">Term</span></code> denotes untyped λ-terms,
 so let's keep track of the types when we convert Πs to λs.
@@ -686,30 +715,36 @@ so let's keep track of the types when we convert Πs to λs.
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span><span style="color: #3a81c3; font-weight: bold;">type</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Term</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Term</span>
-<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span><span style="color: #3a81c3; font-weight: bold;">type</span> (pi a (abs x b)) <span style="color: #715ab1;">=</span> pi a  (abs x (<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span><span style="color: #3a81c3; font-weight: bold;">type</span> b))
-<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span><span style="color: #3a81c3; font-weight: bold;">type</span> x <span style="color: #715ab1;">=</span> unknown
+
+<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span><span style="color: #3a81c3; font-weight: bold;">type</span> (pi a (abs x b))
+ <span style="color: #715ab1;">=</span> pi a  (abs x (<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span><span style="color: #3a81c3; font-weight: bold;">type</span> b))
+
+<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span><span style="color: #3a81c3; font-weight: bold;">type</span> x
+ <span style="color: #715ab1;">=</span> unknown
 </code></pre>
 </div>
 
 </section>
-<section id="slide-org885127f">
-<h4 id="org885127f"><a href="#org885127f">Putting them together</a></h4>
+<section id="slide-org7be6caa">
+<h4 id="org7be6caa"><a href="#org7be6caa">Putting them together</a></h4>
+<small>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #6c3163; font-weight: bold;">macro</span>
   <span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955; <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Term</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Term</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">TC</span> <span style="color: #715ab1;">Unit.&#8868;</span>
-  <span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955; tm goal <span style="color: #715ab1;">=</span>  normalise tm
-                 <span style="color: #715ab1;">&gt;&gt;=</span>&#8348;&#8337;&#7523;&#8344; &#955; tm<span style="color: #715ab1;">&#8242;</span> <span style="color: #715ab1;">&#8594;</span> checkType goal (<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span><span style="color: #3a81c3; font-weight: bold;">type</span> tm<span style="color: #715ab1;">&#8242;</span>)
-                 <span style="color: #715ab1;">&gt;&gt;=</span>&#8348;&#8337;&#7523;&#8344; &#955; <span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #715ab1;">&#8594;</span>  unify goal (<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span>helper tm<span style="color: #715ab1;">&#8242;</span>)
+  <span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955; &#964; goal
+   <span style="color: #715ab1;">=</span>  normalise &#964;
+       <span style="color: #715ab1;">&gt;&gt;=</span>&#8348;&#8337;&#7523;&#8344; &#955; &#964;<span style="color: #715ab1;">&#8242;</span> <span style="color: #715ab1;">&#8594;</span> checkType goal (<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span><span style="color: #3a81c3; font-weight: bold;">type</span> &#964;<span style="color: #715ab1;">&#8242;</span>)
+       <span style="color: #715ab1;">&gt;&gt;=</span>&#8348;&#8337;&#7523;&#8344; &#955; <span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #715ab1;">&#8594;</span>  unify goal (<span style="color: #ba2f59; font-weight: bold;">&#928;</span><span style="color: #715ab1;">&#8594;</span>&#955;<span style="color: #715ab1;">-</span>helper &#964;<span style="color: #715ab1;">&#8242;</span>)
 </code></pre>
 </div>
-
+</small>
 
 </section>
 </section>
 <section>
-<section id="slide-orgbca83f3">
-<h3 id="orgbca83f3"><a href="#orgbca83f3">Lesson Learned</a></h3>
+<section id="slide-org87dc7a0">
+<h3 id="org87dc7a0"><a href="#org87dc7a0">Lesson Learned</a></h3>
 <p>
 On-the-fly unbundling can be implemented as an in-language library in a
 dependently-typed language with sufficient reflection capabilities (•̀ᴗ•́)و
@@ -718,15 +753,9 @@ dependently-typed language with sufficient reflection capabilities (•̀ᴗ•�
 </section>
 </section>
 <section>
-<section id="slide-org2f1c926">
-<h2 id="org2f1c926"><a href="#org2f1c926">GADTs are Contexts too!</a></h2>
-<div class="outline-text-2" id="text-org2f1c926">
-</div>
-</section>
-</section>
-<section>
-<section id="slide-org61ebc4b">
-<h3 id="org61ebc4b"><a href="#org61ebc4b">From Contexts to GADTS</a></h3>
+<section id="slide-org0420824">
+<h2 id="org0420824"><a href="#org0420824">GADTs are Contexts too!</a></h2>
+<small>
 <dl>
 <dt class="fragment appear"> </dt><dd class="fragment appear"><code class="src src-agda2"><span style="color: #ba2f59; font-weight: bold;">Monoid</span></code></dd>
 <dt class="fragment appear">⟿</dt><dd class="fragment appear"><code class="src src-agda2"><span style="color: #3a81c3; font-weight: bold;">do</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8592;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>; <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">C</span>; <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">C</span>; <span style="color: #715ab1;">&#8230;</span></code></dd>
@@ -736,13 +765,13 @@ dependently-typed language with sufficient reflection capabilities (•̀ᴗ•�
 <dt class="fragment appear">⟿</dt><dd class="fragment appear"><code class="src src-agda2"><span style="color: #6c3163; font-weight: bold;">&#956;</span> <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8226;</span>       <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#215;</span> <span style="color: #ba2f59; font-weight: bold;">C</span>    <span style="color: #715ab1;">&#8845;</span>         <span style="color: #ba2f59; font-weight: bold;">C</span> <span style="color: #715ab1;">&#8845;</span> &#120793;</code></dd>
 
 </dl>
-
+</small>
 </section>
 </section>
 <section>
-<section id="slide-org0303e7b">
-<h3 id="org0303e7b"><a href="#org0303e7b">As a macro!</a></h3>
-<pre class="example" id="org58b8d62">
+<section id="slide-org2250d77">
+<h3 id="org2250d77"><a href="#org2250d77">As a macro!</a></h3>
+<pre class="example" id="org6dcf547">
 termtype : UnaryFunctor → Type
 termtype τ = Fix (Σ→⊎ (sources τ))
 </pre>
@@ -762,58 +791,86 @@ termtype τ = Fix (Σ→⊎ (sources τ))
 </section>
 </section>
 <section>
-<section id="slide-org8a15fdb">
-<h3 id="org8a15fdb"><a href="#org8a15fdb">Monoids give rise to tree skeletons</a></h3>
-<div class="outline-text-3" id="text-org8a15fdb">
+<section id="slide-org4941614">
+<h3 id="org4941614"><a href="#org4941614">Monoids give rise to tree skeletons</a></h3>
+<div class="outline-text-3" id="text-org4941614">
 </div>
 </section>
-<section id="slide-org16fac3d">
-<h4 id="org16fac3d"><a href="#org16fac3d">Context</a></h4>
+<section id="slide-org39802a2">
+<h4 id="org39802a2"><a href="#org39802a2">Context</a></h4>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">Monoid</span> <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> &#8467; <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Context</span> (&#8467;suc &#8467;)
 <span style="color: #ba2f59; font-weight: bold;">Monoid</span> &#8467; <span style="color: #715ab1;">=</span> <span style="color: #3a81c3; font-weight: bold;">do</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8592;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> &#8467;
-              <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#8853;</span><span style="color: #3a81c3; font-weight: bold;">_</span>     <span style="color: #715ab1;">&#8592;</span> (<span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>)
+              <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#10814;</span><span style="color: #3a81c3; font-weight: bold;">_</span>     <span style="color: #715ab1;">&#8592;</span> (<span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>)
               <span style="color: #ba2f59; font-weight: bold;">Id</span>      <span style="color: #715ab1;">&#8592;</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>
-              leftId  <span style="color: #715ab1;">&#8592;</span> <span style="color: #715ab1;">&#8704;</span> {x <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>} <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#8853;</span> x <span style="color: #715ab1;">&#8801;</span> x
-              rightId <span style="color: #715ab1;">&#8592;</span> <span style="color: #715ab1;">&#8704;</span> {x <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>} <span style="color: #715ab1;">&#8594;</span> x <span style="color: #715ab1;">&#8853;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#8801;</span> x
-              assoc   <span style="color: #715ab1;">&#8592;</span> <span style="color: #715ab1;">&#8704;</span> {x y z} <span style="color: #715ab1;">&#8594;</span> (x <span style="color: #715ab1;">&#8853;</span> y) <span style="color: #715ab1;">&#8853;</span> z  <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">&#8853;</span> (y <span style="color: #715ab1;">&#8853;</span> z)
+              leftId  <span style="color: #715ab1;">&#8592;</span> <span style="color: #715ab1;">&#8704;</span> {x <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>} <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#10814;</span> x <span style="color: #715ab1;">&#8801;</span> x
+              rightId <span style="color: #715ab1;">&#8592;</span> <span style="color: #715ab1;">&#8704;</span> {x <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Carrier</span>} <span style="color: #715ab1;">&#8594;</span> x <span style="color: #715ab1;">&#10814;</span> <span style="color: #ba2f59; font-weight: bold;">Id</span> <span style="color: #715ab1;">&#8801;</span> x
+              assoc   <span style="color: #715ab1;">&#8592;</span> <span style="color: #715ab1;">&#8704;</span> {x y z} <span style="color: #715ab1;">&#8594;</span> (x <span style="color: #715ab1;">&#10814;</span> y) <span style="color: #715ab1;">&#10814;</span> z  <span style="color: #715ab1;">&#8801;</span>  x <span style="color: #715ab1;">&#10814;</span> (y <span style="color: #715ab1;">&#10814;</span> z)
               <span style="color: #ba2f59; font-weight: bold;">End</span> {&#8467;}
 </code></pre>
 </div>
 
 </section>
-<section id="slide-org1feef59">
-<h4 id="org1feef59"><a href="#org1feef59">Termtype</a></h4>
+<section id="slide-org758ef41">
+<h4 id="org758ef41"><a href="#org758ef41">Termtype</a></h4>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim>  <span style="color: #ba2f59; font-weight: bold;">&#120132;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
   <span style="color: #ba2f59; font-weight: bold;">&#120132;</span> <span style="color: #715ab1;">=</span> termtype (<span style="color: #ba2f59; font-weight: bold;">Monoid</span> &#8467;&#8320; <span style="color: #ba2f59; font-weight: bold;">:</span>waist 1)
+</code></pre>
+</div>
 
-  that<span style="color: #715ab1;">-</span>is <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#120132;</span> <span style="color: #715ab1;">&#8801;</span> <span style="color: #ba2f59; font-weight: bold;">Fix</span> (&#955; <span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #715ab1;">&#215;</span> <span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #715ab1;">&#215;</span> &#120793; <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">_&#8853;_, branch</span>
-                          <span style="color: #715ab1;">&#8846;</span> &#120793;        <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Id, nil leaf</span>
-                          <span style="color: #715ab1;">&#8846;</span> &#120792;        <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">invariant leftId</span>
-                          <span style="color: #715ab1;">&#8846;</span> &#120792;        <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">invariant rightId</span>
-                          <span style="color: #715ab1;">&#8846;</span> &#120792;        <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">invariant assoc</span>
-                          <span style="color: #715ab1;">&#8846;</span> &#120792;)       <span style="color: #2aa1ae; background-color: #ecf3ec;">--  </span><span style="color: #2aa1ae; background-color: #ecf3ec;">the &#8220;End {&#8467;}&#8221;</span>
+<div class="org-src-container">
+
+<pre  class="src src-agda2"><code trim>  that<span style="color: #715ab1;">-</span>is <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#120132;</span>
+          <span style="color: #715ab1;">&#8801;</span> <span style="color: #ba2f59; font-weight: bold;">Fix</span> (&#955; <span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #715ab1;">&#8594;</span>
+                <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">_&#8853;_, branch</span>
+                <span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #715ab1;">&#215;</span> <span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #715ab1;">&#215;</span> &#120793;
+                <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Id, nil leaf</span>
+              <span style="color: #715ab1;">&#8846;</span> &#120793;
+                <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">invariant leftId</span>
+              <span style="color: #715ab1;">&#8846;</span> &#120792;
+                <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">invariant rightId</span>
+              <span style="color: #715ab1;">&#8846;</span> &#120792;
+                <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">invariant assoc</span>
+              <span style="color: #715ab1;">&#8846;</span> &#120792;
+                <span style="color: #2aa1ae; background-color: #ecf3ec;">--  </span><span style="color: #2aa1ae; background-color: #ecf3ec;">the &#8220;End {&#8467;}&#8221;</span>
+              <span style="color: #715ab1;">&#8846;</span> &#120792;)
   that<span style="color: #715ab1;">-</span>is <span style="color: #715ab1;">=</span> refl
 </code></pre>
 </div>
 
 </section>
-<section id="slide-orgd6f9b54">
-<h4 id="orgd6f9b54"><a href="#orgd6f9b54">Pattern synonyms for more compact presentation</a></h4>
+<section id="slide-org4bf665f">
+<h4 id="org4bf665f"><a href="#org4bf665f">Pattern synonyms for more compact presentation</a></h4>
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim>  <span style="color: #3a81c3; font-weight: bold;">pattern</span> emptyM      <span style="color: #715ab1;">=</span> &#956; (inj&#8322; (inj&#8321; tt))              <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">: &#120132;</span>
-  <span style="color: #3a81c3; font-weight: bold;">pattern</span> branchM l r <span style="color: #715ab1;">=</span> &#956; (inj&#8321; (l , r , tt))           <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">: &#120132; &#8594; &#120132; &#8594; &#120132;</span>
-  <span style="color: #3a81c3; font-weight: bold;">pattern</span> absurdM a   <span style="color: #715ab1;">=</span> &#956; (inj&#8322; (inj&#8322; (inj&#8322; (inj&#8322; a)))) <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">absurd &#120792;-values</span>
+<pre  class="src src-agda2"><code trim><span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">: &#120132;</span>
+<span style="color: #3a81c3; font-weight: bold;">pattern</span> emptyM
+    <span style="color: #715ab1;">=</span> &#956; (inj&#8322; (inj&#8321; tt))
+</code></pre>
+</div>
+
+<div class="org-src-container">
+
+<pre  class="src src-agda2"><code trim><span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">: &#120132; &#8594; &#120132; &#8594; &#120132;</span>
+<span style="color: #3a81c3; font-weight: bold;">pattern</span> branchM l r
+    <span style="color: #715ab1;">=</span> &#956; (inj&#8321; (l , r , tt))
+</code></pre>
+</div>
+
+<div class="org-src-container">
+
+<pre  class="src src-agda2"><code trim><span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">absurd &#120792;-values</span>
+<span style="color: #3a81c3; font-weight: bold;">pattern</span> absurdM a
+    <span style="color: #715ab1;">=</span> &#956; (inj&#8322; (inj&#8322; (inj&#8322; (inj&#8322; a))))
 </code></pre>
 </div>
 
 </section>
-<section id="slide-org8c71e55">
-<h4 id="org8c71e55"><a href="#orgbed68da"><code>termtype Monoid ≅ TreeSkeleton</code></a></h4>
+<section id="slide-org7ada514">
+<h4 id="org7ada514"><a href="#org36c1ae5"><code>termtype Monoid ≅ TreeSkeleton</code></a></h4>
 <div class="org-src-container">
 
 <pre  class="fragment (appear)"><code trim>  <span style="color: #3a81c3; font-weight: bold;">data</span> <span style="color: #ba2f59; font-weight: bold;">TreeSkeleton</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #3a81c3; font-weight: bold;">where</span>
@@ -857,39 +914,48 @@ termtype τ = Fix (Σ→⊎ (sources τ))
 </section>
 </section>
 <section>
-<section id="slide-org89944e6">
-<h3 id="org89944e6"><a href="#org89944e6">Dynamical Systems give rise to ℕ</a></h3>
-<div class="outline-text-3" id="text-org89944e6">
+<section id="slide-orgffa8abf">
+<h3 id="orgffa8abf"><a href="#orgffa8abf">Dynamical Systems give rise to ℕ</a></h3>
+<div class="outline-text-3" id="text-orgffa8abf">
 </div>
 </section>
-<section id="slide-orgece3555">
-<h4 id="orgece3555"><a href="#orgece3555">Context</a></h4>
+<section id="slide-orge4c7093">
+<h4 id="orge4c7093"><a href="#orge4c7093">Context</a></h4>
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim>    <span style="color: #ba2f59; font-weight: bold;">DynamicSystem</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Context</span> &#8467;&#8321;
-    <span style="color: #ba2f59; font-weight: bold;">DynamicSystem</span> <span style="color: #715ab1;">=</span> <span style="color: #3a81c3; font-weight: bold;">do</span> <span style="color: #ba2f59; font-weight: bold;">State</span> <span style="color: #715ab1;">&#8592;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
-                       start <span style="color: #715ab1;">&#8592;</span> <span style="color: #ba2f59; font-weight: bold;">State</span>
-                       next  <span style="color: #715ab1;">&#8592;</span> (<span style="color: #ba2f59; font-weight: bold;">State</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">State</span>)
-                       <span style="color: #ba2f59; font-weight: bold;">End</span> {&#8467;&#8320;}
+<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">DynamicSystem</span> <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Context</span> &#8467;&#8321;
+<span style="color: #ba2f59; font-weight: bold;">DynamicSystem</span> <span style="color: #715ab1;">=</span> <span style="color: #3a81c3; font-weight: bold;">do</span> <span style="color: #ba2f59; font-weight: bold;">State</span> <span style="color: #715ab1;">&#8592;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
+                   start <span style="color: #715ab1;">&#8592;</span> <span style="color: #ba2f59; font-weight: bold;">State</span>
+                   next  <span style="color: #715ab1;">&#8592;</span> (<span style="color: #ba2f59; font-weight: bold;">State</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">State</span>)
+                   <span style="color: #ba2f59; font-weight: bold;">End</span> {&#8467;&#8320;}
 </code></pre>
 </div>
 
 </section>
-<section id="slide-org3b6c42e">
-<h4 id="org3b6c42e"><a href="#org3b6c42e">Termtype</a></h4>
+<section id="slide-org129d1d0">
+<h4 id="org129d1d0"><a href="#org129d1d0">Termtype</a></h4>
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim>    <span style="color: #ba2f59; font-weight: bold;">&#120123;</span> <span style="color: #715ab1;">=</span> termtype (<span style="color: #ba2f59; font-weight: bold;">DynamicSystem</span> <span style="color: #ba2f59; font-weight: bold;">:</span>waist 1)
+<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">&#120123;</span> <span style="color: #715ab1;">=</span> termtype (<span style="color: #ba2f59; font-weight: bold;">DynamicSystem</span> <span style="color: #ba2f59; font-weight: bold;">:</span>waist 1)
+</code></pre>
+</div>
+<p>
+Pattern synonyms for more compact presentation
+</p>
+<div class="org-src-container">
 
-    <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Pattern synonyms for more compact presentation</span>
-    <span style="color: #3a81c3; font-weight: bold;">pattern</span> startD  <span style="color: #715ab1;">=</span> &#956; (inj&#8321; tt)       <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">: &#120123;</span>
-    <span style="color: #3a81c3; font-weight: bold;">pattern</span> nextD e <span style="color: #715ab1;">=</span> &#956; (inj&#8322; (inj&#8321; e)) <span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">: &#120123; &#8594; &#120123;</span>
+<pre  class="src src-agda2"><code trim><span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">: &#120123;</span>
+<span style="color: #3a81c3; font-weight: bold;">pattern</span> startD
+    <span style="color: #715ab1;">=</span> &#956; (inj&#8321; tt)
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">: &#120123; &#8594; &#120123;</span>
+<span style="color: #3a81c3; font-weight: bold;">pattern</span> nextD e <span style="color: #715ab1;">=</span> &#956; (inj&#8322; (inj&#8321; e))
 </code></pre>
 </div>
 
 </section>
-<section id="slide-org5d559f5">
-<h4 id="org5d559f5"><a href="#orgbed68da"><code>termtype 𝔻 ≅ ℕ</code></a></h4>
+<section id="slide-org3bd0ac7">
+<h4 id="org3bd0ac7"><a href="#org36c1ae5"><code>termtype 𝔻 ≅ ℕ</code></a></h4>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim>    to <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#120123;</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">&#8469;</span>
@@ -905,8 +971,8 @@ termtype τ = Fix (Σ→⊎ (sources τ))
 </section>
 </section>
 <section>
-<section id="slide-org0bad418">
-<h3 id="org0bad418"><a href="#org0bad418">Pointed Sets give rise to terminal types</a></h3>
+<section id="slide-orgfde36c2">
+<h3 id="orgfde36c2"><a href="#orgfde36c2">Pointed Sets give rise to terminal types</a></h3>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">PSet</span>  <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Context</span> (&#8467;suc &#8467;&#8320;)
@@ -918,23 +984,26 @@ termtype τ = Fix (Σ→⊎ (sources τ))
 
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">&#8473;&#120138;&#120150;&#120165;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
+<pre  class="fragment appear"><code trim><span style="color: #ba2f59; font-weight: bold;">&#8473;&#120138;&#120150;&#120165;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
 <span style="color: #ba2f59; font-weight: bold;">&#8473;&#120138;&#120150;&#120165;</span> <span style="color: #715ab1;">=</span> termtype (<span style="color: #ba2f59; font-weight: bold;">PSet</span> <span style="color: #ba2f59; font-weight: bold;">:</span>waist 1)
 </code></pre>
 </div>
 
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim>to <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#8473;&#120138;&#120150;&#120165;</span> <span style="color: #715ab1;">&#8594;</span> &#120793; {&#8467;&#8320;}; to emptyM <span style="color: #715ab1;">=</span> tt
-from <span style="color: #6c3163; font-weight: bold;">:</span> &#120793; {&#8467;&#8320;} <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">&#8473;&#120138;&#120150;&#120165;</span>; from <span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #715ab1;">=</span> &#956; (inj&#8321; tt)
+<pre  class="fragment appear"><code trim>to <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">&#8473;&#120138;&#120150;&#120165;</span> <span style="color: #715ab1;">&#8594;</span> &#120793; {&#8467;&#8320;}
+<span style="color: #6c3163; font-weight: bold;">to</span> emptyM <span style="color: #715ab1;">=</span> tt
+
+from <span style="color: #6c3163; font-weight: bold;">:</span> &#120793; {&#8467;&#8320;} <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">&#8473;&#120138;&#120150;&#120165;</span>
+<span style="color: #6c3163; font-weight: bold;">from</span> <span style="color: #3a81c3; font-weight: bold;">_</span> <span style="color: #715ab1;">=</span> &#956; (inj&#8321; tt)
 </code></pre>
 </div>
 
 </section>
 </section>
 <section>
-<section id="slide-org873326a">
-<h3 id="org873326a"><a href="#org873326a">(Directed multi-)Graphs give rise to pairs</a></h3>
+<section id="slide-org70c0e49">
+<h3 id="org70c0e49"><a href="#org70c0e49">(Simple) Graphs give rise to pairs</a></h3>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">Graph</span>  <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Context</span> (&#8467;suc &#8467;&#8320;)
@@ -947,14 +1016,14 @@ from <span style="color: #6c3163; font-weight: bold;">:</span> &#120793; {&#8467
 
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">&#120126;&#120163;&#120146;&#120161;&#120153;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
+<pre  class="fragment appear"><code trim><span style="color: #ba2f59; font-weight: bold;">&#120126;&#120163;&#120146;&#120161;&#120153;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
 <span style="color: #ba2f59; font-weight: bold;">&#120126;&#120163;&#120146;&#120161;&#120153;</span> <span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #715ab1;">=</span> termtype ((<span style="color: #ba2f59; font-weight: bold;">Graph</span> <span style="color: #ba2f59; font-weight: bold;">:</span>waist 2) <span style="color: #ba2f59; font-weight: bold;">X</span>)
 </code></pre>
 </div>
 
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim><span style="color: #3a81c3; font-weight: bold;">pattern</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#8652;</span><span style="color: #3a81c3; font-weight: bold;">_</span> x y <span style="color: #715ab1;">=</span> &#956; (inj&#8321; (x , y , tt))
+<pre  class="fragment appear"><code trim><span style="color: #3a81c3; font-weight: bold;">pattern</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#8652;</span><span style="color: #3a81c3; font-weight: bold;">_</span> x y <span style="color: #715ab1;">=</span> &#956; (inj&#8321; (x , y , tt))
 
 view <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> {<span style="color: #ba2f59; font-weight: bold;">X</span>} <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">&#120126;&#120163;&#120146;&#120161;&#120153;</span> <span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #715ab1;">&#215;</span> <span style="color: #ba2f59; font-weight: bold;">X</span>
 <span style="color: #6c3163; font-weight: bold;">view</span> (x <span style="color: #715ab1;">&#8652;</span> y) <span style="color: #715ab1;">=</span> x , y
@@ -964,13 +1033,13 @@ view <span style="color: #6c3163; font-weight: bold;">:</span> <span style="colo
 </section>
 </section>
 <section>
-<section id="slide-org40de0ea">
-<h3 id="org40de0ea"><a href="#org40de0ea">Indexed unary algebras (“actions”) give rise to streams</a></h3>
-<div class="outline-text-3" id="text-org40de0ea">
+<section id="slide-orgeca65c6">
+<h3 id="orgeca65c6"><a href="#orgeca65c6">Indexed unary algebras (“actions”) give rise to streams</a></h3>
+<div class="outline-text-3" id="text-orgeca65c6">
 </div>
 </section>
-<section id="slide-org39b9e26">
-<h4 id="org39b9e26"><a href="#org39b9e26">Context</a></h4>
+<section id="slide-org7683e37">
+<h4 id="org7683e37"><a href="#org7683e37">Context</a></h4>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">Action</span>  <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Context</span> &#8467;&#8321;
@@ -981,20 +1050,26 @@ view <span style="color: #6c3163; font-weight: bold;">:</span> <span style="colo
 </code></pre>
 </div>
 </section>
-<section id="slide-org7c2c105">
-<h4 id="org7c2c105"><a href="#org7c2c105">Termtype</a></h4>
+<section id="slide-org6c3e046">
+<h4 id="org6c3e046"><a href="#org6c3e046">Termtype</a></h4>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">&#120120;&#120148;&#120165;&#120154;&#120160;&#120159;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
 <span style="color: #ba2f59; font-weight: bold;">&#120120;&#120148;&#120165;&#120154;&#120160;&#120159;</span> <span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #715ab1;">=</span> termtype ((<span style="color: #ba2f59; font-weight: bold;">Action</span> <span style="color: #ba2f59; font-weight: bold;">:</span>waist 2) <span style="color: #ba2f59; font-weight: bold;">X</span>)
+</code></pre>
+</div>
 
-<span style="color: #3a81c3; font-weight: bold;">pattern</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#183;</span><span style="color: #3a81c3; font-weight: bold;">_</span> head tail <span style="color: #715ab1;">=</span> &#956; (inj&#8321; (tail , head , tt))
+<div class="org-src-container">
+
+<pre  class="src src-agda2"><code trim><span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">: X &#8594; &#120120;&#120148;&#120165;&#120154;&#120160;&#120159; X &#8594; &#120120;&#120148;&#120165;&#120154;&#120160;&#120159; X</span>
+<span style="color: #3a81c3; font-weight: bold;">pattern</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">&#8759;</span><span style="color: #3a81c3; font-weight: bold;">_</span> head tail
+         <span style="color: #715ab1;">=</span> &#956; (inj&#8321; (tail , head , tt))
 </code></pre>
 </div>
 
 </section>
-<section id="slide-orgbc0a691">
-<h4 id="orgbc0a691"><a href="#orgbc0a691">… to stream</a></h4>
+<section id="slide-org308ec59">
+<h4 id="org308ec59"><a href="#org308ec59">… to stream</a></h4>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #6c3163; font-weight: bold;">record</span> <span style="color: #ba2f59; font-weight: bold;">Stream</span> (<span style="color: #ba2f59; font-weight: bold;">X</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>) <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>   <span style="color: #3a81c3; font-weight: bold;">where</span>
@@ -1004,18 +1079,21 @@ view <span style="color: #6c3163; font-weight: bold;">:</span> <span style="colo
     tl <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Stream</span> <span style="color: #ba2f59; font-weight: bold;">X</span>
 
 <span style="color: #6c3163; font-weight: bold;">open</span> <span style="color: #ba2f59; font-weight: bold;">Stream</span>
+</code></pre>
+</div>
+<div class="org-src-container">
 
-view <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> {<span style="color: #ba2f59; font-weight: bold;">I</span>} <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">&#120120;&#120148;&#120165;&#120154;&#120160;&#120159;</span> <span style="color: #ba2f59; font-weight: bold;">I</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Stream</span> <span style="color: #ba2f59; font-weight: bold;">I</span>
-<span style="color: #6c3163; font-weight: bold;">hd</span> (view (t <span style="color: #715ab1;">&#183;</span> h)) <span style="color: #715ab1;">=</span> t
-<span style="color: #6c3163; font-weight: bold;">tl</span> (view (t <span style="color: #715ab1;">&#183;</span> h)) <span style="color: #715ab1;">=</span> view h
+<pre  class="fragment appear"><code trim>view <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> {<span style="color: #ba2f59; font-weight: bold;">I</span>} <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">&#120120;&#120148;&#120165;&#120154;&#120160;&#120159;</span> <span style="color: #ba2f59; font-weight: bold;">I</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Stream</span> <span style="color: #ba2f59; font-weight: bold;">I</span>
+<span style="color: #6c3163; font-weight: bold;">hd</span> (view (h <span style="color: #715ab1;">&#8759;</span> t)) <span style="color: #715ab1;">=</span> h
+<span style="color: #6c3163; font-weight: bold;">tl</span> (view (h <span style="color: #715ab1;">&#8759;</span> t)) <span style="color: #715ab1;">=</span> view t
 </code></pre>
 </div>
 
 </section>
 </section>
 <section>
-<section id="slide-orgb6632fd">
-<h3 id="orgb6632fd"><a href="#orgb6632fd">Collection theories give rise to lists</a></h3>
+<section id="slide-orgaa0566d">
+<h3 id="orgaa0566d"><a href="#orgaa0566d">Collection theories give rise to lists</a></h3>
 <div class="org-src-container">
 
 <pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">Collection</span> <span style="color: #6c3163; font-weight: bold;">:</span> <span style="color: #715ab1;">&#8704;</span> &#8467; <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Context</span> (&#8467;suc &#8467;)
@@ -1029,19 +1107,27 @@ view <span style="color: #6c3163; font-weight: bold;">:</span> <span style="colo
 
 <div class="org-src-container">
 
-<pre  class="src src-agda2"><code trim><span style="color: #ba2f59; font-weight: bold;">&#8450;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
+<pre  class="fragment appear"><code trim><span style="color: #ba2f59; font-weight: bold;">&#8450;</span> <span style="color: #ba2f59; font-weight: bold;">:</span> <span style="color: #ba2f59; font-weight: bold;">Set</span> <span style="color: #715ab1;">&#8594;</span> <span style="color: #ba2f59; font-weight: bold;">Set</span>
 <span style="color: #ba2f59; font-weight: bold;">&#8450;</span> <span style="color: #ba2f59; font-weight: bold;">Elem</span> <span style="color: #715ab1;">=</span> termtype ((<span style="color: #ba2f59; font-weight: bold;">Collection</span> &#8467;&#8320; <span style="color: #ba2f59; font-weight: bold;">:</span>waist 2) <span style="color: #ba2f59; font-weight: bold;">Elem</span>)
+</code></pre>
+</div>
+<div class="org-src-container">
 
-<span style="color: #3a81c3; font-weight: bold;">pattern</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">::</span><span style="color: #3a81c3; font-weight: bold;">_</span> x xs <span style="color: #715ab1;">=</span> &#956; (inj&#8321; (x , xs , tt))
-<span style="color: #3a81c3; font-weight: bold;">pattern</span>  <span style="color: #6c3163; font-weight: bold;">&#8709;</span>        <span style="color: #715ab1;">=</span> &#956; (inj&#8322; (inj&#8321; tt))
+<pre  class="fragment appear"><code trim><span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">: X &#8594; &#8450; X &#8594; &#8450; X</span>
+<span style="color: #3a81c3; font-weight: bold;">pattern</span> <span style="color: #3a81c3; font-weight: bold;">_</span><span style="color: #715ab1;">::</span><span style="color: #3a81c3; font-weight: bold;">_</span> x xs
+         <span style="color: #715ab1;">=</span> &#956; (inj&#8321; (x , xs , tt))
+
+<span style="color: #2aa1ae; background-color: #ecf3ec;">-- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">: &#8450; X</span>
+<span style="color: #3a81c3; font-weight: bold;">pattern</span>  <span style="color: #6c3163; font-weight: bold;">&#8709;</span>
+    <span style="color: #715ab1;">=</span> &#956; (inj&#8322; (inj&#8321; tt))
 </code></pre>
 </div>
 
 </section>
 </section>
 <section>
-<section id="slide-orgeca7795">
-<h3 id="orgeca7795"><a href="#orgeca7795">Summary</a></h3>
+<section id="slide-org971d651">
+<h3 id="org971d651"><a href="#org971d651">Summary</a></h3>
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -1098,11 +1184,42 @@ view <span style="color: #6c3163; font-weight: bold;">:</span> <span style="colo
 </section>
 </section>
 <section>
-<section id="slide-org21b8834">
-<h2 id="org21b8834"><a href="#org21b8834">Bye!</a></h2>
+<section id="slide-org75dc253">
+<h2 id="org75dc253"><a href="#org75dc253">Bye!</a></h2>
 <p>
 <i>Thanks for listening in!</i>
 </p>
+
+<small>
+<ul>
+<li><p>
+The <code class="src src-agda2"><span style="color: #ba2f59; font-weight: bold;">Context</span></code> Library:
+</p>
+
+<p>
+<a href="https://alhassy.github.io/next-700-module-systems/diy/Context.agda">https://alhassy.github.io/next-700-module-systems/diy/Context.agda</a>
+</p></li>
+
+<li><p>
+Examples to play with:
+</p>
+
+<p>
+<a href="https://alhassy.github.io/next-700-module-systems/diy/Examples.agda">https://alhassy.github.io/next-700-module-systems/diy/Examples.agda</a>
+</p></li>
+
+<li>Project homepage: <a href="https://alhassy.github.io/next-700-module-systems/">https://alhassy.github.io/next-700-module-systems/</a></li>
+
+</ul>
+
+<p>
+These slides:
+</p>
+
+<p>
+<a href="https://alhassy.github.io/next-700-module-systems/diy/agda-implementors-meeting-2020">https://alhassy.github.io/next-700-module-systems/diy/agda-implementors-meeting-2020</a>
+</p>
+</small>
 </section>
 </section>
 </div>

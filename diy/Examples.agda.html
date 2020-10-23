@@ -1,0 +1,322 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!-- Created by htmlize-1.56 in css mode. -->
+<html>
+  <head>
+    <title>Examples.agda</title>
+    <style type="text/css">
+    <!--
+      body {
+        color: #655370;
+        background-color: #fbf8ef;
+      }
+
+      a {
+        color: inherit;
+        background-color: inherit;
+        font: inherit;
+        text-decoration: inherit;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    -->
+    </style>
+  </head>
+  <body>
+    <pre>
+-- [[file:thesis.org::*Context Examples Header][Context Examples Header:1]]
+-- Agda version 2.6.0.1
+-- Standard library version 1.2
+
+module Examples where
+
+open import Context
+
+open import Data.Product
+open import Level renaming (zero to &#8467;&#8320;; suc to &#8467;suc)
+open import Relation.Binary.PropositionalEquality hiding ([_])
+open import Data.Empty
+open import Relation.Nullary
+open import Data.Nat
+open import Function using (id)
+open import Data.Bool renaming (Bool to &#120121;)
+open import Data.Sum
+
+open import Data.List
+import Data.Unit as Unit
+open import Reflection hiding (name; Type) renaming (_&gt;&gt;=_ to _&gt;&gt;=&#8348;&#8337;&#7523;&#8344;_)
+-- Context Examples Header:1 ends here
+
+-- [[file:thesis.org::*The Problems][The Problems:1]]
+record DynamicSystem&#8320; : Set&#8321; where
+  field
+    State  : Set
+    start  : State
+    next   : State &#8594; State
+
+record DynamicSystem&#8321; (State : Set) : Set where
+  field
+    start : State
+    next  : State &#8594; State
+
+record DynamicSystem&#8322; (State : Set) (start : State) : Set where
+  field
+    next : State &#8594; State
+-- The Problems:1 ends here
+
+-- [[file:thesis.org::*The Problems][The Problems:2]]
+_ : Set&#8321;
+_ = DynamicSystem&#8320;
+
+_ : &#928; X &#8758; Set &#8226; Set
+_ = DynamicSystem&#8321;
+
+_ : &#928; X &#8758; Set &#8226; &#928; x &#8758; X &#8226; Set
+_ = DynamicSystem&#8322;
+-- The Problems:2 ends here
+
+-- [[file:thesis.org::*The Problems][The Problems:3]]
+id&#964;&#8320; : Set&#8321;
+id&#964;&#8320; = &#928; X &#8758; Set &#8226; &#928; e &#8758; X &#8226; X
+
+id&#964;&#8321; : &#928; X &#8758; Set &#8226; Set
+id&#964;&#8321; = &#955; (X : Set) &#8594; &#928; e &#8758; X &#8226; X
+
+id&#964;&#8322; : &#928; X &#8758; Set &#8226; &#928; e &#8758; X &#8226; Set
+id&#964;&#8322; = &#955; (X : Set) (e : X) &#8594; X
+
+{- Surprisingly, the latter is derivable from the former -}
+_ : id&#964;&#8322; &#8801; &#928;&#8594;&#955; id&#964;&#8320;
+_ = refl
+
+{- The relationship with id&#964;&#8321; is clarified later when we get to _:waist_ -}
+-- The Problems:3 ends here
+
+-- [[file:thesis.org::*Monadic Notation][Monadic Notation:2]]
+DynamicSystem : Context &#8467;&#8321;
+DynamicSystem = do State &#8592; Set
+                   start &#8592; State
+                   next  &#8592; (State &#8594; State)
+                   End {&#8467;&#8320;}
+-- Monadic Notation:2 ends here
+
+-- [[file:thesis.org::*Monadic Notation][Monadic Notation:7]]
+&#119977;&#8320; : DynamicSystem 0   {- See the above elaborations  -}
+&#119977;&#8320; = &#8469; , 0 , suc , tt
+
+-- &#119977;&#8321; : DynamicSystem 1
+-- &#119977;&#8321; = &#955; State &#8594; ??? {- Impossible to complete if &#8220;State&#8221; is empty! -}
+
+{- &#8216;Instantiaing&#8217; State to be &#8469; in &#8220;DynamicSystem 1&#8221; -}
+&#119977;&#8321;&#8242; : let State = &#8469; in &#931; start &#8758; State  &#8226; &#931; s &#8758; (State &#8594; State)  &#8226; &#120793; {&#8467;&#8320;}
+&#119977;&#8321;&#8242; = 0 , suc , tt
+-- Monadic Notation:7 ends here
+
+-- [[file:thesis.org::*Monadic Notation][Monadic Notation:10]]
+_ = &#928;&#8594;&#955; (DynamicSystem 2)
+  &#8801;&#10216;" Definition of DynamicSystem at exposure level 2 "&#10217;&#8242;
+    &#928;&#8594;&#955; (&#928; X &#8758; Set &#8226; &#928; s &#8758; X &#8226; &#931; n &#8758; (X &#8594; X)  &#8226; &#120793; {&#8467;&#8320;})
+  &#8801;&#10216;" Definition of &#928;&#8594;&#955;; replace a &#8216;&#928;&#8217; by a &#8216;&#955;&#8217; "&#10217;&#8242;
+    (&#955; (X : Set) &#8594; &#928;&#8594;&#955; (&#928; s &#8758; X &#8226; &#931; n &#8758; (X &#8594; X)  &#8226; &#120793; {&#8467;&#8320;}))
+  &#8801;&#10216;" Definition of &#928;&#8594;&#955;; replace a &#8216;&#928;&#8217; by a &#8216;&#955;&#8217; "&#10217;&#8242;
+    (&#955; (X : Set) &#8594; &#955; (s : X) &#8594; &#928;&#8594;&#955; (&#931; n &#8758; (X &#8594; X)  &#8226; &#120793; {&#8467;&#8320;}))
+  &#8801;&#10216;" Next symbol is not a &#8216;&#928;&#8217;, so &#928;&#8594;&#955; stops "&#10217;&#8242;
+    &#955; (X : Set) &#8594; &#955; (s : X) &#8594; &#931; n &#8758; (X &#8594; X)  &#8226; &#120793; {&#8467;&#8320;}
+-- Monadic Notation:10 ends here
+
+-- [[file:thesis.org::*Monadic Notation][Monadic Notation:15]]
+&#119977;&#8304; : DynamicSystem :waist 0
+&#119977;&#8304; = &#10216; &#8469; , 0 , suc &#10217;
+
+&#119977;&#185; : (DynamicSystem :waist 1) &#8469;
+&#119977;&#185; = &#10216; 0 , suc &#10217;
+
+&#119977;&#178; : (DynamicSystem :waist 2) &#8469; 0
+&#119977;&#178; = &#10216; suc &#10217;
+
+&#119977;&#179; : (DynamicSystem :waist 3) &#8469; 0 suc
+&#119977;&#179; = &#10216;&#10217;
+-- Monadic Notation:15 ends here
+
+-- [[file:thesis.org::*Monadic Notation][Monadic Notation:16]]
+Monoid : &#8704; &#8467; &#8594; Context (&#8467;suc &#8467;)
+Monoid &#8467; = do Carrier &#8592; Set &#8467;
+              _&#8853;_     &#8592; (Carrier &#8594; Carrier &#8594; Carrier)
+              Id      &#8592; Carrier
+              leftId  &#8592; &#8704; {x : Carrier} &#8594; x &#8853; Id &#8801; x
+              rightId &#8592; &#8704; {x : Carrier} &#8594; Id &#8853; x &#8801; x
+              assoc   &#8592; &#8704; {x y z} &#8594; (x &#8853; y) &#8853; z  &#8801;  x &#8853; (y &#8853; z)
+              End {&#8467;}
+-- Monadic Notation:16 ends here
+
+-- [[file:thesis.org::*Stage 1: Records][Stage 1: Records:1]]
+D&#8321; = DynamicSystem 0
+
+1-records : D&#8321; &#8801; (&#931; X &#8758; Set &#8226; &#931; z &#8758; X &#8226; &#931; s &#8758; (X &#8594; X) &#8226; &#120793; {&#8467;&#8320;})
+1-records = refl
+-- Stage 1: Records:1 ends here
+
+-- [[file:thesis.org::*Stage 2: Parameterised Records][Stage 2: Parameterised Records:1]]
+D&#8322; = DynamicSystem :waist 1
+
+2-funcs : D&#8322; &#8801; (&#955; (X : Set) &#8594; &#931; z &#8758; X &#8226; &#931; s &#8758; (X &#8594; X) &#8226; &#120793; {&#8467;&#8320;})
+2-funcs = refl
+-- Stage 2: Parameterised Records:1 ends here
+
+-- [[file:thesis.org::*Stage 3: Sources][Stage 3: Sources:1]]
+_ : sources (&#120121; &#8594; &#8469;) &#8801; &#120121;
+_ = refl
+
+_ : sources (&#931; f &#8758; (&#8469; &#8594; &#120121;) &#8226; Set) &#8801; (&#931; x &#8758; &#8469; &#8226; Set)
+_ = refl
+
+_ : sources (&#931; f &#8758; (&#8469; &#8594; Set &#8594; &#120121; &#8594; &#8469;) &#8226; 1 &#8801; 1) &#8801; (&#931; x &#8758; (&#8469; &#215; Set &#215; &#120121;) &#8226; 1 &#8801; 1)
+_ = refl
+
+_ : &#8704; {&#8467;} &#8594; sources (&#120793; {&#8467;}) &#8801; &#120792;
+_ = refl
+
+_ = (sources (&#8704; {x : &#8469;} &#8594; &#8469;)) &#8801; &#120792;
+_ = refl {&#8467;&#8321;} {Set} {&#120792;}
+-- Stage 3: Sources:1 ends here
+
+-- [[file:thesis.org::*Stage 3: Sources][Stage 3: Sources:2]]
+D&#8323; = sources D&#8322;
+
+3-sources : D&#8323; &#8801; &#955; (X : Set) &#8594; &#931; z &#8758; &#120793; &#8226; &#931; s &#8758; X &#8226; &#120792;
+3-sources = refl
+-- Stage 3: Sources:2 ends here
+
+-- [[file:thesis.org::*Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums][Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums:1]]
+_ : &#931;&#8594;&#8846; (&#928; S &#8758; Set &#8226; (S &#8594; S)) &#8801; (&#928; S &#8758; Set &#8226; (S &#8594; S))
+_ = refl
+
+_ : &#931;&#8594;&#8846; (&#928; S &#8758; Set &#8226; &#931; n &#8758; S &#8226; S) &#8801; (&#928; S &#8758; Set &#8226; S &#8846; S)
+_ = refl
+
+_ : &#931;&#8594;&#8846; (&#955; (S : Set) &#8594; &#931; n &#8758; S &#8226; S) &#8801; &#955; S &#8594; S &#8846; S
+_ = refl
+
+_ : &#931;&#8594;&#8846; (&#928; S &#8758; Set &#8226; &#931; s &#8758; S &#8226; &#931; n &#8758; (S &#8594; S) &#8226; &#120793; {&#8467;&#8320;}) &#8801; (&#928; S &#8758; Set &#8226; S &#8846; (S &#8594; S) &#8846; &#120792;)
+_ = refl
+
+_ : &#931;&#8594;&#8846; (&#955; (S : Set) &#8594; &#931; s &#8758; S &#8226; &#931; n &#8758; (S &#8594; S) &#8226; &#120793; {&#8467;&#8320;}) &#8801; &#955; S &#8594; S &#8846; (S &#8594; S) &#8846; &#120792;
+_ = refl
+-- Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums:1 ends here
+
+-- [[file:thesis.org::*Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums][Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums:4]]
+D&#8324; = &#931;&#8594;&#8846; D&#8323;
+
+4-unions : D&#8324; &#8801; &#955; X &#8594; &#120793; &#8846; X &#8846; &#120792;
+4-unions = refl
+-- Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums:4 ends here
+
+-- [[file:thesis.org::*Instructive Example: &#120123; &#8773; &#8469;][Instructive Example: &#120123; &#8773; &#8469;:3]]
+module free-dynamical-system where
+
+    &#120123; = termtype (DynamicSystem :waist 1)
+
+    -- Pattern synonyms for more compact presentation
+    pattern startD  = &#956; (inj&#8321; tt)       -- : &#120123;
+    pattern nextD e = &#956; (inj&#8322; (inj&#8321; e)) -- : &#120123; &#8594; &#120123;
+
+    to : &#120123; &#8594; &#8469;
+    to startD    = 0
+    to (nextD x) = suc (to x)
+
+    from : &#8469; &#8594; &#120123;
+    from zero    = startD
+    from (suc n) = nextD (from n)
+-- Instructive Example: &#120123; &#8773; &#8469;:3 ends here
+
+-- [[file:thesis.org::*Free Datatypes from Theories][Free Datatypes from Theories:2]]
+module termtype[Monoid]&#8773;TreeSkeleton where
+-- Free Datatypes from Theories:2 ends here
+
+-- [[file:thesis.org::*Free Datatypes from Theories][Free Datatypes from Theories:3]]
+  &#120132; : Set
+  &#120132; = termtype (Monoid &#8467;&#8320; :waist 1)
+
+  that-is : &#120132; &#8801; Fix (&#955; X &#8594; X &#215; X &#215; &#120793; -- _&#8853;_, branch
+                          &#8846; &#120793;        -- Id, nil leaf
+                          &#8846; &#120792;        -- invariant leftId
+                          &#8846; &#120792;        -- invariant rightId
+                          &#8846; &#120792;        -- invariant assoc
+                          &#8846; &#120792;)       --  the &#8220;End {&#8467;}&#8221;
+  that-is = refl
+
+  -- Pattern synonyms for more compact presentation
+  pattern emptyM      = &#956; (inj&#8322; (inj&#8321; tt))              -- : &#120132;
+  pattern branchM l r = &#956; (inj&#8321; (l , r , tt))           -- : &#120132; &#8594; &#120132; &#8594; &#120132;
+  pattern absurdM a   = &#956; (inj&#8322; (inj&#8322; (inj&#8322; (inj&#8322; a)))) -- absurd &#120792;-values
+
+  data TreeSkeleton : Set where
+    empty  : TreeSkeleton
+    branch : TreeSkeleton &#8594; TreeSkeleton &#8594; TreeSkeleton
+-- Free Datatypes from Theories:3 ends here
+
+-- [[file:thesis.org::*Free Datatypes from Theories][Free Datatypes from Theories:4]]
+  to : &#120132; &#8594; TreeSkeleton
+  to emptyM        = empty
+  to (branchM l r) = branch (to l) (to r)
+  to (absurdM (inj&#8321; ()))
+  to (absurdM (inj&#8322; ()))
+
+  from : TreeSkeleton &#8594; &#120132;
+  from empty        = emptyM
+  from (branch l r) = branchM (from l) (from r)
+-- Free Datatypes from Theories:4 ends here
+
+-- [[file:thesis.org::*Free Datatypes from Theories][Free Datatypes from Theories:5]]
+  from&#8728;to : &#8704; m &#8594; from (to m) &#8801; m
+  from&#8728;to emptyM        = refl
+  from&#8728;to (branchM l r) = cong&#8322; branchM (from&#8728;to l) (from&#8728;to r)
+  from&#8728;to (absurdM (inj&#8321; ()))
+  from&#8728;to (absurdM (inj&#8322; ()))
+
+  to&#8728;from : &#8704; t &#8594; to (from t) &#8801; t
+  to&#8728;from empty        = refl
+  to&#8728;from (branch l r) = cong&#8322; branch (to&#8728;from l) (to&#8728;from r)
+-- Free Datatypes from Theories:5 ends here
+
+-- [[file:thesis.org::*Free Datatypes from Theories][Free Datatypes from Theories:6]]
+module termtype[Collection]&#8773;List where
+-- Free Datatypes from Theories:6 ends here
+
+-- [[file:thesis.org::*Free Datatypes from Theories][Free Datatypes from Theories:7]]
+  Collection : &#8704; &#8467; &#8594; Context (&#8467;suc &#8467;)
+  Collection &#8467; = do Elem    &#8592; Set &#8467;
+                    Carrier &#8592; Set &#8467;
+                    insert  &#8592; (Elem &#8594; Carrier &#8594; Carrier)
+                    &#8709;       &#8592; Carrier
+                    End {&#8467;}
+
+  &#8450; : Set &#8594; Set
+  &#8450; Elem = termtype ((Collection &#8467;&#8320; :waist 2) Elem)
+
+  pattern _::_ x xs = &#956; (inj&#8321; (x , xs , tt))
+  pattern  &#8709;        = &#956; (inj&#8322; (inj&#8321; tt))
+-- Free Datatypes from Theories:7 ends here
+
+-- [[file:thesis.org::*Free Datatypes from Theories][Free Datatypes from Theories:8]]
+  to : &#8704; {E} &#8594; &#8450; E &#8594; List E
+  to (e :: es) = e &#8759; to es
+  to &#8709;         = []
+-- Free Datatypes from Theories:8 ends here
+
+-- [[file:thesis.org::*Free Datatypes from Theories][Free Datatypes from Theories:9]]
+  from : &#8704; {E} &#8594; List E &#8594; &#8450; E
+  from []       = &#8709;
+  from (x &#8759; xs) = x :: from xs
+
+  to&#8728;from : &#8704; {E} (xs : List E) &#8594; to (from xs) &#8801; xs
+  to&#8728;from []       = refl
+  to&#8728;from (x &#8759; xs) = cong (x &#8759;_) (to&#8728;from xs)
+
+  from&#8728;to : &#8704; {E} (e : &#8450; E) &#8594; from (to e) &#8801; e
+  from&#8728;to (e :: es) = cong (e ::_) (from&#8728;to es)
+  from&#8728;to &#8709;         = refl
+-- Free Datatypes from Theories:9 ends here
+</pre>
+  </body>
+</html>

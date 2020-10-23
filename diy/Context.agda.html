@@ -1,0 +1,318 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!-- Created by htmlize-1.56 in css mode. -->
+<html>
+  <head>
+    <title>Context.agda</title>
+    <style type="text/css">
+    <!--
+      body {
+        color: #655370;
+        background-color: #fbf8ef;
+      }
+
+      a {
+        color: inherit;
+        background-color: inherit;
+        font: inherit;
+        text-decoration: inherit;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    -->
+    </style>
+  </head>
+  <body>
+    <pre>
+-- [[file:thesis.org::*The =Context= Library][The =Context= Library:1]]
+-- 
+-- The Next 700 Module Systems (&#8226;&#768;&#7447;&#8226;&#769;)&#1608; Musa Al-hassy &#10216;2020-10-21 Wednesday 11:38:38&#10217;
+-- 
+-- This file was mechanically generated from a literate program.
+-- Namely, my PhD thesis on &#8216;do-it-yourself module systems for Agda&#8217;.
+-- 
+-- https://alhassy.github.io/next-700-module-systems/thesis.pdf
+-- 
+-- There are &#8220;[[backward][references]]&#8221; to the corresponding expository text.
+-- 
+-- Agda version 2.6.1; Standard library version 1.2
+
+open import Level renaming (_&#8852;_ to _&#8845;_; suc to &#8467;suc; zero to &#8467;&#8320;)
+open import Relation.Binary.PropositionalEquality
+open import Relation.Nullary
+
+open import Data.Nat
+open import Data.Fin  as Fin using (Fin)
+open import Data.Maybe  hiding (_&gt;&gt;=_)
+
+open import Data.Bool using (Bool ; true ; false)
+open import Data.List as List using (List ; [] ; _&#8759;_ ; _&#8759;&#691;_; sum)
+
+import Data.Unit as Unit
+
+-- The map-Args of Reflection is deprecated, and it is advised to use the map-Args
+-- within Reflection.Argument.
+open import Reflection hiding (name; Type; map-Arg;  map-Args) renaming (_&gt;&gt;=_ to _&gt;&gt;=&#8348;&#8337;&#7523;&#8344;_)
+open import Reflection.Argument using (map-Args) renaming (map to map-Arg)
+
+&#8467;&#8321;   = Level.suc &#8467;&#8320;
+
+open import Data.Empty using (&#8869;)
+open import Data.Sum
+open import Data.Product
+open import Function using (_&#8728;_)
+
+&#931;&#8758;&#8226; : &#8704; {a b} (A : Set a) (B : A &#8594; Set b) &#8594; Set _
+&#931;&#8758;&#8226; = &#931;
+
+infix -666 &#931;&#8758;&#8226;
+syntax &#931;&#8758;&#8226; A (&#955; x &#8594; B) = &#931; x &#8758; A &#8226; B
+
+&#928;&#8758;&#8226; : &#8704; {a b} (A : Set a) (B : A &#8594; Set b) &#8594; Set _
+&#928;&#8758;&#8226; A B = (x : A) &#8594; B x
+
+infix -666 &#928;&#8758;&#8226;
+syntax &#928;&#8758;&#8226; A (&#955; x &#8594; B) = &#928; x &#8758; A &#8226; B
+
+record &#120793; {&#8467;} : Set &#8467; where
+  constructor tt
+
+&#120792; = &#8869;
+
+-- [[Single argument application][Single argument application:1]]
+_app_ : Term &#8594; Term &#8594; Term
+(def f args) app arg&#8242; = def f (args &#8759;&#691; arg (arg-info visible relevant) arg&#8242;)
+(con f args) app arg&#8242; = con f (args &#8759;&#691; arg (arg-info visible relevant) arg&#8242;)
+{-# CATCHALL #-}
+tm app arg&#8242; = tm
+-- Single argument application:1 ends here
+
+-- [[Reify &#8469; term encodings as &#8469; values][Reify &#8469; term encodings as &#8469; values:1]]
+to&#8469; : Term &#8594; &#8469;
+to&#8469; (lit (nat n)) = n
+{-# CATCHALL #-}
+to&#8469; _ = 0
+-- Reify &#8469; term encodings as &#8469; values:1 ends here
+
+{- Type annotation -}
+syntax has A a = a &#8758; A
+
+has : &#8704; {&#8467;} (A : Set &#8467;) (a : A) &#8594; A
+has A a = a
+
+-- From: https://alhassy.github.io/PathCat.html  &#167; Imports
+open import Relation.Binary.PropositionalEquality as &#8801; using (_&#8791;_ ; _&#8801;_)
+module _ {i} {S : Set i} where
+    open import Relation.Binary.Reasoning.Setoid (&#8801;.setoid S) public
+
+open import Agda.Builtin.String
+
+defn-chasing : &#8704; {i} {A : Set i} (x : A) &#8594; String &#8594; A &#8594; A
+defn-chasing x reason supposedly-x-again = supposedly-x-again
+
+syntax defn-chasing x reason xish = x &#8801;&#10216; reason &#10217;&#8242; xish
+
+infixl 3 defn-chasing
+-- The =Context= Library:1 ends here
+
+-- [[file:thesis.org::*Monadic Notation][Monadic Notation:3]]
+{- &#8220;Contexts&#8221; are exposure-indexed types -}
+Context = &#955; &#8467; &#8594; &#8469; &#8594; Set &#8467;
+
+{- Every type can be used as a context -}
+&#8245;_ : &#8704; {&#8467;} &#8594; Set &#8467; &#8594; Context &#8467;
+&#8245; S = &#955; _ &#8594; S
+
+{- The &#8220;empty context&#8221; is the unit type -}
+End : &#8704; {&#8467;} &#8594; Context &#8467;
+End {&#8467;} = &#8245; &#120793; {&#8467;}
+-- Monadic Notation:3 ends here
+
+-- [[file:thesis.org::*Monadic Notation][Monadic Notation:6]]
+_&gt;&gt;=_ : &#8704; {a b}
+      &#8594; (&#915; : Set a)  -- Main difference
+      &#8594; (&#915; &#8594; Context b)
+      &#8594; Context (a &#8845; b)
+(&#915; &gt;&gt;= f) zero    = &#931; &#947; &#8758; &#915; &#8226; f &#947; 0
+(&#915; &gt;&gt;= f) (suc n) = &#928; &#947; &#8758; &#915; &#8226; f &#947; n
+-- Monadic Notation:6 ends here
+
+-- [[file:thesis.org::*Monadic Notation][Monadic Notation:8]]
+&#928;&#8594;&#955;-type : Term &#8594; Term
+&#928;&#8594;&#955;-type (pi a (abs x b)) = pi a  (abs x (&#928;&#8594;&#955;-type b))
+&#928;&#8594;&#955;-type x = unknown
+
+&#928;&#8594;&#955;-helper : Term &#8594; Term
+&#928;&#8594;&#955;-helper (pi a (abs x b)) = lam visible (abs x (&#928;&#8594;&#955;-helper b))
+&#928;&#8594;&#955;-helper x = x
+
+macro
+  &#928;&#8594;&#955; : Term &#8594; Term &#8594; TC Unit.&#8868;
+  &#928;&#8594;&#955; tm goal =  normalise tm
+                 &gt;&gt;=&#8348;&#8337;&#7523;&#8344; &#955; tm&#8242; &#8594; checkType goal (&#928;&#8594;&#955;-type tm&#8242;)
+                 &gt;&gt;=&#8348;&#8337;&#7523;&#8344; &#955; _ &#8594;  unify goal (&#928;&#8594;&#955;-helper tm&#8242;)
+-- Monadic Notation:8 ends here
+
+-- [[file:thesis.org::*Monadic Notation][Monadic Notation:12]]
+{- &#961; :waist n  &#8801;  &#928;&#8594;&#955; (&#961; n)  -}
+macro
+  _:waist_ : (pkg : Term) (height : Term) (goal : Term) &#8594; TC Unit.&#8868;
+  _:waist_ pkg n goal = normalise (pkg app n)
+                        &gt;&gt;=&#8348;&#8337;&#7523;&#8344; &#955; &#961; &#8594; checkType goal (&#928;&#8594;&#955;-type &#961;)
+                        &gt;&gt;=&#8348;&#8337;&#7523;&#8344; &#955; _ &#8594; unify goal (&#928;&#8594;&#955;-helper &#961;)
+-- Monadic Notation:12 ends here
+
+-- [[file:thesis.org::*Monadic Notation][Monadic Notation:14]]
+-- Expressions of the form &#8220;&#8943; , tt&#8221; may now be written &#8220;&#10216; &#8943; &#10217;&#8221;
+infixr 5 &#10216; _&#10217;
+&#10216;&#10217; : &#8704; {&#8467;} &#8594; &#120793; {&#8467;}
+&#10216;&#10217; = tt
+
+&#10216; : &#8704; {&#8467;} {S : Set &#8467;} &#8594; S &#8594; S
+&#10216; s = s
+
+_&#10217; : &#8704; {&#8467;} {S : Set &#8467;} &#8594; S &#8594; S &#215; (&#120793; {&#8467;})
+s &#10217; = s , tt
+-- Monadic Notation:14 ends here
+
+-- [[file:thesis.org::*Stage 3: Sources][Stage 3: Sources:3]]
+-- The source of a type, not an arbitrary term.
+-- E.g., sources (&#931; x &#8758; &#964; &#8226; body) = &#931; x &#8758; sources&#8348; &#964; &#8226; sources body
+sources&#8348; : Term &#8594; Term
+
+{- &#8220;&#928; {a &#8758; A} &#8226; Ba&#8221;  &#8614;  &#120792; -}
+sources&#8348; (pi (arg (arg-info hidden _) A) _) = quoteTerm &#120792;
+
+{-  &#8220;&#928; a &#8758; A &#8226; &#928; b &#8758; Ba &#8226; C a b&#8221; &#8614; &#8220;&#931; a &#8758; A &#8226; &#931; b &#8758; B a &#8226; sources&#8348; (C a b)&#8221;  -}
+sources&#8348; (pi (arg a A) (abs &#8220;a&#8221; (pi (arg b Ba) (abs &#8220;b&#8221; Cab)))) =
+  def (quote &#931;) (vArg A
+                &#8759; vArg (lam visible (abs &#8220;a&#8221;
+                   (def (quote &#931;)
+                          (vArg Ba
+                         &#8759; vArg (lam visible (abs &#8220;b&#8221; (sources&#8348; Cab)))
+                         &#8759; []))))
+                &#8759; [])
+
+{-  &#8220;&#928; a &#8758; A &#8226; Ba&#8221; &#8614; &#8220;A&#8221; provided Ba does not begin with a &#928;  -}
+sources&#8348; (pi (arg a A) (abs &#8220;a&#8221; Ba)) = A
+
+{- All other non function types have an empty source; since X &#8773; (&#120793; &#8594; X) -}
+sources&#8348; _ = quoteTerm (&#120793; {&#8467;&#8320;})
+
+{-# TERMINATING #-} -- Termination via structural smaller arguments is not clear due to the call to List.map
+sources&#8348;&#8337;&#7523;&#8344; : Term &#8594; Term
+
+sources&#8348;&#8337;&#7523;&#8344; (pi a b) = sources&#8348; (pi a b)
+{- &#8220;&#931; x &#8758; &#964; &#8226; Bx&#8221; &#8614;  &#8220;&#931; x &#8758; sources&#8348; &#964; &#8226; sources Bx&#8221; -}
+sources&#8348;&#8337;&#7523;&#8344; (def (quote &#931;) (&#8467;&#8321; &#8759; &#8467;&#8322; &#8759; &#964; &#8759; body))
+    = def (quote &#931;) (&#8467;&#8321; &#8759; &#8467;&#8322; &#8759; map-Arg sources&#8348; &#964; &#8759; List.map (map-Arg sources&#8348;&#8337;&#7523;&#8344;) body)
+
+{- This function introduces &#120793;s, so let's drop any old occurances a la &#120792;. -}
+sources&#8348;&#8337;&#7523;&#8344; (def (quote &#120793;) _) = def (quote &#120792;) []
+
+-- TODO: Maybe we do not need these cases.
+sources&#8348;&#8337;&#7523;&#8344; (lam v (abs s x))     = lam v (abs s (sources&#8348;&#8337;&#7523;&#8344; x))
+sources&#8348;&#8337;&#7523;&#8344; (var x args) = var x (List.map (map-Arg sources&#8348;&#8337;&#7523;&#8344;) args)
+sources&#8348;&#8337;&#7523;&#8344; (con c args) = con c (List.map (map-Arg sources&#8348;&#8337;&#7523;&#8344;) args)
+sources&#8348;&#8337;&#7523;&#8344; (def f args) = def f (List.map (map-Arg sources&#8348;&#8337;&#7523;&#8344;) args)
+sources&#8348;&#8337;&#7523;&#8344; (pat-lam cs args) =  pat-lam cs (List.map (map-Arg sources&#8348;&#8337;&#7523;&#8344;) args)
+
+-- sort, lit, meta, unknown
+sources&#8348;&#8337;&#7523;&#8344; t = t
+
+macro
+  sources : Term &#8594; Term &#8594; TC Unit.&#8868;
+  sources tm goal = normalise tm &gt;&gt;=&#8348;&#8337;&#7523;&#8344; &#955; tm&#8242; &#8594; unify (sources&#8348;&#8337;&#7523;&#8344; tm&#8242;) goal
+-- Stage 3: Sources:3 ends here
+
+-- [[file:thesis.org::*Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums][Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums:2]]
+arg-term : &#8704; {&#8467;} {A : Set &#8467;} &#8594; (Term &#8594; A) &#8594; Arg Term &#8594; A
+arg-term f (arg i x) = f x
+
+{-# TERMINATING #-}
+length&#8348; : Term &#8594; &#8469;
+length&#8348; (var x args)      = 1 + sum (List.map (arg-term length&#8348; ) args)
+length&#8348; (con c args)      = 1 + sum (List.map (arg-term length&#8348; ) args)
+length&#8348; (def f args)      = 1 + sum (List.map (arg-term length&#8348; ) args)
+length&#8348; (lam v (abs s x)) = 1 + length&#8348; x
+length&#8348; (pat-lam cs args) = 1 + sum (List.map (arg-term length&#8348; ) args)
+length&#8348; (pi X (abs b Bx)) = 1 + length&#8348; Bx
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+length&#8348; t = 0
+-- The Length of a Term:1 ends here
+
+-- [[The Length of a Term][The Length of a Term:2]]
+_ : length&#8348; (quoteTerm (&#931; x &#8758; &#8469; &#8226; x &#8801; x)) &#8801; 10
+_ = refl
+
+--
+var-dec&#8320; : (fuel : &#8469;) &#8594; Term &#8594; Term
+var-dec&#8320; zero t  = t
+-- Let's use an &#8220;impossible&#8221; term.
+var-dec&#8320; (suc n) (var zero args)      = def (quote &#120792;) []
+var-dec&#8320; (suc n) (var (suc x) args)   = var x args
+var-dec&#8320; (suc n) (con c args)         = con c (map-Args (var-dec&#8320; n) args)
+var-dec&#8320; (suc n) (def f args)         = def f (map-Args (var-dec&#8320; n) args)
+var-dec&#8320; (suc n) (lam v (abs s x))    = lam v (abs s (var-dec&#8320; n x))
+var-dec&#8320; (suc n) (pat-lam cs args)    = pat-lam cs (map-Args (var-dec&#8320; n) args)
+var-dec&#8320; (suc n) (pi (arg a A) (abs b Ba)) = pi (arg a (var-dec&#8320; n A)) (abs b (var-dec&#8320; n Ba))
+-- var-dec&#8320; (suc n) (&#928;[ s &#8758; arg i A ] B) = &#928;[ s &#8758; arg i (var-dec&#8320; n A) ] var-dec&#8320; n B
+{-# CATCHALL #-}
+-- sort, lit, meta, unknown
+var-dec&#8320; n t = t
+
+var-dec : Term &#8594; Term
+var-dec t = var-dec&#8320; (length&#8348; t) t
+-- Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums:2 ends here
+
+-- [[file:thesis.org::*Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums][Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums:3]]
+{-# TERMINATING #-}
+&#931;&#8594;&#8846;&#8320; : Term &#8594; Term
+
+{-  &#8220;&#931; a &#8758; A &#8226; Ba&#8221; &#8614; &#8220;A &#8846; B&#8221; where &#8216;B&#8217; is &#8216;Ba&#8217; with no reference to &#8216;a&#8217;  -}
+&#931;&#8594;&#8846;&#8320; (def (quote &#931;) (&#119997;&#8321; &#8759; &#119997;&#8320; &#8759; arg i A &#8759; arg i&#8321; (lam v (abs s x)) &#8759; []))
+  =  def (quote _&#8846;_) (&#119997;&#8321; &#8759; &#119997;&#8320; &#8759; arg i A &#8759; vArg (&#931;&#8594;&#8846;&#8320; (var-dec x)) &#8759; [])
+
+-- Interpret &#8220;End&#8221; in do-notation to be an empty, impossible, constructor.
+-- See the unit tests above ;-)
+-- For some reason, the inclusion of this caluse obscures structural termination.
+&#931;&#8594;&#8846;&#8320; (def (quote &#120793;) _) = def (quote &#120792;) []
+
+ -- Walk under &#955;'s and &#928;'s.
+&#931;&#8594;&#8846;&#8320; (lam v (abs s x)) = lam v (abs s (&#931;&#8594;&#8846;&#8320; x))
+&#931;&#8594;&#8846;&#8320; (pi A (abs a Ba)) = pi A (abs a (&#931;&#8594;&#8846;&#8320; Ba))
+&#931;&#8594;&#8846;&#8320; t = t
+
+macro
+  &#931;&#8594;&#8846; : Term &#8594; Term &#8594; TC Unit.&#8868;
+  &#931;&#8594;&#8846; tm goal = normalise tm &gt;&gt;=&#8348;&#8337;&#7523;&#8344; &#955; tm&#8242; &#8594; unify (&#931;&#8594;&#8846;&#8320; tm&#8242;) goal
+-- Stage 4: ~&#931;&#8594;&#8846;~ --Replacing Products with Sums:3 ends here
+
+-- [[file:thesis.org::*Stage 5: Fixpoint][Stage 5: Fixpoint:1]]
+{-# NO_POSITIVITY_CHECK #-}
+data Fix {&#8467;} (F : Set &#8467; &#8594; Set &#8467;) : Set &#8467; where
+  &#956; : F (Fix F) &#8594; Fix F
+-- Stage 5: Fixpoint:1 ends here
+
+-- [[file:thesis.org::*Stage 5: Fixpoint][Stage 5: Fixpoint:3]]
+macro
+  termtype : Term &#8594; Term &#8594; TC Unit.&#8868;
+  termtype tm goal =
+                normalise tm
+           &gt;&gt;=&#8348;&#8337;&#7523;&#8344; &#955; tm&#8242; &#8594; unify goal (def (quote Fix) ((vArg (&#931;&#8594;&#8846;&#8320; (sources&#8348;&#8337;&#7523;&#8344; tm&#8242;))) &#8759; []))
+-- Stage 5: Fixpoint:3 ends here
+
+-- [[file:thesis.org::*Instructive Example: &#120123; &#8773; &#8469;][Instructive Example: &#120123; &#8773; &#8469;:4]]
+-- &#119998;-th injection:  (inj&#8322; &#8728; &#8943; &#8728; inj&#8322;) &#8728; inj&#8321;
+Inj&#8320; : &#8469; &#8594; Term &#8594; Term
+Inj&#8320; zero c    = con (quote inj&#8321;) (arg (arg-info visible relevant) c &#8759; [])
+Inj&#8320; (suc n) c = con (quote inj&#8322;) (vArg (Inj&#8320; n c) &#8759; [])
+
+macro
+  Inj : &#8469; &#8594; Term &#8594; Term &#8594; TC Unit.&#8868;
+  Inj n t goal = unify goal ((con (quote &#956;) []) app (Inj&#8320; n t))
+-- Instructive Example: &#120123; &#8773; &#8469;:4 ends here
+</pre>
+  </body>
+</html>
