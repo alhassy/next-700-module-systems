@@ -293,8 +293,8 @@ commutative ring with one/.
 # will need to look into passing [tbh] options to figures from org mode further.
 #+LATEX_HEADER: \usepackage{placeins}
 
-#+latex_header: \usepackage[font=itshape]{quoting}
-# Now quote blocks have their contents italicised.
+# Now “quoteit” blocks have their contents italicised.
+#+latex_header: \newenvironment{quoteit}{\begin{quote}\itshape}{\end{quote}}
 
 #+latex_header_extra: \newtcolorbox{mybox}[2][]{colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black,title=#2,#1}
 
@@ -735,6 +735,7 @@ plagiarism even comes down to one sentence.” ---Ninth Ward Goethe
 
 #+latex: \yesmargins
 ** A middle-path with margins :ignore:
+
 #+begin_center
 *A middle-path with margins*
 #+end_center
@@ -753,7 +754,27 @@ the margins side notes may have /informal and optioniated/
 left; here in the right we take a relaxed tone.}.@@ We're trying to avoid being
 too dry, and aim at being somewhat light-hearted.
 
-However, the cost of utilising margin space is that the overall page count may
+Dijkstra cite:EWD:EWD1300 might construe the graffiti as /mathematical
+politeness/ that could potentially save the reader a minute.  Even though a
+characteristic of academic writing is its @@latex:
+terseness\sidenote[ω]{\color{gray!80} “It's so obvious, I won't waste time on
+it”; i.e., “It's an exercise to the reader to figure out what I'm really
+saying.” Elaboration removes mystery and some authors might prefer academia be
+exclusive. }@@, we don't want to baffle or puzzle our readers, and so we use the
+informality of the graffiti to say what we mean bluntly, /but/ it may be less
+accurate or not as formally justifiable as the text proper.
+
+#+latex: \vspace{2em}
+#+begin_quoteit
+Some consider the puzzles that are created by their omissions as spicy
+challenges, without which their texts would be boring; others shun clarity lest
+their worth is considered trivial.  [...] Some authors believe that, in order to
+keep the reader awake, one has to tickle him with surprises. [...] essential for
+earning the respect of their readership.  ---Edsger Dijkstra cite:EWD:EWD1300
+#+end_quoteit
+#+latex: \vspace{2em}
+
+A superficial cost of utilising margin space is that the overall page count may
 be @@latex:‘over-exaggerated’\sidenote[γ]{\color{gray!80}Which doesn't matter,
 since you're likely reading this online!}.@@ Nonetheless, I have found long
 empty columns of margin space /yearning/ to be filled with explanatory remarks,
@@ -809,6 +830,11 @@ than perverse.
 #+latex_header:             outer=2.1835cm,
 #+latex_header:             ignoremp}}
 #+latex_header: \def\yesmargins{\restoregeometry}
+# Actually, these force new pages; so let's do something else.
+#+latex_header: \newenvironment{fullwidth}{\begin{minipage}{15.5cm}}{\end{minipage}}
+# +latex: \begin{fullwidth}
+# words
+# +latex: \end{fullwidth}
 #+latex_header:
 #+latex_header: \usepackage{adjustbox}
 #+latex_header: \usepackage{xcolor} % named colours
@@ -1579,10 +1605,10 @@ $\,$ \hfill \hspace{.95\textwidth}
 #+latex: \vspace{-17em}
 As with currying, the right side here is preferable at times since it
 immediately lets one ‘fix’ ---i.e., select--- a value $i₀ : I$ to obtain the
-specialised type \[ Π x ∶ X\, i₀ • Y\, (i₀, x) \] In contrast to the right, the
-left side can only be contorted to simulate the idea of fixing a field ahead of
+specialised type \[ Π x ∶ X\, i₀ • Y\, (i₀, x) \enskip .\] In contrast to the right, the
+left side can only be contorted to simulate the idea of fixing a field, $i_1 : I$, ahead of
 time; e.g.: \[ Π p ∶ (Σ i ∶ I • X\, i) • Z\, p \quad\text{ where }\quad Z\, p
-\;=\; \bigg(Y\, p × (\mathsf{fst}\, p \,≡\, i₀)\bigg) \] The verbosity of this
+\;=\; \bigg(Y\, p × (\mathsf{fst}\, p \,≡\, i_1)\bigg) \] The verbosity of this
 formulation is what we wish to mitigate.
 
 #+latex: \vspace{0em}
@@ -1707,7 +1733,7 @@ cite:DBLP:books/sp/GriesS93.
    algebraically’ to produce simper constraints on the unknowns, possibly
    providing ‘solutions’ to the system of relationships directly.  The shift
    from /systems of equations/ that serve to collect relationships, to /matrices/
-   (expressing equations) gave way to the treatment of such systems as algebraic
+   (expressing equations[fn:55]) gave way to the treatment of such systems as algebraic
    entities unto themselves: They can be treated with nearly the same interface
    as that of integers, say, that of rings.
    #+latex: \remark{
@@ -10317,7 +10343,7 @@ expressive parsimony.
 # for defining top-level functions.  With Lisp as the implementing language, we
 # were *implicitly encouraged* to seek meta-primitives for making modules.
 #
-** COMMENT Aim: /Scrap the Repetition/
+** Aim: /Scrap the Repetition/
   :PROPERTIES:
   :CUSTOM_ID: Aim---Scrap-the-Repetition-
   :END:
@@ -10331,14 +10357,20 @@ expressive parsimony.
 Programming Language research is summarised, in essence, by the question: /If 𝒳
 is written manually, what information 𝒴 can be derived for free?/ Perhaps the
 most popular instance is /type inference/: From the syntactic structure of an
-expression, its type can be derived. From a context, the =PackageFormer= editor
-extension can generate the many common design patterns discussed earlier in
-section ref:sec:DTL_design_patterns; such as unbundled variations of any number
-wherein fields are exposed as parameters at the type level, term types for
-syntactic manipulation, arbitrary renaming, extracting signatures, and forming
-homomorphism types. In this section we discuss how =PackageFormer= works and
-provide a ‘real-world’ use case, along with a discussion.
+expression, its type can be derived. From a context, the src_haskell[:exports
+code]{PackageFormer} @@latex: \remark{With the extension, Agda's usual
+\texttt{C-c C-l} command parses special comments containing fictitious Agda
+declarations, produces an auxiliary Agda file which it ensures is imported in
+the current file, then control is passed to the usual Agda typechecking
+mechanism.}@@ editor extension can generate the many common design patterns
+discussed earlier in section ref:sec:DTL_design_patterns; such as unbundled
+variations of any number wherein fields are exposed as parameters at the type
+level, term types for syntactic manipulation, arbitrary renaming, extracting
+signatures, and forming homomorphism types. In this section we discuss how
+=PackageFormer= works and provide a ‘real-world’ use case, along with a
+discussion.
 
+:PF_usage_details_DELETE:
 The =PackageFormer= tool is an Emacs editor extension written in Lisp that is
 integrated seemlessly into the Agda Emacs interface: Whenver a user loads a file
 ~X.agda~ for interactive typechecking, with the usual Agda keybinding ~C-c C-l~,
@@ -10352,8 +10384,11 @@ integrated seemlessly into the Agda Emacs interface: Whenver a user loads a file
      legitimate Agda code. This feature is indispensable as it lets one generate
      grouping mechanisms and quickly ensure that they are what one intends them
      to be.
+:END:
 
-Here is an example of contents in a 700-comment.  The first eight lines,
+# Here is an example of contents in a 700-comment.
+Below is example code that can occur in the specially recognised comments.
+The first eight lines,
 starting at line [[(msetDecl)]], are essentially an Agda src_agda[:exports
 code]{record} declaration but the src_agda[:exports code]{field} qualifier is
 absent. The declaration is intended to name an abstract context, a sequence of
@@ -10382,48 +10417,77 @@ PackageFormer M-Set : Set₁ where (ref:msetDecl)
    𝟙       : Scalar
    _×_     : Scalar → Scalar → Scalar
    leftId  : {𝓋 : Vector}  →  𝟙 · 𝓋  ≡  𝓋
-   assoc   : {a b : Scalar} {𝓋 : Vector} → (a × b) · 𝓋  ≡  a · (b · 𝓋)
+   assoc   : {a b : Scalar} {𝓋 : Vector} →   (a × b) · 𝓋
+                                           ≡  a · (b · 𝓋)
 #+END_SRC
 
-#+latex: \begin{tcolorbox}[colback=red!5!white, colframe=red!75!black]
-*Aside:* The names have been chosen to stay relatively close to the real-world
-examples presented in chapter ref:sec:examples_from_the_wild.  ( The name *M-Set*
-comes from /monoid acting on a set/; in our example, =Scalar= values may act on
-=Vector= values to produce new =Scalar= values. ) The programmer may very well
-appreciate this example if the names =Scalar, 𝟙, _×_, Vector, _·_= were chosen to be
-=Program, do-nothing, _⨾_, Input, run=.  With this new naming, =leftId= says /running
-the empty program on any input, leaves the input unchanged/, whereas =assoc= says
-/to run a sequence of programs on an input, the input must be threaded through
-the programs/.  Whence, *M-Sets abstract program execution*.
-#+latex: \end{tcolorbox}
+#+latex: \vspace{-24em}\remark{ % \begin{tcolorbox}[colback=red!5!white, colframe=red!75!black]
+In the code block, the names have been chosen to stay relatively close to the
+real-world examples presented in chapter ref:sec:examples_from_the_wild. The
+name *M-Set* comes from /monoid acting on a set/; in our example,
+src_haskell[:exports code]{Scalar} values may act on src_haskell[:exports
+code]{Vector} values to produce new src_haskell[:exports code]{Scalar}
+values. The programmer may very well appreciate this example if the names
+src_haskell[:exports code]{Scalar, 𝟙, _×_, Vector, _·_} were chosen to be
+src_agda[:exports code]{Program, do-nothing, _⨾_, Input, run}.  With this new
+naming, src_haskell[:exports code]{leftId} says /running the empty program on any
+input, leaves the input unchanged/, whereas src_haskell[:exports code]{assoc}
+says /to run a sequence of programs on an input, the input must be threaded
+through the programs/.  Whence, *M-Sets abstract program execution*.
+#+latex: }\vspace{24em} % \end{tcolorbox}
 
-{{{code(Different Ways to Organise (“interpret”, “use”) M-Sets)}}}
+\vspace{-1cm}
+{{{code(Different Ways to Organise (“interpret” / “use”) M-Sets)}}}
 #+attr_latex: :options xleftmargin=6pt
 #+BEGIN_SRC haskell -n 9 -r :tangle M-Set.agda :prologue {-700 :epilogue -}
--- M-Sets as records, possibly with renaming, or with parameters
-Semantics           = M-Set ⟴ record (ref:msetSemantics)
-Semantics𝒟          = Semantics ⟴ rename (λ x → (concat x "𝒟"))
-Semantics₃          =  Semantics :waist 3
+Semantics  = M-Set ⟴ record (ref:msetSemantics)
+Semantics𝒟 = Semantics ⟴ rename (λ x → (concat x "𝒟"))
+Semantics₃ =  Semantics :waist 3
 
--- Duality; chaning the order of the action (c.f., “run” above)
-Left-M-Set          = M-Set ⟴ record  (ref:msetLeftSet)
-Right-M-Set         = Left-M-Set ⟴ flipping "_·_" :renaming "leftId to rightId"
+Left-M-Set  = M-Set ⟴ record  (ref:msetLeftSet)
+Right-M-Set = Left-M-Set ⟴ flipping "_·_" :renaming "leftId to rightId"
 
--- Keeping only the ‘syntactic interface’, say, for serialisation or automation
-ScalarSyntax        = M-Set ⟴ primed ⟴ data "Scalar′" (ref:msetTermtype)
-Signature           = M-Set ⟴ record ⟴ signature
-Sorts               = M-Set ⟴ record ⟴ sorts
+ScalarSyntax = M-Set ⟴ primed ⟴ data "Scalar′" (ref:msetTermtype)
+Signature    = M-Set ⟴ record ⟴ signature
+Sorts        = M-Set ⟴ record ⟴ sorts
 
--- Collapsing different features to obtain the notion of “monoid”
-𝒱-one-carrier       = renaming "Scalar to Carrier; Vector to Carrier"  (ref:msetNewVariationals)
-𝒱-compositional     = renaming "_×_ to _⨾_; _·_ to _⨾_"
-𝒱-monoidal          = one-carrier ⟴ compositional ⟴ record
+𝒱-one-carrier   = renaming "Scalar to Carrier; Vector to Carrier"  (ref:msetNewVariationals)
+𝒱-compositional = renaming "_×_ to _⨾_; _·_ to _⨾_"
+𝒱-monoidal      = one-carrier ⟴ compositional ⟴ record
 
--- Obtaining parts of the monoid hierarchy (see chapter 3) from M-Sets
 LeftUnitalSemigroup = M-Set ⟴ monoidal
 Semigroup           = M-Set ⟴ keeping "assoc" ⟴ monoidal
 Magma               = M-Set ⟴ keeping "_×_" ⟴ monoidal
 #+END_Src
+
+#+begin_export latex
+\vspace{-8.5cm}
+\remark{Now to actually use this context ...}
+
+\vspace{0.5cm}
+\remark{M-Sets as records, possibly with renaming or parameters.}
+\remark{\centering ⋆ ⋆ ⋆}
+
+\vspace{0.4cm}
+\remark{Duality;
+we might want to change the order of the action, say, to write \texttt{evalAt x f}
+instead of \texttt{run f x} ---using the program-input interpretation of M-Sets
+above.}
+\remark{\centering ⋆ ⋆ ⋆}
+
+\vspace{1cm}
+\remark{Keeping only the ‘syntactic interface’, say, for serialisation or automation.}
+\remark{\centering ⋆ ⋆ ⋆}
+
+\vspace{0.5cm}
+\remark{Collapsing different features to obtain the notion of “monoid”.}
+\remark{\centering ⋆ ⋆ ⋆}
+
+\vspace{0.8cm}
+\remark{Obtaining parts of the monoid hierarchy (see chapter 3) from M-Sets}
+
+\vspace{0.8cm}
+#+end_export
 
 \noindent These manually written ∼25 lines elaborate into the ∼100 lines of raw,
 legitimate, Agda syntax below ---line breaks are denoted by the symbol ‘↪’
@@ -10431,114 +10495,139 @@ rather than inserted manually, since all subsequent code snippets in this
 section are *entirely generated* by =PackageFormer=.  The result is nearly a *400%
 increase in size*; that is, our fictitious code will save us a lot of repetition.
 
+Let's discuss what's actually going on here.
+
+# Line [[(msetDecl)]] ::
+The first line declares the context of src_haskell[:exports code]{M-Set}s using
+traditional Agda syntax “ src_agda[:exports code]{record M-Set : Set₁ where} ”
+except the we use the word \newline ~PackageFormer~ to avoid confusion with the
+existing record concept, but[fn:57] we also /omit/ the need for a
+src_agda[:exports code]{field} keyword and /forbid/ the existence of parameters.
+Such abstract contexts have no concrete form in Agda and so no code is
+generated; the second snippet above[fn:56] shows sample declarations that result
+in legitimate Agda.
+# are further samples of code that could be in the special comments.
+
 =PackageFormer= module combinators are called <<</variationals/>>>
 #+latex: \label{</variationals/>} since they
 provide a variation on an existing grouping mechanism. The syntax ~p ⟴ 𝓋₁ ⟴ ⋯ ⟴
 𝓋ₙ~ is tantamount to explicit forward function application ~𝓋ₙ (𝓋ₙ₋₁ (⋯ (𝓋₁ p)))~.
 With this understanding, we can explain the different ways to organise M-sets.
 
-+ Line [[(msetDecl)]] :: The context of src_haskell[:exports code]{M-Set}s is declared.
+The next page shows, first, the elaboration of lines 9-11 and, in the second
+snippet, the elaborations of lines 12-14.
 
-  This is the traditional Agda syntax “ src_agda[:exports code]{record M-Set :
-  Set₁ where} ” except the we use the word ~PackageFormer~ to avoid confusion with
-  the existing record concept, but we also /omit/ the need for a src_agda[:exports
-  code]{field} keyword and /forbid/ the existence of parameters.
-
-  #+latex: \begin{tcolorbox}[title={Conflating fields, parameters, and definitional extensions}, colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black]
-  The lack of a src_agda[:exports code]{field} keyword and forbidding parameters
-  means that arbitrary programs may ‘live within’ a =PackageFormer= and it is up
-  to a variational to decide how to treat them and their optional definitions.
-  #+latex: \end{tcolorbox}
-
-  Such abstract contexts have no concrete form in Agda and so no code is generated.
-
-+ Line [[(msetSemantics)]] :: The src_emacs-lisp[:exports code]{record} variational
+In line [[(msetSemantics)]], the src_emacs-lisp[:exports code]{record} variational
   is invoked to transform the abstract context src_haskell[:exports code]{M-Set}
   into a valid Agda record declaration, with the key word src_agda[:exports
   code]{field} inserted as necessary. Later, its first 3 fields are lifted as
   parameters using the meta-primitive src_emacs-lisp[:exports code]{:waist}.
+  @@latex: \remark{The waist is the number of parameters exposed; recall $ΠʷΣ$ from chapter 2.}@@
 
-    #+latex: \begin{tcolorbox}[title=Arbitrary functions act on modules, colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black]
-  When only one variational is applied to a
-  context, the one and only ‘⟴’ may be omitted. As such, =Semantics₃= is defined
-  as ~Semantics rename f~, where =f= is the decoration function.
-  In this form, one is tempted to believe
+# [fn:58]
+  #+latex: \begin{tcolorbox}[title=Arbitrary functions act on modules, colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black]
+  When only one variational
+  is applied to a context, the one and only ‘⟴’ may be omitted. As such,
+  =Semantics₃= is defined as ~Semantics rename f~, where =f= is the decoration
+  function.  In this form, one is tempted to believe
   #+latex: \begin{center}
-  src_haskell[:exports code]{ _rename_ : PackageFormer → (Name → Name) → PackageFormer}
+  # src_haskell[:exports code]{ _rename_ : PackageFormer} \\
+  # src_haskell[:exports code]{        → (Name → Name) } \\
+  # src_haskell[:exports code]{        → PackageFormer }
+  src_haskell[:exports code]{ _rename_ : PackageFormer → (Name → Name) → PackageFormer }
   #+latex: \end{center}
   That is, we have a binary operation in which functions may act on modules
   ---this is yet a new feature that Agda cannot perform.
   #+latex: \end{tcolorbox}
 
-  {{{code(Record / decorated renaming / typeclass forms)}}}
-  #+INCLUDE: "M-Set-generated.agda" src agda :lines "21-50"
-
-  Likewise, line [[(msetLeftSet)]], mentions another combinator src_haskell[:exports
-  code]{_flipping_ : PackageFormer → Name → PackageFormer}; however, it also takes
-  an /optional keyword argument/ src_emacs-lisp[:exports code]{:renaming}, which
-  simply renames the given pair.  The notation of keyword arguments is
-  inherited[fn:8] from Lisp.
-
-  {{{code(Duality: Sets can act on semigroups from the left or the right)}}}
-  #+INCLUDE: "M-Set-generated.agda" src agda :lines "52-73"
-
   Notice how src_haskell[:exports code]{Semantics𝒟} was /built from/ a concrete
   context, namely the src_haskell[:exports code]{Semantics} record.  As such,
   every instance of src_haskell[:exports code]{Semantics𝒟} can be transformed as
-  an instance of src_haskell[:exports code]{Semantics}: This view ---see Section
+  an instance of src_haskell[:exports code]{Semantics}: This view[fn:59] ---see Section
   ref:sec:module_theory--- is automatically generated and named
   src_haskell[:exports code]{toSemantics} above, by default. Likewise,
   src_haskell[:exports code]{Right-M-Set} was derived from src_haskell[:exports
   code]{Left-M-Set} and so we have automatically have a view
   src_haskell[:exports code]{Right-M-Set → Left-M-Set}.
 
-  It is important to remark that the mechanical construction of such views
-  (coercions) is *not built-in*, but rather a /user-defined/ variational
-  that is constructed from \newline =PackageFormer='s meta-primitives.
+#+latex: \begin{fullwidth}
+  {{{code(Lines 9-11 \hfill Record / decorated renaming / typeclass forms)}}}
+  #+INCLUDE: "M-Set-generated.agda" src agda :lines "20-50"
 
-+ Line [[(msetTermtype)]] :: An algebraic data type is a tagged union of symbols,
-  terms, and so is one type ---see section ref:sec:W-types.  We can view a
-  context as such a termtype by declaring one sort of the context to act as the
-  termtype and then keep only the function symbols that target it ---this is the
-  *core idea* that is used when we operate on Agda src_haskell[:exports
-  code]{Term}s in the next chapter.  Furthermore, recall from Chapter
-  ref:sec:packages_and_their_parts, symbols that target src_haskell[:exports
-  code]{Set} are considered sorts and if we keep only the symbols targeting a
-  sort, we have a signature.  ( By allowing symbols to be of type
-  src_haskell[:exports code]{Set}, we actually have *generalised contexts*. )
+  {{{code(Lines 13-14 \hfill Duality: Sets can act on semigroups from the left or the right)}}}
+  #+INCLUDE: "M-Set-generated.agda" src agda :lines "52-73"
+#+latex: \end{fullwidth}
 
-  {{{code(Termtypes and lawless presentations)}}}
+Likewise, line [[(msetLeftSet)]], mentions another combinator
+#+latex: \vspace{-1em}
+#+begin_center
+src_haskell[:exports code]{_flipping_ : PackageFormer → Name → PackageFormer}
+#+end_center
+#+latex: \vspace{-1em}
+  This combinator also takes an /optional keyword argument/
+  src_emacs-lisp[:exports code]{:renaming}, which simply renames the given pair.
+  The notation of keyword arguments is inherited[fn:8] from Lisp.
+
+#+latex: \remark{ ⋆ ⋆ ⋆ }
+
+Next, in line [[(msetTermtype)]], we view a context as such a
+@@latex:termtype\remark{An algebraic data type is a tagged union of symbols,
+terms, and so is one type ---see section \ref{sec:W-types}.}@@ by declaring
+one sort of the context to act as the termtype (carrier) and then keep only the function
+symbols that target it ---this is the *core idea* that is used when we operate
+on Agda src_haskell[:exports code]{Term}s in the next chapter.
+#+latex: \remark{
+Recall from Chapter ref:sec:packages_and_their_parts, symbols that target
+src_haskell[:exports code]{Set} are considered sorts and if we keep only the
+symbols targeting a sort, we have a signature.  By allowing symbols to be of
+type src_haskell[:exports code]{Set}, we actually have *generalised contexts*.
+#+latex: }
+
+  {{{code(Lines 16-18 \hfill Termtypes and lawless presentations)}}}
   #+INCLUDE: "M-Set-generated.agda" src agda :lines "75-94"
-  ( The priming decoration is needed so that the names ~𝟙, _×_~ do not
-  pollute the global name space. )
 
-+ Line [[(msetNewVariationals)]] :: Declarations starting with “
-  src_haskell[:exports code]{𝒱-} ” indicate that a new variation is to be
-  formed, rather than a new grouping mechanism. For instance, the user-defined
-  src_emacs-lisp[:exports code]{one-carrier} variational identifies both the
-  src_haskell[:exports code]{Scalar} and src_haskell[:exports code]{Vector}
-  sorts, whereas src_emacs-lisp[:exports code]{compositional} identifies the
-  binary operations; then, finally, src_emacs-lisp[:exports code]{monoidal}
-  performs both of those operations and also produces a concrete Agda
-  src_agda[:exports code]{record} formulation.
+#+latex: \vspace{-4cm} \remark{
+The priming decoration in ~ScalarSyntax~ is needed so that the names ~𝟙, _×_~ do not
+pollute the global name space.
+#+latex: }\vspace{4cm}
 
-  #+latex: \begin{tcolorbox}[colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black]
-  User defined variationals are applied as if they were built-ins
-  ---interestingly, only src_emacs-lisp[:exports code]{:waist} and
-  src_haskell[:exports code]{_⟴_} are built-in meta-primitives, the other
-  primitives discussed thus far build upon less than 5 meta-primitives.
-  #+latex: \end{tcolorbox}
+Finally, starting with line [[(msetNewVariationals)]], declarations start with “
+src_haskell[:exports code]{𝒱-} ” to indicate that a new variation /combinator/ is
+to be formed, rather than a new /grouping/ mechanism. For instance, the
+user-defined src_emacs-lisp[:exports code]{one-carrier} variational identifies
+both the src_haskell[:exports code]{Scalar} and src_haskell[:exports
+code]{Vector} sorts, whereas src_emacs-lisp[:exports code]{compositional}
+identifies the binary operations; then, finally, src_emacs-lisp[:exports
+code]{monoidal} performs both of those operations and also produces a concrete
+Agda src_agda[:exports code]{record} formulation. Below, in the final code
+snippet of this section, are the elaborations of using these new new
+user-defined variationals.
 
-  {{{code(Conflating features gives familiar structures)}}}
+# +latex: \begin{tcolorbox}[colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black]
+#+latex: \vspace{-3cm}\remark{
+  User defined variationals are applied as if they were built-ins.
+#+latex: }\vspace{3cm}
+#  ---interestingly, only src_emacs-lisp[:exports code]{:waist} and
+# src_haskell[:exports code]{_⟴_} are built-in meta-primitives, the other
+# primitives discussed thus far build upon less than 5 meta-primitives.
+# +latex: \end{tcolorbox}
+
+#+latex: \begin{fullwidth}
+
+  {{{code(Lines 24-26 \hfill Conflating features gives familiar structures)}}}
   #+INCLUDE: "M-Set-generated.agda" src agda :lines "96-"
 
-As shown in Figure ref:mousing-over, the source file is furnished with tooltips
-displaying the 700-comment that a name is associated with, as well as the full
-elaboration into legitimate Agda syntax. In addition, the above generated
-elaborations also document the 700-comment that produced them.  Moreover, since
-the editor extension results in valid code in an auxiliary file, future users of
-a library need not use the =PackageFormer= extension at all ---thus we essentially
-have a static *editor tactic* similar to Agda's (Emacs interface) proof finder.
+#+latex: \vspace{1em}
+As shown in the figure below, the source file is furnished with tooltips
+displaying the special comment that a name is associated with, as well as the
+full elaboration into legitimate Agda syntax. In addition, the above generated
+elaborations also document the special comment that produced them.  Moreover,
+since the editor extension results in valid code in an auxiliary file, future
+users of a library need not use the =PackageFormer= extension at all ---thus we
+essentially have a static *editor tactic* similar to Agda's (Emacs interface)
+proof finder.
+
+#+latex: \end{fullwidth}
 
 :Constraints:
 
@@ -10557,9 +10646,12 @@ implementations, that we hope to include in the future. For now, we just want
 something that works, is decently documented, and can be useful.
 :End:
 
+#+latex: \vspace{2cm}\remark{
+Hovering to show details. Notice special syntax has default colouring: Red for
+\textsf{PackageFormer} delimiters, yellow for elements, and green for
+variationals.
+#+latex: } \vspace{-3cm}
 #+attr_latex: :width 300px
-#+caption: Hovering to show details. Notice special syntax has default colouring: Red for \textsf{PackageFormer} delimiters,
-#+caption: yellow for elements, and green for variationals. label:mousing-over
 [[file:./papers/gpce19-mousing-over-large.png]]
 
 ** COMMENT Practicality
@@ -22597,6 +22689,37 @@ comap′ f ⟨ edgs ⟩¹ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩¹
 
 * Footnotes
 
+[fn:59]   It is important to remark that the mechanical construction of such
+  views (coercions) is *not built-in*, but rather a /user-defined/ variational that
+  is constructed from =PackageFormer='s meta-primitives.
+
+[fn:58] \textbf{Arbitrary functions act on modules:} When only one variational
+  is applied to a context, the one and only ‘⟴’ may be omitted. As such,
+  =Semantics₃= is defined as ~Semantics rename f~, where =f= is the decoration
+  function.  In this form, one is tempted to believe
+  #+latex: \begin{center}
+  src_haskell[:exports code]{ _rename_ : PackageFormer} \\
+  src_haskell[:exports code]{        → (Name → Name) } \\
+  src_haskell[:exports code]{        → PackageFormer }
+  #+latex: \end{center}
+  That is, we have a binary operation in which functions may act on modules
+  ---this is yet a new feature that Agda cannot perform.
+
+
+[fn:57] \textbf{Conflating fields, parameters, and definitional extensions:}
+  The lack of a src_agda[:exports code]{field} keyword and forbidding parameters
+  means that arbitrary programs may ‘live within’ a =PackageFormer= and it is up
+  to a variational to decide how to treat them and their optional definitions.
+
+[fn:56] For every (special comment) declaration ~ℒ = ℛ~ in the source file, the
+     name ~ℒ~ obtains a tooltip which mentions its specification ~ℛ~ and the
+     resulting legitimate Agda code. This feature is indispensable as it lets
+     one generate grouping mechanisms and quickly ensure that they are what one
+     intends them to be.
+
+[fn:55] The matrix equation $A \cdot x = B$ captures the system of equations
+with coefficients from $A$, unknowns from $x$, and $B$ are the ‘target coefficients’.
+
 [fn:54] A prototype's raison d'etre is a testing ground for ideas, so its ease
 of development may well be more important than its usability.
 
@@ -22927,8 +23050,8 @@ as a Lisp macro and so, in general, the right side of a declaration in
 ---for declaration purposes, and to avoid touching Emacs specific utilities,
 variationals src_emacs-lisp[:exports code]{f} are actually named
 src_emacs-lisp[:exports code]{𝒱-f}. One may quickly obtain the documentation of
-a variational src_emacs-lisp[:exports code]{f} with src_haskell[:exports
-code]{C-h o RET 𝒱-f} to see how it works.
+a variational src_emacs-lisp[:exports code]{f} with \newline
+src_haskell[:exports code]{C-h o RET 𝒱-f} to see how it works.
 
 
 [fn:7] None of my colleagues thought Lisp was at all the ‘right’ choice;
