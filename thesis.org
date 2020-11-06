@@ -770,9 +770,17 @@ Some consider the puzzles that are created by their omissions as spicy
 challenges, without which their texts would be boring; others shun clarity lest
 their worth is considered trivial.  [...] Some authors believe that, in order to
 keep the reader awake, one has to tickle him with surprises. [...] essential for
-earning the respect of their readership.  ---Edsger Dijkstra cite:EWD:EWD1300
+earning the respect of their readership.  ---Edsger Dijkstra \cite{EWD:EWD1300}
 #+end_quoteit
 #+latex: \vspace{2em}
+# Intentionally a \cite and not a cite:, since I don't want to show the full bib
+# to the side.
+
+#+latex: \begin{fullwidth}\fbox{ \parbox{\textwidth}{
+When there are no side remarks to be made, or a code snippet would be better
+viewed with greater width, we will unabashedly switch to using the full width of
+the page ---temporarily, on the fly, and without ceremony.
+#+latex: }}\end{fullwidth} \vfill
 
 A superficial cost of utilising margin space is that the overall page count may
 be @@latex:‘over-exaggerated’\sidenote[γ]{\color{gray!80}Which doesn't matter,
@@ -787,7 +795,8 @@ than perverse.
 #  \maketitle
 # +latex: \renewcommand\contentsname{Brief Table of Contents}
 #+latex: \setcounter{tocdepth}{1}
-#+latex: \begin{small}\tableofcontents\end{small}
+# +latex: \begin{small}\tableofcontents\end{small}
+#+latex: \tableofcontents
 # +latex: \renewcommand\contentsname{Detailed Table of Contents}
 
 
@@ -10099,7 +10108,7 @@ The remainder of this thesis is organised as follows.
 + Chapter 6 :: The contributions made by this thesis are highlighted and
   assessed. Conclusions are drawn and avenues for future work are suggested.
 
-* The =PackageFormer= Prototype
+* The @@latex:{\color{red!70}\texttt{PackageFormer}}@@ Prototype
 
 # The Second Choice: =PackageFormer=
 
@@ -10178,7 +10187,7 @@ thesis where this is a concern, so the issue should continue to remain open.
 For the interested reader, the full implementation is presented \emph{literately} as a
 discussion at \url{https://alhassy.github.io/next-700-module-systems/prototype/package-former.html}.
 We will not be discussing any Lisp code in particular.
-#+latex: }
+#+latex: } \vspace{-0.9cm}
 # \end{tcolorbox}
 
 From the lessons learned from spelunking in a few libraries, we concluded that
@@ -10212,7 +10221,13 @@ Quick summary of subsections covered.
 
 :End:
 
+#+latex: \vspace{-0.1cm}
 {{{localtoc}}}
+
+#+latex: \vspace{-6cm}\remark{
+The core of this chapter shows how some of the problems of Chapter 3, /Examples
+from the wild/, can be solved using ~PackageFormer~.
+#+latex: }\vspace{5cm}
 
 ** Why an editor extension?
    # Why Lisp is reasonable?
@@ -10286,7 +10301,7 @@ $\,$ \hfill \hspace{.95\textwidth}
   Result is pure (type-checkable) Agda}}}
 
 \remark{\textbf{How does it work?} All stages transpire in \emph{one} user-written file}
-\vspace{-3cm}
+\vspace{3cm}
 #+end_export
 
 *Why Lisp?* Emacs is extensible using @@latex:Elisp\footnote{Emacs Lisp is a
@@ -10358,7 +10373,7 @@ Programming Language research is summarised, in essence, by the question: /If �
 is written manually, what information 𝒴 can be derived for free?/ Perhaps the
 most popular instance is /type inference/: From the syntactic structure of an
 expression, its type can be derived. From a context, the src_haskell[:exports
-code]{PackageFormer} @@latex: \remark{With the extension, Agda's usual
+code]{PackageFormer}@@latex: \remark{With the extension, Agda's usual
 \texttt{C-c C-l} command parses special comments containing fictitious Agda
 declarations, produces an auxiliary Agda file which it ensures is imported in
 the current file, then control is passed to the usual Agda typechecking
@@ -10434,7 +10449,7 @@ naming, src_haskell[:exports code]{leftId} says /running the empty program on an
 input, leaves the input unchanged/, whereas src_haskell[:exports code]{assoc}
 says /to run a sequence of programs on an input, the input must be threaded
 through the programs/.  Whence, *M-Sets abstract program execution*.
-#+latex: }\vspace{24em} % \end{tcolorbox}
+#+latex: }\vspace{1cm} % \end{tcolorbox}
 
 \vspace{-1cm}
 {{{code(Different Ways to Organise (“interpret” / “use”) M-Sets)}}}
@@ -10514,31 +10529,23 @@ provide a variation on an existing grouping mechanism. The syntax ~p ⟴ 𝓋₁
 𝓋ₙ~ is tantamount to explicit forward function application ~𝓋ₙ (𝓋ₙ₋₁ (⋯ (𝓋₁ p)))~.
 With this understanding, we can explain the different ways to organise M-sets.
 
-The next page shows, first, the elaboration of lines 9-11 and, in the second
-snippet, the elaborations of lines 12-14.
+#+latex: \clearpage
+# The next page shows, first, the elaboration of lines 9-11 and, in the second
+# snippet, the elaborations of lines 12-14.
 
+#+latex: \remark{
+The waist is the number of parameters exposed; recall $ΠʷΣ$ from chapter 2.
+#+latex: } \vspace{0cm}
 In line [[(msetSemantics)]], the src_emacs-lisp[:exports code]{record} variational
   is invoked to transform the abstract context src_haskell[:exports code]{M-Set}
   into a valid Agda record declaration, with the key word src_agda[:exports
   code]{field} inserted as necessary. Later, its first 3 fields are lifted as
   parameters using the meta-primitive src_emacs-lisp[:exports code]{:waist}.
-  @@latex: \remark{The waist is the number of parameters exposed; recall $ΠʷΣ$ from chapter 2.}@@
 
-# [fn:58]
-  #+latex: \begin{tcolorbox}[title=Arbitrary functions act on modules, colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black]
-  When only one variational
-  is applied to a context, the one and only ‘⟴’ may be omitted. As such,
-  =Semantics₃= is defined as ~Semantics rename f~, where =f= is the decoration
-  function.  In this form, one is tempted to believe
-  #+latex: \begin{center}
-  # src_haskell[:exports code]{ _rename_ : PackageFormer} \\
-  # src_haskell[:exports code]{        → (Name → Name) } \\
-  # src_haskell[:exports code]{        → PackageFormer }
-  src_haskell[:exports code]{ _rename_ : PackageFormer → (Name → Name) → PackageFormer }
-  #+latex: \end{center}
-  That is, we have a binary operation in which functions may act on modules
-  ---this is yet a new feature that Agda cannot perform.
-  #+latex: \end{tcolorbox}
+#+latex: \begin{fullwidth}
+  {{{code(Elaboration of lines 9-11 \hfill Record / decorated renaming / typeclass forms)}}}
+  #+INCLUDE: "M-Set-generated.agda" src agda :lines "20-50"
+#+latex: \end{fullwidth}
 
   Notice how src_haskell[:exports code]{Semantics𝒟} was /built from/ a concrete
   context, namely the src_haskell[:exports code]{Semantics} record.  As such,
@@ -10550,25 +10557,52 @@ In line [[(msetSemantics)]], the src_emacs-lisp[:exports code]{record} variation
   code]{Left-M-Set} and so we have automatically have a view
   src_haskell[:exports code]{Right-M-Set → Left-M-Set}.
 
-#+latex: \begin{fullwidth}
-  {{{code(Lines 9-11 \hfill Record / decorated renaming / typeclass forms)}}}
-  #+INCLUDE: "M-Set-generated.agda" src agda :lines "20-50"
+  *“Arbitrary functions act on modules”:* When only one variational is applied to
+  a context, the one and only sequencing operator ‘⟴’ may be omitted. As such,
+  the 𝒟ecorated =Semantics𝒟= is defined as ~Semantics rename f~, where =f= is the
+  decoration function.  In this form, one is tempted to believe
+  #+latex: \begin{center}
+  # src_haskell[:exports code]{ _rename_ : PackageFormer} \\
+  # src_haskell[:exports code]{        → (Name → Name) } \\
+  # src_haskell[:exports code]{        → PackageFormer }
+  src_haskell[:exports code]{ _rename_ : PackageFormer → (Name → Name) → PackageFormer }
+  #+latex: \end{center}
+#+latex: \vspace{-1cm}\remark{
+  That is, we have a binary operation in which functions may act on modules
+  ---this is yet a new feature that Agda cannot perform.
+#+latex: }
 
-  {{{code(Lines 13-14 \hfill Duality: Sets can act on semigroups from the left or the right)}}}
-  #+INCLUDE: "M-Set-generated.agda" src agda :lines "52-73"
-#+latex: \end{fullwidth}
-
+#+latex: \clearpage \vspace{-2cm}\remark{
+More accurately, the ‘⟴’-based mini-language for variationals is realised as a
+Lisp macro and so, in general, the right side of a declaration in 700-comments
+is interpreted as valid Lisp modulo this mini-language: =PackageFormer= names and
+variationals are variables in the Emacs environment ---for declaration purposes,
+and to avoid touching Emacs specific utilities, variationals
+src_emacs-lisp[:exports code]{f} are actually named src_emacs-lisp[:exports
+code]{𝒱-f}. One may quickly obtain the documentation of a variational
+src_emacs-lisp[:exports code]{f} with \newline src_haskell[:exports code]{C-h o
+RET 𝒱-f} to see how it works.
+#+latex: }\vspace{0cm}
+#
 Likewise, line [[(msetLeftSet)]], mentions another combinator
-#+latex: \vspace{-1em}
+# +latex: \vspace{-1em}
 #+begin_center
 src_haskell[:exports code]{_flipping_ : PackageFormer → Name → PackageFormer}
 #+end_center
-#+latex: \vspace{-1em}
-  This combinator also takes an /optional keyword argument/
-  src_emacs-lisp[:exports code]{:renaming}, which simply renames the given pair.
-  The notation of keyword arguments is inherited[fn:8] from Lisp.
+# +latex: \vspace{1em}
+  All combinators are demonstrated in this section and their usefulness is
+  dicussed in the nextion section. For example, in contrast to the above ‘type’,
+  the src_emacs-lisp[:exports code]{flipping} combinator also takes an /optional
+  keyword argument/ src_emacs-lisp[:exports code]{:renaming}, which simply
+  renames the given pair.  The notation of keyword arguments is inherited from
+  Lisp.
 
-#+latex: \remark{ ⋆ ⋆ ⋆ }
+#+latex: \vspace{1cm}\begin{fullwidth}
+  {{{code(Elaboration of lines 13-14 \hfill Duality: Sets can act on semigroups from the left or the right)}}}
+  #+INCLUDE: "M-Set-generated.agda" src agda :lines "51-73"
+#+latex: \end{fullwidth}\vspace{1cm}
+
+# +latex: \remark{ ⋆ ⋆ ⋆ }
 
 Next, in line [[(msetTermtype)]], we view a context as such a
 @@latex:termtype\remark{An algebraic data type is a tagged union of symbols,
@@ -10583,13 +10617,13 @@ symbols targeting a sort, we have a signature.  By allowing symbols to be of
 type src_haskell[:exports code]{Set}, we actually have *generalised contexts*.
 #+latex: }
 
-  {{{code(Lines 16-18 \hfill Termtypes and lawless presentations)}}}
-  #+INCLUDE: "M-Set-generated.agda" src agda :lines "75-94"
+  {{{code(\hspace{-0.7cm}Elaboration of lines 16-18 \hfill Termtypes and lawless presentations)}}}
+  #+INCLUDE: "M-Set-generated.agda" src agda :lines "74-94"
 
 #+latex: \vspace{-4cm} \remark{
 The priming decoration in ~ScalarSyntax~ is needed so that the names ~𝟙, _×_~ do not
 pollute the global name space.
-#+latex: }\vspace{4cm}
+#+latex: }\vspace{3.1cm}
 
 Finally, starting with line [[(msetNewVariationals)]], declarations start with “
 src_haskell[:exports code]{𝒱-} ” to indicate that a new variation /combinator/ is
@@ -10613,9 +10647,11 @@ user-defined variationals.
 # +latex: \end{tcolorbox}
 
 #+latex: \begin{fullwidth}
-
-  {{{code(Lines 24-26 \hfill Conflating features gives familiar structures)}}}
-  #+INCLUDE: "M-Set-generated.agda" src agda :lines "96-"
+#+latex: \vspace{-2em}
+  {{{code(Elaboration of lines 24-26 \hfill Conflating features gives familiar structures)}}}
+  #+INCLUDE: "M-Set-generated.agda" src agda :lines "95-"
+#+latex: \end{fullwidth}
+#+latex: \newpage
 
 #+latex: \vspace{1em}
 As shown in the figure below, the source file is furnished with tooltips
@@ -10626,8 +10662,6 @@ since the editor extension results in valid code in an auxiliary file, future
 users of a library need not use the =PackageFormer= extension at all ---thus we
 essentially have a static *editor tactic* similar to Agda's (Emacs interface)
 proof finder.
-
-#+latex: \end{fullwidth}
 
 :Constraints:
 
@@ -10651,15 +10685,14 @@ Hovering to show details. Notice special syntax has default colouring: Red for
 \textsf{PackageFormer} delimiters, yellow for elements, and green for
 variationals.
 #+latex: } \vspace{-3cm}
-#+attr_latex: :width 300px
+#+attr_latex: :width 200px
 [[file:./papers/gpce19-mousing-over-large.png]]
 
-** COMMENT Practicality
+** Practicality
 <<sec:PF:practicality>>
 #+latex: \label{sec:PF:practicality}
 
 #+latex_header: \usepackage{smartdiagram}
-
 
 *** Intro                                                            :ignore:
 
@@ -10667,16 +10700,42 @@ variationals.
  # please consult the pre-print [[../papers/gpce19_a_language_feature_to_unbundle_data_at_will.pdf][A Language Feature to Unbundle Data at Will]]
  # or [[https://alhassy.github.io/next-700-module-systems/][the next 700 module systems proposal]].
 
+ #+latex: \vspace{-0.5em}
  Herein we demonstrate how to use this system from the perspective of /library
  designers/.  That is to say, we will demonstrate how common desirable features
  encountered “in the wild” ---chapter ref:sec:examples_from_the_wild--- can be
- used with our system.  The exposition here follows section 2 of the /Theory
- Presentation Combinators/ cite:tpc, reiterating many the ideas therein.  These
- features are *not built-in* but instead are constructed from a small set of
- meta-primitives, just as a small core set of language features give way to
- complex software programs.  Moreover, user may combine the meta-primitives
- ---using Lisp--- to *extend* the system to produce grouping mechanisms for any
- desired purpose.
+ used with our system.  The exposition here follows section 2 cite:tpc,
+ reiterating many the ideas therein.  These features are *not built-in* but
+ instead are constructed from a small set of primitives, shown below, just as a
+ small core set of language features give way to complex software programs.
+ Moreover, users may combine the primitives ---using Lisp--- to *extend* the
+ system to produce grouping mechanisms for any desired purpose.
+ #+latex: \vspace{+0.5em}
+
+ # #+latex: \vspace{-3cm} \remark{
+ #   This table has the *five primitives* from which all variationals are borne,
+ #   followed by two others that are useful for extending the system by making
+ #   your own grouping mechanisms and operations on them.  Using these requires a
+ #   small amount of Lisp.
+ # #+latex: }\vspace{2cm}
+
+ #+latex: \vspace{-0.415cm}\begin{fullwidth}
+    #+latex: \begin{tcolorbox}[title = \TABLE{Metaprogramming Meta-primitives for Making Modules}, colback=red!5!white, colframe=red!75!black]{\footnotesize
+   # +name: tbl:meta-primitives
+   # +caption: Metaprogramming Meta-primitives for Making Modules
+   | *Name*            | *Description*                                                          |
+   |-----------------+----------------------------------------------------------------------|
+   | ~:waist~          | Consider the first /N/ elements as, possibly ill-formed, parameters.   |
+   | ~:kind~           | Valid Agda grouping mechanisms: ~record, data, module~.                |
+   | ~:level~          | The Agda level of a PackageFormer.                                   |
+   | ~:alter-elements~ | Apply a ~List Element → List Element~ function over a PackageFormer.   |
+   | ~⟴~               | Compose two variational clauses in left-to-right sequence.           |
+   |-----------------+----------------------------------------------------------------------|
+   | ~map~             | Map a ~Element → Element~ function over a PackageFormer.               |
+   | ~generated~       | Keep the sub-PackageFormer whose elements satisfy a given predicate. |
+   |-----------------+----------------------------------------------------------------------|
+  #+latex: }\end{tcolorbox} \vspace{0.5cm}
+ #+latex: \end{fullwidth}
 
  @@comment: This section demonstrates the power and expressivity of the
  meta-primitives by showcasing a series of ubiquitous combinators /which may be
@@ -10686,15 +10745,25 @@ variationals.
  desired operations on any notion of grouping mechanism*.  @@
 
  The few constructs demonstrated in this section not only create new grouping
- mechanisms from old ones, but also create maps from the new, child,
+ mechanisms from old ones, but also create morphsisms from the new, child,
  presentations to the old parent presentations.  @@comment: Maps between
  grouping mechanisms are sometimes called /views/, Section
  ref:sec:module_theory. @@ For example, a theory extended by new declarations
  comes equipped with a map that forgets the new declarations to obtain an
  instance of the original theory.  Such morphisms are tedious to write out, and
- our system provides them for free. The user can implement such
- features using our 5 meta-primitives ---but we have implemented a few to show
- that the meta-primitives are deserving of their name.
+ our system provides them for free. The user can implement such features using
+ our 5 primitives ---but we have implemented a few to show that the primitives
+ are deserving of their name, as shown below.
+
+ #+latex: \vspace{-5cm}\remark{ %\begin{tcolorbox}[title = Do-it-yourself Extendability, colback=red!5!white, colframe=red!75!black]
+ *Do-it-yourself Extendability:*
+ In order to make the editor extension immediately useful, and to substantiate
+ the claim that *common module combinators can be defined using the system*, we
+ have implemented a few notable ones, as described in the table below. The
+ implementations, in the user manual, are discussed along with the associated
+ Lisp code and use cases.
+ #+latex: }\vspace{5cm} %\end{tcolorbox}
+
 
  :Header:
  #+BEGIN_SRC agda
@@ -10712,19 +10781,7 @@ import Relation.Binary.PropositionalEquality as ≡; open ≡ using (_≡_)
  # definitions, and to provide examples (mostly in the second part of the user
  # manual) for users to build what they want.
 
-*** Summary of Sample Variationals Provided With The System :ignore:
-    :PROPERTIES:
-    :CUSTOM_ID: Summary-of-Sample-Variationals-Provided-With-The-System
-    :END:
-
- #+latex: \begin{tcolorbox}[title = Do-it-yourself Extendability, colback=red!5!white, colframe=red!75!black]
- In order to make the editor extension immediately useful, and to substantiate
- the claim that *common module combinators can be defined using the system*, we
- have implemented a few notable ones, as described in the table below. The
- implementations, in the user manual, are discussed along with the associated
- Lisp code and use cases.
- #+latex: \end{tcolorbox}
-
+ #+latex: \begin{fullwidth}
   #+latex: \begin{tcolorbox}[title = \TABLE{Summary of Sample Variationals Provided With The System}, colback=red!5!white, colframe=red!75!black]{\footnotesize
  # +name: tbl:variationals-summary
  # +caption: Summary of Sample Variationals Provided With The System
@@ -10756,27 +10813,21 @@ import Relation.Binary.PropositionalEquality as ≡; open ≡ using (_≡_)
      | ~hom~                  | Formulate the notion of homomorphism of parent PackageFormer algebras    |
      |----------------------+--------------------------------------------------------------------------|
   #+latex: }\end{tcolorbox}
+ #+latex: \end{fullwidth}
 
-   \noindent The following table has the *five
-   meta-primitives* from which all variationals are borne, followed by two others
-   that are useful for extending the system by making your own grouping
-   mechanisms and operations on them.  Using these requires a small amount of
-   Lisp.
-    #+latex: \begin{tcolorbox}[title = \TABLE{Metaprogramming Meta-primitives for Making Modules}, colback=red!5!white, colframe=red!75!black]{\footnotesize
-   # +name: tbl:meta-primitives
-   # +caption: Metaprogramming Meta-primitives for Making Modules
-   | *Name*            | *Description*                                                          |
-   |-----------------+----------------------------------------------------------------------|
-   | ~:waist~          | Consider the first /N/ elements as, possibly ill-formed, parameters.   |
-   | ~:kind~           | Valid Agda grouping mechanisms: ~record, data, module~.                |
-   | ~:level~          | The Agda level of a PackageFormer.                                   |
-   | ~:alter-elements~ | Apply a ~List Element → List Element~ function over a PackageFormer.   |
-   | ~⟴~               | Compose two variational clauses in left-to-right sequence.           |
-   |-----------------+----------------------------------------------------------------------|
-   | ~map~             | Map a ~Element → Element~ function over a PackageFormer.               |
-   | ~generated~       | Keep the sub-PackageFormer whose elements satisfy a given predicate. |
-   |-----------------+----------------------------------------------------------------------|
-  #+latex: }\end{tcolorbox}
+#+latex: \vspace{0.5cm} \remark{
+Any variational ~𝓋~ that takes an argument of type ~τ~ can be thought of as a *binary
+packaged-valued operator*,
+#+begin_center
+src_haskell[:exports code]{_𝓋_ : PackageFormer} \newline
+src_haskell[:exports code]{ → τ} \newline
+src_haskell[:exports code]{   → PackageFormer}
+#+end_center
+With this perspective, the /sequencing variational
+combinator/ ‘⟴’ is essentially forward function composition/application.  Details
+can be found on the associated webpage; whereas the next chapter provides an
+Agda function-based semantics.
+#+latex: } \vspace{-0.5cm}
 
 \noindent =PackageFormer= packages are an *implementation of the idea* of packages
 fleshed out in Chapter ref:sec:packages_and_their_parts.  Tersely put, a
@@ -10786,40 +10837,34 @@ parameters from fields, and by src_emacs-lisp[:exports code]{:kind} to determine
 a possible legitimate Agda representation that lives in a universe dictated by
 src_emacs-lisp[:exports code]{:level}--- as well as a list of declarations
 (elements) that can be manipulated with src_emacs-lisp[:exports
-code]{:alter-elements}.  Any variational ~𝓋~ that takes an argument of type ~τ~ can
-be thought of as a *binary packaged-valued operator*,
-| ~_𝓋_ : PackageFormer → τ → PackageFormer~ |
-\noindent With this perspective, the /sequencing variational combinator/ ‘⟴’ is
-essentially forward function composition/application.  Details can be found on
-the associated webpage; whereas the next chapter provides an Agda function-based
-semantics.
+code]{:alter-elements}.
 
-The remainder of this section is an exposition of notable *user-defined*
+The remainder of this section is an exposition of notable /user-defined/
 combinators ---i.e., those which can be constructed using the system's
-meta-primitives and a small amount of Lisp.  Along the way, for each example, we
-show both the terse specfication using =PackageFormer= and its elaboration into
-pure typecheckable Agda.  In particular, since packages are essentially a list
-of declarations ---see Chapter ref:sec:packages_and_their_parts--- we begin in
+primitives and a small amount of Lisp.  Along the way, for each example, we show
+both the terse specfication using =PackageFormer= and its elaboration into pure
+typecheckable Agda.  In particular, since packages are essentially a list of
+declarations ---see Chapter ref:sec:packages_and_their_parts--- we begin in
 section ref:sec:PF:extension with the src_emacs-lisp[:exports code]{extended-by}
 combinator which “grows a package”.  Then, in section
 ref:sec:PF:practicality:postulating, we show how /Agda users/ can *quickly*, with a
-/tiny/ amount of Lisp[fn:9] knowledge, make useful variationals to abbreviate commonly
-occurring situations, such as a method to adjoin named operation properties to a
-a package.  After looking at a src_emacs-lisp[:exports code]{renaming}
-combinator, in section ref:sec:PF:practicality:renaming, and its properties that
-make it resonable; we show the Lisp code, in section
+/tiny/ amount of Lisp[fn:9] knowledge, make useful variationals to abbreviate
+commonly occurring situations, such as a method to adjoin named operation
+properties to a a package.  After looking at a src_emacs-lisp[:exports
+code]{renaming} combinator, in section ref:sec:PF:practicality:renaming, and its
+properties that make it resonable; we show the Lisp code, in section
 ref:sec:PF:practicality:pushout required for a pushout construction on packages.
 Of note is how Lisp's keyword argument feature allows the /verbose/ 5-argument
 pushout operation to be *used* /easily/ as a 2-argument operation, with other
 arguments optional.  This construction is shown to generalise set union
 (disjoint and otherwise) and provide support for granular hierarchies thereby
 solving the so-called ‘diamond problem’.  Afterword, in section
-ref:sec:PF:duality, we turn to another example of *formalising common patterns*
+ref:sec:PF:duality, we turn to another example of /formalising common patterns/
 ---see Chapter ref:sec:examples_from_the_wild--- by showing how the idea of
 duality, not much used in simpler type systems, is used to mechanically produce
 new packages from old ones.  Then, in section
 ref:sec:PF:extracting_little_theories, we show how the interface segregation
-principle can be *applied after the fact*. Finally, we close in section
+principle can be /applied after the fact/. Finally, we close in section
 ref:sec:PF:hundreds-of-theories with a measure of the systems immediate
 practicality.
 
@@ -10827,6 +10872,15 @@ practicality.
 <<sec:PF:extension>>
 #+latex: \label{sec:PF:extension}
 
+#+latex: \remark{\noindent
+ One may use the call @@latex: \hbox{\tiny@@ src_emacs-lisp[:exports code]{P = Q extended-by R
+ :adjoin-retract nil} @@latex:}@@ to extend src_emacs-lisp[:exports code]{Q} by declaration
+ src_emacs-lisp[:exports code]{R} but avoid having a view (coercion)
+ src_emacs-lisp[:exports code]{P → Q}. Of-course, src_emacs-lisp[:exports
+ code]{extended-by} is /user-defined/ and we have simply chosen to adjoint retract
+ views by default; the online documentation shows how users can define their own
+ variationals.
+#+latex: }
     The simplest operation on packages is when one package is included,
     verbatim, in another.  Concretely, consider src_haskell[:exports
     code]{Monoid} ---which consists of a number of /parameters/ and
@@ -10835,7 +10889,6 @@ practicality.
 
  {{{code( Manually Repeating the entirety of ‘Monoid’ within ‘CommutativeMonoid₀’ )}}}
  #+BEGIN_SRC agda
-{-700
 PackageFormer Monoid : Set₁ where
    Carrier : Set
    _·_     : Carrier → Carrier → Carrier
@@ -10856,28 +10909,35 @@ PackageFormer CommutativeMonoid₀ : Set₁ where
    comm    : {x y : Carrier} →  x · y  ≡  y · x
    𝕀-unique : ∀ {e} (lid : ∀ {x} → e · x ≡ x) (rid : ∀ {x} → x · e ≡ x) → e ≡ 𝕀
    𝕀-unique lid rid = ≡.trans (≡.sym leftId) rid
--}
  #+END_SRC
 
+#+latex: \vspace{-3cm}\remark{
+So much repetition for an additional axiom! Eek!
+#+latex: }\vspace{2cm}
+
+ #+latex: \begin{fullwidth}
+ #+latex: \vspace{-3cm}\noindent
  As expected, the only difference is that src_haskell[:exports
  code]{CommutativeMonoid₀} adds a src_emacs-lisp[:exports code]{comm}utatity
  axiom.  Thus, given src_haskell[:exports code]{Monoid}, it would be *more
  economical* to define:
 
+ #+latex: \vspace{1em}
  {{{code( Economically declaring only the new additions to ‘Monoid’ )}}}
  #+BEGIN_SRC agda
-{-700
 CommutativeMonoid = Monoid extended-by "comm : {x y : Carrier} →  x · y  ≡  y · x"
--}
  #+END_SRC
+#+latex: \end{fullwidth}
 
+#+latex: \remark{
  As discussed in the previous section, mouse-hovering over the left-hand-side of
  this declaration gives a tooltip showing the resulting elaboration, which is
- identical to src_haskell[:exports code]{CommutativeMonoid₀} above along with a
- forgetful operation, shown below.  The tooltip shows the /expanded/ version of
- the theory, which is *what we want to specify but not what we want to enter
- manually*.  As discussed in section ref:sec:examples:extensions, to obtain this
- specification of src_haskell[:exports code]{CommutativeMonoid} in the current
+ identical to src_haskell[:exports code]{CommutativeMonoid₀} above ---followed
+ by forgetful operation.  The tooltip shows the /expanded/ version of the theory,
+ which is *what we want to specify but not what we want to enter manually*.
+#+latex: } \noindent
+ As discussed in section ref:sec:examples:extensions, to obtain this
+ specification of \newline src_haskell[:exports code]{CommutativeMonoid} in the current
  implementation of Agda, one would likely declare a record with two fields
  ---one being a src_haskell[:exports code]{Monoid} and the other being the
  commutativity constraint--- however, this _only_ gives the appearance of the
@@ -10887,6 +10947,7 @@ CommutativeMonoid = Monoid extended-by "comm : {x y : Carrier} →  x · y  ≡ 
  value first. It is a happy coincidence that our system alleviates such an
  issue; i.e., we have *flattened extensions*.
 
+:Already_done_in_tour:
  Alternatively, we may reify the new syntactical items as concrete Agda
  supported src_agda[:exports code]{record}s as follows.
  {{{code( Every ‘CommutativeMonoid’ is automatically viewable as a ‘Monoid’ )}}}
@@ -10915,6 +10976,7 @@ neato = CommutativeMonoidR.toMonoidR
  views by default; the online documentation shows how users can define their own
  variationals.
  #+latex: \end{tcolorbox}
+:End:
 
 *** Defining a Concept Only Once
     :PROPERTIES:
@@ -10923,36 +10985,46 @@ neato = CommutativeMonoidR.toMonoidR
 <<sec:PF:practicality:postulating>>
 #+latex: \label{sec:PF:practicality:postulating}
 
-    From a library-designer's perspective, our definition of
+#+latex: \remark{
+The definition below uses functional methods and
+should not be inaccessible to Agda programmers.
+#+latex: } \remark{\centering ⋆ ⋆ ⋆} \remark{
+Method call src_emacs-lisp[:exports code]{(s-replace old new s)}
+replaces all occurrences of string src_emacs-lisp[:exports code]{old} by
+src_emacs-lisp[:exports code]{new} in the given string src_emacs-lisp[:exports
+code]{s}.
+#+latex: } \remark{\centering ⋆ ⋆ ⋆} \remark{
+src_emacs-lisp[:exports code]{(pcase e (x₀ y₀) … (xₙ yₙ))}
+pattern matches on src_emacs-lisp[:exports code]{e} and performs the first
+src_emacs-lisp[:exports code]{yᵢ} if src_emacs-lisp[:exports code]{e = xᵢ},
+otherwise it returns src_emacs-lisp[:exports code]{nil}.
+#+latex: } \vspace{-1cm}
+
+    From a library-designer's perspective, our definition of \newline
     src_haskell[:exports code]{CommutativeMonoid} has the commutativity property
     ‘hard coded’ into it.  If we wish to speak of commutative magmas ---types
     with a single commutative operation--- we need to hard-code the property
     once again.  If, at a later time, we wish to move from having arguments be
     implicit to being explicit then we need to track down every hard-coded
-    instance of the property then alter them ---having them in-sync becomes an
-    issue.
-
-    Instead, the system lets us ‘build upon’ the src_emacs-lisp[:exports
+    instance of the property then alter them ---having them in-sync then becomes
+    an issue.
+    Instead, as shown below, the system lets us ‘build upon’ the src_emacs-lisp[:exports
     code]{extended-by} combinator: We make an associative list of names and
     properties, then string-replace the meta-names /op, op′, rel/ with the
-    provided user names.  The definition below uses functional methods and
-    should not be inaccessible to Agda programmers[fn:11].
+    provided user names.
 
- {{{code( The ‘postulating’ variational )}}}
+#+latex: \vspace{-2.2cm}\begin{fullwidth}
+ {{{code( Writing definitions \textbf{only once} with the ‘postulating’ variational )}}}
  #+BEGIN_SRC emacs-lisp  :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
 (𝒱 postulating bop prop (using bop) (adjoin-retract t)
  = "Adjoin a property PROP for a given binary operation BOP.
 
    PROP may be a string: associative, commutative, idempotent, etc.
-
    Some properties require another operator or a relation; which may
    be provided via USING.
 
    ADJOIN-RETRACT is the optional name of the resulting retract morphism.
-   Provide nil if you do not want the morphism adjoined.
-
-   With this variational, a definition is only written once.
-   "
+   Provide nil if you do not want the morphism adjoined."
    extended-by
     (s-replace "op" bop (s-replace "rel" using (s-replace "op′" using
      (pcase prop
@@ -10965,10 +11037,13 @@ neato = CommutativeMonoidR.toMonoidR
       ("reflexive"     "refl    : ∀ x y  → rel x x")
       ("transitive"    "trans   : ∀ x y z → rel x y → rel y z → rel x z")
       ("antisymmetric" "antisym : ∀ x y → rel x y → rel y x → x ≡ z")
+      ("congruence"    "cong    : ∀ x x′ y y′ → rel x x′ → rel y y′ → rel (op x x′) (op y y′)")
       (_ (error "𝒱-postulating does not know the property “%s”" prop))
       )))) :adjoin-retract 'adjoin-retract)
  #+END_SRC
+#+latex: \end{fullwidth}
 
+:How_It_Works:
  #+latex: \begin{tcolorbox}[title = Lisp Syntax, colback=red!5!white, colframe=red!75!black]
  The syntax of variational declarations was discussed in the previous section;
  one has access to the entirety of Emacs Lisp when forming such definitions.  In
@@ -10991,13 +11066,16 @@ neato = CommutativeMonoidR.toMonoidR
  src_emacs-lisp[:exports code]{extended-by} and simply propagates the
  request to either adjoin, or not, a retract to the parent package.
  #+latex: \end{tcolorbox}
+:END:
 
- We can extend this database of properties as needed with relative ease. Here is
- an example use along with its elaboration.
+ # +latex: \begin{tcolorbox}[colback=red!5!white, colframe=red!75!black]  # +latex: \end{tcolorbox}
+ As such, we have a formal approach to the idea that *each piece of mathematical
+ knowledge should be formalised only once* cite:DBLP:conf/aisc/GrabowskiS10.  We
+ can extend this database of properties as needed with relative ease. Here is an
+ example use along with its elaboration.
 
  {{{code( Example Use )}}}
  #+BEGIN_SRC agda
-{-700
 PackageFormer Magma : Set₁ where
   Carrier : Set
   _·_      : Carrier → Carrier → Carrier
@@ -11005,7 +11083,6 @@ PackageFormer Magma : Set₁ where
 RawRelationalMagma = Magma extended-by "_≈_ : Carrier → Carrier → Set" ⟴ record
 
 RelationalMagma    = RawRelationalMagma postulating "_·_" "congruence" :using "_≈_" ⟴ record
--}
  #+END_SRC
  {{{code( Associated Elaboration )}}}
  #+BEGIN_SRC haskell :remark these-are-just-results-from-previous-blocks :tangle no
@@ -11026,16 +11103,15 @@ record RelationalMagma : Set₁ where
     toRawRelationalMagma        : let View X = X in View RawRelationalMagma ;   toRawRelationalMagma = record {Carrier = Carrier;op = op;_≈_ = _≈_}
  #+END_SRC
 
- ( The src_haskell[:exports code]{let View X = X in View ⋯} clauses are a part
+#+latex: \vspace{-5cm}\remark{
+ The src_haskell[:exports code]{let View X = X in View ⋯} clauses are a part
  of the user implementation of src_emacs-lisp[:exports code]{extended-by}; they
  are used as markers to indicate that a declaration is a /view/ and so should not
  be an element of the current view constructed by a call to src_emacs-lisp[:exports
- code]{extended-by}. )
+ code]{extended-by}.
+#+latex: }\vspace{5cm}
 
- #+latex: \begin{tcolorbox}[colback=red!5!white, colframe=red!75!black]
- Hence, we have a formal approach to the idea that *each piece of mathematical
- knowledge should be formalised only once* cite:DBLP:conf/aisc/GrabowskiS10.
- #+latex: \end{tcolorbox}
+#+latex: \begin{fullwidth}
 
  In conjunction with src_emacs-lisp[:exports code]{postulating},
  the src_emacs-lisp[:exports code]{extended-by} variational makes it
@@ -11046,6 +11122,7 @@ record RelationalMagma : Set₁ where
  of src_haskell[:exports code]{CommutativeMonoid₀} is identical to
  the src_haskell[:exports code]{CommutativeMonoid} package obtained by
  using variationals, as follows.
+ #+latex: \vspace{1cm}
 
  {{{code(Building fine-grained hierarchies with ease)}}}
 #+BEGIN_SRC agda
@@ -11057,12 +11134,20 @@ LeftUnitalSemigroup = Semigroup           postulating "_·_" "left-unit"  :using
 Monoid              = LeftUnitalSemigroup postulating "_·_" "right-unit" :using "𝕀"
 CommutativeMonoid   = Monoid              postulating "_·_" "commutative"
 #+END_SRC
-\noindent
+
+#+latex: \vspace{1em} \noindent
 Of-course, one can continue to build packages in a monolithic fashion, as shown below.
- {{{code()}}}
+  {{{code()}}}
 #+BEGIN_SRC agda
-GroupR = MonoidR extended-by "_⁻¹ : Carrier → Carrier; left⁻¹ : ∀ {x} → (x ⁻¹) · x ≡ 𝕀; right⁻¹ : ∀ {x} → x · (x ⁻¹) ≡ 𝕀" ⟴ record
+Group = Monoid extended-by "_⁻¹ : Carrier → Carrier; left⁻¹ : ∀ {x} → (x ⁻¹) · x ≡ 𝕀; right⁻¹ : ∀ {x} → x · (x ⁻¹) ≡ 𝕀" ⟴ record
 #+END_SRC
+
+#+latex: \vspace{1em} \noindent
+After discussing renaming, we return to discuss the loss of relationships when
+we augment ~Group~ with a commutativity axiom ---commutative groups are
+commutative monoids!
+
+#+latex: \end{fullwidth}
 
 *** Renaming
     :PROPERTIES:
@@ -11072,43 +11157,51 @@ GroupR = MonoidR extended-by "_⁻¹ : Carrier → Carrier; left⁻¹ : ∀ {x} 
 <<sec:PF:practicality:renaming>>
 #+latex: \label{sec:PF:practicality:renaming}
 
+ #+latex: \remark{
+    An Abealian monoid is /both/ a commutative monoid and also, simply, a monoid.
+    The above declaration freely maintains these relationships: The resulting
+    record comes with a new projection src_haskell[:exports
+    code]{toCommutativeMonoid}, and still has the /inherited/ projection
+    src_haskell[:exports code]{toMonoid}.
+#+latex: } \vspace{-1cm}
+
     From an end-user perspective, our src_haskell[:exports
     code]{CommutativeMonoid} has one flaw: Such monoids are frequently written
     /additively/ rather than multiplicatively. Such a change can be rendered
     conveniently:
-
  {{{code( Renaming Example )}}}
  #+BEGIN_SRC agda
-{-700
-AbealianMonoidR = CommutativeMonoidR renaming "_·_ to _+_"
--}
+AbealianMonoid = CommutativeMonoid renaming "_·_ to _+_"
  #+END_SRC
 
-    An Abealian monoid is /both/ a commutative monoid and also, simply, a monoid.
-    The above declaration freely maintains these relationships: The resulting
-    record comes with a new projection src_haskell[:exports
-    code]{toCommutativeMonoidR}, and still has the /inherited/ projection
-    src_haskell[:exports code]{toMonoidR}.
+    There are a few reasonable properties that a renaming construction should
+    support. Let us briefly look at the (operational) properties of
+    src_emacs-lisp[:exports code]{renaming}.
 
-    There are a few reasonable properties that a renaming construction
-    should support. Let us briefly look at the properties of src_C[:exports code]{renaming}.
+**** Relationship to Parent Packages :ignore:
 
-**** Relationship to Parent Packages
-    Dual to src_emacs-lisp[:exports code]{extended-by} which can construct
-    (retract) views *to parent* modules mechanically, src_emacs-lisp[:exports
-    code]{renaming} constructs (coretract) views *from parent* packages. That is,
-    it has an optional argument src_emacs-lisp[:exports code]{:adjoin-coretract}
-    which can be provided with src_emacs-lisp[:exports code]{t} to use a default
-    name or provided with a string to use a desired name for the inverse part of
-    a projection, src_haskell[:exports code]{fromMagma} below.
+#+latex: \newline
+
+    *Relationship to Parent Packages.* Dual to src_emacs-lisp[:exports
+    code]{extended-by} which can construct (retract) views /to parent/ modules
+    mechanically, src_emacs-lisp[:exports code]{renaming} constructs (coretract)
+    views /from parent/ packages.
+#+latex: \vspace{-1cm}\remark{
+    That is, it has an optional argument src_emacs-lisp[:exports
+    code]{:adjoin-coretract} which can be provided with src_emacs-lisp[:exports
+    code]{t} to use a default name or provided with a string to use a desired
+    name for the inverse part of a projection, src_haskell[:exports
+    code]{fromMagma} below.
+#+latex: }\vspace{1cm}
 
     {{{code(Adjoining coretracts ---views from parent packages)}}}
  #+BEGIN_SRC agda
-{-700
 Sequential = Magma renaming "op to _⨾_" :adjoin-coretract t
--}
  #+END_SRC
- {{{code(Elaboration)}}}
+
+#+latex: \vspace{-1.6cm} $\,$ \hfill \hspace{.95\textwidth} {\Large \maxsizebox{.6\textwidth}{\textheight}{
+ {{{code(\texttt{Sequential} elaboration)}}}
+ #+ATTR_LATEX: :options fontsize=\small
  #+BEGIN_SRC haskell :remark these-are-just-results-from-previous-blocks :tangle no
 record Sequential : Set₁ where
     field Carrier : Set
@@ -11123,106 +11216,121 @@ record Sequential : Set₁ where
     fromMagma : let View X = X in Magma → View Sequential
     fromMagma = λ g227742 → record {Carrier = Magma.Carrier g227742;_⨾_ = Magma.op g227742}
  #+END_SRC
+#+latex: }}
 
- \noindent
- As the elaboration show, the user implementation of src_emacs-lisp[:exports
- code]{renaming} makes use of /gensym/'s ---generated symbolic names, “fresh
- variable names”--- for λ-arguments to avoid name clashes.
+#+latex: \vspace{-0.4cm}\remark{
+ This user implementation of src_emacs-lisp[:exports code]{renaming} avoid name
+ clashes for λ-arguments by using /gensyms/ ---generated symbolic names, “fresh
+ variable names”.
+#+latex: }
 
-**** Commutativity
-   Since src_emacs-lisp[:exports code]{renaming} and src_emacs-lisp[:exports
-   code]{extended-by} (including src_emacs-lisp[:exports code]{postulating})
-   both adjoin retract morphisms, by default, we are lead to wonder about the
-   result of performing these operations in sequence ‘on the fly’, rather than
-   naming each application. Since src_emacs-lisp[:exports code]{P renaming X ⟴
-   postulating Y} comes with a retract src_haskell[:exports code]{toP} via the
+**** Commutativity :ignore:
+
+#+latex: \vspace{-2cm}
+
+*Commutativity.* Since src_emacs-lisp[:exports code]{renaming} and
+   src_emacs-lisp[:exports code]{postulating} both adjoin retract morphisms, by
+   default, we are led to wonder about the result of performing these
+   operations in sequence ‘on the fly’, rather than naming each
+   application. Since src_emacs-lisp[:exports code]{P renaming X ⟴ postulating
+   Y} comes with a retract src_haskell[:exports code]{toP} via the
    src_emacs-lisp[:exports code]{renaming} and another, distinctly defined,
    src_haskell[:exports code]{toP} via src_emacs-lisp[:exports
    code]{postulating}, we have that the operations commute if /only/ the first
-   permits the creation of a retract. Below is a concrete example wherein we may
-   replace @@latex: \begin{center}@@ src_emacs-lisp[:exports code]{renaming "_·_
-   to _⊔_" ⟴ postulating "_⊔_" "idempotent"} @@latex: \end{center}@@ with
-   @@latex: \begin{center}@@ src_emacs-lisp[:exports code]{postulating "_⊔_"
-   "idempotent" ⟴ renaming "_·_ to _⊔_"} @@latex: \end{center}@@ and still end up
-   with the same elaboration, up to order of constituents.
+   permits the creation of a @@latex: retract\footnote{@@
+For instance, we may define idempotent magmas with
+#+latex: \vspace{1ex}\newline
+src_emacs-lisp[:exports code]{   renaming "_·_ to _⊔_"}
+#+latex: \newline\mbox{
+src_emacs-lisp[:exports code]{⟴ postulating "_⊔_" "idempotent"}
+#+latex: }\newline
+src_emacs-lisp[:exports code]{:adjoin-retract nil}
+#+latex: \vspace{1ex}\newline
+or, equivalently (up to reordering of constituents), with
+#+latex: \vspace{1ex}\newline
+src_emacs-lisp[:exports code]{postulating "_⊔_" "idempotent" ⟴ renaming "_·_ to _⊔_"     :adjoin-retract nil}
+#+latex: }. % \vspace{-0.5cm}
+# %\vspace{-2cm}\remark{
+#   and still end up with the same elaboration, up to order of constituents.
 
-   {{{code()}}}
-#+BEGIN_SRC agda
-{-700
-IdempotentMagma  = Magma renaming "_·_ to _⊔_" ⟴ postulating "_⊔_" "idempotent"   :adjoin-retract nil ⟴ record
--}
-#+END_SRC
-
+#+latex: \vspace{1em}
   It is important to realise that the renaming and postulating combinators are
   /user-defined/, and could have been defined without adjoining a retract by
   default; consequently, we would have *unconditional commutativity of these
   combinators*. The user can make these alternative combinators as follows:
 
+#+latex: \vspace{0.5cm} \begin{fullwidth}
   {{{code(Alternative ‘renaming’ and ‘postulating’ ---with an example use)}}}
 #+BEGIN_SRC agda
-{-700
 𝒱-renaming′ by = renaming 'by :adjoin-retract nil
 𝒱-postulating′ p bop (using) = postulating 'p 'bop :using 'using :adjoin-retract nil
 
-IdempotentMagma′ = Magma postulating′ "_⊔_" "idempotent" ⟴ renaming′ "_·_ to _⊔_" ⟴ record
--}
+IdempotentMagma = Magma postulating′ "_⊔_" "idempotent" ⟴ renaming′ "_·_ to _⊔_"
 #+END_SRC
+#+latex: \end{fullwidth}
 
-# Super near stuff!
+# Super neat stuff!
 
-**** Simultaneous Textual Substitution
+**** Simultaneous Textual Substitution & Involution; self-inverse                            :ignore:
 
-As expected, simultaneous renaming works too.
-# ^_^
-{{{code()}}}
+#+latex: \vspace{0em}\remark{
+src_haskell[:exports code]{TwoR} is just src_haskell[:exports code]{Two} but as
+an Agda src_agda[:exports code]{record}, so it typechecks.
+#+latex: } \vspace{-1cm}
+
+Finally, as expected, simultaneous renaming works too, and renaming is an
+invertible operation ---e.g., below src_haskell[:exports code]{Magmaʳʳ} is
+identical to src_haskell[:exports code]{Magma}.
+
+#+latex: \vspace{-0.6cm} $\,$ \hfill \hspace{.95\textwidth} {\Large \maxsizebox{.6\textwidth}{\textheight}{
+{{{code(Simultaneous textual substitution example)}}}
+ #+ATTR_LATEX: :options fontsize=\small
 #+BEGIN_SRC agda
-{-700
 PackageFormer Two : Set₁ where
   Carrier : Set
   𝟘       : Carrier
   𝟙       : Carrier
 
 TwoR = Two record ⟴ renaming′ "𝟘 to 𝟙; 𝟙 to 𝟘"
--}
 #+END_SRC
-src_haskell[:exports code]{TwoR} is just src_haskell[:exports code]{Two} but as
-an Agda src_agda[:exports code]{record}, so it typechecks.
+#+latex: }}
 
-**** Involution; self-inverse
-
-Finally, renaming is an invertible operation ---ignoring the adjoined retracts,
-src_haskell[:exports code]{Magmaʳʳ} is identical to src_haskell[:exports
-code]{Magma}.
-
-{{{code()}}}
+# Self Inverse
+#+latex: \vspace{-2cm}
+{{{code(\hspace{-2ex}({\footnotesize Recall \texttt{renaming′} performs renaming but does not adjoin retract views.}))}}}
 #+BEGIN_SRC agda
-{-700
-Magmaʳ  = Magma  renaming "_·_  to op"
-Magmaʳʳ = Magmaʳ renaming "op   to _·_"
--}
+Magmaʳ  = Magma  renaming′ "_·_  to op"
+Magmaʳʳ = Magmaʳ renaming′ "op   to _·_"
 #+END_SRC
 
-**** Do-it-yourself
+**** Do-it-yourself :ignore:
 
 <<sec:PF:practicality:renaming:rename>>
 #+latex: \label{sec:PF:practicality:renaming:rename}
 
+#+latex: \begin{fullwidth}
+*Do-it-yourself.*
 Finally, to demonstrate the accessibility of the system, we show how a generic
-renaming operation can be defined swiftly using the extended set of
-meta-primitives mentioned in the lower part of Table ref:tbl:meta-primitives.
-Instead of src_emacs-lisp[:exports code]{renaming} elements /one at a time/,
-suppose we want to be able to uniformly src_C[:exports code]{rename} all
-elements in a package. That is, given a function src_emacs-lisp[:exports
-code]{f} on strings, we want to map over the name component of each
-element in the package. This is easily done with the following declaration.
+renaming operation can be defined swiftly using the primitives mentioned listed
+in the first table of this section.  Instead of src_emacs-lisp[:exports
+code]{renaming} elements /one at a time/, suppose we want to be able to uniformly
+src_emacs-lisp[:exports code]{rename} all elements in a package. That is, given a
+function src_emacs-lisp[:exports code]{f} on strings, we want to map over the
+name component of each element in the package. This is easily done with the
+following declaration.
+
+#+latex: \vspace{1em}
 {{{code(Tersely forming a new variational)}}}
 #+begin_src emacs-lisp
 𝒱-rename f = map (λ element → (map-name (λ nom → (funcall f nom))) element)
 #+end_src
+#+latex: \end{fullwidth}
 
-\noindent Perhaps the main point of the above definition that may be unexpected
-to the Agda programmer is that Lisp function calls are of the form
-src_emacs-lisp[:exports code]{(function arg₀ arg₁ ... argₙ)}.
+# \noindent Perhaps the main point of the above definition that may be unexpected
+# to the Agda programmer is that Lisp function calls are of the form
+# src_emacs-lisp[:exports code]{(function arg₀ arg₁ ... argₙ)}.
+
+#+latex: \vspace{-0.5em}
 
 *** Unions/Pushouts (and intersections)
     :PROPERTIES:
@@ -11232,28 +11340,30 @@ src_emacs-lisp[:exports code]{(function arg₀ arg₁ ... argₙ)}.
 <<sec:PF:practicality:pushout>>
 #+latex: \label{sec:PF:practicality:pushout}
 
- But even with these features, using src_haskell[:exports code]{GroupR} from above, we would find ourselves writing:
+#+latex: \vspace{-0.5em}
+
+But even with these features, using src_haskell[:exports code]{Group} from above, we would find ourselves writing:
+# But even with these features, we may find ourselves writing:
  {{{code()}}}
  #+BEGIN_SRC agda
-{-700
-CommutativeGroupR₀ = GroupR extended-by "comm : {x y : Carrier} →  x · y  ≡  y · x" ⟴ record
--}
+CommutativeGroup₀ = Group extended-by "comm : {x y : Carrier} →  x · y  ≡  y · x" ⟴ record
 #+END_SRC
 
+#+latex: \noindent
  This is *problematic*: We lose the /relationship/ that every commutative group is a
  commutative monoid.  This is not an issue of erroneous hierarchical design:
  From src_haskell[:exports code]{Monoid}, we could orthogonally add a
  commutativity property or inverse operation; src_haskell[:exports
- code]{CommutativeGroupR₀} then closes this diamond-loop by adding both
- features, as shown in Figure ref:fig:group-diamond.  The simplest way to share
+ code]{CommutativeGroup₀} then closes this diamond-loop by adding both
+ features, as shown in the figure to the right.  The simplest way to share
  structure is to union two presentations:
 
  #+latex_header: \usepackage{my-tikz-cats}
  #+begin_export latex
-\begin{figure}
-  \label{fig:group-diamond}
-  \caption{Given green, require red}
-\begin{center}
+\vspace{-7cm}\remark{\centerline{Given green, require red}}
+
+$\,$ \hfill \hspace{.95\textwidth}
+{\large \maxsizebox{.6\textwidth}{\textheight}{
   \begin{tikzpicture}
     \setlength{\unit}{3cm}
 \def\arrowthickness{thick}
@@ -11271,20 +11381,16 @@ CommutativeGroupR₀ = GroupR extended-by "comm : {x y : Carrier} →  x · y  �
 % Require red,
 \mkline[bend left]{top = CM}{left = G, required color}
 \mkline[bend right]{top = MUO}{right = G, required color}
-\end{tikzpicture}
-\end{center}
-\end{figure}
+\end{tikzpicture}}} \vspace{0cm}
  #+end_export
 
  {{{code(Unions of packages)}}}
  #+BEGIN_SRC agda
-{-700
-CommutativeGroupR = GroupR union CommutativeMonoidR ⟴ record
--}
+CommutativeGroup = Group union CommutativeMonoid ⟴ record
  #+END_SRC
 
  \noindent The resulting record, src_haskell[:exports code]{CommutativeMonoidR},
- comes with three derived fields ---src_haskell[:exports code]{toMonoidR,
+ comes with three[fn:60] derived fields ---src_haskell[:exports code]{toMonoidR,
  toGroupR, toCommutativeMonoidR}--- that retain the results relationships with
  its hierarchical construction.  This approach “works” to build a sizeable
  library, say of the order of 500 concepts, in a fairly economical way
@@ -11292,27 +11398,29 @@ CommutativeGroupR = GroupR union CommutativeMonoidR ⟴ record
  consists of 5 arguments ---three objects and two morphisms--- which may be
  included into the src_emacs-lisp[:exports code]{union} operation as optional
  keyword arguments.  The more general notion of pushout is required if we were
- to combine src_haskell[:exports code]{GroupR} with src_haskell[:exports
- code]{AbealianMonoidR}, which have non-identical syntactic copies of
- src_haskell[:exports code]{MonoidR}.
+ to combine[fn:61] src_haskell[:exports code]{Group} with src_haskell[:exports
+ code]{AbealianMonoid}, which have non-identical syntactic copies of
+ src_haskell[:exports code]{Monoid}.
 
- The pushout of $f : Z → X$ and $g : Z → Y$ is, essentially, the disjoint sum of
- $X$ and $Y$ where embedded elements are considered ‘indistinguishable’ when
- they share the same origin in $Z$ via the paths $f$ and $g$ ---the pushout
- generalises the notion of /least upper bound/ as shown in Figure ref:fig:pushout
- by treating each ‘→’ as a ‘≤’.  Unfortunately, the resulting
- ‘indistinguishable’ elements $f(z) ≈ g(z)$ are *actually distinguishable*: They may be the
- /f/-name or the /g/-name and a choice must be made as to which name is preferred
- since users actually want to refer to them later on.  Hence, to be useful for
- library construction, the pushout construction actually requires at least
- another input function that provides canonical names to the supposedly
- ‘indistinguishable’ elements.
+ #+latex: \remark{\textbf{What is a pushout?}}
+ #+latex: \vspace{-0.2em}
+ The pushout of morphisms $f : Z → X$ and $g : Z → Y$ is, essentially, the
+ disjoint sum of contexts $X$ and $Y$ where embedded elements are considered
+ ‘indistinguishable’ when they share the same origin in $Z$ via the ‘paths’ $f$
+ and $g$ ---the pushout generalises the notion of /least upper bound/ as shown in
+ the figure to the right, by treating each ‘→’ as a ‘≤’.  Unfortunately, the
+ resulting ‘indistinguishable’ elements $f(z) ≈ g(z)$ are *actually
+ distinguishable*: They may be the /f/-name or the /g/-name and a choice must be made
+ as to which name is preferred since users actually want to refer to them later
+ on.  Hence, to be useful for library construction, the pushout construction
+ actually requires at least another input function that provides canonical names
+ to the supposedly ‘indistinguishable’ elements. Hence, 6 inputs are actually
+ needed for forming a /usable/ pushout object.
 
   #+begin_export latex
-\begin{figure}
-  \label{fig:pushout}
-  \caption{Given green, require red, such that every candidate cyan has a unique umber}
-\begin{center}
+\vspace{-5cm}
+$\,$ \hfill \hspace{.95\textwidth}
+{\large \maxsizebox{.6\textwidth}{\textheight}{
 \begin{tikzpicture}
 \setlength{\unit}{3cm}
 \def\arrowthickness{thick}
@@ -11336,128 +11444,100 @@ CommutativeGroupR = GroupR union CommutativeMonoidR ⟴ record
 \mkline[bend right]{top = Y, dx = +0.2cm}{right = PP, candidate color}
 % there is a unique umber
 \mkline{top = P}{bot = PP,  dashed, unique color}
-\end{tikzpicture}
-\end{center}
-\end{figure}
+\end{tikzpicture}}}
+
+\remark{Given green, require red, such that every candidate cyan has a unique umber}
+\vspace{-3.5cm}
   #+end_export
+
+ #+latex: \vspace{-0.2em}
+ At first, a pushout construction needs 5 inputs, to be practical it further
+ needs a function for canonical names for a total of 6 inputs. However, a
+ pushout of $f : Z → X$ and $g : Z → Y$ is intended to be the ‘smallest object
+ $P$ that contains a copy of $X$ and of $Y$ sharing the common substructure
+ $X$’, and as such it outputs two functions $\mathsf{inj₁} : X → P,\,
+ \mathsf{inj₂} : Y → P$ that inject the names of $X$ and $Y$ into $P$.  If we
+ realise $P$ as a record ---a type of models--- then the embedding functions are
+ /reversed/, to obtain projections $P → X$ and $P → Y$: If we have a model of $P$,
+ then we can forget some structure and rename via $f$ and $g$ to obtain models
+ of $X$ and $Y$.  For the resulting construction to be useful, these names could
+ be automated such as $\mathsf{toX} : P → X$ and $\mathsf{toY} : P → Y$ but such
+ a naming scheme does not scale ---but we shall use it for default names. As
+ such, we need two more inputs to the pushout construction so the names of the
+ resulting output functions can be used later on.  /Hence, a practical choice of
+ pushout needs 8 inputs!/
+
+ #+latex: \remark{\textbf{By changing perspective, we half the number of inputs to the pushout construction!}} \vspace{-0.9cm}
 
  Since a ~PackageFormer~ is essentially just a /signature/ ---a collection of typed
  names---, we can make a ‘partial choice of pushout’ to reduce the number of
  arguments from 6 to 4 by letting the typed-names object $Z$ be ‘inferred’ and
  encoding the canonical names function into the operations $f$ and $g$.  The
- inputs functions $f, g$ are necessarily /signature morphisms/ ---mappings of
- names that preserve types--- and so are simply lists associating names of $Z$
- to names of $X$ and $Y$. If we instead consider $f′ : Z′ ← X$ and $g′ : Z′ ←
- Y$, in the /opposite direction/, then we may reconstruct a pushout by setting $Z$
- to be common image of $f′, g′$, and set $f, g$ to be inclusions.
- In-particular, the full identity of $Z′$ is not necessarily relevant for the
- pushout reconstruction and so it may be omitted. Moreover, the issue of
- canonical names is resolved:
- *If $x ∈ X$ is intended to be identified with $y ∈ Y$ such that the resulting
- element has $z$ as the chosen canonical name, then we simply require $f′\, x =
- z = g′ \, y$.* An example is shown below in Figure ref:fig:pushout-example.
+ input functions $f, g$ are necessarily /signature morphisms/ ---mappings of names
+ that preserve types--- and so are simply lists associating names of $Z$ to
+ names of $X$ and $Y$. If we instead consider $f′ : Z′ ← X$ and $g′ : Z′ ← Y$,
+ in the /opposite direction/, then we may reconstruct a pushout by setting $Z$ to
+ be common image of $f′, g′$, and set $f, g$ to be inclusions.  In-particular,
+ the full identity of $Z′$ is not necessarily relevant for the pushout
+ reconstruction and so it may be omitted. Moreover, the issue of canonical names
+ is resolved: @@latex:\emph{@@If $x ∈ X$ is intended to be identified with $y ∈
+ Y$ such that the resulting element has $z$ as the chosen canonical name, then
+ we simply require $f′\, x = z = g′ \, y$.@@latex:}@@
+ # An example is shown below in Figure ref:fig:pushout-example.
 
- At first, a pushout construction needs 5 inputs, to be practical it further
- needs a function for canonical names for a total of 6 inputs. However, a
- pushout of $f : Z → X$ and $g : Z → Y$ is intended to be the ‘smallest object
- $P$ that contains a copy of $X$ and of $Y$ sharing the common substructure
- $X$’, and as such it outputs two functions $inj₁ : X → P,\, inj₂ : Y → P$ that
- inject the names of $X$ and $Y$ into $P$.  If we realise $P$ as a record ---a
- type of models--- then the embedding functions are /reversed/, to obtain
- projections $P → X$ and $P → Y$: If we have a model of $P$, then we can forget
- some structure and rename via $f$ and $g$ to obtain models of $X$ and $Y$.  For
- the resulting construction to be useful, these names could be automated such as
- $toX : P → X$ and $toY : P → Y$ but such a naming scheme does not scale ---but
- we shall use it for default names. As such, we need two more inputs to the
- pushout construction so the names of the resulting output functions can be used
- later on.  /Hence, a practical choice of pushout needs 8 inputs!/
+#+latex: \vspace{-4cm}\remark{
+ That is, /this particular user implementation/ realises
+ @@latex: \vspace{-0.5em}\begin{center}\hbox{@@
+ src_emacs-lisp[:exports code]{X₁ union X₂ :renaming₁ f′ :renaming₂ g′}
+ @@latex: }\end{center}\vspace{-1em}@@
+ as the pushout of the inclusions
+#+begin_center
+ src_haskell[:exports code]{f′ X₁ ∩ g′ X₂ ↪ Xᵢ}
+#+end_center
+ where the source is the set-wise intersection of /names/.  Moreover, when either
+ src_emacs-lisp[:exports code]{renamingᵢ} is omitted, it defaults to the
+ identity function.
+#+latex: } \vspace{3cm}
 
- Using the above issue to reverse the directions of $f, g$ via $f′, g′$, we can
+#+latex: \remark{
+In Lisp, optional keyword arguments are passed with the syntax
+src_emacs-lisp[:exports code]{:arg val}.
+#+latex: } \remark{\centerline{⋆ ⋆ ⋆}}
+#+latex: \remark{
+Invoke src_emacs-lisp[:exports code]{union} with
+#+latex: \mbox{
+src_emacs-lisp[:exports code]{:adjoin-retractᵢ "new-function-name"}
+#+latex: }
+to use a new name, or src_emacs-lisp[:exports code]{nil} instead of a string to
+omit the retract ---as was done for src_emacs-lisp[:exports code]{extended-by}
+earlier.
+#+latex: }
+
+ Incidentally, using the reversed directions of $f, g$ via $f′, g′$, we can
  infer the shared structure $Z$ and the canonical name function. Likewise, by
- using $toChild : P → Child$ default-naming scheme, we may omit the names of the
- retract functions. If we wish to rename these retracts or simply omit them
- altogether, we make the /optional/ arguments: Provide src_emacs-lisp[:exports
- code]{:adjoin-retractᵢ "new-function-name"} to use a new name, or
- src_emacs-lisp[:exports code]{nil} instead of a string to omit the retract
- ---as was done for src_emacs-lisp[:exports code]{extended-by} earlier.
+ using $\mathsf{toChild} : P → \mathsf{Child}$ default-naming scheme, we may
+ omit the names of the retract functions. If we wish to rename these retracts or
+ simply omit them altogether, we make them /optional/ arguments.
 
- {{{code( (Abridged) Pushout combinator with 6 optional arguments)}}}
- #+BEGIN_SRC emacs-lisp :tangle "variationals.tmp" :noweb-ref 𝒱-user-man-pt-1 :noweb yes
-(𝒱 union pf (renaming₁ "") (renaming₂ "") (adjoin-retract₁ t) (adjoin-retract₂ t)
+#+latex: \remark{\centerline{⋆ ⋆ ⋆}}
+#+latex: \remark{Whew, a worked-out example!}
+Before we show the implementation of src_emacs-lisp[:exports code]{union}, let
+us showcase an example that mentions all arguments, optional and otherwise
+---i.e., test-driven development.  Besides the elaboration The *commutative*
+diagram, to the right, /informally/ carries out the src_emacs-lisp[:exports
+code]{union} construction that results in the elaborated code below.
 
- = "Union the elements of the parent PackageFormer with those of
-    the provided PF symbolic name, then adorn the result with two views:
-    One to the parent and one to the provided PF.
-
-    If an identifer is shared but has different types, then crash.
-
-    ADJOIN-RETRACTᵢ, for i : 1..2, are the optional names of the resulting
-    views. Provide NIL if you do not want the morphisms adjoined.
-    "
-   :alter-elements (λ es →
-     (let* ((p (symbol-name 'pf))
-            (es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
-            (es₂ (alter-elements ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) renaming renaming₂
-                                 :adjoin-retract nil))
-            (es′ (-concat es₁ es₂))
-            (name-clashes (loop for n in (find-duplicates (mapcar #'element-name es′))
-                                for e = (--filter (equal n (element-name it)) es′)
-                                unless (--all-p (equal (car e) it) e)
-                                collect e))
-            (er₁ (if (equal t adjoin-retract₁) (format "to%s" $𝑝𝑎𝑟𝑒𝑛𝑡)
-                   adjoin-retract₁))
-            (er₂ (if (equal t adjoin-retract₂) (format "to%s" p)
-                   adjoin-retract₂)))
-
-       ;; Error on name clashes; unabridged version has a mechanism to “fix conflicts”
-       ;; The unabridged version accounts for name clashes on retracts as well.
-       (if name-clashes
-            (-let [debug-on-error nil]
-              (error "%s = %s union %s \n\n\t\t ➩ Error:
-                      Elements “%s” conflict!\n\n\t\t\t%s"
-                      $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 p (element-name (caar name-clashes))
-                      (s-join "\n\t\t\t" (mapcar #'show-element (car name-clashes))))))
-
-   ;; return value
-   (-concat es′
-            (and adjoin-retract₁ (not er₁) (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es₁ :name adjoin-retract₁)))
-            (and adjoin-retract₂ (not er₂) (list (element-retract p ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) :new es₂ :name adjoin-retract₂)))))))
- #+END_SRC
-
- \noindent
- The reader is not meant to understand the (abridged[fn:42]) definition provided here, however we
- present a few implementation remarks and wish to emphasise that this definition
- is *not built in*, and so the user could have, for example, provided a faster
- implementation by omitting checks for name clashes.
-
- 1. Since the systems allows optional keyword arguments, the first line declares
-    only a context name, src_emacs-lisp[:exports code]{pf}, is mandatory and the
-    remaining arguments to a pushout are ‘inferred’ unless provided.
- 2. The second line documents this new user-defined variational; the
-    documentation string is attached as a tooltip to all instances of the phrase
-    src_emacs-lisp[:exports code]{union}.
- 3. Given src_emacs-lisp[:exports code]{f, g} as src_emacs-lisp[:exports code]{renamingᵢ}, we apply the renaming variational on the elements of
-    the implicit context (to this variational) and to the given context src_emacs-lisp[:exports code]{pf}
-    to obtain two new element lists src_emacs-lisp[:exports code]{eᵢ}.
- 4. We then adjoin retract elements src_emacs-lisp[:exports code]{erᵢ}.
- 5. Finally, we check for name clashes and handle them appropriately.
-
- \noindent The user manual contains full details and an implementation of
- intersection, pullback, as well. We now turn to some examples of this
- construction to see it in action; in particular, here is an example
- which mentions all arguments, optional and otherwise.
- Besides the specification's elaboration, we also provide a *commutative*
- diagram, Figure ref:fig:pushout-example, that /informally/ carries out
- the src_emacs-lisp[:exports code]{union} construction.
+#+latex: \remark{
+The user manual contains full details and an implementation of
+intersection, pullback, as well.
+#+latex: } \vspace{-0.5cm}
  {{{code(Bimagmas: Two magmas sharing the same carrier)}}}
  #+BEGIN_SRC agda
-{-700
-TwoBinaryOps = Magma union Magma :renaming₁ "op to _+_" :renaming₂ "op to _×_"  :adjoin-retract₁ "left" :adjoin-retract₂ "right"
--}
- #+END_SRC
+BiMagma = Magma union Magma :renaming₁ "op to _+_" :renaming₂ "op to _×_"  :adjoin-retract₁ "left" :adjoin-retract₂ "right"
+  #+END_SRC
  {{{code(Elaboration)}}}
  #+BEGIN_SRC haskell :remark these-are-just-results-from-previous-blocks :tangle no
-record TwoBinaryOps : Set₁ where
+record BiMagma : Set₁ where
     field Carrier : Set
     field _+_     : Carrier → Carrier → Carrier
 
@@ -11473,11 +11553,13 @@ record TwoBinaryOps : Set₁ where
     right = record {Carrier = Carrier;op = _×_}
  #+END_SRC
 #+begin_export latex
-\begin{figure}
-  \label{fig:pushout-example}
-  \caption{Given green, yield yellow, require red, form fuchsia}
-\begin{center}
-  \begin{tikzpicture}
+\vspace{-7cm}
+\remark{\begin{center}Given green, yield yellow, require red, form fuchsia\end{center}}
+\vspace{1em}
+
+$\,$ \hfill \hspace{.95\textwidth}
+{\large \maxsizebox{.6\textwidth}{\textheight}{
+\begin{tikzpicture}
 \setlength{\unit}{4cm}
 \def\arrowthickness{thick}
 \def\nodethickness{thick}
@@ -11502,31 +11584,20 @@ record TwoBinaryOps : Set₁ where
 \mkline[bend right]{top = Mul}{right = Two, required color, label = inclusion, sloped, location = above}
 \mkline[bend right]{bot = Two, dx = -0.2cm}{top = Mag, dx = -0.1cm, color = pink!40!purple, label = \texttt{left}, location = left}
 \mkline[bend left]{bot = Two, dx = +0.2cm}{top = Mag, dx = +0.1cm, color = pink!40!purple, label = \texttt{right}, location = right}
-\end{tikzpicture}
-\end{center}
-\end{figure}
+\end{tikzpicture}}} \vspace{0.5cm}
 #+end_export
 
- Remember, /this particular user implementation/ realises
- @@latex: \begin{center}@@
-src_emacs-lisp[:exports code]{X₁ union X₂ :renaming₁ f′ :renaming₂ g′}
-@@latex: \end{center}@@
- as the pushout of the inclusions src_haskell[:exports code]{f′ X₁ ∩ g′ X₂ ↪ Xᵢ}
- where the source is the set-wise intersection of /names/.  Moreover, when either
- src_emacs-lisp[:exports code]{renamingᵢ} is omitted, it defaults to the identity function.
+ *Idempotence.* The main reason that the construction is named ‘union’ instead of
+ ‘pushout’ is that, modulo adjoined retracts, it is idempotent.  For example,
+ src_emacs-lisp[:exports code]{Magma union Magma ≈ Magma} ---this is essentially
+ the previous bi-magma example /but/ we are not distinguishing (via
+ src_emacs-lisp[:exports code]{:renamingᵢ}) the two instances of
+ src_haskell[:exports code]{Magma}.
 
-We now turn to useful properties of the user-defined src_emacs-lisp[:exports code]{union} variational.
-
-**** Idempotence ---Set Union
- The next example is one of the reasons the construction is named ‘union’ instead of ‘pushout’:
- It's idempotent, if we ignore the addition of the retract.
- {{{code()}}}
+#+latex: \vspace{-3cm} $\,$ \hfill \hspace{.95\textwidth} {\large \maxsizebox{.6\textwidth}{\textheight}{
+ {{{code(\texttt{MagmaAgain = Magma union Magma})}}}
+ #+ATTR_LATEX: :options fontsize=\small
  #+BEGIN_SRC agda
-{-700
-MagmaAgain   = Magma union Magma
--}
- #+END_SRC
- #+BEGIN_SRC haskell :remark these-are-just-results-from-previous-blocks :tangle no
 record MagmaAgain : Set₁ where
     field Carrier : Set
     field op      : Carrier → Carrier → Carrier
@@ -11537,22 +11608,25 @@ record MagmaAgain : Set₁ where
     toMagma : let View X = X in View Magma
     toMagma = record {Carrier = Carrier;op = op}
  #+END_SRC
+#+latex: }} \vspace{3cm}
 
-\noindent Of note is that this is essentially the previous bi-magma example
----Figure ref:fig:pushout-example--- /but/ we are not distinguishing ---via
-src_emacs-lisp[:exports code]{:renamingᵢ}--- the two instances of
-src_haskell[:exports code]{Magma}.
-
-**** Disjointness ---Categorial Sums
- We may perform disjoint sums ---simply distinguish all the names of one of the input objects.
- {{{code()}}}
+*Disjointness.* On the other extreme, distinguishing all the names of one of the
+input objects, we have disjoint sums.  In contrast to the above bi-magma, in the
+example below, we are not distinguishing the two instances of
+src_haskell[:exports code]{Magma} ‘on the fly’ via src_emacs-lisp[:exports
+code]{:renamingᵢ} but instead making them disjoint beforehand using
+src_emacs-lisp[:exports code]{primed} ---which is specified informally as
+#+latex: \quad
+src_emacs-lisp[:exports code]{p primed  ≈  p :renaming (λ name → name ++ "′")}.
+{{{code()}}}
  #+BEGIN_SRC agda
-{-700
 Magma′    = Magma primed  ⟴ record
 SumMagmas = Magma union Magma′ :adjoin-retract₁ nil ⟴ record
--}
  #+END_SRC
+
+#+latex: \vspace{-5cm} $\,$ \hfill \hspace{.95\textwidth} {\Large \maxsizebox{.6\textwidth}{\textheight}{
  {{{code(Elaboration)}}}
+ #+ATTR_LATEX: :options fontsize=\small
  #+BEGIN_SRC haskell :remark these-are-just-results-from-previous-blocks :tangle no
 record SumMagmas : Set₁ where
     field Carrier  : Set
@@ -11573,36 +11647,124 @@ record SumMagmas : Set₁ where
     toMagma′ : let View X = X in View Magma′
     toMagma′ = record {Carrier′ = Carrier′;op′ = op′}
  #+END_SRC
+#+latex: }} \vspace{-0.5cm}
 
- \noindent Of note is that this is essentially the previous bi-magma example
----Figure ref:fig:pushout-example--- /but/ we are not distinguishing
-the two instances of src_haskell[:exports code]{Magma} ‘on the fly’ via
-src_emacs-lisp[:exports code]{:renamingᵢ} but instead making them disjoint
-beforehand using the following /informal/ equation:
-#+latex: \begin{center}
-src_emacs-lisp[:exports code]{p primed  ≈  p :renaming (λ name → name ++ "′")}
-#+latex: \end{center}
+# After a remark on implementation, we discuss how the user-defined
+# src_emacs-lisp[:exports code]{union} variational can be used to solve the
+# diamond problem posed at the start of this section, then we conclude with an
+# example algebraic hierarhcy /declared tersely, and succiently,/ by using
+# src_emacs-lisp[:exports code]{union}.
+#
+
+**** An Implementation of src_C[:exports code]{union} :ignore:
+
+ Before returning to the diamond problem, we show an implementation not so that
+ the reader can see some cleverness ---not that we even expect the reader to
+ understand it--- but instead to showcase that a sufficiently complicated
+ combinator, which is /not built-in/, can be defined without much difficulty.
+
+#  \noindent
+#  The reader is not meant to understand the (abridged) definition provided below, however we
+#  present a few implementation remarks and wish to emphasise that this definition
+#  is *not built in*, and so the user could have, for example, provided a faster
+#  implementation by omitting checks for name clashes.
+#
+#+latex: \vspace{-0.15cm}
+#+latex: \hspace{-1.8em}\begin{minipage}{13.245cm} \maxsizebox{!}{0.6\textheight}{
+ {{{code( (Abridged) Pushout combinator with 4 optional arguments)}}}
+ #+ATTR_LATEX: :options fontsize=\footnotesize
+ #+begin_src emacs-lisp
+(𝒱 union pf (renaming₁ "") (renaming₂ "") (adjoin-retract₁ t) (adjoin-retract₂ t)
+
+ = "Union the elements of the parent PackageFormer with those of
+    the provided PF symbolic name, then adorn the result with two views:
+    One to the parent and one to the provided PF.
+
+    If an identifer is shared but has different types, then crash.
+
+    ADJOIN-RETRACTᵢ, for i : 1..2, are the optional names of the resulting
+    views. Provide NIL if you do not want the morphisms adjoined."
+   :alter-elements (λ es →
+     (let* ((p (symbol-name 'pf))
+            (es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
+            (es₂ (alter-elements ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) renaming renaming₂
+                                 :adjoin-retract nil))
+            (es′ (-concat es₁ es₂))
+            (name-clashes (loop for n in (find-duplicates (mapcar #'element-name es′))
+                                for e = (--filter (equal n (element-name it)) es′)
+                                unless (--all-p (equal (car e) it) e)
+                                collect e))
+            (er₁ (if (equal t adjoin-retract₁) (format "to%s" $𝑝𝑎𝑟𝑒𝑛𝑡)
+                   adjoin-retract₁))
+            (er₂ (if (equal t adjoin-retract₂) (format "to%s" p)
+                   adjoin-retract₂)))
+
+       (if name-clashes
+            (-let [debug-on-error nil]
+              (error "%s = %s union %s \n\n\t\t ➩ Error:
+                      Elements “%s” conflict!\n\n\t\t\t%s"
+                      $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 p (element-name (caar name-clashes))
+                      (s-join "\n\t\t\t" (mapcar #'show-element (car name-clashes))))))
+
+   ;; return value
+   (-concat es′
+            (and adjoin-retract₁ (not er₁) (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es₁ :name adjoin-retract₁)))
+            (and adjoin-retract₂ (not er₂) (list (element-retract p ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) :new es₂ :name adjoin-retract₂)))))))
+ #+end_src
+ #+latex: }\end{minipage}
+#       ;; Error on name clashes; unabridged version has a mechanism to “fix conflicts”
+#       ;; The unabridged version accounts for name clashes on retracts as well.
+
+#+latex: \vspace{-8cm}\remark{
+Indeed, the core of the construction lies in the first 12 lines of
+the src_emacs-lisp[:exports code]{let*} clause; the rest are extra
+bells-and-whistles ---which could have been omitted, by the user, for a faster
+implementation.
+#+latex: }
+
+#+latex: \vspace{3cm}\remark{
+The unabridged definition, on the =PackageFormer= webpage, has more
+features. In particular, it accepts additional keyword toggles that dictate
+how it should behave when name clashes occur; e.g., whether it should
+halt and report the name clash or whether it should silently perform a name
+change, according to another provided argument. The additional flexibility
+is useful for rapid experimentation.
+#+latex: }\vspace{3cm}
+
+#  1. Since the systems allows optional keyword arguments, the first line declares
+#     only a context name, src_emacs-lisp[:exports code]{pf}, is mandatory and the
+#     remaining arguments to a pushout are ‘inferred’ unless provided.
+#  2. The second line documents this new user-defined variational; the
+#     documentation string is attached as a tooltip to all instances of the phrase
+#     src_emacs-lisp[:exports code]{union}.
+#  3. Given src_emacs-lisp[:exports code]{f, g} as src_emacs-lisp[:exports code]{renamingᵢ}, we apply the renaming variational on the elements of
+#     the implicit context (to this variational) and to the given context src_emacs-lisp[:exports code]{pf}
+#     to obtain two new element lists src_emacs-lisp[:exports code]{eᵢ}.
+#  4. We then adjoin retract elements src_emacs-lisp[:exports code]{erᵢ}.
+#  5. Finally, we check for name clashes and handle them appropriately.
+#
 
 **** Support for Diamond Hierarchies
+
+#+latex: \begin{fullwidth}
  A common scenario is extending a structure, say src_haskell[:exports
- code]{Magma}, into orthogonal directions, such as by making it operation
+ code]{Magma}, into orthogonal directions, such as by making its operation
  associative or idempotent, then closing the resulting diamond by combining
  them, to obtain a semilattice. However, the orthogonal extensions may involve
  different names and so the resulting semilattice presentation can only be
  formed via pushout; below are three ways to form it.
 
+ #+latex: \vspace{0.5cm}
  {{{code(Three ways to get to SemiLattice)}}}
  #+BEGIN_SRC agda
-{-700
 Semigroup          = Magma postulating "_·_" "associative"
 IdempotentMagma    = Magma renaming "_·_ to _⊔_" ⟴ postulating "_⊔_" "idempotent"  :adjoin-retract nil
 
 ⊔-SemiLattice     = Semigroup union IdempotentMagma :renaming₁ "_·_ to _⊔_"
 ·-SemiLattice     = Semigroup union IdempotentMagma :renaming₂ "_⊔_ to _·_"
 ↑-SemiLattice     = Semigroup union IdempotentMagma :renaming₁ "_·_ to _↑_" :renaming₂ "_⊔_ to _↑_"
--}
  #+END_SRC
-
+#+latex: \end{fullwidth}
 **** Application: Granular (Modular) Hierarchy for Rings
  We will close with the classic example of forming a ring structure by combining
  two monoidal structures.  This example also serves to further showcase how
@@ -11611,14 +11773,18 @@ IdempotentMagma    = Magma renaming "_·_ to _⊔_" ⟴ postulating "_⊔_" "ide
 
  {{{code()}}}
  #+BEGIN_SRC agda
-{-700
 Additive           = Magma renaming "_·_ to _+_" ⟴ postulating "_+_" "commutative"  :adjoin-retract nil ⟴ record
+
 Multiplicative     = Magma renaming "_·_ to _×_" :adjoin-retract nil ⟴ record
+
 AddMult            = Additive union Multiplicative ⟴ record
+
 AlmostNearSemiRing = AddMult ⟴ postulating "_×_" "distributiveˡ" :using "_+_" ⟴ record
--}
  #+END_SRC
+
+#+latex: \vspace{-6cm} $\,$ \hfill \hspace{.95\textwidth} {\Large \maxsizebox{.6\textwidth}{\textheight}{
  {{{code(Elaboration)}}}
+ #+ATTR_LATEX: :options fontsize=\small
  #+BEGIN_SRC haskell :remark these-are-just-results-from-previous-blocks :tangle no
 record AlmostNearSemiRing : Set₁ where
     field Carrier : Set
@@ -11641,6 +11807,11 @@ record AlmostNearSemiRing : Set₁ where
 
     field distˡ      : ∀ x y z → _×_ x (_+_ y z) ≡ _+_ (_×_ x y) (_×_ x z)
  #+END_SRC
+#+latex: }} \vspace{-1cm}
+
+\noindent
+This example, as well as mitigating diamond problems, show that the
+implementation outlined is reasonably well-behaved.
 
 *** COMMENT 𝑵𝑶 Pullbacks
  Following the reasoning for pushouts, we implement pullbacks in the same way with the same optional arguments.
@@ -11664,53 +11835,81 @@ Magma-yet-again = Additive intersect Multiplicative :renaming₁ "_+_ to op" :re
 <<sec:PF:duality>>
 #+latex: \label{sec:PF:duality}
 
+#+latex: \remark{
+The *dual*, or opposite, of a binary operation src_agda[:exports code]{_·_ : X → Y →
+ Z} is the operation src_agda[:exports code]{_·ᵒᵖ_ : Y → X → Z} defined by
+ src_agda[:exports code]{x ·ᵒᵖ y = y · x}.
+#+latex: } \vspace{-1cm}
 
  Maps between grouping mechanisms are sometimes called /views/, which are
  essentially an internalisation of the /variationals/ in our system.  A useful
  view is that of capturing the heuristic of /dual concepts/, e.g., by changing the
- order of arguments in an operation. That is, the dual, or opposite, of a binary
- operation src_agda[:exports code]{_·_ : X → Y → Z} is the operation
- src_agda[:exports code]{_·ᵒᵖ_ : Y → X → Z} defined by src_agda[:exports code]{x
- ·ᵒᵖ y = y · x}.  Classically in Agda, duality is /utilised/ as follows:
+ order of arguments in an operation. Classically in Agda, duality is /utilised/ as
+ follows:
+
  1. Define a /parameterised/ module src_haskell[:exports code]{R _·_} for the
     desired ideas *on* the operation src_haskell[:exports code]{_·_}.
-    + Concretely, say it defines the predicate src_agda[:exports code]{·-isLeftId e = (∀ x → e · x ≡ x)}.
+
+   #+latex: \vspace{-1.5cm} $\,$ \hfill \hspace{.95\textwidth} {\large \maxsizebox{.5\textwidth}{\textheight}{
+   {{{code(Example)}}}
+   #+ATTR_LATEX: :options fontsize=\small
+    #+begin_src agda
+module R (_·_ : X → Y → Z) where
+    ·-isLeftId : X → Set
+    ·-isLeftId e = ∀ {x} → e · x ≡ x
+    #+end_src
+    #+latex: }}
+
  2. Define a shallow (parameterised) module src_haskell[:exports code]{Rᵒᵖ _·_}
     that essentially only opens src_haskell[:exports code]{R _·ᵒᵖ_} and renames
     the concepts in src_haskell[:exports code]{R} with dual names.
-    + Continuing the concrete example, src_haskell[:exports code]{Rᵒᵖ _·_} would essentially be
-      #+latex: \begin{center}
-      src_agda[:exports code]{public open R _·_ renaming (·-isLeftId to ·-isRightId)}
-      #+latex: \end{center}
 
-    #+latex: \begin{tcolorbox}[title = The Ubiquity of Duality, colback=red!5!white, colframe=red!75!black]
-    The RATH-Agda cite:RATH library performs essentially this approach, for
-    example for obtaining src_haskell[:exports code]{UpperBounds} from
-    src_haskell[:exports code]{LowerBounds} in the context of an ordered set.
-    Moreover, since Category Theory can serve as a foundational system of
-    reasoning (logic) and implementation (programming), the idea of duality
-    immediately applies to produce “two for one” theorems and programs.
-    #+latex: \end{tcolorbox}
+   #+latex: \vspace{-1.5cm} $\,$ \hfill \hspace{.95\textwidth} {\large \maxsizebox{.5\textwidth}{\textheight}{
+   {{{code(Continuing...)}}}
+   #+ATTR_LATEX: :options fontsize=\small
+    #+begin_src agda
+module Rᵒᵖ (_·_ : X → Y → Z) where
+    public open R _·_
+           renaming (·-isLeftId to ·-isRightId)
+    #+end_src
+    #+latex: }}
 
+    # +latex: \begin{tcolorbox}[title = The Ubiquity of Duality, colback=red!5!white, colframe=red!75!black]
+#+latex: \remark{
+\textbf{The ubiquity of duality!}
+#+latex: } \noindent
+ The RATH-Agda cite:RATH library performs essentially this approach, for example
+ for obtaining src_haskell[:exports code]{UpperBounds} from src_haskell[:exports
+ code]{LowerBounds} in the context of an ordered set.  Moreover, since category
+ theory can serve as a foundational system of reasoning (logic) and
+ implementation (programming), the idea of duality immediately applies to
+ produce “two for one” theorems and programs.
+ # +latex: \end{tcolorbox}
+
+ #+latex: \remark{
+Admittedly, RATH-Agda's names are well-chosen; e.g., src_emacs-lisp[:exports
+ code]{value}, src_emacs-lisp[:exports code]{boundᵢ}, src_emacs-lisp[:exports
+ code]{universal} to denote a src_emacs-lisp[:exports code]{value} that is a
+ lower/upper src_emacs-lisp[:exports code]{bound} of two given elements,
+ satisfying a least upper bound or greatest lower bound src_emacs-lisp[:exports
+ code]{universal} property.
+#+latex: } \vspace{0cm}
  Unfortunately, this means that any record definitions in src_haskell[:exports
  code]{R} must have their field names be sufficiently generic to play /both/ roles
- of the original and the dual concept.  Admittedly, RATH-Agda's names are
- well-chosen; e.g., src_emacs-lisp[:exports code]{value},
- src_emacs-lisp[:exports code]{boundᵢ}, src_emacs-lisp[:exports code]{universal}
- to denote a src_emacs-lisp[:exports code]{value} that is a lower/upper
- src_emacs-lisp[:exports code]{bound} of two given elements, satisfying a least
- upper bound or greatest lower bound src_emacs-lisp[:exports code]{universal}
- property. However, well-chosen names come at an upfront cost: One must take
- care to provide sufficiently generic names and account for duality at the
- outset, irrespective of whether one /currently/ cares about the dual or not;
- otherwise when the dual is later formalised, then the names of the original
- concept must be refactored throughout a library and its users.
- This is not the case using =PackageFormer=.
+ of the original and the dual concept.  However, well-chosen names come at an
+ upfront cost: One must take care to provide sufficiently generic names and
+ account for duality at the outset, irrespective of whether one /currently/ cares
+ about the dual or not; otherwise when the dual is later formalised, then the
+ names of the original concept must be refactored throughout a library and its
+ users.  This is not the case using =PackageFormer=.
+
  Consider the following heterogeneous algebra ---which is essentially the main
- example of section ref:sec:PF_scrap_repetition but missing the associativity field.
+ example of section ref:sec:PF_scrap_repetition but missing the associativity
+ field.
+
+#+latex: \begin{fullwidth}\vspace{-0.2cm}
  {{{code(Left unital actions)}}}
  #+BEGIN_SRC agda
-{-700
 PackageFormer LeftUnitalAction : Set₁ where
   Scalar : Set
   Vector : Set
@@ -11720,7 +11919,6 @@ PackageFormer LeftUnitalAction : Set₁ where
 
 -- Let's reify this as a valid Agda record declaration
 LeftUnitalActionR  = LeftUnitalAction ⟴ record
--}
  #+END_SRC
  \noindent Informally, one now ‘defines’ a right unital action by duality,
  flipping the binary operation and renaming src_agda[:exports code]{leftId} to
@@ -11729,26 +11927,25 @@ LeftUnitalActionR  = LeftUnitalAction ⟴ record
 
  {{{code(Right unital actions ---mechanically by duality)}}}
  #+BEGIN_SRC agda
-{-700
 RightUnitalActionR = LeftUnitalActionR flipping "_·_" :renaming "leftId to rightId" ⟴ record
--}
  #+END_SRC
- \noindent
- Of-course the resulting representation is semantically identical to the previous one, and so it is
- furnished with a $toParent$ mapping:
+ \noindent Of-course the resulting representation is semantically identical to
+ the previous one, and so it is furnished with a $\mathsf{to}Parent$ mapping:
  {{{code()}}}
  #+BEGIN_SRC agda
 forget : RightUnitalActionR → LeftUnitalActionR
 forget = RightUnitalActionR.toLeftUnitalActionR
  #+END_SRC
 
+#+latex: \end{fullwidth}
+
+#+latex: \begin{fullwidth}
+
  \noindent
  Likewise, for the RATH-Agda library's example from above, to define semi-lattice structures by duality:
- {{{code()}}}
+ #+latex: \vspace{1em}
+ {{{code(\texttt{import Data.Product as P})}}}
  #+BEGIN_SRC agda
-import Data.Product as P
-
-{-700
 PackageFormer JoinSemiLattice : Set₁ where
   Carrier : Set
   _⊑_     : Carrier → Carrier → Set
@@ -11763,13 +11960,13 @@ PackageFormer JoinSemiLattice : Set₁ where
 
 JoinSemiLatticeR = JoinSemiLattice record
 MeetSemiLatticeR = JoinSemiLatticeR flipping "_⊑_" :renaming "_⊔_ to _⊓_; ⊔-lub to ⊓-glb"
--}
  #+END_SRC
+ #+latex: \vspace{1em}
  \noindent
  In this example, besides the map from meet semi-lattices to join semi-lattices,
  the types of the dualised names, such as src_agda[:exports code]{⊓-glb}, are
  what one would expect were the definition written out explicitly:
-
+ #+latex: \vspace{1em}
  {{{code(Checking the types of the duals)}}}
  #+BEGIN_SRC agda
 module woah (M : MeetSemiLatticeR) where
@@ -11783,36 +11980,43 @@ module woah (M : MeetSemiLatticeR) where
   trans_dual_type = trans
  #+END_SRC
 
+#+latex: \end{fullwidth}
+#+latex: \vspace{-1em}
+
 *** Extracting Little Theories
     :PROPERTIES:
     :CUSTOM_ID: Extracting-Little-Theories
     :END:
 
+#+latex: \vspace{-0.5em}
+
 <<sec:PF:extracting_little_theories>>
 #+latex: \label{sec:PF:extracting_little_theories}
 
  The src_emacs-lisp[:exports code]{extended-by} variational allows Agda users to
- easily employ the /tiny theories/ cite:little_theories,mathscheme approach to
- library design: New structures are built from old ones by augmenting one
- concept at a time ---as shown below--- then one uses mixins such as
- src_emacs-lisp[:exports code]{union} to obtain a complex structure.  This
- approach lets us write a program, or proof, in a context that only provides
- what is /necessary/ for that program-proof and nothing more.  In this way, we
- obtain /maximal generality/ for re-use!  This approach can be construed as *The
- Interface Segregation Principle*
- cite:old-design-patterns-solid,design_patterns_head_first: /No client should be
- forced to depend on methods it does not use./
+ easily employ the /tiny theories/ cite:little_theories approach to library
+ design: New structures are built from old ones by augmenting one concept at a
+ time ---as shown below--- then one uses mixins such as src_emacs-lisp[:exports
+ code]{union} to obtain a complex structure.  This approach lets us write a
+ program, or proof, in a context that only provides what is /necessary/ for that
+ program-proof and nothing more.  In this way, we obtain /maximal generality/ for
+ re-use!  This approach can be construed as /the interface segregation
+ principle/ cite:old-design-patterns-solid,design_patterns_head_first: /No client
+ should be forced to depend on methods it does not use./
 
+#+latex: \vspace{-0.2cm}
+#+latex: \hspace{-1.8em}\begin{minipage}{13.3cm} \maxsizebox{!}{0.1\textheight}{
  {{{code(Tiny Theories Example)}}}
+ #+ATTR_LATEX: :options fontsize=\footnotesize
  #+BEGIN_SRC agda :tangle no
-{-700
 PackageFormer Empty : Set₁ where {- No elements -}
 Type  = Empty extended-by "Carrier : Set"
 Magma = Type  extended-by "_·_ : Carrier → Carrier → Carrier"
 CommutativeMagma = Magma extended-by "comm : {x y : Carrier} →  x · y  ≡  y · x"
--}
  #+END_SRC
+#+latex: }\end{minipage}
 
+ #+latex: \vspace{1cm}\begin{fullwidth}
  However, life is messy and sometimes one may hurriedly create a structure, then
  later realise that they are being forced to depend on unused methods.  Rather
  than throw a =not implemented= exception or leave them undefined, we may use the
@@ -11822,33 +12026,35 @@ CommutativeMagma = Magma extended-by "comm : {x y : Carrier} →  x · y  ≡  y
  start of section ref:sec:PF:extension, but later wished to utilise other
  substrata. This is easily achieved with the following declarations.
 
+ #+latex: \vspace{1em}
  {{{code(Extracting Substrata from a Monolithic Construction)}}}
  #+BEGIN_SRC agda
-{-700
 Empty′        = Monoid keeping ""
 Type′         = Monoid keeping "Carrier"
 Magma′        = Monoid keeping "_·_"
 Semigroup′    = Monoid keeping "assoc"
 PointedMagma′ = Monoid keeping "𝕀; _·_"
-                -- This is just keeping: Carrier; _·_; 𝕀
--}
+                -- This is just “ keeping: Carrier; _·_; 𝕀 ”
  #+END_SRC
+
+  #+latex: \vspace{1em}
  \noindent Even better, we may go about deriving results ---such as theorems or
  algorithms--- in familiar settings, such as ~Monoid~, only to realise that they
  are written in *settings more expressive than necessary*. Such an observation
  no longer need to be found by inspection, instead it may be derived
  mechanically.
 
+  #+latex: \vspace{1em}
  {{{code(Specialising a result from an expressive setting to the
  \textbf{minimal} necessary setting)}}}
  #+BEGIN_SRC agda
-{-700
 LeftUnitalMagma = Monoid keeping "𝕀-unique" ⟴ record
--}
  #+END_SRC
+
+  #+latex: \vspace{1em}
  \noindent This expands to the following theory, minimal enough to derive
  src_haskell[:exports code]{𝕀-unique}.
-
+ #+latex: \vspace{1em}
  {{{code(Elaboration)}}}
  #+BEGIN_SRC haskell :remark these-are-just-results-from-previous-blocks :tangle no :tangle no
 record LeftUnitalMagma : Set₁ where
@@ -11863,36 +12069,43 @@ record LeftUnitalMagma : Set₁ where
    𝕀-unique lid rid = ≡.trans (≡.sym leftId) rid
  #+END_SRC
 
+ #+latex: \vspace{1em}
  \noindent Surprisingly, in some sense, src_emacs-lisp[:exports code]{keeping}
  let's us apply the interface segregation principle, or ‘little theories’, *after
  the fact* ---this is also known as /[[https://en.wikipedia.org/wiki/Reverse_mathematics][reverse mathematics]]/.
+#+latex: \end{fullwidth}
 
 *** 200+ theories ---one line for each
     :PROPERTIES:
     :CUSTOM_ID: hundreds-of-theories
     :END:
 
+#+latex_header: \newunicodechar{↻}{\ensuremath{\circlearrowright}}
+#+latex_header: \newunicodechar{↺}{\ensuremath{\circlearrowleft}}
+
 <<sec:PF:hundreds-of-theories>>
 #+latex: \label{sec:PF:hundreds-of-theories}
 
-    #+begin_quote
-    /People should enter terse, readable, specifications that expand into useful,
-    typecheckable, code that may be dauntingly larger in textual size./
-    #+end_quote
+#+latex: \remark{
+↻ /People should enter terse, readable, specifications that expand into useful,
+typecheckable, code that may be dauntingly larger in textual size./ ↺
+#+latex: } \vspace{-1cm}
 
     In order to demonstrate the *immediate practicality* of the ideas embodied by
-    =PackageFormer=, we have implemented a list of mathematical concepts from
-    universal algebra ---which is useful to computer science in the setting of
-    specifications.  The list of structures is adapted from the source of a
-    MathScheme library cite:tpc,mathscheme, which in turn was inspired by web
-    lists of [[http://math.chapman.edu/~jipsen/structures/doku.php][Peter Jipsen]], [[http://home.utah.edu/~nahaj/logic/structures/][John Halleck]], and many others from Wikipedia and
-    nlab. Totalling over 200 theories which elaborate into nearly 1500 lines of
-    typechecked Agda, this demonstrates that our systems works; the *750%
-    efficiency savings* speak for themselves.
+    src_haskell[:exports code]{PackageFormer}, we have implemented a list of
+    mathematical concepts from universal algebra ---which is useful to computer
+    science in the setting of specifications.  The list of structures is adapted
+    from the source of a MathScheme library, which in turn was inspired by web
+    lists of [[http://math.chapman.edu/~jipsen/structures/doku.php][Peter Jipsen]], [[http://home.utah.edu/~nahaj/logic/structures/][John Halleck]], and many others from Wikipedia and nLab
+    cite:tpc,mathscheme. Totalling over 200 theories which elaborate into nearly
+    1500 lines of typechecked Agda, this demonstrates that our systems works;
+    the *750% efficiency savings* speak for themselves.
 
      #+latex: \begin{tcolorbox}[colback=red!5!white, colframe=red!75!black]
-     /The 200+ one line specifications and their ~1500 lines of elaborated
-     typechecked Agda can be found on =PackageFormer='s webpage./
+     The 200+ one line specifications and their ~1500 lines of elaborated
+     typechecked Agda can be found on src_haskell[:exports
+     code]{PackageFormer}'s webpage.
+     #+latex: \vspace{-1em}
      | https://alhassy.github.io/next-700-module-systems |
      #+latex: \tcblower
        If anything, this elaboration demonstrates our tool as a useful
@@ -11902,26 +12115,33 @@ record LeftUnitalMagma : Set₁ where
        language.
      #+latex: \end{tcolorbox}
 
-  Since the resulting *expanded code is typechecked* by Agda, we encountered a number
-  of places where non-trivial assumptions accidentally got-by the MathScheme team.
-  For example, in a number of places, an arbitrary binary operation occurred multiple
-  times leading to ambiguous terms, since no associativity was declared.
-  Even if there was an implicit associativity criterion, one would then expect
-  multiple copies of such structures, one axiomatisation for each parenthesisation.
-  Moreover, there were also certain semantic concerns about the design
-  hierarchy that we think are out-of-place, but we chose to leave them as is
-  ---e.g., one would think that a “partially ordered magma” would consist of
-  a set, an order relation, and a binary operation that is monotonic in both arguments; however, ~PartiallyOrderedMagma~ instead comes with
-  a single monotonicity axiom which is only equivalent to the two monotonicity
-  claims in the setting of a monoidal operation.
-  Nonetheless, we are grateful for the source file provided by the MathScheme team.
+# +latex: \begin{tcolorbox}[title = Extensiblity, colback=red!5!white, colframe=red!75!black]
+#+latex: \vspace{-3cm} \remark{
+Unlike other systems, src_haskell[:exports code]{PackageFormer} does not come
+with a static set of module operators ---it grows dynamically, possibly by you,
+the user.
+#+latex: } \vspace{2cm}
+# +latex: \end{tcolorbox}
+
+#+latex: \remark{
+  MathScheme's design hierarchy raised certain semantic concerns that we think
+  are out-of-place, but we chose to leave them as is ---e.g., one would think
+  that a “partially ordered magma” would consist of a set, an order relation,
+  and a binary operation that is monotonic in both arguments; however,
+  ~PartiallyOrderedMagma~ instead comes with a single monotonicity axiom which is
+  only equivalent to the two monotonicity claims in the setting of a monoidal
+  operation.
+#+latex: }
+  Since the resulting *expanded code is typechecked* by Agda, we encountered a
+  number of places where non-trivial assumptions accidentally got-by the
+  MathScheme team.  For example, in a number of places, an arbitrary binary
+  operation occurred multiple times leading to ambiguous terms, since no
+  associativity was declared.  Even if there was an implicit associativity
+  criterion, one would then expect multiple copies of such structures, one
+  axiomatisation for each parenthesisation.  Nonetheless, we are grateful for
+  the source file provided by the MathScheme team.
   # Indeed, monotonicity in the second argument cannot be proven from the given
   # law for the operation “x ⟪ y = x” when ≤ is taken to be ≈, and we have 2 points.
-
-   #+latex: \begin{tcolorbox}[title = Extensiblity, colback=red!5!white, colframe=red!75!black]
-  Unlike other systems, =PackageFormer= does not come with a static set of module
-  operators ---it grows dynamically, possibly by you, the user.
- #+latex: \end{tcolorbox}
 
 ** COMMENT ⟨No⟩ Things learned from making a protottype?
      * Perhaps show the minimal code needed to get PF working; <= 300 lines?
@@ -15472,13 +15692,13 @@ pk decorated f = record { Name         = bimap id f pk.Name
  It would unsurprising if this approach yields
  the next 700 module systems.
 
-** COMMENT Contributions: From Theory to Practice
+** Contributions: From Theory to Practice
 
 The =PackageFormer= implements the ideas of Chapters
 ref:sec:packages_and_their_parts and ref:sec:examples_from_the_wild.  As such,
 as an editor extension, it is mostly *language agnostic* and could be altered to
-work with other languages such as Coq cite:coq_implementing_modules, Idris
-cite:idris_tdd, and even Haskell cite:DBLP:conf/haskell/LindleyM13.  The
+work with other languages such as Coq, @@ignore: cite:coq_implementing_modules@@
+Idris cite:idris_tdd, and even Haskell cite:DBLP:conf/haskell/LindleyM13.  The
 =PackageFormer= implementation has the following useful properties.
 
 1. Expressive & extendable specification language for the library developer.
@@ -15497,15 +15717,24 @@ cite:idris_tdd, and even Haskell cite:DBLP:conf/haskell/LindleyM13.  The
    - Once a library is developed using (the current implementation of)
      =PackageFormer=, the end user only needs to reference the resulting generated
      Agda, without any knowledge of the existence of =PackageFormer=.
-     * Generated modules are necessarily ‘flattened’ for typechecking with Agda
-       ---see section ref:sec:PF:extension.
+
+     #+latex: \vspace{-1cm}\remark{
+      Generated modules are necessarily ‘flattened’ for typechecking with Agda
+      ---see section ref:sec:PF:extension.
+     #+latex: }
+
    - We demonstrates how end-users can build upon a library by using /one
      line/ specifications, by reducing over 1500 lines of Agda code to nearly 200
      specifications using =PackageFormer= syntax.
 
-3. Efficient: Our current implementation processes over 200 specifications in ~3
+3. Efficient: Our current implementation processes over 200 specifications in $\sim 3$
    seconds; yielding typechecked Agda code /which/ is what consumes the majority
    of the time.
+   #+latex: \vspace{-0.9cm}\remark{
+   Moreover, all of this happens in the /background/
+   preceeding the ussual typechecking command,
+   ~C-c C-l~.
+   #+latex: }\vspace{1cm}
 
 4. Pragmatic: Common combinators can be defined for library developers, and be
    furnished with concrete syntax for use by end-users.
@@ -15520,14 +15749,20 @@ cite:idris_tdd, and even Haskell cite:DBLP:conf/haskell/LindleyM13.  The
      are provided with terse solutions using the =PackageFormer= system.
      * E.g., automatically generating homomorphism types and wholesale renaming fields
        using a single function ---see section ref:sec:PF:practicality:renaming:rename.
-   - Over 200 modules are formalised as one-line specifications.
+
+   #+latex: \vspace{-4cm}\remark{\textbf{
+   Over 200 modules are formalised as one-line specifications!
+   #+latex: }}\vspace{3cm}
 
 7. Immediately useable to end-users /and/ library developers.
    + We have provided a large library to experiment with
      ---thanks to the MathScheme group for providing an adaptable source file.
-   + In the online user manual, we show how to formulate module combinators
+
+   #+latex: \vspace{-2cm}\remark{
+     In the online user manual, we show how to formulate module combinators
      using a simple and straightforward subset of Emacs Lisp ---a terse
      introduction to Lisp is provided.
+   #+latex: } \vspace{1cm}
 
 Recall that we alluded ---in the introduction to section
 ref:sec:PF:practicality--- that we have a categorical structure consisting of
@@ -22689,6 +22924,10 @@ comap′ f ⟨ edgs ⟩¹ = ⟨ (λ a₁ a₂ → edgs (f a₁) (f a₂)) ⟩¹
 
 * Footnotes
 
+[fn:61] For example, to make rings!
+
+[fn:60] The three green arrows in the diagram above!
+
 [fn:59]   It is important to remark that the mechanical construction of such
   views (coercions) is *not built-in*, but rather a /user-defined/ variational that
   is constructed from =PackageFormer='s meta-primitives.
@@ -22781,13 +23020,7 @@ relationship.
  cite:gentle-intro-to-reflection.
 
 
-[fn:42] The unabridged definition, on the =PackageFormer= webpage, has more
-features. In particular, it accepts additional keyword toggles that dictate
-how it should behave when name clashes occur; e.g., whether it should
-halt and report the name clash or whether it should silently perform a name
-change, according to another provided argument. The additional flexibility
-is useful for rapid experimentation.
-
+[fn:42]
 [fn:41] “Exotic” in the sense that traditional module systems would not, or
 could not, support such constructions. For instance, some systems allow users to
 get the “shared structure” of two modules ---e.g., for the purposes of finding a
@@ -23026,33 +23259,17 @@ need such a hierarchy; indeed some have a single universe ~Type~ with the rule
 [fn:12]
 https://alhassy.github.io/next-700-module-systems/prototype/package-former.html
 
-[fn:11] The method call src_emacs-lisp[:exports code]{(s-replace old new s)}
-replaces all occurrences of string src_emacs-lisp[:exports code]{old} by
-src_emacs-lisp[:exports code]{new} in the given string src_emacs-lisp[:exports
-code]{s} ; whereas src_emacs-lisp[:exports code]{(pcase e (x₀ y₀) … (xₙ yₙ))}
-pattern matches on src_emacs-lisp[:exports code]{e} and performs the first
-src_emacs-lisp[:exports code]{yᵢ} if src_emacs-lisp[:exports code]{e = xᵢ},
-otherwise it returns src_emacs-lisp[:exports code]{nil}.
-
+[fn:11]
 [fn:10] The current implementation uses a single ‘waist’ /number/ =j= to identify the first
 =j=-many parameters.
 
 [fn:9] The =PackageFormer= manual provides the expected Lisp methods one is
 interested in, such as ~(list x₀ … xₙ)~ to make a list and ~first, rest~ to
 decompose it, and ~(--map (⋯it⋯) xs)~ to traverse it. Moreover, an Emacs Lisp
-cheat sheet covering is provided.
+cheat sheet covering the basics is provided.
 
 
-[fn:8] More accurately, the ‘⟴’-based mini-language for variationals is realised
-as a Lisp macro and so, in general, the right side of a declaration in
-700-comments is interpreted as valid Lisp modulo this mini-language:
-=PackageFormer= names and variationals are variables in the Emacs environment
----for declaration purposes, and to avoid touching Emacs specific utilities,
-variationals src_emacs-lisp[:exports code]{f} are actually named
-src_emacs-lisp[:exports code]{𝒱-f}. One may quickly obtain the documentation of
-a variational src_emacs-lisp[:exports code]{f} with \newline
-src_haskell[:exports code]{C-h o RET 𝒱-f} to see how it works.
-
+[fn:8]
 
 [fn:7] None of my colleagues thought Lisp was at all the ‘right’ choice;
 of-course, none of them had the privilege to use the language enough to
