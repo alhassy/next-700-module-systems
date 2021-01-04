@@ -8175,16 +8175,30 @@ type-checking, and it becomes extra baggage to future users of the codebase
 in order to be kept up to date with the core language.  A middle-road between
 the two is not always possible.
 
+#+latex_header: \usepackage{rotating}
+#+latex_header: \usepackage{tikz} \usetikzlibrary{positioning} \usetikzlibrary{arrows, arrows.meta}
+[[https://www.cs.virginia.edu/~evans/cs655/readings/steele.pdf][“Growing a Language”]]; Difficulty for user setup vs difficulty for implementation
 #+begin_export latex
-% http://latex-cookbook.net/articles/venn-diagram/
-\remark{A reasonable middle path to growing a language}
-
-$\,$ \hfill \hspace{.95\textwidth}
-{\large \maxsizebox{.55\textwidth}{\textheight}{
-\smartdiagram[bubble diagram]{Editor \\ Extension,
-  Altering \\ the \\ compiler,
-  Using \\ a \\ preprocessor}}}
-\vspace{-12em}
+% Spectrum template from: https://tex.stackexchange.com/a/84998/69371
+\def\TWO#1#2{$\substack{\displaystyle \text{#1} \\ \displaystyle \text{#2}}$}
+\begin{tikzpicture}[node distance=5cm]
+  \node(origin) at (-150,0){};
+  % nodes on horizontal and vertical
+  \node(freedom)[above=of origin]{Smooth Usability};
+  \node(authority)[below=of origin]{Intrusive Usage};
+  \node(equality)[left=of origin]{\TWO{Wholesale}{Reimplemention}};
+  \node(inequality)[right=of origin]{\TWO{Localised}{Addition}};
+  % nodes on diagonals
+  \node(socdemo)[above left=2cm of origin]{\TWO{Altering}{the compiler}};
+  \node(classlib)[above right=2cm of origin]{\TWO{Libraries}{(Lisp Macros)}};
+  \node(facism)[below right=2cm of origin]{\TWO{Preprocessor}{tool}};
+  \node(facism)[below left=2cm of origin]{\TWO{Incompatible changes}{to concrete syntax}};
+  %
+  \node[right=1cm of origin]{\rotatebox{45}{\TWO{\texttt{Package}}{\texttt{Former}}}};
+  % connect horizontal and vertical nodes
+  \draw[>=open triangle 60, thick, <->](equality)--(inequality);
+  \draw[>=open triangle 60, thick, <->](freedom)--(authority);
+\end{tikzpicture}
 #+end_export
 
 However, if the language's community subscribes to /one/ IDE, then a reasonable
@@ -8205,6 +8219,11 @@ that /library users/ need not know about the extended language features; since a
 files are in the core language with extended language feature appearing in
 special comments.
 #+latex: {Details can be found in section \ref{sec:PF_scrap_repetition}.}
+#
+# the Prototype is a preprocessor. It is just integrated into the IDE, itself a
+# preprocessor, in such a way that it does not feel like it. It is not a "manual
+# command-line preprocessor", that is true.
+#
 
 #+begin_export latex
 \vspace{-2.5cm}
