@@ -249,6 +249,17 @@ commutative ring with one/.
 # Forbid LaTeX from making linebreaks
 #+macro: mbox @@latex: \mbox{@@ $1 @@latex:}@@
 
+
+# 3.3 contains no examples, even though this chapter says it is about examples
+#  (remember: margin comments don’t count) Ok, this is a good case for moving that
+#  code snippet to the core text.  many things in Figure 3.1 are not illustrated
+#  in this chapter. This could mean that the chapter needs extended, the figure
+#  moved, the figure split, or other solutions still.  One completely different
+#  solution might be to put the figure in *Chapter 1* (!) with annotations attached
+#  to every arrow that links to where this is defined in the thesis itself. The
+#  ultimate in traceability! The move to Ch1 sounds like a great idea! :-)
+#
+
 * Neato petito margins :ignore:
 
 #+latex_header: \usepackage[includemp,
@@ -901,23 +912,28 @@ plagiarism even comes down to one sentence.” ---Ninth Ward Goethe
    shared declaration interface, which is extensible in the language,
    we also find that common data structures correspond to simple theories.
 
-:TO_maybe_include:
-
-The topic of this thesis is summarised as follows.
-
-0. There are things we do as people to get things done.
-1. These things are tedious and mostly mechanical.
-2. Agda cannot let us accomplish these goals directly.
-3. However, Agda allows a *pragmatic* approach to do so
-    by rolling-out our own approach to modules: Context.
-4. It's pragmatic since it's an Agda library,
-    using Agda's type checking and all of its features,
-    such as termination & well-definedness checking.
-5. Finally, the /idea/ is sufficiently generic to be implemented in
-    other DTLs; so the solution to (2) generalises to any DTL
-    sufficient for implementing Context ---the stronger the DTL,
-    the more of Context's combinators can be implemented,
-    the more module combinators one has in hand.
+   #    Put simply, the topic of the thesis is summarised as follows:
+   Put simply, the thesis is about making tedious /and/ inexpressible patterns of
+   programming in DTLs (dependently typed languages) become mechanical /and/
+   expressible. The core of this thesis consists of Chapters 3 and 5, the first
+   covering the first half of the items below and the second covering the second
+   half. The formal foundation is covered in Chapter 2.
+   0. [@0] There are specific things we do as people to get things done.
+   1. These specific things are tedious and mostly mechanical.
+   2. Agda cannot let us accomplish these goals directly.
+   3. However, Agda allows a *pragmatic* approach to do so by rolling-out our own
+      approach to modules: src_haskell[:exports code]{Context}.
+   4. It's pragmatic since it's an Agda library /using/ monadic
+      src_haskell[:exports code]{do}-notation and using Agda's type checking as
+      well as all of its features, such as termination & well-definedness
+      checking.  The cost of such a library is that it is not as smooth as a
+      built-in grouping mechanism.
+   5. Finally, the /idea/ is sufficiently generic to be implemented in other DTLs;
+      so the solution to (2) generalises to any DTL sufficient for implementing
+      Context ---the stronger the DTL, the more of src_haskell[:exports
+      code]{Context}'s combinators can be implemented, the more module
+      combinators one has in hand. This idea is fleshed out in chapter 5 by
+      providing the key insightful syntactic transformations on a DTL's grammar.
 
 :END:
 
@@ -6281,7 +6297,13 @@ Spitters et al. is much more refined here.
 
 # In this section, we showcase a number of problems that occur in developing
 # libraries of code /within/ dependently-typed languages.
-In this section, we motivate the problems ---for which we will find solutions
+In this section, we motivate the problems ---for which we will
+#+begin_margin
+This chapter lays out the problems; there's nothing “new” here /besides/
+collecting exiting problems in DTLs and the current ways they are handled by DTL
+practitioners.
+#+end_margin
+find solutions
 for--- by finding examples within public libraries of code developed in
 dependently-typed languages.  We will refer back to these real-world examples
 later on when developing our frameworks for reducing their tedium and size.  The
@@ -6301,15 +6323,29 @@ algebraic structures <<<Magma>>>
 @@latex:\label{<Semigroup>>>, and <<<Monoid>}@@[fn:4].
 
 Incidentally, the common solutions to the problems presented may be construed as
-*design patterns for dependently-typed programming*. Design patterns are
-algorithms yearning to be formalised. The power of the host language dictates
-whether design patterns remain as informal directions to be implemented in an
-ad-hoc basis then checked by other humans, or as a library methods that are
-written once and may be freely applied by users. For instance, the [[http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Morphism.html#1][Agda
-~Algebra.Morphism~ “library”]][fn:17] presents /only/ an example(!) of the homomorphism design
-pattern ---which shows how to form operation-preserving functions for algebraic
-structures. The documentation reads: ~An example showing how a morphism type can
-be defined~. An example, rather than a library method, is all that can be done
+*design patterns for dependently-typed programming*. Design patterns
+#+begin_margin
+[[https://en.wikipedia.org/wiki/Software_design_pattern][Definition]]: /A general, reusable solution to a commonly occurring
+problem./
+#+end_margin
+are algorithms
+#+begin_margin
+Definition: /A finite sequence of instructions to be followed to accomplish a
+goal./
+#+end_margin
+yearning to be formalised. The power of
+the host language dictates whether design patterns remain as informal directions
+to be implemented in an ad-hoc basis then checked by other humans, or as a
+library methods that are written once and may be freely applied by users. For
+instance, the Agda ~Algebra.Morphism.Structures~ “library”
+#+begin_margin
+All references to the Agda Standard Library refer to the current version 1.3.
+The library can be accessed at https://github.com/agda/agda-stdlib.
+#+end_margin
+presents /only/ examples of the homomorphism design
+pattern ---which shows how to form operation-preserving functions for a few
+chosen algebraic
+structures. Examples, rather than a library method, is all that can be done
 since the current implementation of Agda does not have the necessary
 meta-programming utilities to construct new types in a practical way ---at
 least, not out of the box.
@@ -6535,10 +6571,16 @@ filter p (x ∷ xs) with p x
 ...| false = filter p xs
 #+end_src
 
-*** “Obviously sharing the same type” requires ‘do-nothing’ conversion functions! ---Unbundling
+*** “To Bundle or Not To Bundle”: Structure vs Predicate Style Presentations
 :PROPERTIES:
 :CUSTOM_ID: Obviously-sharing-the-same-type-requires-do-nothing-conversion-functions-Unbundling
 :END:
+
+/Given two different structures that share some sub-component, expressing that/
+/sharing post-facto can be very cumbersome, while if the sharing is expressed via
+parameters, things are simple ---even though both encodings are equivalent./
+(This is ‘essentially’ the same problem as discussed in the previous section but
+in a different guise, as a stepping stone to the more general situation.)
 
 #+latex: \remark{
 That is, the “same problem” arises when, for example, discussing the interaction
@@ -6567,9 +6609,10 @@ many from childhood, in the setting of rings: We have an additive structure ~(R,
 +)~ and a multiplicative structure ~(R, ×)~ on the same underlying set ~R~, and their
 interaction is dictated by distributivity axioms, such as $a \times (b + c) = (a
 \times b) + (a \times c)$. As with ~head~ above, depending on which features of
-the structure are exposed upfront, such axioms may be either difficult to
-express or relatively easy. Below are the two possible ways to present a
-structure admiting a type and a binary operation on that type.
+the structure are exposed upfront, such axioms [[margin:][“Obviously sharing the same type”
+requires ‘do-nothing’ conversion functions!]] may be either difficult to express
+or relatively easy. Below are the two possible ways to present a structure
+admiting a type and a binary operation on that type.
 
 {{{code(To bundle or to not bundle?)}}}
 #+BEGIN_SRC agda :tangle Distributivity.agda :prologue "module Distributivity where \nopen import Notation hiding (_+_) \n"
@@ -6672,9 +6715,14 @@ important facts, but are otherwise unhelpful.  The proofs generalise easily on a
 case-by-case basis to other kinds of structures, but they cannot be proven
 internally to Agda in full generality.
 
-Let us consider /using/ the first presentation.  When structures “pack away” all
-their features, the simple distributivity property becomes a bit of a challenge
-to write and to read.
+Let us consider
+#+begin_margin
+A discussion of propositional equality versus equality-by-construction can be
+found in section \label{sec:redundancy_derived_features_feature_exclusion}.
+#+end_margin
+/using/ the first presentation.  When structures “pack away” all their features,
+the simple distributivity property becomes a bit of a challenge to write and to
+read.
 
 #+latex: \hspace{-1.8em}\begin{minipage}{12cm} \maxsizebox{!}{0.35\textheight}{
 {{{code(Distributivity is Difficult to Express)}}}
@@ -19103,8 +19151,23 @@ function, for vectors, is rather facetious.
 discussed in section ref:sec:agda_tour:ADTs, in the introduction to
 dependently-typed programming with Agda.
 
-[fn:48] A variation of this problem is discussed in section
-ref:sec:packages_and_their_parts:sigma_pi.
+
+[fn:48] A variation of this problem is discussed in
+        #+latex: section \ref{sec:packages_and_their_parts:sigma_pi}.
+        #+latex: \newline\vspace{1em}
+        The purpose of this section is to demonstrate
+        the related, yet different, ideas below.
+                #+latex: \newline
+        (1) Isomorphism is not indistinguishable from equality.
+              #+latex: \newline
+        (2) Propositional equality is not equal to definitional equality.
+              #+latex: \newline
+        (3) Equivalent presentations are not equivalent in different, real usage scenarios.
+              #+latex: \newline\vspace{1em}
+        The first two subsections here are concrete instances of the more general
+        situation and reader familiar with DTLs is encouraged to skip ahead to section
+        #+latex:        \ref{sec:examples:IsX}.
+
 
 [fn:47] Formally, one could show, for instance, that every list corresponds to a
 vector, src_agda[:exports code]{List X ≅ (Σ n : ℕ • Vec X n)}. Informally, any
@@ -19192,10 +19255,8 @@ which we call “Σ-padding”.
     list is written =[]= and =[x₁, x₂, …, xₙ]= denotes the list of $n$ elements ~xᵢ~
     from ~X~; one says $n$ is the /length/ of the list.
 
-[fn:17] All references to the Agda Standard Library refer to version 0.7.  The
-current version is 1.3, however, for the =Algebra.Morphism= library, the newer
-library only refactors the one monolithic homomorphism example into a fine
-grained hierarchy of homomorphisms. The library can be accessed at https://github.com/agda/agda-stdlib.
+[fn:17]
+
 
 
 [fn:16]  The standard type ~Vec A n~, consisting of lists of elements of ~A~ having
