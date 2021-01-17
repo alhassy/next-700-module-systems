@@ -13883,6 +13883,8 @@ of /editor extension/ to /language library/.
 # 3. Provide a semantics to the existing syntax.
 # 4. Ensure the resulting semantics is consistent with that of Agda's.
 
+* nomargins                                                          :ignore:
+#+latex: \nomargins
 * The =Context= Library
 :PROPERTIES:
  :header-args: :tangle Context.agda
@@ -14022,8 +14024,8 @@ The =PackageFormer= framework is a useful tool to experiment with uncommon ways 
 package things together, but is relies on shuffling (untyped) strings and lacks
 a solid semantical basis. Instead of adding semantics after-the-fact, with the
 lessons learned from developing =PackageFormer=, we go on in this section to
-produce src_haskell[:exports code]{Context}, an /extensible do-it-yourself module
-system for Agda *within* Agda/.
+produce src_haskell[:exports code]{Context}, an /extensible do-it-yourself
+packaging mechanism for Agda *within* Agda/.
 
  We will show an automatic technique for unbundling data at will; thereby
  resulting in /bundling-independent representations/ and in /delayed unbundling/.
@@ -14036,9 +14038,10 @@ system for Agda *within* Agda/.
       We identify the problem and the subtleties in shifting between
       representations in Section [[sec:problems]].
 
-   2. Parameterised records can be obtained on-demand from non-parameterised
-      records @@latex:\hbox{@@(Section [[sec:monadic-notation]]) @@latex:}@@.
-      - As with ~Magma₀~, the traditional approach citet:coq_cat_experiences to
+   2. Parameterised records can be obtained dynamically, on-demand, from
+      non-parameterised records @@latex:\hbox{@@(Section [[sec:monadic-notation]])
+      @@latex:}@@.
+      - As with ~Magma₀~, the traditional approach\footcitet{coq_cat_experiences} to
         unbundling a record requires the use of transport along propositional
         equalities, with trivial src_emacs-lisp[:exports code]{refl}exivity proofs
         ---via the Σ-padding anti-pattern of Section ref:sec:examples:IsX. In
@@ -14172,8 +14175,9 @@ _ = DynamicSystem₂
  # Below: (The \" here is a ``trema'', not an ``Umlaut''.)
  #+latex: \noindent
  Recall, say from Section ref:sec:PF:problem_statement, that we refer to the
- concern of moving from a record to a parameterised record as *the unbundling
- problem* citet:packaging_mathematical_structures. For example, moving from the
+ concern of moving from a record to a parameterised record as
+ #+latex: \textbf{the unbundling problem}\footcitet{packaging_mathematical_structures}.
+ For example, moving from the
  /type/ src_agda[:exports code]{Set₁} to the /function type/ @@latex:\quad@@
  src_agda[:exports code]{Π X ∶ Set • Set} @@latex:\quad@@ gets us from
  ~DynamicSystem₀~ to something resembling ~DynamicSystem₁~, which we arrive at if we
@@ -14393,9 +14397,8 @@ do State ← ‵ Set
    End
  #+end_src
  # See page 275.
- #+latex: \noindent
- Interestingly citet:Bird_2009,DBLP:conf/hopl/HudakHJW07, use of
- src_haskell[:exports code]{do}-notation in preference to bind,
+ #+latex: \noindent Interestingly\footcitet{Bird_2009}$^,$\footcitet{DBLP:conf/hopl/HudakHJW07},
+ use of src_haskell[:exports code]{do}-notation in preference to bind,
  src_haskell[:exports code]{>>=}, was suggested by John Launchbury in 1993 and
  was first implemented by Mark Jones in Gofer.  Anyhow, with our goal of
  practicality in mind, we shall “build the lifting quote into the definition” of
@@ -14455,7 +14458,14 @@ time?
  duplication of existing types via the universe encoding. This is neither
  practical nor pragmatic.  As such, we are left with pattern matching on the
  language's type formation primitives as the only reasonable approach.  The
- method src_haskell[:exports code]{Π→λ} is thus a macro[fn:43] that acts on the
+ method src_haskell[:exports code]{Π→λ} is thus a
+ #+latex: macro\FOOTNOTE{
+ A /macro/ is a function that manipulates the abstract syntax trees of the
+ host language. In particular, it may take an arbitrary term, shuffle its syntax
+ to provide possibly meaningless terms or terms that could not be formed without
+ pattern matching on the possible syntactic constructions.
+ #+latex: }
+ that acts on the
  syntactic term representations of types.  Below is the main transformation.
 
  #+latex: \begin{tcolorbox}[title = Π→λ, colback=yellow!5!white, colframe=yellow!75!black]
@@ -14611,7 +14621,7 @@ s ⟩ = s , tt
  ℕ 0} is /the type of dynamic systems over carrier ℕ and start state 0/.
 
  Examples of the need for such on-the-fly unbundling can be found in numerous
- places in the Haskell standard library. For instance, the standard libraries citet:data_monoid
+ places in the Haskell standard library. For instance, the standard libraries\footcitet{data_monoid}
  have two isomorphic copies of the integers, called ~Sum~ and ~Product~, whose reason
  for being is to distinguish two common monoids: The former is for /integers with
  addition/ whereas the latter is for /integers with multiplication/.
@@ -14629,10 +14639,10 @@ Monoid ℓ = do Carrier ← Set ℓ
  #+end_src
  #+latex: \noindent
  With this context, (~Monoid ℓ₀ :waist 2) M _⊕_~ is the type of monoids over
- /particular/ types ~M~ and /particular/ operations ~_⊕_~.  Of-course, this is orthogonal,
- since traditionally unification on the carrier type ~M~ is what makes typeclasses
- and canonical structures citet:coq_canonical_tutorial useful for ad-hoc
- polymorphism.
+ /particular/ types ~M~ and /particular/ operations ~_⊕_~.  Of-course, this is
+ orthogonal, since traditionally unification on the carrier type ~M~ is what makes
+ typeclasses and canonical structures\footcitet{coq_canonical_tutorial} useful
+ for ad-hoc polymorphism.
 
  # since Haskell's use-case is for canonical typeclasses, which utilise unification
  # on the carrier type ~M~ to find instance implementations.
@@ -14652,17 +14662,15 @@ Monoid ℓ = do Carrier ← Set ℓ
     :END:
 
    We have a practical monadic syntax for possibly parameterised record types
-   that we would like to extend to termtypes.
-   As discussed in the previous section, we could alter
-   the bind operator to account for 𝒲-types, but we shall
-   present a different technique so as to avoid
-   “making bind do too much”.
-   Algebraic data types are a means to
-   declare concrete representations of the least fixed-point of a functor; see
-   citet:DBLP:journals/jfp/Swierstra08 for more on this idea.  In particular, the
-   description language ~𝔻~ for dynamical systems, below, declares concrete
-   constructors for a fixpoint of a certain functor 𝒟; i.e., ~𝔻 ≅ Fix 𝒟~ where:
-{{{code( ADTs and Functors )}}}
+   that we would like to extend to termtypes.  As discussed in the previous
+   section, we could alter the bind operator to account for 𝒲-types, but we
+   shall present a different technique so as to avoid “making bind do too much”.
+   Algebraic data types are a means to declare concrete representations of the
+   least fixed-point of a functor; see
+   Swierstra\footcitet{DBLP:journals/jfp/Swierstra08} for more on this idea.  In
+   particular, the description language ~𝔻~ for dynamical systems, below, declares
+   concrete constructors for a fixpoint of a certain functor 𝒟; i.e., ~𝔻 ≅ Fix 𝒟~
+   where: {{{code( ADTs and Functors )}}}
    #+begin_src agda :tangle no
 data 𝔻 : Set where
     startD : 𝔻
@@ -15628,8 +15636,9 @@ macro
   with a theory is a particular useful and practical data-structure ---such as
   src_haskell[:exports code]{ℕ, Maybe,} and src_haskell[:exports
   code]{List}. These two examples are more than encouraging, for the continual
-  of this effort. Also, the success claimed by related work like citet:Arend and
-  citet:that-group makes us believe that we can have a positive impact.
+  of this effort. Also, the success claimed by related work like
+  #+latex: Arend\footcitet{arend:webpage}$^,$\footcitet{arend:DBLP:journals/corr/abs-2004-14195}
+  makes us believe that we can have a positive impact.
 
   This thesis has focused on various aspects of furnishing packages with a
   status resemebling that of a first-class citizen in a dependently-typed
@@ -15745,9 +15754,9 @@ macro
   ‘absorped’ into =Package=? What are the types of the package combinators
   introduced in this thesis, such as unbundliungs Π→λ?
 
-  These questions are not only interesting by themselves but we also would
-  be a stepping stone in having full-fledged first-class pacakages in dependently-typed
-  languages.
+  These questions are not only interesting by themselves but they would also be
+  a stepping stone in having full-fledged first-class pacakages in
+  dependently-typed languages.
 
   *Theoretical Concern ♯2: Syntax.* The theories-as-data-structures lens presented
   in this work showcases how a theory (a record type, signature, admitting
@@ -15764,12 +15773,13 @@ macro
 
   Future work would focus on the treatment non-function-symbols.  For instance,
   instead of discarding properties from a theory, one could keep them thereby
-  obtaining ‘higher-order datatypes’ citet:cubical_agda or could have them lifted
-  as parameters in a (mechanically generated) subsequent module.  Moreover, the
-  current implementation of Context has a basic predicate determining what
-  consitutes a function-symbol, it would be interesting to make that a parameter
-  of the theories-as-data-structures src_emacs-lisp[:exports code]{termtype}
-  construction.
+  obtaining ‘higher-order
+  #+latex: datatypes’\footcitet{DBLP:journals/pacmpl/VezzosiM019}
+  or could have them lifted as parameters in a (mechanically generated)
+  subsequent module.  Moreover, the current implementation of Context has a
+  basic predicate determining what consitutes a function-symbol, it would be
+  interesting to make that a parameter of the theories-as-data-structures
+  src_emacs-lisp[:exports code]{termtype} construction.
 
   *Proof.*
   Finally, there are essentially no formal theorems proven in this work.  The
@@ -15786,7 +15796,7 @@ macro
   ⇒ Reformulate this paragraph to make it clear what is proven and how via typechecking.
   Eg typechecking are examples and the more general meahcnisms and this difference matters.
 
-** yesmargins                                                       :ignore:
+** COMMENT yesmargins                                                       :ignore:
 #+latex: \yesmargins
 ** Concluding Remarks
 
@@ -15810,10 +15820,23 @@ macro
 
  Finally, even though we personally believe in the import of packages, we do not
  expect the same belief to trickle-down to mainstream languages immediately
- since they usually do not have sufficiently sophisticated[fn:46] type systems
- to permit the treatment of packages as first-class citizens, on the same
- footing as numbers.  Nonetheless, we believe that the work in this thesis is
- yet another stepping-stone on the road of /DRY[fn:45]/ endeavours.
+ since they usually do not have sufficiently
+ #+latex: sophisticated\FOOTNOTE{
+ The static typing of some languages, such as C, is so pitiful that is makes type
+systems seem more like a burden then anything useful ---in C, one often uses
+void pointers to side-step the type system's limitations, thereby essentially
+going untyped.  The dynamically typed languages, however, could be an immediate
+test-bed for package combinators ---indeed, Lisp, Python, and JavaScript use
+‘splicing’ operators to wholesale include structures in other structures, within
+the core language.
+ #+latex: }
+ type systems to permit the treatment of packages as first-class citizens, on
+ the same footing as numbers.  Nonetheless, we believe that the work in this
+ thesis is yet another stepping-stone on the road of
+ #+latex: \emph{DRY}\FOOTNOTE{
+ /Don't Repeat Yourself!/
+ #+latex: }
+ endeavours.
 
 * COMMENT to add: termtype 𝒳 ≅ ⋯
 
@@ -19178,28 +19201,14 @@ list.
 
 
 [fn:46]
-The static typing of some languages, such as C, is so pitiful that is makes type
-systems seem more like a burden then anything useful ---in C, one often uses
-void pointers to side-step the type system's limitations, thereby essentially
-going untyped.  The dynamically typed languages, however, could be an immediate
-test-bed for package combinators ---indeed, Lisp, Python, and JavaScript use
-‘splicing’ operators to wholesale include structures in other structures, within
-the core language.
 
 
-[fn:45] /Don't Repeat Yourself!/
+[fn:45]
 
 [fn:44] In these diagrams, the arrows are used to denote a dependency
 relationship.
 
-[fn:43] A /macro/ is a function that manipulates the abstract syntax trees of the
- host language. In particular, it may take an arbitrary term, shuffle its syntax
- to provide possibly meaningless terms or terms that could not be formed without
- pattern matching on the possible syntactic constructions.
- # An up to date and
- # gentle introduction to reflection in Agda can be found at
- # citet:gentle-intro-to-reflection.
-
+[fn:43]
 
 [fn:42]
 [fn:41]
