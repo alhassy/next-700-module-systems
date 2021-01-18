@@ -513,6 +513,13 @@ commutative ring with one/.
 #+LaTeX: \setminted[agda]{fontsize=\footnotesize, breaklines}
 #+LaTeX: \setminted[agda2]{fontsize=\footnotesize, breaklines}
 #+LaTeX: \setminted[common-lisp]{fontsize=\footnotesize, breaklines}
+# https://tex.stackexchange.com/questions/406862/different-fontsize-for-minted-and-mintinline
+#
+#+latex: \makeatletter
+#+latex: \newcommand{\currentfontsize}{\fontsize{\f@size}{\f@baselineskip}\selectfont}
+#+latex: \makeatother
+#+latex:
+#+latex: \setmintedinline{fontsize=\currentfontsize}
 
 # LaTeX doesn't allow \def's in a \def; but a \def may occur in a \ [re]newcommand.
 # +LATEX_HEADER: \BeforeBeginEnvironment{listing}{ \let\oldcaption\caption \renewcommand{\caption}[1]{ \def\mytitle{#1} } }%
@@ -899,18 +906,16 @@ plagiarism even comes down to one sentence.” ---Ninth Ward Goethe
 *Abstract*
 #+end_center
 
-# +begin_abstract org
    Can parameterised records and algebraic datatypes ---i.e., Π-, Σ-, and
-   𝒲-types--- be derived from one
-   pragmatic declaration?
+   𝒲-types--- be derived from one pragmatic declaration?
 
    Record types give a universe of discourse, parameterised record types fix
    parts of that universe ahead of time, and algebraic datatypes give us
    first-class syntax, whence evaluators and optimisers.
 
-   The answer is in the affirmative. Besides a practical
-   shared declaration interface, which is extensible in the language,
-   we also find that common data structures correspond to simple theories.
+   The answer is in the affirmative. Besides a practical shared declaration
+   interface, which is extensible in the language, we also find that common data
+   structures correspond to simple theories.
 
    #    Put simply, the topic of the thesis is summarised as follows:
    Put simply, the thesis is about making tedious /and/ inexpressible patterns of
@@ -935,9 +940,10 @@ plagiarism even comes down to one sentence.” ---Ninth Ward Goethe
       combinators one has in hand. This idea is fleshed out in chapter 5 by
       providing the key insightful syntactic transformations on a DTL's grammar.
 
-:END:
-
- # +end_abstract
+There are situations that occur often when working in a dependently-typed
+language, and it is reasonable enough to have the computer handle them (Chapter
+4). In fact, we can have the computer do so without just string manipulation but
+instead using the DTL itself (Chapter 5).
 
 #+latex: \yesmargins
 ** A middle-path with margins :ignore:
@@ -1081,15 +1087,15 @@ Deriving related /types/ from /the/ definition of monoids:
 \smartdiagram[constellation diagram]{
  {Monoids}
 ,{Monoids \mbox{\hspace{-4ex}\emph{parameterised by}} \mbox{carrier \texttt{C}}}
-,{\mbox{\hspace{-1.5em}Homomorphisms}, \mbox{products}, duals}
+,{\mbox{\hspace{-2.0em}Homomorphisms}, \mbox{products}, duals}
 ,{\mbox{Signature} \mbox{(Tree} \mbox{skeleton)}}
 ,{Pointed Magma} % \\ (“Exclusion”)
-,{Terms \\ \mbox{\hspace{-0.5em}(Trees with} \mbox{variables)}}
-,{Monoids \mbox{\hspace{-4ex}\emph{parameterised by}} a setoid}
+,{Terms \\ \mbox{\hspace{-2ex}(Trees with} \mbox{\hspace{-1ex}variables)}}
+,{Monoids \mbox{\hspace{-4ex}\emph{parameterised by}} \mbox{a setoid}}
 % ,Universal Algebra constructions
 ,{Monoids \mbox{\hspace{-4ex}\emph{parameterised by}}
-   \mbox{ carrier \texttt{C}}
-   \emph{and} \mbox{operation} $\_{}\oplus\_{}$}}
+   \mbox{\hspace{-3ex} carrier \texttt{C} \emph{and} }
+   \mbox{\hspace{-3ex} operation $\oplus$}}}
 #+end_export
 #+end_margin
 of data.  Depending on the /expressivity/ of a language, packages
@@ -1194,7 +1200,28 @@ is shared by the other \newline concerns discussed in this section.
 In general, in a DTL, /packages behave like functions/ in that they may have a
 subset of their contents designated as /parameters exposed at the type-level/
 which users can /instantiate/. The shift between the two forms is known as *the
-unbundling problem* citet:packaging_mathematical_structures.  Unfortunately,
+unbundling problem*
+#+begin_margin
+Here's a ubiquitous instance of this problem: Theorem statements
+\newline
+#+latex: {\scriptsize
+~∀ (G : Group) (M : Monoid)~
+\newline {{{mbox(~→  Group.Carrier G ≡  Monoid.Carrier M~)}}}
+\newline ~  →  ⋯~
+#+latex: }
+\newline may be expressed more clearly ---without an after-the-fact
+constraint--- as
+\newline
+#+latex: {\scriptsize
+~∀ (C : Set)~
+\newline ~   (G : GroupOn  C)~
+\newline ~   (M : MonoidOn C)~
+\newline ~  →  ⋯~.
+#+latex: }
+\newline The problem is how to go from ~Group~ to ~GroupOn~,
+and it numerous derivatives, /dynamically/.
+#+end_margin
+citet:packaging_mathematical_structures.  Unfortunately,
 library developers generally provide only a few /variations/ on /a/ package; such as
 having no parameters or having only /functional symbols/ as parameters [[margin:][Recall the
 carrier ~C~ and operation ~_⊕_~ on page @@latex:\pageref{dia:monoids}@@ on monoid
@@ -2802,7 +2829,7 @@ examples to showcase the differences between dependent and non-dependent types.
    #+latex: \vspace{1em}
    Interestingly, lists of a particular length are known as /vectors/. The type of
    which is denoted =Vec X n=; this is a type that is /indexed/ by /both/ another /type/
-   =X= and an /expression/ =n=. Of-course =Vec ∶ Type → ℕ → Type= and, with vectors, =get=
+   =X= and an /expression/ =n=. Of course =Vec ∶ Type → ℕ → Type= and, with vectors, =get=
    may be typed \newline =Π X ∶ Type • Π n ∶ ℕ • Vec X n → ℕ< n → X=; in-particular notice
    that the /external computation/ =length xs= in the previous typing of =get= is
    replaced by the /intrinsic index/ =n=; that is, *dependent types allow us to
@@ -4687,11 +4714,12 @@ open import Data.Nat.Properties
 
   Our example will be implementing a monoidal interface in each format, then
   presenting /views/ between each format and that of the ~record~ format.
-  Furthermore, we shall also construe each as a typeclass, thereby demonstrating
-  that typeclasses are, essentially, not only a selected record but also a
-  selected /value/ of a dependent type ---incidentally this follows from the
-  previous claim that records and direct dependent types are essentially the
-  same.
+  Furthermore, we shall also construe each as a
+  #+latex: typeclass,
+  thereby demonstrating that typeclasses are, essentially, not only a selected
+  record but also a selected /value/ of a dependent type ---incidentally this
+  follows from the previous claim that records and direct dependent types are
+  essentially the same.
 
   #+begin_export latex
 % \begin{center}
@@ -4751,25 +4779,36 @@ open Monoid-Record {{...}} using (pop-Id-Rec)
  #+END_SRC
 
 # +latex: \begin{tcolorbox}[colframe=red!75!black, title=Instance Resolution]
-*Instance Resolution:* The double curly-braces ~{{...}}~ serve to indicate that the
- given argument is to be found by /instance resolution/. For example, if we
- declare =it ∶ {{e ∶ A}} → B=, then =it= is a =B= value that is formed using an =A=
- value; but which =A= value? Unlike a function which requires the =A= value as
- input, =it= will “look up” an =A= value in the list of names that are marked for
- look-up by the keyword =instance=.  If multiple =A= values are marked for look-up,
- it is not clear which one should be used; as such,
+*Instance Resolution:* The double curly-braces src_agda[:exports code]{{{...}}}
+serve to indicate that the given argument is to be found by /instance
+resolution/. For example, if we declare src_haskell[:exports code]{it : {{e ∶ A}}
+→ B}, then src_emacs-lisp[:exports code]{it} is a src_haskell[:exports
+code]{B}-value that is formed using an src_haskell[:exports code]{A}-value; but
+which src_haskell[:exports code]{A}-value? Unlike a function which requires the
+src_haskell[:exports code]{A}-value as input, src_emacs-lisp[:exports code]{it}
+will “look up” an src_haskell[:exports code]{A}-value in the list of names that
+are marked for look-up by the keyword src_agda[:exports code]{instance}.  If
+multiple src_haskell[:exports code]{A}-values are marked for look-up, it is not
+clear which one should be used; as such,
  #+latex: \emph{at most one}\FOOTNOTE{
  More accurately, there needs to be /a unique instance that solves local
-constraints/. Continuing with =it=, any call to =it= will occur in a context Γ that
-will include inferred types and so when an =A=-valued is looked-up it suffices to
-find a /unique/ value =e= such that =Γ ⊢ e ∶ A=. More concretely, suppose @@latex:
-\newline@@ =A = ℕ × ℕ=, =B == ℕ=, and =it {{(x , y)}} = x= and we declared two ℕumbers
-for instance search, =p = (0 , 10)= and =q = (1, 14)=.  Then in the call site =go ∶
-it ≡ 1; go = refl=, the use of =refl= means both sides of the equality must be
-identical and so =it {{e}}= must have the =e= chosen to make the equality true, but
-only =q= does so and so it is chosen. However, if instead we had defined =p = (1 ,
-10)=, then both =p= and =q= could be used and so there is no local solution;
-prompting Agda to produce an error.
+constraints/. Continuing with src_emacs-lisp[:exports code]{it}, any call to
+src_emacs-lisp[:exports code]{it} will occur in a context src_haskell[:exports
+code]{Γ} that will include inferred types and so when an src_haskell[:exports
+code]{A}-valued is looked-up it suffices to find a /unique/ value
+src_emacs-lisp[:exports code]{e} such that src_haskell[:exports code]{Γ ⊢ e :
+A}. More concretely, suppose src_haskell[:exports code]{A =
+ℕ × ℕ, B = ℕ} and src_agda[:exports code]{it {{(x , y)}} = x} and we declared
+two ℕumbers for instance search, src_haskell[:exports code]{p = (0 , 10)} and
+src_haskell[:exports code]{q = (1, 14)}.  Then in the call site
+src_agda[:exports code]{go : it ≡ 1; go = refl}, the use of
+src_emacs-lisp[:exports code]{refl} means both sides of the equality must be
+identical and so src_agda[:exports code]{it {{e}}} must have the
+src_emacs-lisp[:exports code]{e} chosen to make the equality true, but only
+src_emacs-lisp[:exports code]{q} does so and so it is chosen. However, if
+instead we had defined src_haskell[:exports code]{p = (1 , 10)}, then both
+src_emacs-lisp[:exports code]{p} and src_emacs-lisp[:exports code]{q} could be
+used and so there is no local solution; prompting Agda to produce an error.
 :More_neato:
 #+begin_src agda
 open import Data.Product
@@ -4828,7 +4867,12 @@ _ = refl
  carrier is /bundled at the value level/. If we to speak of “monoids with the
  specific carrier 𝒳”, we need to /bundle the carrier at the type level/.
  This is akin to finding the carrier “dynamically, at runtime” versus
- finding it “statically, at typechecking time”.
+ finding it
+ #+latex: “statically, at typechecking time”. \FOOTNOTE{
+  An accessible introduction to semantics and typeclasses, using a monoid of
+  functions as the running example, can be found in:
+  \fullcite{Elliott2016DenotationalDW}.
+  #+latex: }
  # i.e., the difference between
  # “a structure” and “a structure on a particular carrier”.
 
@@ -5159,7 +5203,7 @@ open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
 
    *Twelf*\footcitet{twelf_site} is a logic programming language implementing
     Edinburgh's Logical
-    #+latex: Framework\footcitet{lf_meta_mechanisation}$^,$\footcitet{lf_has_isabelle}$^,$\footcitet{lf_fast_proof_checking}
+    #+latex: \newline  Framework\footcitet{lf_meta_mechanisation}$^,$\footcitet{lf_has_isabelle}$^,$\footcitet{lf_fast_proof_checking}
     and has been used to prove safety properties of ‘real languages’ such as
     SML.  A notable practical module system\footcitet{lf_practical_modules} for Twelf
     has been implemented using signatures and signature morphisms.
@@ -5508,7 +5552,7 @@ Wadler-Kokke-2018 is about theorem proving in theories of programming languages.
    in its support for subset types; however, the language seems to be unmaintained as of 2014.
 
  + Twelf citet:twelf_site is a logic programming language
-   implementing Edinburgh's Logical Framework
+   implementing Edinburgh's Logical \newline Framework
    citet:lf_meta_mechanisation,lf_has_isabelle,lf_fast_proof_checking
    and has been used to prove safety properties of ‘real languages’ such as SML.
    A notable practical module system citet:lf_practical_modules for Twelf has been implemented using signatures and signature morphisms.
@@ -7168,6 +7212,10 @@ record IsSemiringWithoutOne {a ℓ} {A : Set a} (≈ : Rel A ℓ)
 #+end_parallel
 #+latex: \end{minipage}
 
+Please keep a lookout for the src_agda[:exports code]{renaming ( ⋯ )} lines; it
+is such a /schematic shape/ that is important ---not the actual content.[[margin:][Whence the
+intentionally tiny font!]]
+
 #+latex: \nomargins
 #+begin_parallel
 {{{code(Additive Renaming a 3ʳᵈ Time and Multiplicative Renaming ---IsSemiringWithoutAnnihilatingZero)}}}
@@ -7525,9 +7573,11 @@ Here are a few downsides of not renaming:
    which are ubiquitous in categroy theory.
 
    #+latex: \vspace{-2cm}\remark{
-   Declare ~_≈₀_~ and ~_≈₁_~ to be @@latex:\hbox{@@ ~Setoid._≈_ (F₀
-   Nat[Hom[C][-,c],F] (F , A))~ @@latex:}@@ and, respectively, ~Setoid._≈_ (F₀ F
-   B)~.
+   Declare ~_≈₀_~ and ~_≈₁_~ to be @@latex:{\scriptsize\hbox{@@ ~Setoid._≈_ (F₀
+   Nat[Hom[C][-,c],F] (F , A))~ @@latex:}}@@ and, respectively,
+   #+latex: {\scriptsize
+   ~Setoid._≈_ (F₀ F B)~
+   #+latex: }.
    #+latex: }\vspace{1cm}
 
 2. The short proof is difficult to read!
@@ -7565,24 +7615,27 @@ inconsistent renaming.
  A tenet of software development is not to over-engineer solutions.  For
  example, if we need a notion of untyped composition, we may use
  ~Monoid~. However, at a later stage, we may realise that units are
- @@latex:inappropriate\sidenote[α]{\color{gray!80} for instance, if we wish to
- model finite functions as hashmaps, we need to omit the identity functions
- since they may have infinite domains; and we cannot simply enforce a
- convention, say, to treat empty hashmaps as the identities since then we would
- lose the empty functions.  \iffalse Incidentally, this example, among others,
- led to dropping the identity features from Categories to obtain so-called
- Semigroupoids. \fi }@@ and so we need to drop them to obtain the weaker notion
- of ~Semigroup~. In weaker languages, we could continue to use the monoid
- interface at the cost of “throwing an exception” whenever the identity is
- used. However, this breaks the /Interface Segregation Principle: Users should
- not be forced to bother with features they are not interested in/
- citet:old-design-patterns-solid. A prototypical scenario is exposing an
- expressive interface, possibly with redundancies, to users, but providing a
- minimal self-contained counterpart by dropping some features for the sake of
- efficiency or to act as a “smart constructor” that takes the least amount of
- data to reconstruct the rich interface. Tersely put: One axiomatisation
- may be ideal for verifying instances, whereas an equivalent but possibly
- longer axiomatisation may be more amicable for calculation and computation.
+ inappropriate
+ #+begin_margin
+ For instance, if we wish to model finite functions as hashmaps, we need to omit
+ the identity functions since they may have infinite domains; and we cannot
+ simply enforce a convention, say, to treat empty hashmaps as the identities
+ since then we would lose the empty functions. Incidentally, this example, among
+ others, led to dropping the identity features from Categories to obtain
+ so-called Semigroupoids.
+ #+end_margin
+ and so we need to drop them to obtain the weaker notion of ~Semigroup~. In weaker
+ languages, we could continue to use the monoid interface at the cost of
+ “throwing an exception” whenever the identity is used. However, this breaks the
+ /Interface Segregation Principle: Users should not be forced to bother with
+ features they are not interested in/ citet:old-design-patterns-solid. A
+ prototypical scenario is exposing an expressive interface, possibly with
+ redundancies, to users, but providing a minimal self-contained counterpart by
+ dropping some features for the sake of efficiency or to act as a “smart
+ constructor” that takes the least amount of data to reconstruct the rich
+ interface. Tersely put: One axiomatisation may be ideal for verifying
+ instances, whereas an equivalent but possibly longer axiomatisation may be more
+ amicable for calculation and computation.
 
  More concretely, in the Agda-categories library one finds concepts with
  expressive interfaces, with redundant features, prototypically named ~𝒳~, along
@@ -7644,12 +7697,12 @@ Include redundant features if they allow certain common constructions to be
 #+latex: \end{mybox}
 
 
- Incidentally, since this is not a library method,
- #+latex: inconsistencies\sidenote[β]{\color{gray!80}
+ Incidentally, since this is not a library method, inconsistencies
+ #+begin_margin
  In particular, in the ~𝒳~ and ~𝒳Helper~ naming scheme: The ~NaturalIsomorphism~ type
  has ~NIHelper~ as its minimised version, and the type of [[https://github.com/agda/agda-categories/blob/master/src/Categories/Category/Monoidal/Symmetric.agda][symmetric monoidal
  categories]] is oddly called ~Symmetric'~ with its helper named ~Symmetric~.
- #+latex: }
+ #+end_margin
  are bound to arise. Such issues could be reduced, if not avoided, if library
  methods could have been used instead of manually implementing design patterns.
 
@@ -8541,21 +8594,6 @@ PackageFormer M-Set : Set₁ where (ref:msetDecl)
                                            ≡  a · (b · 𝓋)
 #+END_SRC
 
-#+latex: \vspace{-24em}\remark{ % \begin{tcolorbox}[colback=red!5!white, colframe=red!75!black]
-In the code block, the names have been chosen to stay relatively close to the
-real-world examples presented in chapter ref:sec:examples_from_the_wild. The
-name *M-Set* comes from /monoid acting on a set/; in our example,
-src_haskell[:exports code]{Scalar} values may act on src_haskell[:exports
-code]{Vector} values to produce new src_haskell[:exports code]{Scalar}
-values. The programmer may very well appreciate this example if the names
-src_haskell[:exports code]{Scalar, 𝟙, _×_, Vector, _·_} were chosen to be
-src_agda[:exports code]{Program, do-nothing, _⨾_, Input, run}.  With this new
-naming, src_haskell[:exports code]{leftId} says /running the empty program on any
-input, leaves the input unchanged/, whereas src_haskell[:exports code]{assoc}
-says /to run a sequence of programs on an input, the input must be threaded
-through the programs/.  Whence, *M-Sets abstract program execution*.
-#+latex: }\vspace{1cm} % \end{tcolorbox}
-
 \vspace{-1cm}
 {{{code(Different Ways to Organise (“interpret” / “use”) M-Sets)}}}
 #+attr_latex: :options xleftmargin=6pt
@@ -8609,7 +8647,22 @@ above.}
 \vspace{0.8cm}
 #+end_export
 
-\noindent These manually written ∼25 lines elaborate into the ∼100 lines of raw,
+\noindent These
+#+begin_margin
+In the code block, the names have been chosen to stay relatively close to the
+real-world examples presented in chapter ref:sec:examples_from_the_wild. The
+name *M-Set* comes from /monoid acting on a set/; in our example,
+src_haskell[:exports code]{Scalar} values may act on src_haskell[:exports
+code]{Vector} values to produce new src_haskell[:exports code]{Scalar}
+values. The programmer may very well appreciate this example if the names
+src_haskell[:exports code]{Scalar, 𝟙, _×_, Vector, _·_} were chosen to be
+src_agda[:exports code]{Program, do-nothing, _⨾_, Input, run}.  With this new
+naming, src_haskell[:exports code]{leftId} says /running the empty program on any
+input, leaves the input unchanged/, whereas src_haskell[:exports code]{assoc}
+says /to run a sequence of programs on an input, the input must be threaded
+through the programs/.  Whence, *M-Sets abstract program execution*.
+#+end_margin
+manually written ∼25 lines elaborate into the ∼100 lines of raw,
 legitimate, Agda syntax below ---line breaks are denoted by the symbol ‘↪’
 rather than inserted manually, since all subsequent code snippets in this
 section are *entirely generated* by =PackageFormer=.  The result is nearly a *400%
@@ -8677,7 +8730,7 @@ In line [[(msetSemantics)]], the src_emacs-lisp[:exports code]{record} variation
   ---this is yet a new feature that Agda cannot perform.
 #+latex: }
 
-#+latex: \clearpage \vspace{-2cm}\remark{
+#+latex: \vspace{-2cm}\remark{
 More accurately, the ‘⟴’-based mini-language for variationals is realised as a
 Lisp macro and so, in general, the right side of a declaration in 700-comments
 is interpreted as valid Lisp modulo this mini-language: =PackageFormer= names and
@@ -8687,7 +8740,7 @@ src_emacs-lisp[:exports code]{f} are actually named src_emacs-lisp[:exports
 code]{𝒱-f}. One may quickly obtain the documentation of a variational
 src_emacs-lisp[:exports code]{f} with \newline src_haskell[:exports code]{C-h o
 RET 𝒱-f} to see how it works.
-#+latex: }\vspace{0cm}
+#+latex: }\vspace{1cm}
 #
 Likewise, line [[(msetLeftSet)]], mentions another combinator
 # +latex: \vspace{-1em}
@@ -8978,10 +9031,10 @@ practicality.
 #+latex: \label{sec:PF:extension}
 
 #+latex: \remark{\noindent
- One may use the call @@latex: \hbox{\tiny@@ src_emacs-lisp[:exports code]{P = Q extended-by R
+ One may use the call @@latex: \hbox{\scriptsize@@ src_emacs-lisp[:exports code]{P = Q extended-by R
  :adjoin-retract nil} @@latex:}@@ to extend src_emacs-lisp[:exports code]{Q} by declaration
  src_emacs-lisp[:exports code]{R} but avoid having a view (coercion)
- src_emacs-lisp[:exports code]{P → Q}. Of-course, src_emacs-lisp[:exports
+ src_emacs-lisp[:exports code]{P → Q}. Of course, src_emacs-lisp[:exports
  code]{extended-by} is /user-defined/ and we have simply chosen to adjoint retract
  views by default; the online documentation shows how users can define their own
  variationals.
@@ -9076,7 +9129,7 @@ neato = CommutativeMonoidR.toMonoidR
  One may use the call src_emacs-lisp[:exports code]{P = Q extended-by R
  :adjoin-retract nil} to extend src_emacs-lisp[:exports code]{Q} by declaration
  src_emacs-lisp[:exports code]{R} but avoid having a view (coercion)
- src_emacs-lisp[:exports code]{P → Q}. Of-course, src_emacs-lisp[:exports
+ src_emacs-lisp[:exports code]{P → Q}. Of course, src_emacs-lisp[:exports
  code]{extended-by} is /user-defined/ and we have simply chosen to adjoint retract
  views by default; the online documentation shows how users can define their own
  variationals.
@@ -9241,7 +9294,7 @@ CommutativeMonoid   = Monoid              postulating "_·_" "commutative"
 #+END_SRC
 
 #+latex: \vspace{1em} \noindent
-Of-course, one can continue to build packages in a monolithic fashion, as shown below.
+Of course, one can continue to build packages in a monolithic fashion, as shown below.
   {{{code()}}}
 #+BEGIN_SRC agda
 Group = Monoid extended-by "_⁻¹ : Carrier → Carrier; left⁻¹ : ∀ {x} → (x ⁻¹) · x ≡ 𝕀; right⁻¹ : ∀ {x} → x · (x ⁻¹) ≡ 𝕀" ⟴ record
@@ -9849,6 +9902,8 @@ is useful for rapid experimentation.
 #  5. Finally, we check for name clashes and handle them appropriately.
 #
 
+#+latex: \vspace{1em}
+
 **** Support for Diamond Hierarchies
 
 #+latex: \begin{fullwidth}
@@ -10034,17 +10089,16 @@ LeftUnitalActionR  = LeftUnitalAction ⟴ record
  #+BEGIN_SRC agda
 RightUnitalActionR = LeftUnitalActionR flipping "_·_" :renaming "leftId to rightId" ⟴ record
  #+END_SRC
- \noindent Of-course the resulting representation is semantically identical to
+#+latex: \end{fullwidth}
+
+#+latex: \begin{fullwidth}
+\noindent Of course the resulting representation is semantically identical to
  the previous one, and so it is furnished with a $\mathsf{to}Parent$ mapping:
  {{{code()}}}
  #+BEGIN_SRC agda
 forget : RightUnitalActionR → LeftUnitalActionR
 forget = RightUnitalActionR.toLeftUnitalActionR
  #+END_SRC
-
-#+latex: \end{fullwidth}
-
-#+latex: \begin{fullwidth}
 
  \noindent
  Likewise, for the RATH-Agda library's example from above, to define semi-lattice structures by duality:
@@ -10121,7 +10175,6 @@ CommutativeMagma = Magma extended-by "comm : {x y : Carrier} →  x · y  ≡  y
  #+END_SRC
 #+latex: }\end{minipage}
 
- #+latex: \vspace{1cm}\begin{fullwidth}
  However, life is messy and sometimes one may hurriedly create a structure, then
  later realise that they are being forced to depend on unused methods.  Rather
  than throw a =not implemented= exception or leave them undefined, we may use the
@@ -10159,6 +10212,7 @@ LeftUnitalMagma = Monoid keeping "𝕀-unique" ⟴ record
   #+latex: \vspace{1em}
  \noindent This expands to the following theory, minimal enough to derive
  src_haskell[:exports code]{𝕀-unique}.
+ #+latex: \vspace{1cm}\begin{fullwidth}
  #+latex: \vspace{1em}
  {{{code(Elaboration)}}}
  #+BEGIN_SRC haskell :remark these-are-just-results-from-previous-blocks :tangle no :tangle no
@@ -10173,12 +10227,12 @@ record LeftUnitalMagma : Set₁ where
    𝕀-unique     : ∀ {e} (lid : ∀ {x} → e · x ≡ x) (rid : ∀ {x} → x · e ≡ x) → e ≡ 𝕀
    𝕀-unique lid rid = ≡.trans (≡.sym leftId) rid
  #+END_SRC
+#+latex: \end{fullwidth}
 
  #+latex: \vspace{1em}
  \noindent Surprisingly, in some sense, src_emacs-lisp[:exports code]{keeping}
  let's us apply the interface segregation principle, or ‘little theories’, *after
  the fact* ---this is also known as /[[https://en.wikipedia.org/wiki/Reverse_mathematics][reverse mathematics]]/.
-#+latex: \end{fullwidth}
 
 *** 200+ theories ---one line for each
     :PROPERTIES:
@@ -10461,7 +10515,7 @@ $$\frac{p \,⟴\, v ⟿ q  \qquad q \,⟴\, w ⟿ q}{ (p \,⟴\, v) \,⟴\, w �
 # - As this rule show, ⟴ is forward function application.
 
 :Naming:
-- Of-course, users may name a composition:
+- Of course, users may name a composition:
   #+BEGIN_SRC agda
 {-700
 𝒱-𝓋  = …
@@ -11277,7 +11331,7 @@ PackageFormer MonoidP : Set₁ where
    The “quotes” help, in this case, when there are multiple variationals being
    invoked in a clause.
 
-   Of-course, we do not attempt to cover all possible errors ---e.g., wrong number
+   Of course, we do not attempt to cover all possible errors ---e.g., wrong number
    of arguments or division by zero--- instead relying on Emacs Lisp's native
    error mechanism.
 ** TODO COMMENT ⟨No⟩ An Example in Extensibility
@@ -13885,7 +13939,7 @@ of /editor extension/ to /language library/.
 
 * nomargins                                                          :ignore:
 #+latex: \nomargins
-* The =Context= Library
+* The src_haskell[:exports code]{Context} Library
 :PROPERTIES:
  :header-args: :tangle Context.agda
  :CUSTOM_ID: The-Context-Library
@@ -14181,7 +14235,7 @@ _ = DynamicSystem₂
  /type/ src_agda[:exports code]{Set₁} to the /function type/ @@latex:\quad@@
  src_agda[:exports code]{Π X ∶ Set • Set} @@latex:\quad@@ gets us from
  ~DynamicSystem₀~ to something resembling ~DynamicSystem₁~, which we arrive at if we
- can obtain a /type constructor/ @@latex:\quad@@ src_agda[:exports code]{λ X ∶ Set
+ can obtain a /type constructor/ of the form @@latex:\quad@@ src_agda[:exports code]{λ X ∶ Set
  • ⋯}. @@latex:$\,$@@ We shall refer to the latter change as @@latex:
  \emph{re\"{\i}fication}@@ since the result is more concrete: It can be
  applied. This transformation will be denoted by ~Π→λ~. To clarify this subtlety,
@@ -14312,10 +14366,10 @@ DynamicSystem = do State ← Set
 {{{newunicodechar(Σ, \color{red!50!black} \!\!\!\ensuremath{\Sigma})}}}
 {{{newunicodechar(Π, \color{blue!50!black} \!\!\!\ensuremath{\Pi})}}}
 
-  #+latex: \begin{tcolorbox}[title = \centering \TABLE{Elaborations of \texttt{DynamicSystem} at various exposure levels}, colback=yellow!5!white, colframe=yellow!75!black]
-  # +latex: {\renewcommand{\arraystretch}{1.3}
-  #+name: elaborations
   # +caption: Elaborations of DynamicSystem at various exposure levels
+  # +latex: {\renewcommand{\arraystretch}{1.3}
+ #+name: elaborations
+  #+latex: \begin{tcolorbox}[title = \centering \TABLE{Elaborations of \texttt{DynamicSystem} at various exposure levels}, colback=yellow!5!white, colframe=yellow!75!black]
  |   <c>    |   |                             <c>                             |
  | Exposure |   |                         Elaboration                         |
  |----------+---+-------------------------------------------------------------|
@@ -14323,8 +14377,8 @@ DynamicSystem = do State ← Set
  |    1     |   | =Π State ∶ Set  • Σ start ∶ X  • Σ next ∶ State → State  • 𝟙= |
  |    2     |   | =Π State ∶ Set  • Π start ∶ X  • Σ next ∶ State → State  • 𝟙= |
  |    3     |   | =Π State ∶ Set  • Π start ∶ X  • Π next ∶ State → State  • 𝟙= |
- # +latex: }
  #+latex: \end{tcolorbox}
+ # +latex: }
 
 # Back to normal black colouring
 {{{newunicodechar(Σ, \!\!\ensuremath{\Sigma})}}}
@@ -14350,18 +14404,16 @@ End {ℓ} = ‵ 𝟙 {ℓ}
  #+latex: \noindent
  It remains to identify the definition of the underlying bind operation
  src_haskell[:exports code]{>>=}.  Usually, for a type constructor
- src_emacs-lisp[:exports code]{m}, bind is typed src_agda[:exports code]{∀ {X
- Y : Set} → m X → (X → m Y) → m Y}. It allows one to “extract an
- src_haskell[:exports code]{X}-value for later use” in the src_haskell[:exports
- code]{m Y} context. Since our src_haskell[:exports code]{m = Context} is from
+ src_emacs-lisp[:exports code]{m}, bind is typed src_agda[:exports code]{∀ {A
+ B : Set} → m A → (A → m B) → m B}. It allows one to “extract an
+ src_haskell[:exports code]{A}-value for later use” in the src_haskell[:exports
+ code]{m B} context. Since our src_haskell[:exports code]{m = Context} is from
  levels to types, we need to slightly alter bind's typing.
 
  {{{code( Defining Bind ---First Attempt )}}}
  #+begin_src agda :tangle no
-_>>=_ : ∀ {a b}
-      → (Γ : Context a)
-      → (∀ {n} → Γ n → Context b)
-      → Context (a ⊍ b)
+-- >>= : ∀ {A B : Set}   →      m A        →         (A   → m B)       → m B
+_>>=_  : ∀ {a b : Level} → (Γ : Context a) → (∀ {n} → Γ n → Context b) → Context (a ⊍ b)
 (Γ >>= f) zero    = Σ γ ∶ Γ 0 • f γ 0
 (Γ >>= f) (suc n) = Π γ ∶ Γ n • f γ n
  #+end_src
@@ -14639,7 +14691,7 @@ Monoid ℓ = do Carrier ← Set ℓ
  #+end_src
  #+latex: \noindent
  With this context, (~Monoid ℓ₀ :waist 2) M _⊕_~ is the type of monoids over
- /particular/ types ~M~ and /particular/ operations ~_⊕_~.  Of-course, this is
+ /particular/ types ~M~ and /particular/ operations ~_⊕_~.  Of course, this is
  orthogonal, since traditionally unification on the carrier type ~M~ is what makes
  typeclasses and canonical structures\footcitet{coq_canonical_tutorial} useful
  for ad-hoc polymorphism.
@@ -14647,8 +14699,6 @@ Monoid ℓ = do Carrier ← Set ℓ
  # since Haskell's use-case is for canonical typeclasses, which utilise unification
  # on the carrier type ~M~ to find instance implementations.
 
-** nomargins                                                        :ignore:
-#+latex: \nomargins
 ** Termtypes as Fixed-points
    :PROPERTIES:
    :CUSTOM_ID: COMMENT-Termtypes-as-Fixed-points
@@ -14700,8 +14750,8 @@ data Fix (F : Set → Set) : Set where
 ⟿{- Termtype constructors target the declared type,
     so only their sources matter. E.g., ‘s : S’ is a
     nullary constructor targeting the carrier ‘S’.
-    This introduces 𝟙 types, so any existing
-    occurances are dropped via 𝟘. -}
+    As a design decision, this introduces 𝟙 types, so any existing
+    occurrences are dropped via 𝟘. -}
   λ S : Set • Σ s : 𝟙 • Σ n : S • 𝟘
 ⟿{- Termtypes are sums of products. -}
   λ S : Set •       𝟙   ⊎     S  ⊎ 𝟘
@@ -16999,13 +17049,6 @@ A variable has a De Bruijn index and may be applied to arguments.
 Constructors and definitions may be applied to a list of arguments.
 #+latex: }\vspace{1em}
 
-# https://tex.stackexchange.com/questions/406862/different-fontsize-for-minted-and-mintinline
-#
-#+latex: \makeatletter
-#+latex: \newcommand{\currentfontsize}{\fontsize{\f@size}{\f@baselineskip}\selectfont}
-#+latex: \makeatother
-#+latex:
-#+latex: \setmintedinline{fontsize=\currentfontsize}
 #
 #+macro: hbox @@latex:\hbox{@@ $1 @@latex:}@@
 
@@ -17808,6 +17851,19 @@ only-Blue-is-constant {Green} = refl
 
  In such cases, we can encode the general design decisions ---/pattern match and
  yield refl/--- then apply the schema to each use case.  Here is the schema:
+ #+begin_margin
+Now, ~unquoteDecl f = by-refls-on τ f (quote P)~ results in the following function
+---where the ~cᵢ~ are the constructors of τ.
+#+resize:
+{{{code(Elaboration of ‘by-refls-on’)}}}
+ #+ATTR_LATEX: :options fontsize=\normalsize
+#+BEGIN_SRC agda :tangle no
+f : ∀ {e : τ} → P e
+f c₁  = refl
+  ⋮    ⋮   ⋮
+f cₙ  = refl
+ #+END_SRC
+#+end_margin
  {{{code(Factoring out the insight)}}}
  #+BEGIN_SRC agda
 constructors : Definition → List Name
@@ -17826,23 +17882,6 @@ by-refls-on δατατγρε nom thm-you-hope-is-provable-by-refls
       declareDef (𝓋𝓇𝒶 η) thm-you-hope-is-provable-by-refls
       defineFun η clauses
 #+END_SRC
-
- #+latex: \vspace{-4cm} $\,$ \hfill \hspace{.95\textwidth} {\Large \maxsizebox{.6\textwidth}{\textheight}{
-Now, ~unquoteDecl f = by-refls-on τ f (quote P)~ results in the following function
----where the ~cᵢ~ are the constructors of τ.
-\\
-more
-{{{code(Elaboration of ‘by-refls-on’)}}}
- #+ATTR_LATEX: :options fontsize=\normalsize
-#+BEGIN_SRC agda :tangle no
-f : ∀ {e : τ} → P e
-f c₁  = refl
-  ⋮    ⋮   ⋮
-f cₙ  = refl
- #+END_SRC
- #+latex: }} \vspace{0cm}
-
---------------------------------------------------------------------------------
 
  Here is a use case.
  #+BEGIN_SRC agda
@@ -19306,7 +19345,7 @@ cheat sheet covering the basics is provided.
 [fn:8]
 
 [fn:7] None of my colleagues thought Lisp was at all the ‘right’ choice;
-of-course, none of them had the privilege to use the language enough to
+of course, none of them had the privilege to use the language enough to
 appreciate it for the wonder that it is.
 
 [fn:6] Latin for: /From falsehood ---ex falso--- anything (lit: whatever you wish) follows ---quodlibet./
