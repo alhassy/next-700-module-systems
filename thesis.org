@@ -26,10 +26,31 @@
 #+macro: lof @@latex:L\"{o}f@@@@html:Löf@@
 #+macro: newline @@latex: \newline@@
 
+# Macros to add tcolorbox title's to certain lists.
+# See  https://tex.stackexchange.com/questions/275853/adding-a-table-to-list-of-tables
+# Also: https://tex.stackexchange.com/questions/446704/addtocontents-and-minitoc
+# Also:
+#+latex: \def\TABLE#1{\addcontentsline{lot}{table}{\thesection\;\; #1} #1}
+#+latex: \def\FIGURE#1{\addcontentsline{lof}{figure}{\thesection\;\; #1} #1}
+#+latex_header: \usepackage{caption} \captionsetup[table]{labelformat=empty}
+
+# Use \caption*{text} to label tables with just “text” instead of “Table 𝓃: text”
+#+latex: \def\sc{}
+
+
+# Forbid LaTeX from making linebreaks
+#+macro: mbox @@latex: \mbox{@@ $1 @@latex:}@@
+
+# MA: Final version should not have the following incantation active.
+#+OPTIONS: broken-links:auto
+
+* TODO Immediate dois  :ignore:
 
 # Mention: Signatures as I have them do not allow for overloading.
 
-# Lots of relevant references is a good thing. It shows you know the literature, and thus implicitly convinces the reader that what you're doing must be new.
+# Lots of relevant references is a good thing. It shows you know the
+# literature, and thus implicitly convinces the reader that what
+# you're doing must be new.
 
 # src_agda[:exports code]{module M (params) where f : τ; f = E}
 # ≈  src_agda2[:exports code]{f : params → τ; f = E}
@@ -128,22 +149,6 @@ https://github.com/alhassy/next-700-module-systems/issues/27 you had both a nice
 Story and a nice Outline.
 :End:
 
-# Macros to add tcolorbox title's to certain lists.
-# See  https://tex.stackexchange.com/questions/275853/adding-a-table-to-list-of-tables
-# Also: https://tex.stackexchange.com/questions/446704/addtocontents-and-minitoc
-# Also:
-#+latex: \def\TABLE#1{\addcontentsline{lot}{table}{\thesection\;\; #1} #1}
-#+latex: \def\FIGURE#1{\addcontentsline{lof}{figure}{\thesection\;\; #1} #1}
-#+latex_header: \usepackage{caption} \captionsetup[table]{labelformat=empty}
-
-# Use \caption*{text} to label tables with just “text” instead of “Table 𝓃: text”
-#+latex: \def\sc{}
-
-
-# Forbid LaTeX from making linebreaks
-#+macro: mbox @@latex: \mbox{@@ $1 @@latex:}@@
-
-
 # 3.3 contains no examples, even though this chapter says it is about examples
 #  (remember: margin comments don’t count) Ok, this is a good case for moving that
 #  code snippet to the core text.  many things in Figure 3.1 are not illustrated
@@ -153,8 +158,57 @@ Story and a nice Outline.
 #  to every arrow that links to where this is defined in the thesis itself. The
 #  ultimate in traceability! The move to Ch1 sounds like a great idea! :-)
 
-# MA: Final version should not have the following incantation active.
-#+OPTIONS: broken-links:auto
+:PointsOfCh2:
+
+For reference, here are the main points:
+
+   - (1) What is a language? (2) Signatures (3) Presentations of Signatures
+   - (4) A whirlwind tour of Agda, (5) Facets of Structuring Mechanisms
+   - (6) Contexts are Promising, (7) Coq modules as Generalised Signatures
+   - (8) Problem of the thesis, (9) Thesis outcomes
+
+   I've organised the points into groups, for each bullet ‘-’, since I think
+   they're related.
+
+   The first group is intended to be an introduction to the background material
+   to get the reader comfortable with Σ and Π.
+
+   The next then recasts the previous within the setting of Agda,
+   and tries to show interdefinability of different notions of packaging
+   thereby showing that packages ≈ contexts ≈ modules is a promising idea.
+
+   The third group aims to be ‘related works’.
+
+   The final group wraps up with a reminder on why we're even bothing talking
+   about Σ, Π, and Agda.
+
+   Personally, this is how I currently see Chapter 2:
+   (1, 2, 3) What are the weird symbols Σ and Π?
+   (4, 5) How do we get them in a computer, where are they in our software?
+   (6 ,7) Where else are these weird symbols?
+   (8, 9) What's the thesis doing for/with them?
+
+   From that, things seem to be coherent.
+
+   I do agree that [possibly simplified] versions of (8, 9) belong in Chapter 1.
+:End:
+
+:Meaning:
+You and I /might/ look at “∞” and think “infintiy” but a person speaking Tagalog
+/might/ think that is the “Ha” syllable. The meaning is not in the symbol, but in
+the reader.
+:End:
+
+# TODO: MA: *WORKING HERE!*
+:Refl_PropEq:
+Start here  ⇒  https://xenaproject.wordpress.com/2020/07/03/equality-specifications-and-implementations/
+
+Explanation of Leibniz does not talk about unification and how 'refl' forces it,
+which is why "P l" and "P r" as 'the same' type.  ...missing a very crucial
+point?
+
+TODO: Get other notes re:≡ here.
+:End:
 
 * Neato petito margins :ignore:
 
@@ -952,6 +1006,20 @@ Namely, my PhD thesis on ‘do-it-yourself module systems for Agda’.
 \nAgda version %s; Standard library version 1.2"
  (format-time-string "%Y-%m-%d %A %H:%M:%S") agda2-version)
 #+end_src
+** fancy header setup                                               :ignore:
+
+# Useful: https://www.overleaf.com/learn/latex/headers_and_footers#Reference_guide
+#+latex_header: \usepackage{fancyhdr}
+#+latex_header: \pagestyle{fancy}
+#+latex_header: \fancyhf{} % clears the header and footer, otherwise the elements of the default "plain" page style will appear.
+#+latex_header: \fancyhead[L]{\rightmark}
+#+latex_header: \fancyhead[R]{\thepage}
+# +latex_header: \renewcommand{\headrulewidth}{0pt}
+#+latex_header: \fancyfoot[CE,CO]{\leftmark}
+#+latex_header: \fancyfoot[LE,RO]{\thepage}
+#+latex_header: \renewcommand{\headrulewidth}{2pt}
+#+latex_header: \renewcommand{\footrulewidth}{1pt}
+
 * Introduction
 
 #+latex: \setcounter{footnote}{0} \setcounter{sidenote}{0}
@@ -1739,15 +1807,14 @@ happens, some games have localised interactions between players where the rules
 may be changed temporarily and so we have /games within games/, then the
 object-language of the main game becomes the meta-language of the inner
 game. The objects of the game and their interaction rules, are its /lexicon/ and
-/grammar/, together forming its /syntax/; and and what the game means is its
-/semantics/.  To say that a game piece (term) denotes (/extensionally/) some idea 𝑰,
-we need to be able to /express/ that idea which may only be possible in the
-meta-language; e.g., pieces in a mini-game within a game may themselves denote
-pieces within the primary game ---more concretely, a game may require a roll of
-a die whose numbers /denote/, or /refer to/, players in the main game which are not
-expressible in the mini-game.  A /model/ of a game (type theory) is an
-interpretation of the game's pieces in way that the rules are true under the
-interpretation.
+/grammar/, together forming its /syntax/; and what the game means is its /semantics/.
+To say that a game piece (term) denotes (/extensionally/) some idea 𝑰, we need to
+be able to /express/ that idea which may only be possible in the meta-language;
+e.g., pieces in a mini-game within a game may themselves denote pieces within
+the primary game ---more concretely, a game may require a roll of a die whose
+numbers /denote/, or /refer to/, players in the main game which are not expressible
+in the mini-game.  A /model/ of a game (type theory) is an interpretation of the
+game's pieces in way that the rules are true under the interpretation.
 #+latex: \end{mybox}
 
 :SyntaxAdjSemantics:
@@ -2181,13 +2248,21 @@ as actual sets ~⟦τ⟧~ and terms ~t ∶ τ~ as /values/ of those sets ~⟦t�
 parameterisation without speaking of sets and functions./ (Conversely, /functions/
 $A → B$ “are” /elements/ of $B$ /in a context/ $A$.)  As mentioned in the
 introduction, we want to treat packages as the central structure for compound
-computations. To this aim, we have the approximate slogan: /*Parameterised
-packages are terms in context.*/
+computations. To this aim, we have the
+#+latex: approximate\FOOTNOTE{
+Briefly, given a parameterised package in Agda (section \ref{sec:agda_tour})
+src_agda[:exports code]{module M (x : ℕ) where y : ℕ; y = 3 + x} we may form the
+term in context $x : ℕ \;⊢\; y : ℕ = 3 + x$ (section \ref{sec:GTT}) and
+there is a clear converse construction.  Next, if we place a ‘λ’ in front of
+that context, we get a function, and so paramterised packages are functions.
+#+latex: }
+slogan: /*Parameterised packages are terms in context.*/
 
 ** yesmargins                                                       :ignore:
 #+latex: \yesmargins
 ** Signatures
 
+#+latex: \label{sec:signatures}
 #+latex: \tcbset{colback=green!10!white}
 
 The languages of the previous section can be organised into /signatures/, which
@@ -2217,6 +2292,8 @@ as the formal definition of a /package/.
 
 A *signature*
 #+begin_margin
+A signatures is also known as a /vocabulary/.
+#+latex: \newline\vspace{1em}
 /Unary Signatures/ are those with only one source sort for each function symbol
 ---i.e., the length of $\src f$ is always 1--- and so are just graphs.  Hence,
 /signatures generalise graphical sketches/.
@@ -2236,10 +2313,39 @@ correspondence, (re)interpretation of signature components:
 # +end_figure
 # +latex: \end{tcolorbox}
 #+end_margin
-is a tuple /(𝒮, ℱ, src, tgt)/ consisting of
-+ a set 𝒮 of /sorts/ ---the names of types---,
-+ a set ℱ of /function symbols/, and
-+ two mappings $\src : ℱ → \List 𝒮$ and $\tgt : ℱ → 𝒮$ that associate a
+citet:JacobsCLTT,LogicHandbookVol5 is a tuple /(𝒮, ℱ, src, tgt)/ consisting of
++ a
+  #+latex: set\footnote{
+  In programming language communities \cite{10.5555/114891}, a signature is also
+  known as /a programming language/ ---since our (non-generalised) signatures do
+  not admit function types, they are not equivalent to $λ^{×,→}$, /a pure lambda/
+  /calculus, with function and product types, and basic datatypes 𝒮 and primitive
+  operations ℱ/.  Moreover, sorts are also known as /base types/, /type symbols/, or
+  /type constants/ ---in constrast to ‘type constructors’, which are type-yielding
+  functions.
+  #+latex: }
+  𝒮 of /sorts/ ---the names of types---,
++ a
+  #+latex: set\footnote{
+  Sometimes signatures are presented with dedicated sets of ‘function symbols’
+  and ‘predicate, relation, symbols’. The chosen presentation avoids such a
+  route since we want to use Agda, which does not distinguish between the two.
+  Indeed, for us, /there are no predicate symbols nor function symbols, only
+  symbols/ and /there are no proof terms, only terms/.  We may /simulate/ predicate
+  symbols by declaring that a sort, say, ‘𝔹’ in 𝒮 models the Booleans, the
+  truth-values ---then, for instance, a ‘proof term’ is a term of type 𝔹.
+  #+latex: }
+   ℱ of /(function) symbols/, and
++ two
+  #+latex:  mappings\footnote{
+  Computing generally requires more sorts in comparison to traditional algebras
+  in classical mathematics and so giving a signature's symbols with numbers for
+  their arities is not as helpful as giving each symbol a list of its source
+  sorts ---whose length then determines its arity.  For a traditional
+  mathematical flavour, consult [[https://www.math.uwaterloo.ca/~snburris/htdocs/UALG/univ-algebra.pdf][/A Course in Universal Algebra/]]
+  \cite{DBLP:books/daglib/0067494}.
+  #+latex: }
+  $\src : ℱ → \List 𝒮$ and $\tgt : ℱ → 𝒮$ that associate a
   list[fn:20] of /source sorts/ and a /target sort/ with a given function symbol.
 
 *Typing* the symbols of a signature as follows
@@ -2257,7 +2363,15 @@ Moreover, we regain the /typing judgements/ of the previous section by introduci
 a grammar for /terms/.
 Given a set 𝒱 of *variables*, we may define *terms*
 #+begin_margin
-These are also known as /(abstract syntax) trees/ and /expressions/.
+These are also known as /expressions/ and /(abstract syntax) trees/
+---\cite{10.5555/114891}: The leaves of which are labelled with variables (from
+𝒱) or constants (symbols $f$ with $\src f = []$), and the internal nodes are
+labelled with function symbols (from ℱ) of positive arity, with outdegree equal
+to the arity of the label. Hence, *abstract syntax is characterised algebraically
+using signatures*; moreover, every context-free grammar gives a canonical
+signatures ---with non-terminals as sorts and constructors as function
+symbols--- but the converse is not true since signatures may have infinitely
+many sorts or symbols, and they have no designated ‘start state’.
 #+end_margin
 with the following grammar.
 {{{code(Grammar for Arbitrary Terms)}}}
@@ -2279,13 +2393,24 @@ Term ∷= x               -- A variable; an element of 𝒱
 #+end_box
 
 As discussed in the previous section, variables are /not/ necessary and if they
-are /not/ permitted, we omit the first clause of =Term= and only use the second typing
-rule ---we also drop the contexts since there would be no variables for which
-variable-type associations must be remembered. Without variables, the resulting terms are called
-/ground terms/. Since terms are defined recursively, inductively, the set of
-ground terms is non-empty precisely when at least one function symbol ~c~ needs no
-arguments, in which case we say ~c~ is a /constant symbol/
-and make the following abbreviation:
+are /not/ permitted, we omit the first clause of =Term= and only use the second
+typing rule ---we also drop the contexts since there would be no variables for
+which variable-type associations must be remembered. Without variables, the
+resulting terms are called /ground terms/. Since terms are defined recursively,
+inductively, the set of ground terms is non-empty precisely when at least one
+function symbol ~c~ needs no arguments, in which case we say ~c~ is a /constant
+symbol/ and
+#+begin_margin
+The second typing rule now becomes an axiom rather than inference rule:
+For any /constant/ $c$ of type τ:
+#+begin_tree
++ Constant Type :: \;⊢\; c : τ
+  -
+#+end_tree
+The typing context is empty since the type of a constant is fixed, and therefore
+independent of the context in which it appears.
+#+end_margin
+make the following abbreviation:
 \[
 c : τ \qquad ≡ \qquad \src c = [] \;∧\; \tgt c = τ
 \]
@@ -2533,6 +2658,10 @@ rise to a unique signature $(𝒮, ℱ, \src, \tgt)$ where:
   These equations ensure $\src, \tgt$ are functions /provided/ each name occurs at
   most once as the name part of a declaration.
 
+# The purpose of the example was to make use of existing, common, phrases such as
+#     “school smart” (people) vs “street smart” (people). The kind of people
+#     one is speaking about is indexed by values of the location type.
+#
 This is one of the first instances of a syntax-to-semantics relationship: *A
 context is a syntactic representation of a (generalised) signature*.
 [[margin:][Signatures are all syntax; so we are interpreting contexts as a
@@ -2794,6 +2923,12 @@ examples to showcase the differences between dependent and non-dependent types.
    replaced by the /intrinsic index/ =n=; that is, *dependent types allow us to
    encode properties of elements at the type level!*
 
+#+latex: \tcbsubtitle{Proof Sketch}
+
+ Suppose we want to avoid the erroenous situation 𝑬 which can be expressed in
+ higher order logic. Then we can type our program so that its output type is a
+ dependent product $Σ\, o : 𝑶 • ¬ 𝑬$, involving the intended output type 𝑶 and a
+ proof obligation ---i.e., a value, witnessing the impossibility of 𝑬.
 #+latex: \end{myexamplebox}
 
 :TypeFamilies:
@@ -2813,6 +2948,8 @@ examples to showcase the differences between dependent and non-dependent types.
 #+latex: \yesmargins
 
 *** Defining Generalised Signatures
+
+#+latex: \label{sec:GTT}
 
 Anyhow, back to the task at hand ---formally defining signatures (packages).
 
@@ -3258,11 +3395,23 @@ generalise graphs and type theories.  Our generalised signatures have been
 formalised “after the fact” from the creation of the prototype for packages
 ---see Chapter 4.  In the literature, our definition of generalised signatures
 is essentially a streamlined presentation of Cartmell's ‘generalised algebraic
-theories’\footcitet{DBLP:journals/apal/Cartmell86} expect that we do not allow
-arbitrary equational ‘axioms’ instead using “name = term” rather than “term =
-term” axioms which serve as /default implementations/ of names.  Support for
-default definitions is to place the prototype on a sound footing, but otherwise
-we do not make much use of such a feature outside that chapter.
+#+latex: theories’\footcitet{DBLP:journals/apal/Cartmell86}$^,$\FOOTNOTE{
+Quoting Cartmell: /Thus, a generalised algebraic theory consists of (i) a set of
+sorts, each with a specified role either as a constant type or else as a/
+/variable type varying in some way, (ii) a set of operator symbols, each one with
+its argument types and its value type specified (the value type may vary/ /as the
+argument varies), (iii) a set of axioms. Each axiom must be an identity/ /between/
+/similar well-formed expressions, either between terms of the same possibly
+varying type or else between type expressions./
+#+latex: }
+expect that we do not allow arbitrary equational ‘axioms’ instead using “name =
+term” rather than “term = term” axioms which serve as /default implementations/ of
+names.  Support for default definitions is to place the prototype on a sound
+footing, but otherwise we do not make much use of such a feature outside that
+chapter.
+#   The tuples (𝒮, ℱ, src, tgt) that I use for signatures meet his definition:
+#     (i) is 𝒮, (ii) is ℱ along with src and tgt, and his (iii) is met by my
+#     allowing function symbols to have optional definitions.
 
 #+latex: \begin{tcolorbox}
 Readers familiar with elementary computing may note that our contextual
@@ -3442,10 +3591,6 @@ are term descriptions, possibly the “null” description “$-$”.
 
 #+latex: \tcbset{colback=green!10!white}
 
-# +latex: \newtcolorbox{myexamplebox}[1]{title=#1,
-# +latex: colback=red!5!white, colframe=red!75!black, colbacktitle=yellow!50!red, coltitle=red!25!black, fonttitle=\bfseries,
-# +latex: subtitle style={boxrule=0.4pt, colback=yellow!50!red!25!white}}
-
  We have introduced a number of concepts and it can be difficult to keep track
  of when relationships $Γ ⊢ t : τ$ are in-fact derivable. The
  #+latex: Agda\footcitet{why_dependent_types_matter}$^,$\footcitet{dependent_matching_is_just_K}$^,$\footcitet{curry_howard}$^,$\footcitet{agda_plf}
@@ -3457,13 +3602,44 @@ are term descriptions, possibly the “null” description “$-$”.
  denote the type of types at /level/ $i : ℕ$. This is a technical subtlety and may
  be ignored; instead treating every occurrence of =Setᵢ= as an alias for =Type=.
 
+ # Those circles at the start of §2.4 also try to bridge the content from the
+ # start of §2 to where we are now in §2.4.
+#+begin_parallel
 #+begin_export latex
-\begin{center}
+\maxsizebox{\textwidth}{\textheight}{
 \smartdiagram[bubble diagram]{
 Agda, \texttt{data} / 𝒲 \\ (Grammars), \texttt{record}  / Σ \\ (Context), \texttt{module} / Π \\ (Namespacing)
-}
-\end{center}
+}}
 #+end_export
+
+# The tour assumes readers have actually read §2.2,3 and so the motivation for
+# things, such as Π, is not repeated.
+#+latex: {\color{gray!80}\footnotesize
+*Organisation Commentary.* Since Agda is a DTL, it makes sense to begin with Π and
+DTs since one would expect them to occur everywhere else in a DTL ---the
+motivation for things, such as Π, is in section
+\ref{sec:packages_and_their_parts:sigma_pi}.  After Π, only may reasonable
+wonder about Σ since their close relationship was pointed out in section
+\ref{sec:packages_and_their_parts:sigma_pi}, Σ is not next on the tour since
+Agda records are syntactic sugar for data declarations having one constructor,
+so we need to discuss src_agda[:exports code]{data} after Π.  Okay, we show
+‘data’ and make use of the DTs already introduced; what's next?  We show a
+concrete example of an ADT, namely ‘≡’ since it will be used later on in
+examples in Chapter 5. ADTs are intended to be related to grammars, of section
+\ref{sec:what_is_a_language}, so let's actually flesh-out this relationship; the
+mention of 𝒲-types gives a concrete example of how the “do-it-yourself” appears
+later on in Chapter 5: For the monadic bind, instead of Π or Σ, one can use 𝒲
+---the latter part of Chapter 5 does not change bind in order to demonstrate
+another technique for making ADTs from contexts. Now that we're comfy with ADTs,
+we can go to ones with a single constructor, src_agda[:exports
+code]{record}s. But wait, Agda records behave like Agda modules, so let's talk
+about Agda src_agda[:exports code]{module}s first. After that, we can finally
+get to records (Σ-types) and we can do so very briefly since their underlying
+module/ADT nature has already been explained.  In the next sibling section,
+\ref{sec:module_interdefinability}, we show the interdefinability of packaging
+notions using Agda's syntactic sugar.
+#+latex: }
+#+end_parallel
 
 :OldIntro:
  Agda
@@ -3955,7 +4131,7 @@ example = MkRose 0  (MkRose 1 (MkRose 3 [] ∷ [])
                    ∷ MkRose 2 (MkRose 4 [] ∷ []) ∷ [])
 #+end_src
 The =example= tree is shown diagrammatically below.
-#+begin_src dot :file rose-example.png
+#+begin_src dot :file images/rose-example.png
 digraph {0 -> 1;
             1 -> 3;
        0 -> 2;
@@ -3966,7 +4142,7 @@ digraph {0 -> 1;
 
 #+attr_latex: :width 5cm
 #+RESULTS:
-[[file:rose-example.png]]
+[[file:images/rose-example.png]]
 
 We can easily recast the =Rose= type and the example as a 𝒲-type.  In particular,
 notice that in the construction of =example'=, each node construction =sup (a, n) cs=
@@ -4059,9 +4235,10 @@ by having their rights reduced. In particular, first-class citizens may be
 serviced (‘treated as data’) by other citizens; /second-class citizens/ can only
 provide a service and do not themselves have the right to be serviced.
 #+latex: }
-constructs and essentially only
-serve to delimit namespaces, thereby avoiding name clashes. They use is
-exemplified by the following snippets.
+constructs and essentially only serve to delimit (possibly parameterised)
+namespaces, thereby avoiding name clashes ---as such, there are only a few
+associated keywords, which we show briefly in this section.  The use of modules
+is exemplified by the following snippets.
 
    #+begin_parallel 4
    #+latex: \vspace{0.5em}
@@ -4306,7 +4483,12 @@ use⁴ (MkIt C x)
    we provided =MkIt= as an optional alias. As such, above we could pattern match
    on records using either constructor name.
 
-  So much for records.
+  #+latex: So much for records.\FOOTNOTE{
+  Agda src_agda[:exports code]{record}s are particular ADTs/src_agda[:exports
+  code]{data}, which have been discussed in detail up to this point. They have
+  src_agda[:exports code]{module}-like beavhiour, which has also been discussed,
+  and so, reasonably, the discussion on records is terse.
+  #+latex: }
 
 *** COMMENT ⟨𝑵𝑶⟩ Interacting with the real world ---Compilation, Haskell, and IO
     :PROPERTIES:
@@ -4707,6 +4889,17 @@ way to ‘mix’ or ‘compose’ two things =x= and =y= to get a third =x ⨾ y
 forming a big program from smaller pieces or a story from words--- which has an
 selected ‘empty’ thing that does not affect composition ---such as the
 do-nothing program or the ‘empty word’ which does not add content to a story.
+There are three /typical/ ways to formalise the type of monoids: (1) As a
+src_agda[:exports code]{record} since a monoid is a bunch of things together;
+(2) as a ‘typeclass’ (parameterised record) since we want to /specialise/ the
+carrier dynamically or to have instance search (which is an invaluable feature
+in, for example, Haskell, which organises its libraries using typeclasses and
+instance search); (3) as a raw unsugared src_agda[:exports code]{Σ}-type since
+we want to explicitly disallow the inherent src_agda[:exports
+code]{module}-nature of Agda's src_agda[:exports code]{record}s.  A DTL allows
+for redundancies like this so users can solve their problems in ways they see
+best.
+
 The type of monoids is formalised below as =Monoid-Record=; additionally, we have
 the derived result: ~Id~-entity can be popped-in and out as desired.
 
@@ -4718,7 +4911,7 @@ the derived result: ~Id~-entity can be popped-in and out as desired.
  # ways. Additionally, we have the derived result: ~Id~-entity can be popped-in and
  # out as desired.
 
- {{{code(Monoids as Agda Records)}}}
+ {{{code(Monoids as Agda Records \hfill---The usual mathematical definition)}}}
  #+BEGIN_SRC haskell
 record Monoid-Record : Set₁ where
   infixl 5 _⨾_
@@ -4838,7 +5031,7 @@ _ = refl
  # i.e., the difference between
  # “a structure” and “a structure on a particular carrier”.
 
- {{{code(Monoids as Typeclasses)}}}
+ {{{code(Monoids as ‘Typeclasses’/‘Generics’ \hfill ---Parameterisation on the underlying set)}}}
  #+BEGIN_SRC haskell
 record MonoidOn (Carrier : Set) : Set₁ where
   infixl 5 _⨾_
@@ -4862,7 +5055,7 @@ open MonoidOn {{...}} using (pop-Id-Tc)
  constructive analogue to the classical set comprehension {{{newline}}}
  ~{x ∶ A ❙ B x}~.
 
- {{{code(Monoids as Dependent Sums)}}}
+ {{{code(Monoids as Dependent Sums \hfill---Using none of Agda's built-in syntactic sugar)}}}
  # ATTR_LATEX: :options fontsize={\fontsize{10}{11}\selectfont}
  #+BEGIN_SRC haskell
 -- Type alias
@@ -5184,10 +5377,31 @@ open Monoid-Telescope-User ℕ 0 _+_ (+-identityˡ _) (+-identityʳ _) +-assoc
     framework contains a similar yet more comprehensive algebra of modules and
     how they work with Maude theories.
 
-It is important to consider other languages so as to how see their communities treat
-module systems and what uses cases they are interested in.  In the next section,
-we shall see a glimpse of how the Coq community works with packages, and, to
-make the discussion accessible, we shall provide Agda translations of Coq code.
+  - *Parameters of records are actually their fields*
+
+    The *Arend* proof assistant
+    cite:arend:webpage,arend:DBLP:journals/corr/abs-2004-14195 [[https://arend-lang.github.io/about/arend-features#anonymous-extensions][does not
+    distinguish between record parameters and record fields]] (as such, fields can
+    be /specialised/ dynamically; i.e., Π and λ are essentially identified, but we
+    will form a combinator ‘Π→λ’ in Chapter 5).  This is the exact insight that
+    we arrived at, cite:DBLP:conf/gpce/Al-hassyCK19, independently [[https://arend-lang.github.io/2019/07/17/Arend-1.0.0-released.html][at around the
+    same time that the first version of Arend was released.]]
+
+    Arend provides a /built-in/ solution, whereas we show how such a solution to
+    the unbundling problem can be formed as a reflection library in a DTL.
+    Moreover, our target setting is for both proving /and/ programming.
+
+    Arend is based on intuitionistic logic, like Agda, but is otherwise intended
+    for theorem proving in homotopy type theory\footcitet{hottbook}.
+    # As of 2020 April, Arend has no trusted core.
+    # More concerns discussed here: https://leanprover-community.github.io/archive/stream/113488-general/topic/seminars.html
+
+It is important to consider other languages so as to how see their communities
+treat module systems and what uses cases they are interested in: /It is important
+to draw wisdom from many different places; if you take it from only/ /one place,
+it becomes rigid and stale\footcitet{ATLA}./ In the next section, we shall see a
+glimpse of how the Coq community works with packages, and, to make the
+discussion accessible, we shall provide Agda translations of Coq code.
 
 *** COMMENT old intro
 
@@ -7776,7 +7990,7 @@ center footer  Possible hierarchy leading to Monoid
 #+end_src
 
 #+latex: \vspace{-3.5cm} $\,$ \hfill \hspace{.95\textwidth}
-#+latex: \includegraphics[width=0.65\textwidth,height=\textheight,keepaspectratio]{example_hierarchy.png}
+#+latex: \includegraphics[width=0.65\textwidth,height=\textheight,keepaspectratio]{images/example_hierarchy.png}
 #+latex: \vspace{-4.5cm}
 
 :NO_mermaid:
@@ -7799,7 +8013,7 @@ RightUnitalSemigroup --> Monoid
  #+END_SRC
 
  #+RESULTS:
- [[file:semigroup-to-monoid.png]]
+ [[file:images/semigroup-to-monoid.png]]
 :End:
 
  The libraries mentioned thus far generally implement extensions in this way. By
@@ -8096,7 +8310,7 @@ end
 #+begin_export latex
 \begin{figure*}[h]
 \centering
- \makebox[\textwidth]{\includegraphics[width=.9\paperwidth, height=.75\paperheight]{patterns.png}}
+ \makebox[\textwidth]{\includegraphics[width=.9\paperwidth, height=.75\paperheight]{images/patterns.png}}
 \caption{PL Research is about getting free stuff: From the left-most node, we can get a lot!}
 \end{figure*}
 #+end_export
@@ -8194,7 +8408,7 @@ end
    Unfortunately, a common scenario is when one wants to /instantiate/ such a deeply
    nested theory ---as was the case in section ref:sec:examples:extensions for
    fine-grained hierarchy of monoids.
-* The @@latex:{\color{red!70}\texttt{PackageFormer}}@@ Prototype
+* The ~PackageFormer~ Prototype
 
 #+latex: \setcounter{footnote}{0} \setcounter{sidenote}{0}
 
@@ -8292,6 +8506,16 @@ shows this.};@@ but to also show that ubiquitous packaging combinators can be
 permit arbitrarily complex programs to be written.}@@ from a small number of
 primitives.  The resulting tool resolves many of the issues discussed in section
 ref:sec:examples_from_the_wild.
+
+This chapter is organised as follows.  Firstly, the use of Lisp is explained.
+Then, an example demonstration of the utilities of the prototype is
+given. Afterwards is an overview of the combinators that we have constructed
+using the prototype and we showcase a few of them to solve problems observed in
+Chapter 3. The prototype's fundamental unit is the generalised signature of
+Chapter 2, with the ambient generalised type theory being MLTT (see Chapter 2);
+but we will not discuss how the combinators can be assigned semantics as
+morphisms in an appropriate category of signatures. Instead, we will reach for
+an Agda-based semantics in the next chapter.
 
 :ignore:
 *MA: TODO: ???*
@@ -8737,8 +8961,8 @@ symbols targeting a sort, we have a signature.  By allowing symbols to be of
 type src_haskell[:exports code]{Set}, we actually have *generalised contexts*.
 #+latex: }
 
-  {{{code(\hspace{-0.7cm}Elaboration of lines 16-18 \hfill Termtypes and lawless presentations)}}}
-  #+INCLUDE: "M-Set-generated.agda" src agda :lines "74-94"
+{{{code(\hspace{-0.7cm}Elaboration of lines 16-18 \hfill Termtypes and lawless presentations)}}}
+#+INCLUDE: "M-Set-generated.agda" src agda :lines "74-94"
 
 #+latex: \vspace{-4cm} \remark{
 The priming decoration in ~ScalarSyntax~ is needed so that the names ~𝟙, _×_~ do not
@@ -18497,6 +18721,9 @@ module termtype[Collection]≅List where
  :End:
 
 ** Language Agnostic Construction
+  :PROPERTIES:
+  :header-args: :tangle no
+  :END:
 
 Let us generalise the previous setup to an arbitrary Generalised Type Theory
 ---as defined in Chapter 2, and used to place the prototype on solid
@@ -19168,7 +19395,7 @@ tl (view (t · h)) = view h
 The appendix marker must occur before the section on appendices.
 :End:
 
-* nomargins                                                          :ignore:
+* COMMENT nomargins                                                          :ignore:
 #+latex: \nomargins
 * 265 Line ~Context~ Implementation
 
