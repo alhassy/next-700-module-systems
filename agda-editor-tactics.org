@@ -1,0 +1,955 @@
+#+title: agda-editor-tactics
+#+subtitle: An Emacs editor tactic to produce Σ-types from Agda records (•̀ᴗ•́)و
+#+author: [[https://alhassy.github.io/][Musa Al-hassy]]
+#+PROPERTY: header-args:emacs-lisp :tangle agda-editor-tactics.el :exports code
+#+options: d:nil toc:nil
+#+PROPERTY: header-args :eval never-export
+
+# (progn (org-babel-tangle-file "agda-editor-tactics.org") (load-file "agda-editor-tactics.el") (agda-editor-tactics-mode) )
+
+# (load-file "~/blog/AlBasmala.el")
+# (load-file "~/.emacs.d/elpa/org-static-blog-20201221.1630/org-static-blog.el")
+blog:header
+
+* Lisp Package Preamble                                            :noexport:
+  :PROPERTIES:
+  :CUSTOM_ID: Preamble
+  :END:
+
+TODO: Line 51 below: ...  along with the expected bijection.
+
+#+BEGIN_SRC emacs-lisp  :noweb yes
+;;; agda-editor-tactics.el --- An editor tactic to produce Σ-types from Agda records  -*- lexical-binding: t; -*-
+
+;; Copyright (c) 2021 Musa Al-hassy
+
+;; Author: Musa Al-hassy <alhassy@gmail.com>
+;; Version: 1.0
+;; Package-Requires: ((s "1.12.0") (dash "2.16.0") (emacs "27.1") (org "9.1"))
+;; Keywords: abbrev, convenience, languages, agda, tools
+;; URL: https://github.com/alhassy/next-700-module-systems
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; Agda uses a number of editor tactics, such as C-c C-c, to perform case
+;; analysis or to extract inner definitions to the toplevel. We add a new
+;; tactic.
+;;
+;; Select an Agda record, then press M-x agda-editor-tactics-as-Σ:nested,
+;; tabbing along the way, to obtain a transformed Σ-product form of the record.
+;;
+;; This tactic was requested in the Agda mailing list,
+;; I will likely produce other tactics as requested ---time permitting.
+;;
+;; This file has been tangled from a literate, org-mode, file.
+
+;;; Code:
+
+;; String and list manipulation libraries
+;; https://github.com/magnars/dash.el
+;; https://github.com/magnars/s.el
+
+(require 's)               ;; “The long lost Emacs string manipulation library”
+(require 'dash)            ;; “A modern list library for Emacs”
+(require 'cl-lib)          ;; New Common Lisp library; ‘cl-???’ forms.
+
+(defconst agda-editor-tactics-version (package-get-version))
+(defun agda-editor-tactics-version ()
+  "Print the current agda-editor-tactics version in the minibuffer."
+  (interactive)
+  (message agda-editor-tactics-version))
+
+<<forward-decls>>
+#+END_SRC
+
+The following more elaborate version is for when the package has stuff
+to enable/disable when being toggled.
+#+BEGIN_SRC emacs-lisp :noweb yes
+;;;###autoload
+(define-minor-mode agda-editor-tactics-mode
+    "An Emacs editor tactic to produce Σ-types from Agda records."
+  nil nil nil
+  (if agda-editor-tactics-mode
+      (progn
+        <<enable-mode>>
+      ) ;; Must be on a new line; I'm using noweb-refs
+    <<disable-mode>>
+    )) ;; Must be on a new line; I'm using noweb-refs
+#+END_SRC
+
+
+# With noweb, we need those new lines; otherwise in “x <<y>> z” results in every
+# line of <<y>> being prefixed by x and postfixed by z.
+# #
+# See https://github.com/alhassy/emacs.d#what-does-literate-programming-look-like
+
+* COMMENT Abstract :ignore:
+  :PROPERTIES:
+  :CUSTOM_ID: Abstract
+  :END:
+
+#+begin_center
+
+badge:Emacs|27|green|https://www.gnu.org/software/emacs|gnu-emacs
+badge:Org|9.4|blue|https://orgmode.org|gnu
+
+#+html: <span>
+badge:agda-editor-tactics|1.3|informational|https://github.com/alhassy/agda-editor-tactics|Gnu-Emacs
+
+# #+html: <a href="https://melpa.org/#/agda-editor-tactics"><img alt="MELPA" src="https://melpa.org/packages/agda-editor-tactics-badge.svg"/></a>
+# #+html: </span>
+
+[[badge:license|GNU_3|informational|https://www.gnu.org/licenses/gpl-3.0.en.html|read-the-docs][gnu 3 license badge]]
+[[badge:docs|literate|success|https://github.com/alhassy/emacs.d#what-does-literate-programming-look-like|read-the-docs][read-the-docs badge]]
+tweet:https://github.com/alhassy/agda-editor-tactics
+badge:contributions|welcome|green|https://github.com/alhassy/agda-editor-tactics/issues
+
+badge:author|musa_al-hassy|purple|https://alhassy.github.io/|nintendo-3ds
+badge:|buy_me_a coffee|gray|https://www.buymeacoffee.com/alhassy|buy-me-a-coffee
+
+badge:Hire|me|success|https://alhassy.github.io/about
+
+#+end_center
+
+#+begin_center
+*Abstract*
+#+end_center
+#+begin_quote
+
+A Lisp API to working with Agda records.
+
+See
+https://gist.github.com/alhassy/a4ce4032e7c33de874c3ce43dc9b0fe1
+#+end_quote
+
+#+TOC: headlines 2
+
+* User configurable settings ---~agda-editor-tactics-format-𝒳~
+
+#+begin_src emacs-lisp
+;; The tactic prodcues a Σ-type, what should its name be?
+(defvar agda-editor-tactics-format-Σ-naming "%s′"
+"The format string for the new Σ-variant.
+
+The new name of the Σ-variant: By default, if R is the record name,
+then R′ is the Σ-variant name.  Another useful naming scheme may be
+\"%s-Σ-variant\".")
+#+end_src
+
+** COMMENT more
+#+begin_src emacs-lisp
+;; ⟨1⟩ There are two coercions, to and from the orginal, what are they named?
+(defvar agda-editor-tactics-format-record→Σ-coe "%s-as-%s"
+"The format for the name of the “record to Σ-variant” coercion.
+
+The first ‘%s’ is the record name and the second ‘%s’ is the
+Σ-variant name as determine by ‘agda-editor-tactics-format-Σ-naming’.
+A useful scheme may be \"%s-as-iterated-Σ\".")
+
+(defvar agda-editor-tactics-format-Σ→record-coe "%s-as-%s"
+  "The format of the name of the “Σ-variant to record” coercion.
+
+The first ‘%s’ is the Σ-variant name as determine by
+‘agda-editor-tactics-format-Σ-naming’ and the second ‘%s’ is the
+record name. A useful scheme may be \"from-%s\".")
+
+;; ⟨2⟩ These coercions are inverse, what should the proof names be?
+(defvar agda-editor-tactics-format-to∘from≈id "%s-Σ-to∘from≈id"
+  "The format of the name for the proof that the foward cocerion is invertible.
+
+The first and only ‘%s’ is the name of the record.")
+
+(defvar agda-editor-tactics-format-from∘to≈id "%s-Σ-from∘to≈id"
+  "The format of the name for the proof that the foward cocerion is invertible.
+
+The first and only ‘%s’ is the name of the record.")
+#+end_src
+
+#+RESULTS:
+: agda-editor-tactics-format-from∘to≈id
+
+* agda-editor-tactics-record-info
+#+begin_src emacs-lisp
+(defun agda-editor-tactics-indent (s)
+  "Determine the current indentiation of the string S.
+
+That is, return the number of whitespace at the start of S."
+  (length (car (s-match "\\( \\)+" s))))
+#+end_src
+
+#+begin_src emacs-lisp
+(defun agda-editor-tactics-record-info (r)
+  "Parse an Agda record R as a Lisp plist.
+
+The resulting plist has the following keys.
+
+:name   The name of the record.
+
+:level  The overall type level of the record type.
+
+:body   The sequence of declarations constituting the record.
+        Each declaration is a list (qualifier entry),
+        where qualifier is a symbol from:
+
+        :param This entry is in the parameters list.
+        :local This is a local declaration.
+        :field This entry is a field declaration.
+
+For instance, on the input
+
+   record R (X : Set) (x : X) (y : Y x) : Set where
+
+     w : Set
+     w = X
+
+     m = w
+
+     field
+       a : X
+
+     b : X
+     b = X
+
+     field
+       c : Y a
+
+We obtain the following, modulo missing quotes:
+
+   (:name  R
+    :level \"\"
+    :body ((:param X : Set) (:param x : X) (:param y : Y x)
+           (:local w : Set) (:local w = X) (:local m = w)
+           (:field a : X)
+           (:local b : X) (:local b = X)
+           (:field c : Y a)))
+
+For now,
+ + The ‘field’ keyword must appear by itself on a line.
+ + No ‘{implicit}’ arguments supported; nor telescoping.
+ + The ‘private’ keyword for Agda records is not supported."
+  (-let* ((((header . preamble) . rest)
+             (--split-when (s-contains? "field" it) (s-lines (s-trim r))))
+          ((_ lhs lvl)
+             (s-match "record \\(.*\\) : Set\\(.*\\) where" header))
+          ((nom . parms₀)
+             (s-split " " lhs))
+          (parms (s-join " " parms₀))
+          plist)
+
+    ;; ⟨0⟩ Every parameter is part of the body.
+    (mapc (lambda (it) (push (list :param (cl-second it))
+                        (cl-getf plist :body)))
+          ;; "(x : A) (y : B)    (z : Z x y)"  ↦  ("x : A" "y : B" "z : Z x y")
+          (s-match-strings-all "(\\(.*?\\))" parms))
+
+    ;; ⟨1⟩ Every local declaration before the first ‘field’ keyword is part of
+    ;; the body
+    (mapc (lambda (it) (push (list :local (s-trim it))
+                        (cl-getf plist :body)))
+          preamble)
+
+    ;; ⟨2⟩ The rest of the body.  Agda allows varying, but consistent,
+    ;; indentation levels, so we check indentation case by case.
+    (loop for p in rest ;; i.e., p is a chunk of lines immediately after a
+                        ;; ‘field’ keyword.
+          for indent = (agda-editor-tactics-indent (cl-first p))
+          ;; The lines sharing the same indentation are fields,
+          ;; everything else is a local definitional extension.
+          ;; These claims are true provided
+          ;; the record actually typechecks in Agda.
+          do (mapc (lambda (it)
+                     (push (list (if (= indent (agda-editor-tactics-indent it))
+                                     :field
+                                   :local)
+                                 (s-trim it))
+                           (cl-getf plist :body)))
+                   p))
+
+    ;; ⟨3⟩ Omit blank lines
+    (setf (cl-getf plist :body)
+          (--reject (s-blank? (s-trim (cl-second it))) (cl-getf plist :body)))
+
+    ;; ⟨4⟩ Ensure order of :body is params, then everything else.
+    (setf (cl-getf plist :body) (reverse (cl-getf plist :body)))
+
+    ;; ⟨5⟩ Register the level and name of the record
+    (setf (cl-getf plist :level) lvl)
+    (setf (cl-getf plist :name) nom)
+
+    ;; ⟨7⟩ Yield the record as a Lisp plist.
+    plist))
+#+end_src
+
+:Try:
+(agda-editor-tactics-record-info
+"
+record R (X : Set) (x : X) (y : Y x) : Set where
+
+  w : Set
+  w = A
+
+  m = w
+
+  field
+    a : A
+
+  b : A
+  b = A
+
+  field
+    c : Y a
+")
+:End:
+
+* agda-editor-tactics-regonify
+
+#+begin_src emacs-lisp
+(cl-defmacro agda-editor-tactics-regonify
+    (f &optional
+       (from-string 'it)
+       (on-region `(progn
+                     (kill-new it)
+                     (message "Result of %s is now in your %s"
+                              (quote ,f)
+                              "clipboard -- press C-y to paste it (•̀ᴗ•́)و"))))
+"Given an unary function F, extend it to work interactively on regions.
+
+Override the existing function F to be interactive and to work on
+selected regions.  When F is called in Lisp code, it will act as the
+orginal function.  When F is called interactively on a selected region
+of text, we use the function-body FROM-STRING to prepare the selected
+text as appropriate intoput to F, then we act on the region using
+the function body ON-REGION.
+
+FROM-STRING is an expression that transforms ‘it’, the input string,
+into the approriate datatype required by F.
+
+ON-REGION is an expression involving ‘it’, the output of F,
+as well as ‘start’ and ‘end’, the boundaries of the region.
+
+Below is a full example, where the output is pasted over a region.
+
+   (defun myupcase (s)
+     \"Shout the string S.\"
+     (upcase s))
+
+   (regonify myupcase it (progn (delete-region start end) (insert it)))
+
+Moreover, evaluating a ‘regonify’ sexp multiple times results
+“works fine”; i.e., this is an idempotent operation (mostly).
+[Each invocation increases the documentation; and more.]"
+  `(defun ,f (x &optional start end)
+     ,(concat (documentation f)
+             "\nWhen invoked interactively, works on the selected region.")
+     (interactive (list nil (region-beginning) (region-end)))
+     (let* ((input  (or x (funcall (lambda (it) ,from-string)
+                                   (buffer-substring-no-properties start end))))
+            (output (funcall ,(symbol-function f) input)))
+       (if x ;; i.e., not working on a region
+           output
+         (funcall (lambda (it) ,on-region) output)))))
+#+end_src
+
+* agda-editor-tactics-record-to-Σ-𝒳
+#+begin_src emacs-lisp
+(defun agda-editor-tactics-as-Σ-nested (r)
+  "Transform an Agda record R, as a plist, into an Agda Σ-type."
+  (-let* (((paramsPV body) (--split-with (equal :param (cl-first it)) (cl-getf r :body)))
+          ;; paramsPV is a list of pairs (:param value).
+          (params (mapcar #'cl-second paramsPV))
+          (args (--map (s-trim (cl-first (s-split ":" it))) params)))
+
+    (s-concat
+
+     ;; ⟨0⟩ Type declaration
+     (format agda-editor-tactics-format-Σ-naming (cl-getf r :name))
+     " : "
+     (when params (concat (s-join " " (--map (format "(%s)" it) params)) " → "))
+     "Set " (cl-getf r :level) "\n"
+
+     ;; ⟨1⟩ Body definition
+     (format agda-editor-tactics-format-Σ-naming (cl-getf r :name))
+     " = "
+     (if (not args)
+         ""
+       (format "λ %s → " (s-join " " args)))
+
+    ;; Arrange record as a sequence of let-clauses and Σ-quantifiers.
+    (thread-last
+        (loop for (q e) in body
+              for e′ = (if (equal q :field) (s-replace ":" "∶" e) e)
+              concat (format (if (equal q :field) "Σ %s • " "let %s in ") e′))
+      (s-collapse-whitespace)
+      (s-replace "in let" ";")
+      (s-replace "; ;"    ";")
+      (s-replace "let ;"  "let ")
+      (s-replace "; in"   " in"))
+
+     ;; Final element of a Σ-type will be, consistently, the unit type.
+      "⊤")))
+#+end_src
+
+;; Perhaps when they press “M-x agda-editor TAB” they will discover it.
+#+begin_src emacs-lisp :noweb-ref enable-mode :tangle no
+;; Give users interactive access to this function at the top level.
+(agda-editor-tactics-regonify agda-editor-tactics-as-Σ-nested
+                              (agda-editor-tactics-record-info it))
+#+end_src
+
+:Try:
+#+begin_src emacs-lisp :tangle no
+(agda-editor-tactics--as-Σ-nested (agda-editor-tactics-record-info "
+record R (A : Set) (n : ℕ) : Set where
+
+  Alias = A
+
+  id : Set → Set
+  id X = X
+
+  field
+    x : id Alias
+
+  m : ℕ
+  m = n
+
+  field
+    y : m ≡ n
+    z : A
+
+  more : Set → ℕ
+  more = λ _ → n
+"))
+#+end_src
+
+# Now select the region below and try ;-)
+
+record R (A : Set) (n : ℕ) : Set where
+
+  Alias = A
+
+  id : Set → Set
+  id X = X
+
+  field
+    x : id Alias
+
+  m : ℕ
+  m = n
+
+  field
+    y : m ≡ n
+    z : A
+
+  more : Set → ℕ
+  more = λ _ → n
+:End:
+
+* COMMENT more to do
+#+begin_src emacs-lisp
+(defun agda-editor-tactics--as-Σ-to   (r) )
+(defun agda-editor-tactics--as-Σ-from (r) )
+(defun agda-editor-tactics--as-Σ-from∘to≈id (r) )
+(defun agda-editor-tactics--as-Σ-to∘from≈id (r) )
+(defun agda-editor-tactics-record-to-Σ (r) ) ;; Inserts results of the above 4 defuns.
+      ;; See transform-to-Σ below!
+
+
+;; Override “transpose-lines” keybinding
+;; to be “t”ransform to Σ-record
+(global-set-key (kbd "C-x C-t")
+(defun transform-to-Σ (beginning end)
+  (interactive "r")
+  (when (use-region-p)
+    (kill-region beginning end)
+    (-let* ((rrr (substring-no-properties (car kill-ring)))
+           (_ (insert rrr))
+           ((name params level . body) (record-info rrr))
+           (args (s-collapse-whitespace (s-join " "
+                     (--map (-let [(_ e τ r)
+                                  (s-match "\\(.*\\):\\(.*\\)\\(}\\|)\\)" it)]
+                              e)
+                     (--map (s-join "" it)
+                     (rest (--split-when (member it '("{" "(")) (s-split "" params))))))))
+          (record{xᵢ=xᵢ}ᵢ
+              (format "record{%s}"
+              (s-join " ; "
+                 (loop for (_ . e) in (--filter (equal 'field (car it)) body)
+                       for field = (cl-first (s-split " : " e))
+                       collect (format "%s = %s" field field))))))
+      (kill-new
+  (s-concat
+   ;; type declaration
+   (format Σ-naming-format name)
+   " : "
+   (when params (concat params " → "))
+   "Set " level "\n"
+   ;; body
+   (format Σ-naming-format name) " = "
+   (if (s-blank? (s-trim args))
+       ""
+       (format "λ %s → " args))
+   (s-replace "; in" " in"
+   (s-replace "let ;" "let "
+   (s-replace "; ;" ";"
+   (s-replace "in let" ";"
+   (s-collapse-whitespace
+   (loop for (q . e) in body
+         for e′ = (if (equal q 'field) (s-replace ":" "∶" e) e)
+         concat (format (if (equal q 'field) "Σ %s • " "let %s in ") e′))))))) "⊤"
+
+   "\n\n"
+
+   ;; coercion
+   (format record→Σ-coe-format name (format Σ-naming-format name))
+   " : "
+   (s-replace "(" "{" (s-replace ")" "}" params))
+   (when params " → ")
+   name " " args " → " (format Σ-naming-format name) " " args
+   "\n"
+
+   (format record→Σ-coe-format name (format Σ-naming-format name))
+   " = λ r → "
+   (loop for (_ . e) in (--filter (equal 'field (car it)) body)
+         for field = (cl-first (s-split " : " e))
+         concat (format "%s.%s r , " name field))
+   "tt"
+
+   "\n\n"
+   ;; coercion, the other way around
+   (format Σ→record-coe-format (format Σ-naming-format name) name)
+   " : "
+   (s-replace "(" "{" (s-replace ")" "}" params))
+   (when params " → ")
+   (format Σ-naming-format name) " " args " → " name " " args
+   "\n"
+
+   (format Σ→record-coe-format (format Σ-naming-format name) name)
+   " = λ{ ("
+   (s-join " , "
+   (loop for (_ . e) in (--filter (equal 'field (car it)) body)
+         for field = (cl-first (s-split " : " e))
+         collect field))
+   " , tt) → "
+   record{xᵢ=xᵢ}ᵢ
+   " }" ;; pattern matching λ
+
+   "\n\n"
+   ;; to∘from≈id
+   (format to∘from≈id-format name)
+   " : "
+   (s-replace "(" "{" (s-replace ")" "}" params))
+   (when params " → ")
+   "{ r : " name " " args "} → "
+   (format Σ→record-coe-format (format Σ-naming-format name) name)
+   " (" (format record→Σ-coe-format name (format Σ-naming-format name))
+   " r) ≡ r"
+   "\n"
+   (format to∘from≈id-format name)
+   " {r = " record{xᵢ=xᵢ}ᵢ "} = refl"
+
+   "\n\n"
+   ;; from∘to≈id
+   (format from∘to≈id-format name)
+   " : "
+   (s-replace "(" "{" (s-replace ")" "}" params))
+   (when params " → ")
+   "{ σ : " name " " args "} → "
+   (format Σ→record-coe-format (format Σ-naming-format name) name)
+   " (" (format record→Σ-coe-format name (format Σ-naming-format name))
+   " σ) ≡ σ"
+   "\n"
+   (format from∘to≈id-format name)
+   " = refl"
+   )) ;; kill-new
+      (message "A Σ-variant is now in your clipboard -- press C-y to paste it (•̀ᴗ•́)و")))))
+#+end_src
+
+* COMMENT Summary
+  :PROPERTIES:
+  :CUSTOM_ID: Summary
+  :END:
+
+#+begin_quote
+The full article may be read as
+badge:|HTML|informational|https://alhassy.github.io/agda-editor-tactics/|ghost ---or visit the
+repo github-stars:alhassy/agda-editor-tactics .
+#+end_quote
+
+link-here:summary
+
+| Link                     | Action                         |
+|--------------------------+--------------------------------|
+| ~quran:chapter:verse~      | Retrive a verse from the Quran |
+| ~bible:book:chapter:verse~ | Retrive a verse from the Bible |
+| ~[[basmala:]]~             | Produce the Basmala ligature   |
+
+These each take optional arguments separated by ‘|’; see doc:agda-editor-tactics-quran
+and doc:agda-editor-tactics-bible or see the full documentation online at
+badge:|HTML|informational|https://alhassy.github.io/agda-editor-tactics/|ghost.
+
+There are also doc:agda-editor-tactics-insert-quran and doc:agda-editor-tactics-insert-bible to
+inject verses in the current Emacs buffer ;-)
+
+# Following ‘details’ blocks are more for the resulting README than for the HTML.
+Moreover, the Quran's translation and the Bible's version can both be selected...
+#+begin_details ‘agda-editor-tactics-quran’ details
+#+begin_src emacs-lisp :tangle no :exports results
+(documentation #'agda-editor-tactics-quran)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Lookup a verse, as a string, from the Quran.
+
+CHAPTER and VERSE are both numbers, referring to a chapter in the Quran
+and a verse it contains.
+In the associated Org link, both are treated as strings.
+
++ Lookups are stored in the variable ‘agda-editor-tactics-quran-cache’ for faster reuse.
++ Quran lookup is based on https://quran.com .
++ Examples:
+
+    ;; Get verse 2 of chapter 7 of the Quran
+    (agda-editor-tactics-quran 7 2)
+
+    ;; Get English-Arabic name of 7th chapter
+    (cl-cl-getf (cl-cl-getf agda-editor-tactics-quran 7) :name)
+
+The particular translation can be selected by altering the
+AGDA-EDITOR-TACTICS-QURAN-TRANSLAITON variable.
+
+--------------------------------------------------------------------------------
+
+There is an Org link form: “quran:chapter:verse|color|size|no-info-p”
+Only ‘chapter’ and ‘verse’ are mandatory; when ‘no-info-p’ is given,
+the chapter and verse numbers are not mentioned in the resulting output.
+
+Examples:
+           quran:7:157|darkgreen|30px|t
+
+           quran:7:157
+
+For now, only Org HTML export is supported.
+
+--------------------------------------------------------------------------------
+
+Finally, there is also an HTML tooltip version with a captial ‘Q’;
+it takes the same arguments but only the chapter and verse are actually used.
+E.g. Quran:7:157 results in text “Quran 7:157” with a tooltip showing the verse.
+#+end_example
+
+#+end_details
+#+begin_details ‘agda-editor-tactics-bible’ details
+#+begin_src emacs-lisp :tangle no :exports results
+(documentation #'agda-editor-tactics-bible)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Retrive a verse from the Christian Bible.
+
+CHAPTER is a number.
+VERSES is either a number or a string “x-y” of numbers.
+BOOK is any of the books of the Bible, with ‘+’ instead of spaces!
+
+Examples:
+
+        (agda-editor-tactics-bible "Deuteronomy" 18 "18-22")  ;; Lisp
+
+        bible:Deuteronomy:18:18-22|darkblue   ;; Org-mode
+
+        Bible:Deuteronomy:18:18-22            ;; Tooltip
+
+There is also an Org HTML export link, “bible:book:chapter:verse”
+sharing the same optional arguments and variations as the “quran:” link;
+see the documentation of the method AGDA-EDITOR-TACTICS-QURAN for details.
+
+The particular version can be selected by altering the
+AGDA-EDITOR-TACTICS-BIBLE-VERSION variable.
+
+Currently, Bible lookups are not cached and Quran lookups do not support the
+“x-y” verse lookup style.
+
+Possible books include:
+
+ ;; Old Testament
+ Genesis Exodus Leviticus Numbers Joshua Judges Ruth
+ 1+Samuel 2+Samuel 1+Kings 2+Kings 1+Chronicles 2+Chronicles Ezra
+ Nehemiah Esther Job Psalms Proverbs Ecclesiastes Song+of+Solomon
+ Isaiah Jeremiah Lamentations Ezekiel Daniel Hosea Joel Amos
+ Obadiah Jonah Micah Nahum Habakkuk Zephaniah Haggai Zechariah
+ Malachi
+ ;; New Testament
+ Matthew Mark Luke John Acts Romans 1+Corinthians 2+Corinthians
+ Galatians Ephesians Philippians Colossians 1+Thessalonians
+ 2+Thessalonians 1+Timothy 2+Timothy Titus Philemon Hebrews James
+ 1+Peter 2+Peter 1+John 2+John 3+John Jude Revelation
+
+For example, the following incantation yields the first verse of
+the first chapter of each book.
+
+   (s-join "
+
+<hr>" (--map (agda-editor-tactics-bible it 1 1) ’(...above list...)))
+#+end_example
+
+#+end_details
+
+** Installation Instructions
+   :PROPERTIES:
+   :CUSTOM_ID: Installation-Instructions
+   :END:
+
+Manually or using [[https://github.com/alhassy/emacs.d#installing-emacs-packages-directly-from-source][quelpa]]:
+#+BEGIN_SRC emacs-lisp :tangle no
+;; ⟨0⟩ Download the agda-editor-tactics.el file manually or using quelpa
+(quelpa '(agda-editor-tactics :fetcher github :repo
+"alhassy/agda-editor-tactics"))
+
+;; ⟨1⟩ Have this always active in Org buffers
+(add-hook #'org-mode-hook #'agda-editor-tactics-mode)
+
+;; ⟨1′⟩ Or use: “M-x agda-editor-tactics-mode” to turn it on/off
+
+;; ⟨2⟩ Configure the Quranic translation and Bible version
+;;     Press ‘C-h o’ to get more info on each variable.
+(setq agda-editor-tactics-quran-translation "131"  ;; The Clear Quran
+      agda-editor-tactics-bible-version     "niv") ;; New International Version
+
+#+END_SRC
+
+
+** COMMENT *Or* with [[https://github.com/alhassy/emacs.d#use-package-the-start-of-initel][use-package]]:
+   :PROPERTIES:
+   :CUSTOM_ID: COMMENT-Or-with-https-github-com-alhassy-emacs-d-use-package-the-start-of-initel-use-package
+   :END:
+ #+BEGIN_SRC emacs-lisp :tangle no
+(use-package agda-editor-tactics
+  :ensure t
+  :hook (org-mode . agda-editor-tactics-mode)
+  :custom
+    ;; The places where I keep my ‘#+documentation’
+    (agda-editor-tactics--docs-libraries
+     '("~/agda-editor-tactics/documentation.org"))
+    ;; Disable the in-Emacs fancy-links feature?
+    ;; (agda-editor-tactics-fancy-links nil)
+    ;; Details heading “flash pink” whenever the user hovers over them?
+    (org-html-head-extra (concat org-html-head-extra "<style>  summary:hover {background:pink;} </style>"))
+    ;; The message prefixing a ‘tweet:url’ badge
+    (agda-editor-tactics-link-twitter-excitement
+     "This looks super neat (•̀ᴗ•́)و:")
+  :config
+  ;; Use short names like ‘defblock’ instead of the fully qualified name
+  ;; ‘agda-editor-tactics--defblock’
+    (agda-editor-tactics-short-names))
+ #+END_SRC
+
+** Bye!
+   :PROPERTIES:
+   :CUSTOM_ID: Bye
+   :END:
+
+badge:thanks|for_reading
+tweet:https://github.com/alhassy/agda-editor-tactics
+badge:|buy_me_a coffee|gray|https://www.buymeacoffee.com/alhassy|buy-me-a-coffee
+
+* Lisp Postamble  :noexport:
+  :PROPERTIES:
+  :CUSTOM_ID: Postamble
+  :END:
+#+BEGIN_SRC emacs-lisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide 'agda-editor-tactics)
+
+;;; agda-editor-tactics.el ends here
+#+END_SRC
+* COMMENT MELPA Checks
+  :PROPERTIES:
+  :CUSTOM_ID: COMMENT-MELPA-Checks
+  :END:
+https://github.com/riscy/melpazoid
+
+1. In Github repo: Add file ⇒ Create new file ⇒ License.txt ⇒ Select template ⇒ GNU 3
+2. Ensure first line ends with: -*- lexical-binding: t; -*-
+3. Include appropriate standard keywords;
+   #+begin_src emacs-lisp :tangle no
+(pp finder-known-keywords)
+   #+end_src
+
+   #+RESULTS:
+   #+begin_example
+   ((abbrev . "abbreviation handling, typing shortcuts, and macros")
+    (bib . "bibliography processors")
+    (c . "C and related programming languages")
+    (calendar . "calendar and time management tools")
+    (comm . "communications, networking, and remote file access")
+    (convenience . "convenience features for faster editing")
+    (data . "editing data (non-text) files")
+    (docs . "Emacs documentation facilities")
+    (emulations . "emulations of other editors")
+    (extensions . "Emacs Lisp language extensions")
+    (faces . "fonts and colors for text")
+    (files . "file editing and manipulation")
+    (frames . "Emacs frames and window systems")
+    (games . "games, jokes and amusements")
+    (hardware . "interfacing with system hardware")
+    (help . "Emacs help systems")
+    (hypermedia . "links between text or other media types")
+    (i18n . "internationalization and character-set support")
+    (internal . "code for Emacs internals, build process, defaults")
+    (languages . "specialized modes for editing programming languages")
+    (lisp . "Lisp support, including Emacs Lisp")
+    (local . "code local to your site")
+    (maint . "Emacs development tools and aids")
+    (mail . "email reading and posting")
+    (matching . "searching, matching, and sorting")
+    (mouse . "mouse support")
+    (multimedia . "images and sound")
+    (news . "USENET news reading and posting")
+    (outlines . "hierarchical outlining and note taking")
+    (processes . "processes, subshells, and compilation")
+    (terminals . "text terminals (ttys)")
+    (tex . "the TeX document formatter")
+    (tools . "programming tools")
+    (unix . "UNIX feature interfaces and emulators")
+    (vc . "version control")
+    (wp . "word processing"))
+   #+end_example
+4. Use #' instead of ' for function symbols
+5. Use ‘-’ as a separator, not ‘/’.
+6. Consider reading:
+   https://github.com/bbatsov/emacs-lisp-style-guide#the-emacs-lisp-style-guide
+7. Use cl-loop, cl-first, cl-second, cl-third instead of loop, first, second, third
+8. byte-compile and address any concerns
+9. =M-x checkdoc= on the lisp file to ensure it passes expected style issues.
+   - Symbols =nil, t= should not appear in single quotes.
+   - (progn (setq fill-column 80) (display-fill-column-indicator-mode))
+10. Ensure it byte-compiles without any problems.
+11. Ensure that package-linter raises no issues; i.e., the following has no result.
+     #+BEGIN_SRC emacs-lisp :tangle no
+ (use-package package-lint)
+ (-let [it "agda-editor-tactics.el"]
+  (ignore-errors (kill-buffer it))
+  (find-file-other-window it)
+  (package-lint-buffer it)
+  (switch-to-buffer "*Package-Lint*")) ;; Should say: “No issues found.”
+ #+END_SRC
+12. Commit and push everything in your project's repo!
+13. Create a recipe file by invoking: M-x package-build-create-recipe
+    ---first: (use-package package-build)
+    - Place it in: melpa/recipes/
+    - The name of the file should be the name of the package, no extension.
+
+    *Or:* Uncomment this section & just tangle the following.
+           #+BEGIN_SRC emacs-lisp :tangle ~/melpa/recipes/agda-editor-tactics
+    (agda-editor-tactics :fetcher github :repo "alhassy/agda-editor-tactics")
+        #+END_SRC
+14. Ensure the recipe builds successfully:
+    #+BEGIN_SRC shell :tangle no
+    cd ~/melpa; rm ~/melpa/packages/agda-editor-tactics-*; make recipes/agda-editor-tactics
+    #+END_SRC
+
+    If you have trouble, make a file "~/bin/emacs" with
+    the following which ensures “emacs” can be run
+    from the command line within macos.
+    #+begin_src shell :tangle "~/bin/emacs"
+#!/bin/sh
+/Applications/Emacs.app/Contents/MacOS/Emacs "$@"
+#+end_src
+
+15. Ensure the package installs properly from within Emacs:
+
+      #+BEGIN_SRC emacs-lisp :tangle no
+(package-install-file "~/melpa/packages/agda-editor-tactics-")
+#+END_SRC
+
+16. Produce a dedicated pull request branch
+
+    #+begin_src emacs-lisp :tangle no
+    (magit-status "~/melpa")
+    #+end_src
+
+    + ~F p~ to update the repo.
+    + Now =b c= to checkout a new branch: Select ~master~ then name the branch by
+      the name of the package, e.g., ~agda-editor-tactics~.
+    + Commit your recipe.
+    + Push this branch on your melpa fork: ~P p~.
+    + Go to the https://github.com/melpa/melpa repo and
+      there'll be a big green PR button ^_^
+* COMMENT Making ~README.org~
+  :PROPERTIES:
+  :CUSTOM_ID: COMMENT-Making-README-org
+  :END:
+
+  Evaluate the following source block with ~C-c C-c~ to produce a ~README~ file.
+
+#+NAME: make-readme
+#+BEGIN_SRC emacs-lisp
+(with-temp-buffer
+    (insert "
+,#+EXPORT_FILE_NAME: README.md
+,#+HTML: <h1> An Emacs interface to the Quran and the Bible: Interactive lookup, Org-mode links, tooltips, and Lisp look-ups </h1>
+# +HTML: <h2>  ¯\\_(ツ)_/¯  </h2>
+,#+OPTIONS: toc:nil d:nil broken-links:t
+,#+html: <div align=\"center\">
+#   +INCLUDE: ~/agda-editor-tactics/agda-editor-tactics.org::#Abstract :only-contents t
+,#+html: </div>
+
+,#+html: <div align=\"center\">
+Let's use Org-mode links to look-up Quranic and Biblical verses!
+
+“Live” examples & documentation: https://alhassy.github.io/agda-editor-tactics/
+
+badge:agda-editor-tactics|1.3|informational|https://github.com/alhassy/agda-editor-tactics|Gnu-Emacs
+
+# #+html: <a href=\"https://melpa.org/#/agda-editor-tactics\"><img alt=\"MELPA\" src=\"https://melpa.org/packages/agda-editor-tactics-badge.svg\"/></a>
+# #+html: </span>
+
+tweet:https://github.com/alhassy/agda-editor-tactics
+badge:contributions|welcome|green|https://github.com/alhassy/agda-editor-tactics/issues
+
+badge:author|musa_al-hassy|purple|https://alhassy.github.io/|nintendo-3ds
+badge:|buy_me_a coffee|gray|https://www.buymeacoffee.com/alhassy|buy-me-a-coffee
+
+badge:Hire|me|success|https://alhassy.github.io/about
+
+,#+html: </div>
+
+,#+TOC: headlines 2
+
+,* Short Example
+,#+attr_html: :width 600px
+file:images/short_example.png
+
+,* Long Example
+,#+attr_html: :width 600px
+file:images/long_example.png
+
+,* Summary
+,#+INCLUDE: ~/agda-editor-tactics/agda-editor-tactics.org::#Summary :only-contents t
+#  ,* Minimal working example
+#  #+INCLUDE: ~/agda-editor-tactics/agda-editor-tactics.org::#Minimal-working-example :only-contents t
+")
+    (let ((org-export-use-babel nil) (org-export-with-broken-links t))
+      (org-mode)
+      (org-md-export-to-markdown)))
+#+END_SRC
+
+#+RESULTS: make-readme
+: README.md
+
+*Then* use =grip= to see that this looks reasonable.
