@@ -46,6 +46,18 @@
 
 * TODO Immediate dois  :ignore:
 
+#  Add quote from grothendick about 0 and abstract nonsense.
+
+:Sequents:
+
+The Lhs of a sequent generally acts as a book keeping mechanism. Namely,
+implication introduction is awkward otherwise since one has to somehow document
+the new assumption, usually via extra-lingustic labels. Interestingly, when we
+merge the two, labeling assumptions and keeping track of them locally, we obtain
+unique terms that denote the resulting proofs: Lambda terms!! 😯
+
+:End:
+
 # Mention: Signatures as I have them do not allow for overloading.
 
 # Lots of relevant references is a good thing. It shows you know the
@@ -55,22 +67,6 @@
 # src_agda[:exports code]{module M (params) where f : τ; f = E}
 # ≈  src_agda2[:exports code]{f : params → τ; f = E}
 
-:Re_PropEq:
-
-≡ is generally too strong, coarse, and one must generally use a finer
-equivalence relation.
-
-aluding to the mathematican's code of conduct:
-Definitions of concepts should always be isomorphism-invariant;
-ie work with an interface, not a particular implementation.
-e.g., working with objects that satisfy universal properties,
-whcih characterised them up to isomorphism.
-
-ie if P is a predicate, then
-τ ≈ τ' ⇒ P τ = P τ'
-for some appropriate notion of sameness ‘≈’.
-
-:End:
 :On_naming:
 
 In a context involving numerous fractions,
@@ -197,17 +193,6 @@ For reference, here are the main points:
 You and I /might/ look at “∞” and think “infintiy” but a person speaking Tagalog
 /might/ think that is the “Ha” syllable. The meaning is not in the symbol, but in
 the reader.
-:End:
-
-# TODO: MA: *WORKING HERE!*
-:Refl_PropEq:
-Start here  ⇒  https://xenaproject.wordpress.com/2020/07/03/equality-specifications-and-implementations/
-
-Explanation of Leibniz does not talk about unification and how 'refl' forces it,
-which is why "P l" and "P r" as 'the same' type.  ...missing a very crucial
-point?
-
-TODO: Get other notes re:≡ here.
 :End:
 
 * Neato petito margins :ignore:
@@ -3833,14 +3818,15 @@ ideas arise from grammars.
 # +latex: \begin{tcolorbox}[colframe=red!75!black]
 #+caption: Many useful ideas arise as grammars
 #+name: tbl:utility-of-adts
-| Concept                  | Formal Name        | Scenarios                            |
-|--------------------------+--------------------+--------------------------------------|
-| “Two things”             | Σ, =A × B=, records  | One scenario with two payloads       |
-| “One from a union”       | Sums =A + B=, unions | Two scenarios, each with one payload |
-| “A sequence of things”   | Lists, Vectors, ℕ  | Empty and non-empty scenarios        |
-| “Truth values”           | Booleans 𝔹         | Two scenarios with /no/ payloads       |
-| “A pointer or reference” | =Maybe τ=            | Two scenarios; successful or =null=    |
-| “Equality of two things” | Propositional =_≡_=  | One scenario; discussed later        |
+| Concept                  | Formal Name        | Scenarios                             |
+|--------------------------+--------------------+---------------------------------------|
+| “Two things”             | Σ, =A × B=, records  | One scenario with two payloads        |
+| “One from a union”       | Sums =A + B=, unions | Two scenarios, each with one payload  |
+| “A sequence of things”   | Lists, Vectors, ℕ  | Empty and non-empty scenarios         |
+| “Truth values”           | Booleans 𝔹         | Two scenarios with /no/ payloads        |
+| “A pointer or reference” | =Maybe τ=            | Two scenarios; successful or =null=     |
+| “Equality of two things” | Propositional =_≡_=  | One scenario; discussed later         |
+| “A convincing argument”  | Proof trees        | A scenario for each logical construct |
 # +latex: \end{tcolorbox}
 
 Such “enumerated type with payloads” are also known as *algebraic data types*
@@ -3899,74 +3885,361 @@ _++_ : {A : Set} {n m : ℕ} → Vec A n → Vec A m → Vec A (n + m)
   Notice that the *type encodes a useful property*: The length of the catenation is
   the sum of the lengths of the arguments.
 
+#+latex: {\footnotesize \color{gray!80} \textbf{Extended Commentary on Proof Trees:}
+In section \ref{sec:signatures}, we discussed how terms and trees coincide, but
+when focusing on /proof trees/ the relationship gives us more.  For instance, /the/
+/introduction and elimination rules of a type of trees correspond to the
+constructors and destructor of the type's grammar (ADT)./
+
+Let me try to clarify what it means to say that “syntactic proof is an
+alternative to exhaustive case analysis” (valuations).
+
+Solutions to families of problems can be phrased using names that can be defined
+using sets and functions between them; this is a /denotational semantics:/ One
+solves a problem by looking up the definitions, denotations, of the names. In
+contrast, using ADTs provides a *proof system* to a problem: To solve a problem,
+one merely considers the “shape” of the problem to identify which rule (ADT
+constructor) to apply and continue this process recursively. That is, ADT proof
+systems generally provide a guidance to finding solutions. E.g., a propositional
+logic formula can be shown to be valid by showing every /valuation/ (an assignment
+of values to variables) of its variables results in $\mathsf{true}$ --- i.e.,
+one must produce a function that takes in an arbitrary valuation and returns a
+proof of equality that the application of the valuation to the formula is
+$\mathsf{true}$ ---; in contrast *natural deduction* is a collection of rules and
+one proves a formula is valid by constructing a tree whose conclusion is that
+formula; moreover, the shape of the formula usually determines (or, guides the
+construction of) the tree.
+
+That is, ADTs give us a notion of proof that avoids checking all possible values
+for the variables. The ADT we design usually has its constructors ---i.e., proof
+rules--- to be sensible to the kind of problems we're interested in. This
+property is usually built-into the datatype; it is known as *soundness*: /The ADT/
+/only allows us to prove (i.e., form things) sensible with our intended
+interpretation; i.e., provable things are true./ The contrapositive ---viz
+/non-true statements are not provable/--- allow us to stop searching for a proof
+if we can find a counterexample.  The converse ---viz /true statements are
+provable; i.e., constructible via the ADT/--- is called *completeness* and it is
+not as /practical/ since one usually designs an ADT for a particular kind of
+problem ---with a constrained amount of operations--- rather than all kind of
+problems.
+# Completeness: All possible cases must be handled.
+
+# Which is exponentiale in the number of variables used and so inefficient!
+
+#+latex: }
+#
+# Then mention how ADTs give a syntax to proofs, both via CH and observation that
+# proof trees are ADTs! Then discuss how this perspective gives rise to
+# proof-relevant computations and so proof erasure is not necessairly ideal.
+
+*** yesmargins :ignore:
+#+latex: \yesmargins
 *** ADT Example: Propositional Equality
 
      <<sec:propositional-equality>>
  #+latex: \label{sec:propositional-equality}
 
  In this section, we present a notion of equality as an algebraic data type.
-   Equality is a notoriously difficult concept, even posing it is non-trivial:
-   “When are two things equal?” sounds absurd, since the question speaks about
-   two things and two different things cannot be the same one thing.  For us,
-   equality is the smallest possible reflexive relation: Any relation ℛ that
-   relates things to themselves ---such that $x\, ℛ\, x$ for any /x/--- must
-   necessarily contain the propositional equality relation; i.e., =_≡_ ⊆ ℛ=.
+ Equality is a notoriously difficult concept, even posing it is non-trivial:
+ “When are two things equal?” sounds absurd, since the question speaks about two
+ things and two different things cannot be the same one thing.  /Equality,
+ whatever it means,/
+#+begin_margin
+An *equivalence relation* ~_≈_~ is a relationship that models /similarity/, thereby
+generalising the idea of equality. For ~_≈_~ to be called “similarity,
+equivalence”, it should satisfy:
+1. (*Reflexivity*) “Everything is similar to itself”; i.e., $x ≈ x$ is true for all $x$
+2. “Similarity is a mutual relationship”
+3. “Similarity is a transitive relationship”
+#+end_margin
+/is about ignoring certain ‘uninteresting’ properties/;
+#+begin_margin
+An informal code of conduct among mathematicians is that /interesting properties
+should be invariant under equivalence/ ---otherwise, they are [[https://ncatlab.org/nlab/show/principle+of+equivalence][‘evil’]] properties
+and should be used with caution.  That is, for any interesting property $P$, one
+must have $P\, x \,=\, P\, y$ whenever $x$ and $y$ are “the same” ---whatever
+that means. Working with equivalence-invariant properties is tantamount to
+working with an interface, a specfication, rather than a particular implementation.
+@@ignore: e.g., working with objects that satisfy universal properties,
+whcih characterised them up to isomorphism.@@
+   #+end_margin
+below is a short hierarchy of ‘sameness’ with examples on ℕatural numbers.
 
-   # An example of propositions-as-types is a definition of the identity relation
-   # ---the least reflexive relation.
+1. *Syntactic equality:* “$l = r$” is true whenever $l$ and $r$ are literally the
+   same string of symbols. E.g., 2 = 2, or \newline {{{mbox(src_agda[:exports code]{suc
+   suc zero = suc suc zero})}}}.
 
-   For a type ~A~ and an element ~x~ of ~A~, we define the family of types/proofs of
-   “being equal to $x$” by declaring only one inhabitant at index ~x~.
+   This is sometimes known as /intentional equality/; the equality of two
+   expressions is ‘built-in’ the expressions themselves.  [[margin:][Pedantically, 2 is not
+   the same as 2 viz “2 = 2”, since the /actual occurrences/ occupy different
+   physical locations in this sentence.]]
 
-   #+begin_parallel
+2. *Definitional/judgemental equality:* [[margin:][In classical mathematics, operators are
+   usually /specified/ by a set of laws ---or universally characterised in
+   category theory--- and so users work with a specification rather than any
+   particular set of definitional clauses. For instance, Cartesian products can
+   be defined in numerous ways, but their universal mapping property suffices to
+   characterise them and is powerful enough as an interface. In computing, the
+   /choice of implementation/ can make certain problems easier, more efficient,
+   than others. For instnace, a stack of digits having at most $n$ positions can
+   be implemented by an array of length $n$ or, much more efficiently, as an
+   integer of $n$ digits: Either approach gives us the stack interface ---the
+   methods ~push, pop, insert, isempty~--- but one is much more efficient.]]  “$l
+   = r$” is true whenever one looking-up definitions and applying them leads to
+   syntactic equality.  E.g., src_agda[:exports code]{suc zero + suc zero = suc
+   suc zero}; i.e., 1 + 1 = 2.
+
+   Definitional equality is generally the form of equality taught at schools:
+   Two expressions are equal if they both simplify, as much as possible, to the
+   same thing.  However, this approach ---of ‘=’ as an alias for a reflexive
+   transitive reduction relation that permits a notion of ‘simplification’ or
+   ‘computation’--- emphasises /operational behaviour/ rather than /properties/ of
+   equality.
+
+   This is also known as “normal form equality”: One simplifies the two
+   expressions, using definitions, until the two are syntactically
+   indistinguishable.  (The /normal form/ of an expression is the most direct way
+   of writing it; i.e., it consists of only constructors.)  That is to say,
+   definitional equality is the equivalence closure of a reduction relation
+   ---namely, the evaluation scheme of the programming language.  In classical
+   mathematics, this appears in the form of “semantic equality”: Two things are
+   equal when the values they /denote/ coincide; e.g., “2 + 2” and “4” are clearly
+   different, the first consisting of 3 symbols and the latter of 1 symbol, but
+   after evaluation they denote the same value and so are treated equal.  This
+   is sometimes known as /extensional equality/;
+   citet:OnDenoting_what,OnDenoting_making_sense,OnDenoting_Russell.
+
+3. *“≡” Propositional equality:* “$l = r$” is true exactly when one must perform
+   some sort sort of case analysis of variables (i.e., induction) to arrive at a
+   definitional equality. \newline E.g., src_agda[:exports code]{suc m + suc
+   zero = suc suc m}.
+
+   In Agda, as shown below, the typing /judgement/ src_agda[:exports code]{refl :
+   l ≡ r} expresses that $l$ and $r$ as /judgmentally/ (definitionaly) equal;
+   i.e., a particular /term/ is what signifies the equality as definitional.  The
+   equality that /can/ be mentioned solely at the type level, and so /reasoned
+   about/, is propositional equality: Two expressions, $l$ and $r$, are
+   propositionally equal, src_agda[:exports code]{∀ {x} → l ≡ r}, exactly when
+   /any instantiation of the free variables/, $x$, results in definitionaly equal
+   terms.
+
+   It is important to remember: “syntactic ⊆ definitional ⊆ propositional
+   equality”.  The next kind of equality below, is orthogonal.
+
+4. *Setoids / groupoids / equivalence relations:* “$l ≈ r$” is proven using the
+   assumption that src_agda[:exports code]{_≈_ : τ → τ → Set} is an equivalence
+   relation and any properties of the type τ.
+
+   For instance:
+
+   a. *Extensionality:* $f ≐ g$ is proven for two /functions/ by showing that $f\, x
+      = g\, x$ for all appropriate arguments $x$. [[margin:][In classical maths,
+      extensionality is equal to equality: “≐ = =”.]]  “Extensionality is
+      essential for abstraction”; i.e., functions are abstractions determined
+      only by their input-output relationships ---this is not true in computing,
+      where efficiency is important and one speaks of algorithmic complexity.
+      citet:algos_kaldewaij,eq:irrelevance
+      # citet:algos_cormen,algos_FP,algos_kaldewaij
+
+   b. *Isomorphism:* $A ≅ B$ is proven by exhibiting a non-lossy protocol between
+      the two /types/ $A$ and $B$.  [[margin:][HoTT's univalence axiom, \cite{hottbook}, says
+      “isomorphism is isomorphic to equality” (“≅ = =”) i.e., if two types are
+      /essentially indistinguishable (‘≅’)/ then we might as well treat them as
+      /indistinguishable (‘≡’)/; which is what classical mathematicians do;
+      compare with function extensionality.  HoTT's univalence axiom wonderfully
+      induces the expected definition of equality that one actually finds
+      useful; e.g., categories are equal when they are equivalent.]]
+
+   #+latex: {\footnotesize \color{gray!80} \textbf{Extended Commentary:}
+   Experience has shown that, in Agda at least, the use of explicit equivalence
+   relations is preferable to the use of propositional equality ---i.e., ~_≡_~ is
+   generally too strong, coarse, and one must generally use a finer equivalence
+   relation.  More generally, the use of setoids is the move from ‘global
+   identity types’ ~(A, _≡_)~ to ‘locally-defined identity types’ ~(A, _≈_)~, and more
+   generally is /the move from sets to groupoids/: Two things are ‘equal’ exactly
+   when there is a (necessarily invertible) morphism between them. Since Agda is
+   constructive citet:Bauer2010AcceptingConstructiveMath, its setoids could just
+   as well have been called groupoids.
+   #+latex: }
+
+As a middle-ground, the /propositional equality datatype/ is defined as follows.
+For a type ~A~ and an element ~x~ of ~A~, we define the family of types/proofs of
+“being equal to $x$” by declaring only one inhabitant at index ~x~.
+
  {{{code( Propositional Equality )}}}
    #+BEGIN_SRC agda
 data _≡_ {A : Set} : A → A → Set
   where
     refl : {x : A} → x ≡ x
    #+END_SRC
-   #+latex: \columnbreak
 
-   This states that ~refl {x}~ is a proof of ~l ≡ r~ whenever ~l~ and ~r~ simplify, by
-   definition chasing only, to ~x~ ---i.e., both ~l~ and ~r~ have ~x~ as their normal
-   form.
-   #+end_parallel
-   #+latex: \vspace{-1em}
-
-   This definition makes it easy to prove [[https://en.wikipedia.org/wiki/Identity_of_indiscernibles][Leibniz's substitutivity rule]], “equals
-   for equals”:
-   {{{code( Transport along proofs )}}}
-   #+BEGIN_SRC agda
+This states that src_agda[:exports code]{refl {x}} is a proof of
+src_agda[:exports code]{l ≡ r} whenever src_emacs-lisp[:exports code]{l} and
+src_emacs-lisp[:exports code]{r} simplify, by definition chasing only, to
+src_emacs-lisp[:exports code]{x} ---i.e., both src_emacs-lisp[:exports code]{l}
+and src_emacs-lisp[:exports code]{r} have src_emacs-lisp[:exports code]{x} as
+their normal form. This definition makes it easy to prove [[https://en.wikipedia.org/wiki/Identity_of_indiscernibles][Leibniz's
+substitutivity rule]], “equals for equals”: {{{code( Transport along proofs )}}}
+ #+BEGIN_SRC agda
 {- If l ≡ r and we have P l, then we also have P r too! -}
-subst : {A : Set} {P : A → Set} {l r : A} → l ≡ r → P l → P r
+subst : {A : Set} {P : A → Set} {l r : A}
+      →  l ≡ r  →  P l  →  P r
 subst refl it = it
-   #+END_SRC
-   Why does this work? An element of ~l ≡ r~ must be of the form ~refl {x}~ for some
-   canonical form ~x~; but if ~l~ and ~r~ are both ~x~, then ~P l~ and ~P r~ are the /same
-   type/. Pattern matching on a proof of ~l ≡ r~ gave us information about the rest
-   of the program's type. By the same reasoning, we can prove that equality is
-   the least reflexive relation.
 
-   {{{code( Propositional equality is the least reflexive relagtion )}}}
+-- Alternativelly...
+cong : {A B : Set} {l r : A} (f : A → B)
+     →  l ≡ r  →  f l ≡ f r
+cong refl = refl
+#+END_SRC
+How does src_agda[:exports code]{subst} work? An element of src_agda[:exports
+code]{l ≡ r} must be of the form src_agda[:exports code]{refl {x}} for some
+canonical form ~x~; but if ~l~ and ~r~ are both ~x~, then ~P l~ and ~P r~ are the /same
+type/. Pattern matching on a proof of \newline src_agda[:exports code]{l ≡ r}
+gave us information about the rest of the program's type. By the same reasoning,
+we can prove that equality is the smallest possible reflexive
+relation.
+#+begin_margin
+Any relation ℛ that relates things to themselves ---such that $x\, ℛ\, x$ for
+any /x/--- must necessarily contain the propositional equality relation; i.e., $\_{}≡\_{}
+⊆ ℛ$.
+
+#+latex: {\renewenvironment{tcolorbox}[1][\unskip]{}{}
+{{{code( Propositional equality is “the” least reflexive relation )}}}
+ #+ATTR_LATEX: :options fontsize=\scriptsize
 #+begin_src agda
--- If ℛ is reflexive, then it contains _≡_
-lrr : ∀ {X} {_ℛ_ : X → X → Set}
-    → (reflᵣ : ∀ {x} → x ℛ x)
-    → ∀ {x y} → x ≡ y → x ℛ y
-lrr reflᵣ refl = reflᵣ
+module _ {X} (_ℛ_ : X → X → Set)
+  where
 
--- If ℛ contains _≡_, then it is reflexive
-lrr˘ : ∀ {X} {_ℛ_ : X → X → Set}
-     → (ℛ-contains-≡ : ∀ {x y} → x ≡ y → x ℛ y)
-     → ∀ {x} → x ℛ x
-lrr˘ ℛ-contains-≡ {x} = ℛ-contains-≡ refl
+  ℛ-contains-≡ : Set
+  ℛ-contains-≡
+   = ∀ {x y}  →  x ≡ y  →  x ℛ y
 
--- “ℛ is reflexive precively when it contains _≡_”
--- This follows from (lrr) and (lrr˘), and is sometimes
--- “the” definition of reflexivity.
+  ℛ-reflexive : Set
+  ℛ-reflexive  =  ∀ {x} → x ℛ x
+
+  lrr :  ℛ-reflexive
+      → ℛ-contains-≡
+  lrr reflᵣ refl = reflᵣ
+
+  lrr˘ :  ℛ-contains-≡
+       → ℛ-reflexive
+  lrr˘ go = go refl
 #+end_src
+#+latex: }
+/“ℛ is reflexive precively when it contains $\_{}≡\_{}$”/ follows from (lrr)
+and (lrr˘), and is sometimes “the” definition of reflexivity.
+#+end_margin
 
- One says ~𝓁 ≡ 𝓇~ is <<</definitionally equal/>>>
+The Leibniz rule ---/equals-for-equals:/ src_agda[:exports code]{∀ {x y} → x ≡ y →
+f x ≡ f y} for any function /f/--- is perhaps the most useful principle of
+equality.  In Agda, if we know $x ≡ y$ by definitional (which includes
+syntactic) equality, then $f\, x \;≡\; f\,y$ is true /silently, automatically/:
+#+begin_margin
+That is, if src_agda[:exports code]{refl : x ≡ y}, then, we can apply the
+definition of src_emacs-lisp[:exports code]{cong}, to obtain src_agda[:exports
+code]{refl : f x ≡ f y}. That is, src_agda[:exports code]{cong refl} normalises
+to src_agda[:exports code]{refl}; whereas src_agda[:exports code]{cong p} cannot
+normalise since the definition of src_agda[:exports code]{cong} requires its
+argument to be the shape src_agda[:exports code]{refl} before any normalisation
+can occur. Hence, arbitrary propositional equality proofs src_agda[:exports
+code]{p : x ≡ y} lead to expression src_agda[:exports code]{cong f p : f x ≡ f
+y} which /can only/ simplify in the same cases that allow src_emacs-lisp[:exports
+code]{p} to simplify to src_agda[:exports code]{refl}.
+
+\vspace{1em} There's only one constructor for equalities, so isn't every
+equality proof just ~refl~?  ‘For the most part’, /yes/ ---for more, see HoTT
+cite:hottbook.  However, an arbitrary term src_agda[:exports code]{p : l ≡ r} is
+a /witness/ that (1) both computations src_emacs-lisp[:exports code]{l} and
+src_emacs-lisp[:exports code]{r} terminate, and (2) they have the same normal
+form; and the definition of ~cong~ only works, computes, when we actually have
+~refl~ in hand, so the issue becomes a matter of when can reduction happen.
+#+end_margin
+Without ceremony, we can interchange one with the other.  However, if
+src_agda[:exports code]{p : x ≡ y} is a propositional equality, then
+{{{mbox(src_agda[:exports code]{cong f p : f x ≡ f y})}}}; i.e., we need to invoke the
+/particular/ proof src_emacs-lisp[:exports code]{p} in order to obtain the new
+proof.  Finally, for setoid equivalence relations, one needs to prove the
+theorem src_agda[:exports code]{f-cong : ∀ {x y} → x ≈ y → f x ≈ f y} on a
+case-by-case basis, for each src_emacs-lisp[:exports code]{f} one is interested
+in ---think ‘sets quotiented by an equivalence’.  /Definitionally equal terms can
+be interchanged anywhere, silently,/ and it is this property that makes them so
+remarkable.
+
+Unsurprisingly, the Leibniz rule is so useful that it is sometimes used as /the/
+definition [[margin:][To wit: \[x = y \quad=\quad (∀ P\, •\, P\, x = P\, y)\] The three
+occurrences of ‘=’ above are all different!]] of equality, also known as “The Law
+of Indiscernibles”: src_agda[:exports code]{x ≡ y} exactly when, for every
+property ~P~ we have ~P x ≡ P y~ ---two things are indistinguishable exactly when
+they share the same properties.  That is, general equality is reduced to an
+already accepted notion of equality of truth values.  One half of this rule is
+src_emacs-lisp[:exports code]{cong}, proved above, but we do not have the other
+half: The extensionality principle {{{mbox(src_agda[:exports code]{(∀ P  →  P x
+≡ P y)  →  x ≡ y})}}} is no longer true ---indeed, observationally
+indistinguishable expressions are not necessarily equal since they may have been
+constructed (in syntactically) differently (ways). This is not surprising since
+propositional equality is intentional ---after all it is based on syntactic
+indistinguishability. One way citet:eq:pers_as_types,eq:observational to regain
+extensionality is to start with unityped terms /then/ to define a type 𝒯 to be
+partial-equivalence relation ---i.e., an equivalence lacking reflexivity---,
+/then/ define judgements $t : 𝒯$ to mean $t \,𝒯\, t$; then every type is/comes
+with an equivalence relation and so one speaks of “equality at a type” with $l =
+r : 𝒯$ meaning $l \,𝒯\, r$.
+
+# To.regain extensionaloty, some theories define types to be pers over unityped
+# lamda calculus terms. Then x : T means xTx holds. Pers are used instead
+# of.equivalence relations since otherwise we'd be able to show that every term
+# inhabits every type!
+
+Is the ~_≡_~ datatype really equality? The name is definitely biased; below we
+change the names.  {{{code( Discrete graphs with only self-loops )}}}
+   #+BEGIN_SRC agda
+data _⟶_ {Node : Set} : Node → Node → Set
+  where
+    loop : {x : Node} → (x ⟶ x)
+   #+END_SRC
+#+latex: \noindent
+Instead of ‘≡’ we have the long arrow ‘⟶’, instead of ~A~ we have named the type
+parameter ~Node~, and ~refl~ became ~loop~.  We may /interpret/ the given type ~Node~ as a
+bunch of dots on a sheet of paper and a term src_agda[:exports code]{a : x ⟶ y}
+as an arc, arrow, from the dot named $x$ to the dot named $y$.  Whether we use
+this graphical [[margin:][This is the groupoids interpretation! Moreover, whether we
+intepret the datatype as a /proposition/ (equality) or as a /datastructure/ (graph)
+is an example of the *propositions-as-types* interpretation used in DTLs.]]
+interpretation or the equality one is up to us, the users: The datatype itself
+carries no one, fixed, semantics.  The change in perspective can offer great
+dividends; for instance, specialising the notion of a surjective graph
+homomorphism to this particular graph yields the observation that, in general,
+/injective means surjective on equations/:
+#+begin_margin
+A more general definition of surjectivity can be seen in Baez ad Shulman's
+[[https://arxiv.org/abs/math/0608420][Lectures in /n/-categories and Cohomology]] cite:baez06:_lectur_categ_cohom.
+#+end_margin
+For every proof src_agda[:exports code]{q : f x ≡ f y} there is a proof
+src_agda[:exports code]{p : x ≡ y} such that \newline src_agda[:exports
+code]{cong f p ≡ q}.
+
+As a slightly concrete example, if we define [[margin:][There are multiple, equivalent,
+definitions of addition; but we actually have to write one down in order to use
+it; and then this particular one is given special status by the programming
+language: The particular defining clauses are automatically theorems of addition
+(having zero-length proofs). More concretely, for our example, ~0 + n~ and ~n~ are
+indistinguishable to Agda, and so we can freely use such an identity law
+silently without mention; but the other identity law ~n + 0 = n~ requires explicit
+mention!.  For instance, if ~xs ∶ Vec A (0 + n)~ then ~xs ∶ Vec A n~; but if ~xs ∶
+Vec A (n + 0)~ then ~subst p _ ∶ Vec A n~ where we must ceremonially transport ~xs~,
+‘coerce’, along the proof ~p ∶ n + 0 ≡ n~. This issue pops up in the wild in
+useful, simple, programs such as the catenation of vectors; try it!]]  addition on
+the natural numbers inductively on the first argument ---i.e., src_agda[:exports
+code]{0 + n = n} and src_agda[:exports code]{suc m + n = suc (m + n)}--- then
+one can show that 0 is the left identity of addition very /quickly/ but to show
+that it is a right identity means we need to perform case analysis (i.e.,
+induction) in order to make any progress (viz invoking the definition of +). We
+have two proofs of equality but one has a /shorter/ proof length than the other:
+src_agda[:exports code]{0 + n ≡ n} is ~refl~ /immediately/, whereas
+src_agda[:exports code]{n + 0 ≡ n} /becomes ~refl~ after/ performing $n$ reduction
+steps to get into normal form.
+
+ In summary, one says ~𝓁 ≡ 𝓇~ is <<</definitionally equal/>>>
  #+latex: \label{</definitionally equal/>}
  when both sides are indistinguishable after all possible definitions in the
  terms ~𝓁~ and ~𝓇~ have been used. In contrast,
@@ -3982,9 +4255,52 @@ definitional : ∀ {A} → Vec A 5 ≡ Vec A (2 + 3)
 definitional = refl
 
 propositional : ∀ {A m n} → Vec A (m + n) ≡ Vec A (n + m)
-propositional = {!!}
+propositional v = subst +-sym v
+                  -- where +-sym : ∀ {n m}  →  m + n ≡ n + m
  #+END_SRC
 
+ #+latex: \noindent
+ That is, whenever one has a proof src_agda[:exports code]{p : l ≡ r}, if
+ src_emacs-lisp[:exports code]{p} is the src_agda[:exports code]{refl}
+ /constructor/, then /l and r are equal by definition chasing/; otherwise, they
+ require a ‘non-trivial’ proof and are thus /propositionally equal/.  In
+ particular, to type check src_agda[:exports code]{refl : f(x) = y} for some
+ function src_emacs-lisp[:exports code]{f}, the system must actually perform the
+ computation src_emacs-lisp[:exports code]{f} on input src_emacs-lisp[:exports
+ code]{x} /then/ check for syntactic equality against src_emacs-lisp[:exports
+ code]{y}. Hence, equalities may contain non-trivial computational content and
+ typechecking may involve non-trivial computational effort; e.g.,
+ $\mathsf{refl} : 2^{100} ≡ 2^{100}$ takes some ‘time’ to typecheck.
+
+:John_Major_Equality:
+In the above example, we /know/ that ~m + n~ and ~n + m~ will /simplify/ to the same
+thing, for any actually chosen ℕumeric values for ~m~ and ~n~; as such, we want to
+write just ~v~ instead of ~subst +-sym v~. Within non-trivial programs, ~subst~'s can
+be quite involved and deeply nested, and when we /know/ the type of what we have
+in hand, say ~it ∶ α~, is provably the type of what is required in the current
+context, say type β, then we may prefer to outright provide ~it~ rather than ~subst
+? it~ where ‘?’ is a proof obligation of type ~α ≡ β~.
+
+Heterogeneous equality is most commonly defined with John Major equality
+
+data JMeq : (A B : Set) → A → B → Set where JMrefl : (A : Set)(x : A) → JMeq A A x x
+
+This is termed after a British politician since while it promises that any two
+terms can be equal regardless of their class (type), only two things from the
+same class can ever be equal.
+
+The above definition doesn’t typecheck in Agda!  That’s because Agda is
+predicative, meaning that a type constructor can’t quantify over the same
+universe it occupies. We can however, cleverly phrase JMeq so to avoid this
+
+data JMeq (A : Set) : (B : Set) → A → B → Set where JMrefl : (a : A) → JMeq A A a a
+
+Now the constructor avoids quantifying over Set and therefore fits inside the
+same universe as A and B.
+:End:
+
+*** nomargins                                                      :ignore:
+#+latex: \nomargins
 *** ADTs as 𝒲-types
 
 <<sec:W-types>>
@@ -4805,14 +5121,6 @@ head' (x ∷ xs) _ = x
 
     Unlike the ~_‼_~ definition, rather than there being no index into the empty list,
     there is no proof that a natural number ~i~ is smaller than 0.
-*** TODO COMMENT Background: What's necessary to solve this problem?
-     - What is needed to just understand this problem?
-     - Agda
-     - System F
-     - Monads
-     - Metaprogramming
-
-     Maybe tackle this "as needed", rather than upfront.
 ** Facets of Structuring Mechanisms
   <<sec:module_agda>>
  #+latex: \label{sec:module_agda}
@@ -8539,7 +8847,7 @@ Quick summary of subsections covered.
 #+latex: \vspace{-6cm}\remark{
 The core of this chapter shows how some of the problems of Chapter 3, /Examples
 from the wild/, can be solved using ~PackageFormer~.
-#+latex: }\vspace{5cm}
+#+latex: }\clearpage
 
 ** Why an editor extension?
    # Why Lisp is reasonable?
@@ -8575,23 +8883,16 @@ be a nuisance to remember always invoke a preprocessor before compilation or
 type-checking, and it becomes extra baggage to future users of the codebase
 ---i.e., a further addition to the toolchain that requires regular maintenance
 in order to be kept up to date with the core language.  A middle-road between
-the two is not always possible.
-
-However, if the language's community subscribes to /one/ IDE, then a reasonable
-approach to extending a language would be to /plug-in/ the necessary preprocessing
----to transform the extended language into the pure core language--- in a
-saliently /silent/ fashion such that users need not invoke it manually.
-
+the two is not always possible.  However, if the language's community subscribes
+to /one/ IDE, then a reasonable approach
+#+begin_margin
 #+latex_header: \usepackage{rotating}
 #+latex_header: \usepackage{tikz} \usetikzlibrary{positioning} \usetikzlibrary{arrows, arrows.meta}
-#+latex: \vspace{-2.5cm}\remark{
 [[https://www.cs.virginia.edu/~evans/cs655/readings/steele.pdf][“Growing a Language”]]; Difficulty for user setup vs difficulty for implementation
-#+latex: } \vspace{-.5em}
-
+# +resize:
 #+begin_export latex
 \vspace{1cm}
-$\,$ \hfill \hspace{.95\textwidth}
-{\LARGE \maxsizebox{.55\textwidth}{\textheight}{
+{\LARGE \maxsizebox{1.3\textwidth}{\textheight}{
 % Spectrum template from: https://tex.stackexchange.com/a/84998/69371
 \def\TWO#1#2{$\substack{\displaystyle \text{#1} \\ \displaystyle \text{#2}}$}
 \begin{tikzpicture}[node distance=5cm]
@@ -8614,21 +8915,50 @@ $\,$ \hfill \hspace{.95\textwidth}
 \end{tikzpicture}}}
 \vspace{-12em}
 #+end_export
+#+end_margin
+to extending a language would be to /plug-in/ the necessary preprocessing ---to
+transform the extended language into the pure core language--- in a saliently
+/silent/ fashion such that users need not invoke it manually.
 
-Moreover, the prototype goes to great lengths to ‘fit’ into the usual workflow
-of an Agda user.  In particular, after the initial setup, the prototype is
-implicitly invoked whenver users perform Agda's usual typechecking in Emacs.
-Since the prototype is mostly string manipulation, its presence is barely
-noticable, and its results are then checked by Agda itself.  In addition, to
-mitigate the burden of increasing the toolchain, the silent preprocessing would
-/not transform user code/ but instead /produce auxiliary files/ containing core
-language code which are then /imported/ by user code ---furthermore, such import
-clauses could be automatically inserted when necessary.  The benefit here is
-that /library users/ need not know about the extended language features; since all
-files are in the core language with extended language feature appearing in
+The usual workflow of an Agda user involves writing some code (types and terms
+alike), then asking for Agda to typecheck it. The typechecking operation is done
+quite frequently. Thus, one way for our prototype to fit in well to this
+workflow is to extend the emacs hook that triggers Agda's typechecking to also
+invoke our prototype.
+
+The prototype implementation works via string manipulations. Although we have no
+formal proof of this, the manipulations all seem quite straightforward, and none
+seem to be overly time-consuming.  While we can't be assured that these are
+linear in the size of the code, in practice, it seems like this is the case. To
+guard against bugs potentially introduced through this untyped “wild
+manipulation” phase, Agda typechecks everything that the prototype generates,
+thus ensuring eventual soundness.
+
+Unlike Agda itself, which rewrites user code, such as when doing case-split, and
+will occasionally produce incorrect code, we eschew that. Instead, our prototype
+produces auxilliary files that contain Agda code, which are then imported into
+user code. The necessary import clauses, to the auxiliary files, are
+automatically inserted when not present.  One benefit of this approach is that
+library users do not need to know about the extended language, as what is
+imported is pure Agda, albeit with the extended language features appearing in
 special comments.
-#+latex: {Details can be found in section \ref{sec:PF_scrap_repetition}.}
+
+# --------------------------------------------------------------------------------
 #
+# Moreover, the prototype goes to great lengths to ‘fit’ into the usual workflow
+# of an Agda user.  In particular, after the initial setup, the prototype is
+# implicitly invoked whenver users perform Agda's usual typechecking in Emacs.
+# Since the prototype is mostly string manipulation, its presence is barely
+# noticable, and its results are then checked by Agda itself.  In addition, to
+# mitigate the burden of increasing the toolchain, the silent preprocessing would
+# not transform user code/ but instead /produce auxiliary files/ containing core
+# language code which are then /imported/ by user code ---furthermore, such import
+# clauses could be automatically inserted when necessary.  The benefit here is
+# that /library users/ need not know about the extended language features; since all
+# files are in the core language with extended language feature appearing in
+# special comments.
+# #+latex: {Details can be found in section \ref{sec:PF_scrap_repetition}.}
+# #
 # the Prototype is a preprocessor. It is just integrated into the IDE, itself a
 # preprocessor, in such a way that it does not feel like it. It is not a "manual
 # command-line preprocessor", that is true.
@@ -8689,7 +9019,7 @@ extended Agda syntax to legitimate existing syntax.
 :End:
 
 Finally, Lisp uses a rather small number of constructs, such as macros and
-lambda, which themselves are used to build 'primitives', such as
+lambda, which themselves are used to build ‘primitives’, such as
 src_emacs-lisp[:exports code]{defun} for defining top-level functions
 citet:10.5555/1816935.  Knowing this about Lisp encourages us to emulate this
 expressive parsimony.
@@ -8873,7 +9203,7 @@ provide a variation on an existing grouping mechanism. The syntax ~p ⟴ 𝓋₁
 𝓋ₙ~ is tantamount to explicit forward function application ~𝓋ₙ (𝓋ₙ₋₁ (⋯ (𝓋₁ p)))~.
 With this understanding, we can explain the different ways to organise M-sets.
 
-#+latex: \clearpage
+# +latex: \clearpage
 # The next page shows, first, the elaboration of lines 9-11 and, in the second
 # snippet, the elaborations of lines 12-14.
 
@@ -18799,8 +19129,8 @@ termtype τ = Fix (Σ→⊎ (sources τ))
 
 Since ~⟫=~ ensures that ~Context~ values are always formed from sums Σ and products
 Π, we have polynomial constructions and so it suffices to find the initial
-algebra of such operators ---which always exist. We assumed ~Fix~ yields such
-algebras.
+algebra of such operators ---which always exist; see section \ref{sec:W-types}
+on 𝒲-types. We assumed ~Fix~ yields such algebras.
 
 ** Conclusion
    :PROPERTIES:

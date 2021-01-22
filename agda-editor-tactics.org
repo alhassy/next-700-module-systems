@@ -140,17 +140,14 @@ https://gist.github.com/alhassy/a4ce4032e7c33de874c3ce43dc9b0fe1
 * User configurable settings ---~agda-editor-tactics-format-𝒳~
 
 #+begin_src emacs-lisp
-;; The tactic prodcues a Σ-type, what should its name be?
+;; ⟨0⟩ The tactic prodcues a Σ-type, what should its name be?
 (defvar agda-editor-tactics-format-Σ-naming "%s′"
 "The format string for the new Σ-variant.
 
 The new name of the Σ-variant: By default, if R is the record name,
 then R′ is the Σ-variant name.  Another useful naming scheme may be
 \"%s-Σ-variant\".")
-#+end_src
 
-** COMMENT more
-#+begin_src emacs-lisp
 ;; ⟨1⟩ There are two coercions, to and from the orginal, what are they named?
 (defvar agda-editor-tactics-format-record→Σ-coe "%s-as-%s"
 "The format for the name of the “record to Σ-variant” coercion.
@@ -189,6 +186,9 @@ The first and only ‘%s’ is the name of the record.")
 That is, return the number of whitespace at the start of S."
   (length (car (s-match "\\( \\)+" s))))
 #+end_src
+
+#+RESULTS:
+: agda-editor-tactics-indent
 
 #+begin_src emacs-lisp
 (defun agda-editor-tactics-record-info (r)
@@ -263,7 +263,7 @@ For now,
 
     ;; ⟨2⟩ The rest of the body.  Agda allows varying, but consistent,
     ;; indentation levels, so we check indentation case by case.
-    (loop for p in rest ;; i.e., p is a chunk of lines immediately after a
+    (cl-loop for p in rest ;; i.e., p is a chunk of lines immediately after a
                         ;; ‘field’ keyword.
           for indent = (agda-editor-tactics-indent (cl-first p))
           ;; The lines sharing the same indentation are fields,
@@ -293,6 +293,9 @@ For now,
     plist))
 #+end_src
 
+#+RESULTS:
+: agda-editor-tactics-record-info
+
 :Try:
 (agda-editor-tactics-record-info
 "
@@ -313,6 +316,48 @@ record R (X : Set) (x : X) (y : Y x) : Set where
     c : Y a
 ")
 :End:
+
+
+#+begin_src emacs-lisp
+(defmacro agda-editor-tactics-open-record-with-pp (r &rest body)
+  "Open Agda record as plist R with various projections.
+
+r-name         : The name of the given record.
+r-name-applied : The name of the given record along with any required arguments.
+body           : The declarations excluding the prefix of ‘:param’s.
+fields         : The name:type strings belonging to entries qualified ‘:field’.
+field-names    : The list of names of declarations qualified ‘:field’.
+paramsPV       : The longest prefix of (:param name:type) declarations.
+params         : The list of param names and their types, as strings.
+pp-params      : The params as an (explicit) Agda telescope.
+{pp-params}    : The params as an {implicit} Agda telescope.
+{pp-params}→   : An implicit telscope of the params then a function arrow.
+args           : The list of param names.
+pp-args        : The param names with spaces between them;
+                 e.g., to be used for an application or a λ.
+record{xᵢ=xᵢ}ᵢ : The record pattern matching idiom."
+  `(-let* ((r-name (getf r :name))
+           ((paramsPV body) (--split-with (equal :param (cl-first it)) (cl-getf r :body)))
+           (fields (mapcar #'cl-second (--filter (equal :field (car it)) body)))
+           (field-names (--map (cl-first (s-split " : " it)) fields))
+           ;; paramsPV is a list of pairs (:param value).
+           (params (mapcar #'cl-second paramsPV))
+           (pp-params    (s-join " " (--map (format "(%s)" it) params)))
+           ({pp-params}  (s-join " " (--map (format "{%s}" it) params)))
+           ({pp-params}→ (concat {pp-params} (if params " → " "")))
+           (args (--map (s-trim (cl-first (s-split ":" it))) params))
+           (pp-args (s-join " " args))
+           (r-name-applied (concat r-name " " pp-args))
+           (record{xᵢ=xᵢ}ᵢ (thread-last field-names
+                             (--map (format "%s = %s" it it))
+                             (s-join " ; ")
+                             (format "record{ %s }"))))
+     ,@body))
+#+end_src
+
+#+RESULTS:
+: agda-editor-tactics-open-record-with-pp
+
 
 * agda-editor-tactics-regonify
 
@@ -363,6 +408,9 @@ Moreover, evaluating a ‘regonify’ sexp multiple times results
          (funcall (lambda (it) ,on-region) output)))))
 #+end_src
 
+#+RESULTS:
+: agda-editor-tactics-regonify
+
 * agda-editor-tactics-record-to-Σ-𝒳
 #+begin_src emacs-lisp
 (defun agda-editor-tactics-as-Σ-nested (r)
@@ -389,7 +437,7 @@ Moreover, evaluating a ‘regonify’ sexp multiple times results
 
     ;; Arrange record as a sequence of let-clauses and Σ-quantifiers.
     (thread-last
-        (loop for (q e) in body
+        (cl-loop for (q e) in body
               for e′ = (if (equal q :field) (s-replace ":" "∶" e) e)
               concat (format (if (equal q :field) "Σ %s • " "let %s in ") e′))
       (s-collapse-whitespace)
@@ -402,6 +450,9 @@ Moreover, evaluating a ‘regonify’ sexp multiple times results
       "⊤")))
 #+end_src
 
+#+RESULTS:
+: agda-editor-tactics-as-Σ-nested
+
 ;; Perhaps when they press “M-x agda-editor TAB” they will discover it.
 #+begin_src emacs-lisp :noweb-ref enable-mode :tangle no
 ;; Give users interactive access to this function at the top level.
@@ -409,9 +460,12 @@ Moreover, evaluating a ‘regonify’ sexp multiple times results
                               (agda-editor-tactics-record-info it))
 #+end_src
 
+#+RESULTS:
+: agda-editor-tactics-as-Σ-nested
+
 :Try:
 #+begin_src emacs-lisp :tangle no
-(agda-editor-tactics--as-Σ-nested (agda-editor-tactics-record-info "
+(agda-editor-tactics-as-Σ-nested (agda-editor-tactics-record-info "
 record R (A : Set) (n : ℕ) : Set where
 
   Alias = A
@@ -433,6 +487,10 @@ record R (A : Set) (n : ℕ) : Set where
   more = λ _ → n
 "))
 #+end_src
+
+#+RESULTS:
+: R′ : (A : Set) (n : ℕ) → Set
+: R′ = λ A n → let Alias = A ; id : Set → Set ; id X = X in Σ x ∶ id Alias • let m : ℕ ; m = n in Σ y ∶ m ≡ n • Σ z ∶ A • let more : Set → ℕ ; more = λ _ → n in ⊤
 
 # Now select the region below and try ;-)
 
@@ -457,125 +515,235 @@ record R (A : Set) (n : ℕ) : Set where
   more = λ _ → n
 :End:
 
-* COMMENT more to do
-#+begin_src emacs-lisp
-(defun agda-editor-tactics--as-Σ-to   (r) )
-(defun agda-editor-tactics--as-Σ-from (r) )
-(defun agda-editor-tactics--as-Σ-from∘to≈id (r) )
-(defun agda-editor-tactics--as-Σ-to∘from≈id (r) )
-(defun agda-editor-tactics-record-to-Σ (r) ) ;; Inserts results of the above 4 defuns.
-      ;; See transform-to-Σ below!
+* to
 
-
-;; Override “transpose-lines” keybinding
-;; to be “t”ransform to Σ-record
-(global-set-key (kbd "C-x C-t")
-(defun transform-to-Σ (beginning end)
-  (interactive "r")
-  (when (use-region-p)
-    (kill-region beginning end)
-    (-let* ((rrr (substring-no-properties (car kill-ring)))
-           (_ (insert rrr))
-           ((name params level . body) (record-info rrr))
-           (args (s-collapse-whitespace (s-join " "
-                     (--map (-let [(_ e τ r)
-                                  (s-match "\\(.*\\):\\(.*\\)\\(}\\|)\\)" it)]
-                              e)
-                     (--map (s-join "" it)
-                     (rest (--split-when (member it '("{" "(")) (s-split "" params))))))))
-          (record{xᵢ=xᵢ}ᵢ
-              (format "record{%s}"
-              (s-join " ; "
-                 (loop for (_ . e) in (--filter (equal 'field (car it)) body)
-                       for field = (cl-first (s-split " : " e))
-                       collect (format "%s = %s" field field))))))
-      (kill-new
-  (s-concat
-   ;; type declaration
-   (format Σ-naming-format name)
-   " : "
-   (when params (concat params " → "))
-   "Set " level "\n"
-   ;; body
-   (format Σ-naming-format name) " = "
-   (if (s-blank? (s-trim args))
-       ""
-       (format "λ %s → " args))
-   (s-replace "; in" " in"
-   (s-replace "let ;" "let "
-   (s-replace "; ;" ";"
-   (s-replace "in let" ";"
-   (s-collapse-whitespace
-   (loop for (q . e) in body
-         for e′ = (if (equal q 'field) (s-replace ":" "∶" e) e)
-         concat (format (if (equal q 'field) "Σ %s • " "let %s in ") e′))))))) "⊤"
-
-   "\n\n"
-
-   ;; coercion
-   (format record→Σ-coe-format name (format Σ-naming-format name))
-   " : "
-   (s-replace "(" "{" (s-replace ")" "}" params))
-   (when params " → ")
-   name " " args " → " (format Σ-naming-format name) " " args
-   "\n"
-
-   (format record→Σ-coe-format name (format Σ-naming-format name))
-   " = λ r → "
-   (loop for (_ . e) in (--filter (equal 'field (car it)) body)
-         for field = (cl-first (s-split " : " e))
-         concat (format "%s.%s r , " name field))
-   "tt"
-
-   "\n\n"
-   ;; coercion, the other way around
-   (format Σ→record-coe-format (format Σ-naming-format name) name)
-   " : "
-   (s-replace "(" "{" (s-replace ")" "}" params))
-   (when params " → ")
-   (format Σ-naming-format name) " " args " → " name " " args
-   "\n"
-
-   (format Σ→record-coe-format (format Σ-naming-format name) name)
-   " = λ{ ("
-   (s-join " , "
-   (loop for (_ . e) in (--filter (equal 'field (car it)) body)
-         for field = (cl-first (s-split " : " e))
-         collect field))
-   " , tt) → "
-   record{xᵢ=xᵢ}ᵢ
-   " }" ;; pattern matching λ
-
-   "\n\n"
-   ;; to∘from≈id
-   (format to∘from≈id-format name)
-   " : "
-   (s-replace "(" "{" (s-replace ")" "}" params))
-   (when params " → ")
-   "{ r : " name " " args "} → "
-   (format Σ→record-coe-format (format Σ-naming-format name) name)
-   " (" (format record→Σ-coe-format name (format Σ-naming-format name))
-   " r) ≡ r"
-   "\n"
-   (format to∘from≈id-format name)
-   " {r = " record{xᵢ=xᵢ}ᵢ "} = refl"
-
-   "\n\n"
-   ;; from∘to≈id
-   (format from∘to≈id-format name)
-   " : "
-   (s-replace "(" "{" (s-replace ")" "}" params))
-   (when params " → ")
-   "{ σ : " name " " args "} → "
-   (format Σ→record-coe-format (format Σ-naming-format name) name)
-   " (" (format record→Σ-coe-format name (format Σ-naming-format name))
-   " σ) ≡ σ"
-   "\n"
-   (format from∘to≈id-format name)
-   " = refl"
-   )) ;; kill-new
-      (message "A Σ-variant is now in your clipboard -- press C-y to paste it (•̀ᴗ•́)و")))))
+  #+begin_src emacs-lisp
+(defun agda-editor-tactics-as-Σ-to (r)
+  (agda-editor-tactics-open-record-with-pp r
+    (let ((to (format agda-editor-tactics-format-record→Σ-coe
+                     r-name
+                     (format agda-editor-tactics-format-Σ-naming r-name))))
+      (s-concat
+       ;; Coercion declaration
+       to " : " {pp-params}→
+                r-name-applied
+                " → "
+                (format agda-editor-tactics-format-Σ-naming r-name) " " pp-args
+       "\n"
+       ;; Coercion definition
+       to " = λ r → "
+       (s-join " , " (--map (format "%s.%s r" r-name it) field-names))
+       " , tt"))))
 #+end_src
+
+#+RESULTS:
+: agda-editor-tactics-as-Σ-to
+
+:Try:
+#+begin_src emacs-lisp :tangle no
+(agda-editor-tactics-as-Σ-to (agda-editor-tactics-record-info "
+record R (A : Set) (n : ℕ) : Set where
+
+  Alias = A
+
+  id : Set → Set
+  id X = X
+
+  field
+    x : id Alias
+
+  m : ℕ
+  m = n
+
+  field
+    y : m ≡ n
+    z : A
+
+  more : Set → ℕ
+  more = λ _ → n
+"))
+#+end_src
+
+#+RESULTS:
+: R-as-R′ : {A : Set} {n : ℕ} → R A n → R′ A n
+: R-as-R′ = λ r → R.x r , R.y r , R.z r , tt
+:End:
+
+* from
+#+begin_src emacs-lisp
+(defun agda-editor-tactics-as-Σ-from (r)
+  (agda-editor-tactics-open-record-with-pp r
+    (let ((from (format agda-editor-tactics-format-Σ→record-coe
+                        (format agda-editor-tactics-format-Σ-naming r-name)
+                        r-name)))
+      (s-concat
+      ;; coercion, the other way around
+      from " : " {pp-params}→
+      (format agda-editor-tactics-format-Σ-naming r-name) " " pp-args
+      " → "
+      r-name-applied
+      "\n"
+      from " = λ{ (" (s-join " , " field-names) " , tt) → "
+                  record{xᵢ=xᵢ}ᵢ
+              " }")))) ;; closed the pattern matching λ
+#+end_src
+
+#+RESULTS:
+: agda-editor-tactics-as-Σ-from
+
+:Try:
+#+begin_src emacs-lisp :tangle no
+(agda-editor-tactics-as-Σ-from (agda-editor-tactics-record-info "
+record R (A : Set) (n : ℕ) : Set where
+
+  Alias = A
+
+  id : Set → Set
+  id X = X
+
+  field
+    x : id Alias
+
+  m : ℕ
+  m = n
+
+  field
+    y : m ≡ n
+    z : A
+
+  more : Set → ℕ
+  more = λ _ → n
+"))
+#+end_src
+
+#+RESULTS:
+: R′-as-R : {A : Set} {n : ℕ} → R′ A n → R A n
+: R′-as-R = λ{ (x , y , z , tt) → record{ x = x ; y = y ; z = z } }
+:End:
+
+* iso proofs
+#+begin_src emacs-lisp
+;; to∘from≈id
+(defun agda-editor-tactics-as-Σ-iso-proofs (r)
+  (agda-editor-tactics-open-record-with-pp r
+    (let ((to (format agda-editor-tactics-format-record→Σ-coe
+                     r-name
+                     (format agda-editor-tactics-format-Σ-naming r-name)))
+          (from (format agda-editor-tactics-format-Σ→record-coe
+                        (format agda-editor-tactics-format-Σ-naming r-name)
+                        r-name))
+          (to∘from≈id (format agda-editor-tactics-format-to∘from≈id r-name))
+          (from∘to≈id (format agda-editor-tactics-format-from∘to≈id r-name)))
+      (s-concat
+       ;; ⟨0⟩ from∘to≈id
+       from∘to≈id
+       " : " {pp-params}→
+            "{r : " r-name-applied "} → "
+            from " (" to " r) ≡ r"
+       "\n"
+       from∘to≈id " {r = " record{xᵢ=xᵢ}ᵢ "} = refl"
+
+       "\n\n"
+
+       ;; ⟨1⟩ from∘to≈id
+       to∘from≈id
+       " : " {pp-params}→
+             "{σ : " (format agda-editor-tactics-format-Σ-naming r-name)
+                     " " pp-args "} → "
+             to " (" from " σ) ≡ σ"
+       "\n"
+       to∘from≈id " = refl"))))
+#+end_src
+
+#+RESULTS:
+: agda-editor-tactics-as-Σ-iso-proofs
+
+:Try:
+#+begin_src emacs-lisp :tangle no
+(agda-editor-tactics-as-Σ-iso-proofs (agda-editor-tactics-record-info "
+record R (A : Set) (n : ℕ) : Set where
+
+  Alias = A
+
+  id : Set → Set
+  id X = X
+
+  field
+    x : id Alias
+
+  m : ℕ
+  m = n
+
+  field
+    y : m ≡ n
+    z : A
+
+  more : Set → ℕ
+  more = λ _ → n
+"))
+#+end_src
+
+#+RESULTS:
+: R-Σ-from∘to≈id : {A : Set} {n : ℕ} → {r : R A n} → R′-as-R (R-as-R′ r) ≡ r
+: R-Σ-from∘to≈id {r = record{ x = x ; y = y ; z = z }} = refl
+:
+: R-Σ-to∘from≈id : {A : Set} {n : ℕ} → {σ : R′ A n} → R-as-R′ (R′-as-R σ) ≡ σ
+: R-Σ-to∘from≈id = refl
+
+:End:
+
+* record-to-Σ
+#+begin_src emacs-lisp
+(defun agda-editor-tactics-record-to-Σ (r) ;; Inserts results of the above 4 defuns.
+  (s-join "\n\n" (list
+                  (agda-editor-tactics-as-Σ-nested r)
+                  (agda-editor-tactics-as-Σ-to r)
+                  (agda-editor-tactics-as-Σ-from r)
+                  (agda-editor-tactics-as-Σ-iso-proofs r))))
+
+;; Give users interactive access to this function at the top level.
+(agda-editor-tactics-regonify agda-editor-tactics-record-to-Σ
+                              (agda-editor-tactics-record-info it))
+#+end_src
+
+:Try:
+record R (A : Set) (n : ℕ) : Set where
+
+  Alias = A
+
+  id : Set → Set
+  id X = X
+
+  field
+    x : id Alias
+
+  m : ℕ
+  m = n
+
+  field
+    y : m ≡ n
+    z : A
+
+  more : Set → ℕ
+  more = λ _ → n
+
+# ###############################################################################
+
+R′ : (A : Set) (n : ℕ) → Set
+R′ = λ A n → let Alias = A ; id : Set → Set ; id X = X in Σ x ∶ id Alias • let m : ℕ ; m = n in Σ y ∶ m ≡ n • Σ z ∶ A • let more : Set → ℕ ; more = λ _ → n in ⊤
+
+R-as-R′ : {A : Set} {n : ℕ} → R A n → R′ A n
+R-as-R′ = λ r → R.x r , R.y r , R.z r , tt
+
+R′-as-R : {A : Set} {n : ℕ} → R′ A n → R A n
+R′-as-R = λ{ (x , y , z , tt) → record{ x = x ; y = y ; z = z } }
+
+R-Σ-from∘to≈id : {A : Set} {n : ℕ} → {r : R A n} → R′-as-R (R-as-R′ r) ≡ r
+R-Σ-from∘to≈id {r = record{ x = x ; y = y ; z = z }} = refl
+
+R-Σ-to∘from≈id : {A : Set} {n : ℕ} → {σ : R′ A n} → R-as-R′ (R′-as-R σ) ≡ σ
+R-Σ-to∘from≈id = refl
+:End:
 
 * COMMENT Summary
   :PROPERTIES:
@@ -777,7 +945,7 @@ badge:|buy_me_a coffee|gray|https://www.buymeacoffee.com/alhassy|buy-me-a-coffe
 
 ;;; agda-editor-tactics.el ends here
 #+END_SRC
-* COMMENT MELPA Checks
+* MELPA Checks
   :PROPERTIES:
   :CUSTOM_ID: COMMENT-MELPA-Checks
   :END:
@@ -856,12 +1024,16 @@ https://github.com/riscy/melpazoid
 
     *Or:* Uncomment this section & just tangle the following.
            #+BEGIN_SRC emacs-lisp :tangle ~/melpa/recipes/agda-editor-tactics
-    (agda-editor-tactics :fetcher github :repo "alhassy/agda-editor-tactics")
+    (agda-editor-tactics :fetcher github :repo "alhassy/
+next-700-module-systems")
         #+END_SRC
 14. Ensure the recipe builds successfully:
     #+BEGIN_SRC shell :tangle no
     cd ~/melpa; rm ~/melpa/packages/agda-editor-tactics-*; make recipes/agda-editor-tactics
     #+END_SRC
+
+    #+RESULTS:
+    : • Building package agda-editor-tactics ...
 
     If you have trouble, make a file "~/bin/emacs" with
     the following which ensures “emacs” can be run
