@@ -150,20 +150,20 @@ For now,
 
     ;; ⟨2⟩ The rest of the body.  Agda allows varying, but consistent,
     ;; indentation levels, so we check indentation case by case.
-    (loop for p in rest ;; i.e., p is a chunk of lines immediately after a
-                        ;; ‘field’ keyword.
-          for indent = (agda-editor-tactics-indent (cl-first p))
-          ;; The lines sharing the same indentation are fields,
-          ;; everything else is a local definitional extension.
-          ;; These claims are true provided
-          ;; the record actually typechecks in Agda.
-          do (mapc (lambda (it)
-                     (push (list (if (= indent (agda-editor-tactics-indent it))
-                                     :field
-                                   :local)
-                                 (s-trim it))
-                           (cl-getf plist :body)))
-                   p))
+    (cl-loop for p in rest ;; i.e., p is a chunk of lines immediately after a
+                           ;; ‘field’ keyword.
+             for indent = (agda-editor-tactics-indent (cl-first p))
+             ;; The lines sharing the same indentation are fields,
+             ;; everything else is a local definitional extension.
+             ;; These claims are true provided
+             ;; the record actually typechecks in Agda.
+             do (mapc (lambda (it)
+                        (push (list (if (= indent (agda-editor-tactics-indent it))
+                                        :field
+                                      :local)
+                                    (s-trim it))
+                              (cl-getf plist :body)))
+                      p))
 
     ;; ⟨3⟩ Omit blank lines
     (setf (cl-getf plist :body)
@@ -248,9 +248,9 @@ Moreover, evaluating a ‘regonify’ sexp multiple times results
 
     ;; Arrange record as a sequence of let-clauses and Σ-quantifiers.
     (thread-last
-        (loop for (q e) in body
-              for e′ = (if (equal q :field) (s-replace ":" "∶" e) e)
-              concat (format (if (equal q :field) "Σ %s • " "let %s in ") e′))
+        (cl-loop for (q e) in body
+                 for e′ = (if (equal q :field) (s-replace ":" "∶" e) e)
+                 concat (format (if (equal q :field) "Σ %s • " "let %s in ") e′))
       (s-collapse-whitespace)
       (s-replace "in let" ";")
       (s-replace "; ;"    ";")
