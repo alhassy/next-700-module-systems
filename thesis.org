@@ -259,10 +259,10 @@ the reader.
 #+latex_header:
 
 # footecitet takes only ONE argument.
-#+latex: \def\footcitet#1{\let\thefootnote\thesidenote\OGfootnote{\fullcite{#1}}\stepcounter{sidenote}}
+#+latex: \def\footcitet#1{{\let\thefootnote\thesidenote\OGfootnote{\fullcite{#1}}\stepcounter{sidenote}}}
 
 # an honest to goodness footnote
-#+latex: \def\FOOTNOTE#1{\let\thefootnote\thesidenote\OGfootnote{#1}\stepcounter{sidenote}}
+#+latex: \def\FOOTNOTE#1{{\let\thefootnote\thesidenote\OGfootnote{#1}\stepcounter{sidenote}}}
 
 #+latex: % For some reason, this cannot be in the header!
 #+latex: \def\footnote#1{$^{\thesidenote}$\sidenote[$\,$]{\color{gray!80}\hspace{-1.2em}
@@ -433,11 +433,6 @@ the reader.
 # Now “quoteit” blocks have their contents italicised.
 #+latex_header: \newenvironment{quoteit}{\begin{quote}\itshape}{\end{quote}}
 
-#+latex_header_extra: \newtcolorbox{mybox}[2][]{colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black,title=#2,#1}
-
-# Print a local, chapter based, toc within a pleasant box
-#+MACRO: localtoc \begin{tcolorbox}[title=Chapter Contents, colback=red!5!white,  colframe=blue!50!red] \startcontents[level-1]  \printcontents[level-1]{}{0}{\setcounter{tocdepth}{5}} \end{tcolorbox}
-
 ** Minted setup -- colouring code blocks                             :ignore:
 
 #+LATEX_HEADER: \usepackage{minted}
@@ -448,6 +443,14 @@ the reader.
 #+latex: \newtcolorbox{myexamplebox}[1]{title=#1,
 #+latex: colback=red!5!white, colframe=red!75!black, colbacktitle=yellow!50!red, coltitle=red!25!black, fonttitle=\bfseries,
 #+latex: subtitle style={boxrule=0.4pt, colback=yellow!50!red!25!white}}
+
+#+latex_header: \tcbuselibrary{breakable}
+#+latex_header: \tcbuselibrary{skins}
+#+latex_header_extra: \newtcolorbox{mybox}[2][]{colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black,title=#2,#1}
+#+latex_header_extra: \newtcolorbox{myboxB}[2][]{colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,colbacktitle=red!85!black,enhanced,skin=enhanced jigsaw,breakable,title=#2,#1}
+
+# Print a local, chapter based, toc within a pleasant box
+#+MACRO: localtoc \begin{tcolorbox}[title=Chapter Contents, colback=red!5!white,  colframe=blue!50!red] \startcontents[level-1]  \printcontents[level-1]{}{0}{\setcounter{tocdepth}{5}} \end{tcolorbox}
 
 #+LATEX_HEADER: \usepackage{etoolbox}
 #+LATEX_HEADER: \def\mytitle{??? Program Code ???}
@@ -520,7 +523,7 @@ the reader.
 #+LATEX_HEADER: \definecolor{darkorange}{rgb}{1.0, 0.55, 0.0}
 #+LATEX_HEADER: \definecolor{sienna}{rgb}{0.53, 0.18, 0.09}
 #+LATEX_HEADER_EXTRA: \hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkgreen}
-
+#+LATEX_HEADER_EXTRA: \urlstyle{same}
 #+NAME: symbols for itemisation environment
 #+BEGIN_EXPORT latex
 \def\labelitemi{$\diamond$}
@@ -1854,12 +1857,30 @@ has been /tangled/ from the source of Chapter \ref{sec:contexts}.
 
 # +begin_parallel
 
-#+latex: \vspace{-.5em}
-The purpose of language is to communicate ideas that ‘live’ in our minds
+#+latex: \vspace{-2ex}
+#+latex: \begin{tcolorbox}[colback=red!5!white, colframe=red!75!black]
+\parskip0.6ex
+Chapter \ref{sec:packages_and_their_parts}
+is intentionally written in ``blog style''.
+
+It starts with an introduction to grammars and elementary type theory,
+along with a motivation of the dependent type formers Π and Σ types,
+going out of its way to explain basic ideas using analogies and
+   ‘real-life (non-computing) examples’.
+
+This chapter ends with a brief overview of dependently-typed programming with
+Agda in Section \ref{sec:what_is_DTL},
+with a focus on packaging constructs: Namespacing with src_agda[:exports
+code]{module}, record types with src_agda[:exports code]{record}, and as
+contexts with Σ-padding.
+ #+latex: \end{tcolorbox}
+
+
 #+begin_export  latex
-\begin{wrapfigure}{r}{5.6cm}
+\begin{wrapfigure}{r}{5.7cm}
 % \caption{Languages}
 % \label{fig:languages}
+\kern-3ex
 \maxsizebox{8cm}{7.5cm}{
 \smartdiagram[descriptive diagram]{
   {Syntax    , {Written text; a sequence of symbols}},
@@ -1868,12 +1889,15 @@ The purpose of language is to communicate ideas that ‘live’ in our minds
 {Semantics   , { An idea, or thing, “possible in some world”}},
 {Package     , {A language consisting of a vocabulary and sentences}},
 {Combinator  , {A translation of ideas in one language (package) into another}},
-}
-}
-\FloatBarrier
+}%
+}%
+%\FloatBarrier%
 \end{wrapfigure}
 #+end_export
-#+latex: ---conversely\FOOTNOTE{
+The purpose of language is to communicate ideas that ‘live’ in our minds
+---conversely,
+language also [[https://en.wikipedia.org/wiki/Linguistic_relativity][influences]] the kinds of thoughts we may have.@@latex:\kern0.25em%@@
+#+latex:\FOOTNOTE{
 *Linguistics.* The idea that /language limits the kinds of thoughts one can
 have/ is known as the [[https://en.wikipedia.org/wiki/Linguistic_relativity][Sapir-Whorf Hypothesis]]
 \cite{DBLP:conf/cogsci/TsengCRX16,DBLP:conf/cogsci/CibelliXAGR16,DBLP:journals/csl/MehlerPD11,DBLP:conf/ijcnn/Perlovsky09}
@@ -1886,8 +1910,7 @@ to a Suodku puzzle--- which would require tenfold the number of lines in, say,
 Python since the former is intended to work with constraint problems.  As such,
 thoughts can be had in different language, but some languages may allow thoughts
 to be more easily expressed.
-#+latex: },
-language also [[https://en.wikipedia.org/wiki/Linguistic_relativity][influences]] the kinds of thoughts we may have.
+#+latex: }
 In particular, written text captures ideas independently of the person who
 initially thought of them.  To understand the idea /behind/ a written sentence,
 people agree on /how/ sentences may be organised and /what/ content they denote from
@@ -1897,8 +1920,13 @@ is considered ‘meaningful’ if the subject and object are noun phrases that
 /denote things in a world that could exist/ and the verb is a /possible action/ by
 the subject on the object. For instance, in the previous example, there /could/ be
 a person named /Jim/ who /could/ eat an apple, and so the sentence is meaningful.
-In
-#+latex: contrast\FOOTNOTE{
+In contrast,
+ the phrase /“the colourless green apple
+kissed Jim”/ is well-formed /but not/ meaningful: The indicated action /could
+happen/, say, /in a world/ of sentient apples; however, the subject ---/the
+colourless green apple/--- /cannot possibly exist/ since a thing cannot be both
+lacking colour but also having colour at the same time.@@latex:\kern0.25em%@@
+#+latex:\FOOTNOTE{
 *Green Apples.* In our cursory glance of linguistic examples we spoke of /green
 apples/ with the implicit understanding that /green/ is an adjective that qualifies
 its subject, rather than /green apples/ being taken as an atomic name of a /species/
@@ -1915,11 +1943,7 @@ it denotes the notion of a monoid with all references to a unit dropped,
 ignored. Interestingly, this use of adjectives to “dropping details” is a common
 combinator for producing new packages from old, as we will come to see.
 #+latex: }
- the phrase /“the colourless green apple
-kissed Jim”/ is well-formed /but not/ meaningful: The indicated action /could
-happen/, say, /in a world/ of sentient apples; however, the subject ---/the
-colourless green apple/--- /cannot possibly exist/ since a thing cannot be both
-lacking colour but also having colour at the same time. Moreover, /depending on
+Moreover, /depending on
 who you ask/, the action of the previous example ---/the [...] apple kissed
 Jim/---, may be ludicrous /on the basis/ that kissing is ‘classified’ as a verb
 whose subject, in the ‘real’ world, has the ability to kiss.  As such,
@@ -1947,7 +1971,7 @@ in the figure above.
 # +latex: \end{tcolorbox}
 :end:
 
-#+latex: \begin{mybox}{Game-Play Analogy}
+#+latex: \begin{myboxB}{Game-Play Analogy}
 # The contents of Figure \ref{fig:languages} may be intimidating to the
 # The contents of the above figure may be intimidating to the uninitiated; so we
 The contents of the above figure are a bit abstract; so we reach for a /concrete/
@@ -1984,7 +2008,7 @@ the primary game ---more concretely, a game may require a roll of a die whose
 numbers /denote/, or /refer to/, players in the main game which are not expressible
 in the mini-game.  A /model/ of a game (type theory) is an interpretation of the
 game's pieces in way that the rules are true under the interpretation.
-#+latex: \end{mybox}
+#+latex: \end{myboxB}
 
 :SyntaxAdjSemantics:
 #+begin_center
@@ -2105,23 +2129,24 @@ code]{module}s, and algebraic src_agda[:exports code]{data}types (respectively).
 # +latex: \begin{fullwidth}
 {{{localtoc}}}
 # +latex: \end{fullwidth}
+# +latex: \clearpage % Does not help with the two wrong footnote numbers above
 
 ** yesmargins                                                       :ignore:
 #+latex: \yesmargins
 ** What is a language?
 
 <<sec:what_is_a_language>>
-#+latex: \label{sec:what_is_a_language}
+# +latex: \label{sec:what_is_a_language}
 
 
 #+latex: \tcbset{colback=green!10!white}
 
-In this section
+In this section @@latex:\iffalse@@
 #+begin_margin :width "0.45\\textwidth"
-The plan for this section is loosely summarised by the following diagram.
+The plan for this section is loosely summarised by the following diagram:
 #+begin_export latex
-\begin{center}
-\maxsizebox{\textwidth}{\textheight}{
+%\begin{center}
+\maxsizebox{\textwidth}{\textheight}{%
 \usetikzlibrary{shapes.geometric} % required in the preamble
 \smartdiagramset{module shape=circle,
 font=\scriptsize,
@@ -2130,22 +2155,25 @@ module minimum height=1cm,
 text width=1cm,
 circular distance=2cm,
 circular final arrow disabled=true,
-}
+}%
 \smartdiagram[circular diagram:clockwise]{English \mbox{Example}, \!\!\!\mbox{Arithmetic} \mbox{Example}, Rules, \!\!\mbox{Contexts}}}
-\end{center}
+%\end{center}
 #+end_export
 #+end_margin
+@@latex:\fi%@@
 we introduce two languages in preparation for the terminology
 and ideas of the next section. The first language, /Madlips/, will only be
 discussed briefly and is mentioned due to its inherit
-accessibility
+accessibility, @@latex:\iffalse@@
 #+begin_margin :width "0.45\\textwidth"
 Also accessible is Winterhalter's [[https://github.com/TheoWinterhalter/phd-thesis/releases/download/v1.2.1/TheoWinterhalter-PhD-v1.2.1.pdf][Formalisation and Meta-Theory of Type Theory]]
 \cite{types:Winterhalter_2020}; a delightful read with a similar ‘marginful’
-approach; it's presentation language is Coq instead of Agda. See also
+approach; its presentation language is Coq instead of Agda. See also
 \cite{types:with_computational_assumptions}.
 #+end_margin
-, thereby avoiding unnecessary domain specific clutter and making definitions
+\kern-0.4em%
+@@latex:\fi%@@
+thereby avoiding unnecessary domain specific clutter and making definitions
 clearer.
 
 # The languages are presented gently in increasing
@@ -2167,13 +2195,16 @@ citet:DBLP:journals/iandc/Chomsky59b,DBLP:journals/iandc/Chomsky59a presented in
 citet:DBLP:journals/cj/ChaplinCH73,DBLP:conf/aplas/GuoyongDF02,DBLP:journals/bmcbi/LarosBDT11,DBLP:journals/cacm/Knuth64a
 as shown below.
 
-#+latex: \FloatBarrier
+# +latex: \FloatBarrier
 # The FloatBarrier stops floats (figures are floats) from jumping over them. I
 # will need to look into passing [tbh] options to figures from org mode further.
+# The FloatBarrier apparently is not the culprit for the two wrong footnote
+# numbers above.
 
 {{{code(Madlips Grammar)}}}
 # +caption: Madlips Grammar
-#+begin_figure org
+# +begin_figure org
+#+latex: \begin{figure}[h!]
 #+latex: \label{fig:madlips-grammar}
 #+begin_center
 #+begin_src haskell
@@ -2183,7 +2214,8 @@ Object   ∷= The Subject | Subject
 Sentence ∷= Subject Verb Object
 #+end_src
 #+end_center
-#+end_figure
+# +end_figure
+#+latex: \end{figure}
 The notation ~τ ∷= c₀ | c₁ | … | cₙ~ defines the name τ as an alias for the
 collection of words ---also called /strings/ or /constructors/--- ~c₀~ or ~c₁~ or … or
 ~cₙ~; that is the bar ‘|’ is read ‘or’. The name τ is also known as a /syntactic
@@ -2242,18 +2274,18 @@ Term ∷= Zero | Succ Term | Term + Term   -- Numeric portion
       | True | False | Term ≈ Term       -- Boolean portion
 #+end_src
 Unlike the previous grammar, instead of =+ Term Term= to declare a constructor ‘+’
-that takes two =Term= values, we write the operation ~_+_~
-#+latex: \emph{infix}\FOOTNOTE{
-It is common to use underscores “_” to denote the /position/ of arguments to
+that takes two =Term= values, we write the operation ~_+_~ as an \emph{infix} operation
+in the middle, since that is a common convention for such an
+operation. Likewise, =Term ≈ Term= specifies a constructor ~_≈_~ that takes two term
+values.
+
+(With this, we are following the general convention
+to use underscores “_” to denote the /position/ of arguments to
 constructions that do not appear first in a term. For example, one writes
 =if_then_else_= to indicate that we have a construction that takes /three/
 arguments, as indicated by the number of underscores; whence in a term such as
 =if 𝓍 then 𝓎 else 𝓏= it is understood that we have the construction =if_then_else_=
-applied to the arguments 𝓍, 𝓎, and 𝓏.
-#+latex: },
-in the middle, since that is a common convention for such an
-operation. Likewise, =Term ≈ Term= specifies a constructor ~_≈_~ that takes two term
-values.
+applied to the arguments 𝓍, 𝓎, and 𝓏.)
 
 ** nomargins                                                        :ignore:
 #+latex: \nomargins
@@ -3516,7 +3548,7 @@ is a mixture of the {\sc Abbreviation} and {\sc Π-Formation} rules; the third
 one is the most involved, so we verify it as an example derivation.
 #+end_export
 # a mixture of the {\sc Π-Formation}, {\sc Base Symbol Introduction}, and {\sc Π-Elimination} rules.
-# +latex: \maxsizebox{.9\textwidth}{\textheight}{
+# +latex: \maxsizebox{.9\textwidth}{\textheight}{% MAKE THE TREE FIT!
 #+begin_tree
 + Π-Intro :: ⊢ (Π a : A • B\, a) : \Type
   - Π-Elim :: a : A ⊢ B\, a : \Type
@@ -5000,7 +5032,7 @@ designer should bundle data”.
 
 In this section, we want to discuss how “unbundled (possibly
 value-parameterised) presentations” can be used to simplify programs and
-statements about elements of shared types.  We begin with a ubqutious
+statements about elements of shared types.  We begin with a ubiquitous
 problem[fn:48] that happens in practice: Given a list ~[x₀, x₁, …, xₙ₋₁]~, how do
 we get the $k^{th}$ element of the list?  Unless $0 ≤ k < n$, we will have an
 error. The issue is clearly at the ‘bounds’, $0$ and $n$, and so, for brevity,
@@ -14456,7 +14488,7 @@ https://github.com/agda/agda/issues/4698
 
  An example of something that we couldn't do before can be found here
  https://github.com/UlfNorell/agda-prelude/blob/master/test/MonoidTactic.agda.
- It's a simple monoid solver (the Hello World of proof by reflection) that
+ This is a simple monoid solver (the Hello World of proof by reflection) that
  uses instance arguments to figure the monoid.
 
 **** Default arguments for implicits
@@ -16032,7 +16064,7 @@ _ = foldn _ refl (λ _ → cong suc)    {- No change, same proof as previous -}
 
  Repetition can be mitigated a number of ways, including typeclasses or
  metaprogramming, for example.  The latter requires possibly less thought and
- it's the topic of this article, so let's do that.  @@html: :smile: @@
+ it is the topic of this article, so let's do that.  @@html: :smile: @@
 
 ***** COMMENT Exercise                                        :html_only:
      :PROPERTIES:
@@ -16112,7 +16144,7 @@ _ = _^_ trivially-has-rid 1
  It would have been ideal if we could have defined our macro without using ~foldn~;
  I could not figure out how to do that. 😧
 
- Before one abstracts a pattern into a macro, it's useful to have a few instances
+ Before one abstracts a pattern into a macro, it is useful to have a few instances
  of the pattern beforehand. When abstracting, one may want to compare how we think
  versus how Agda's thinking. For example, you may have noticed that in the previous
  macro, Agda normalised the expression ~suc n + 0~ into ~suc (n + 0)~ by invoking the definition
@@ -21370,7 +21402,7 @@ fmap f s | null s    = s
   Subtyping is a controversial issue.
   On the one hand, it permits re-use.
   On the other hand, it makes type inference citet:type_inference_in_math rather weak.
-  It's incorporation however does allow for using records for manifest fields.
+  Its incorporation however does allow for using records for manifest fields.
   Then again, type inference is already sufficiently weak in a dependently-typed language,
   so this may not be too much of a burden.
 
