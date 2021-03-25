@@ -1,5 +1,101 @@
  # -*- eval: (my/execute-startup-blocks) -*-
 
+# HOW TO MAKE PDF: C-e C-e l l    THEN   biber thesis.bcf; time pdflatex --shell-escape thesis.tex
+# OR WHEN NARROWED:     biber thesis.bcf; time pdflatex --interaction=nonstopmode --shell-escape thesis.tex
+
+:RequiredModificationToMargin:
+#+begin_src emacs-lisp
+(org-special-block-extras-defblock margin
+  (marker nil
+          :face '(:foreground "grey" :weight bold
+          :underline "orange" :overline "orange"))
+  (color "gray!80"
+          counter "sidenote"
+          width "0.45\\textwidth")
+          ;; Width: https://tex.stackexchange.com/a/101861/69371
+  :please-inline__no-extra-newlines__k-thx-bye!
+  "Produce an HTML tooltip or a LaTeX margin note.
+
+The ‘margin’ block is intended for “one-off” (mostly optional) remarks.
+
+For notes that you want to use repeatedly, in multiple articles
+or in multiple locations in the same article, consider using
+‘documentation’ to declare them and ‘doc’ to invoke them.
+
+For LaTeX, place ‘#+resize:’ to have the remainder of a block be
+resized, for now 1.3 the margin width ---requires \\usepackage{adjustbox}.
+
+----------------------------------------------------------------------
+
+WIDTH, COUNTER, and COLOR are LaTeX specfic.
+
+When no label, marker, is used for a marginal note, we rely
+on a COUNTER, such as ‘footnote’ (default) or ‘sidenote.’
+Since HTML has no margin per se, we use “∘” as default marker:
+Users hover over it to read the marginal note.
+
+Marginal notes have their labels, markers, in black
+and the notes themselves have COLOR being grey!80.
+In Emacs, margin links appear grey with an orange tinted boarder.
+
+Regarding LaTeX, since verbatim environments do not in general work well
+as arguments to other commands, such as ‘\\marginpar’, we save the contents
+of the special block in a ‘minipage’ within a LaTeX ‘box’; then we can
+unfold such
+a box in the margin. Hence, ‘src’ blocks can appear within ‘margin’ blocks
+(•̀ᴗ•́)و
+
+The WIDTH argument is the width of the margin; i.e., the width of the
+underlying
+minipage.
+
+One could use \\maxsizebox{.25\\textwidth}{\\textheight}{ ... }
+which only resizes the content if its natural size is larger than
+the given 〈width〉 or 〈height〉.  We don't use this, since
+maxsizebox does not natively allow linebreaks
+(e.g., one would wrap contents in a tabular environment then use
+‘\\\\’, two backslashes, to request a line break; but this
+crashes if one wants to also use verbatim environments.)
+
+In LaTeX, it may be useful to invoke ‘\\dotfill’."
+  (-let [stepcounter (if marker "" (format "\\stepcounter{%s}" counter))]
+    (pcase backend
+      (`latex
+       (setq marker (or marker (format "{\\the%s}" counter))) ;; "\\circ"
+       (format "%s\\!\\!${}^{\\textnormal{%s}}$%%
+               \\newsavebox{\\OrgSpecialBlockExtrasMarginBox}%%
+               \\begin{lrbox}{\\OrgSpecialBlockExtrasMarginBox}
+               \\begin{minipage}{%s}
+               \\raggedright \\iffalse Otherwise default alignment is fully justified. \\fi
+               \\footnotesize
+               \\setminted{fontsize=\\footnotesize, breaklines} \\iffalse HACK! \\fi
+               {\\color{black}${}^{\\textnormal{%s}}$}\n\\color{%s}\\normalfont\n %s
+               \\end{minipage}
+               \\end{lrbox}%%
+               \\marginpar{\\usebox{\\OrgSpecialBlockExtrasMarginBox}}%%
+               \\hspace{-0ex}%%
+               \\global\\let\\OrgSpecialBlockExtrasMarginBox\\relax{}"
+               stepcounter
+               marker
+               width
+               marker
+               color
+               (if (s-contains? "#+resize:" contents)
+                   (s-concat
+                    (s-replace "#+resize:"
+                               "#+latex:\\maxsizebox{1.3\\textwidth}{\\textheight}{\\begin{tabular}{l}\n"
+                               (s-trim contents))
+                    "\n\\end{tabular}}")
+                 (s-trim contents))
+               ))
+      (_ (setq marker (or marker "°"))
+         (format "<abbr class=\"tooltip\" title=\"%s\">%s</abbr>&emsp13;"
+                 (org-special-block-extras--poor-mans-html-org-export contents)
+                 ; MA: FIXME: (org-export-string-as contents 'html:body-only-please)
+                 marker)))))
+#+end_src
+:End:
+
 # +latex_class_options: [notoc]
 #+latex_class_options: [oneside, 10pt]
 #+LATEX_CLASS: scrbook
@@ -40,6 +136,8 @@
 
 # Forbid LaTeX from making linebreaks
 #+macro: mbox @@latex: \mbox{@@ $1 @@latex:}@@
+
+#+latex_header: \long\def\ignore#1{}
 
 # MA: Final version should not have the following incantation active.
 #+OPTIONS: broken-links:auto
@@ -259,14 +357,14 @@ the reader.
 #+latex_header:
 
 # footecitet takes only ONE argument.
-#+latex: \def\footcitet#1{{\let\thefootnote\thesidenote\OGfootnote{\fullcite{#1}}\stepcounter{sidenote}}}
+#+latex: \def\footcitet#1{\stepcounter{sidenote}{\let\thefootnote\thesidenote\OGfootnote{\,\fullcite{#1}}}}
 
 # an honest to goodness footnote
-#+latex: \def\FOOTNOTE#1{{\let\thefootnote\thesidenote\OGfootnote{#1}\stepcounter{sidenote}}}
+#+latex: \def\FOOTNOTE#1{\stepcounter{sidenote}{\let\thefootnote\thesidenote\OGfootnote{\,#1}}}
 
 #+latex: % For some reason, this cannot be in the header!
-#+latex: \def\footnote#1{$^{\thesidenote}$\sidenote[$\,$]{\color{gray!80}\hspace{-1.2em}
-#+latex:     $^{\thesidenote}$#1}\stepcounter{sidenote}}
+#+latex: \def\footnote#1{\stepcounter{sidenote}$^{\thesidenote}$\sidenote[$\,$]{\hspace{-1.2em}
+#+latex:     $^{\thesidenote}$ \color{gray!80} #1}}
 #+latex:
 
 # https://tex.stackexchange.com/questions/159118/how-to-iterate-over-a-comma-separated-list
@@ -916,7 +1014,7 @@ library building (Chapter \ref{sec:PF}).
 #+latex: \yesmargins
 ** A middle-path with margins :ignore:
 
-#+latex: \setcounter{footnote}{1} \stepcounter{sidenote}
+#+latex: \setcounter{footnote}{0}% \stepcounter{sidenote}
 
 #+begin_center
 *A middle-path with margins*
@@ -1041,7 +1139,7 @@ Namely, my PhD thesis on ‘do-it-yourself module systems for Agda’.
 
 * Introduction
 
-#+latex: \setcounter{footnote}{1} \setcounter{sidenote}{1}
+#+latex: \setcounter{footnote}{0} \setcounter{sidenote}{0}
 
 #+latex_header: \usepackage{smartdiagram}
 
@@ -1835,13 +1933,13 @@ has been /tangled/ from the source of Chapter \ref{sec:contexts}.
  #+latex: \end{tcolorbox} \end{fullwidth}
 
 * nomargins                                                          :ignore:
-#+latex: \nomargins
+#+latex: \nomargins\clearpage
 * Packages and Their Parts
-
-#+latex: \setcounter{footnote}{1} \setcounter{sidenote}{1}
 
 <<sec:packages_and_their_parts>>
 # +latex: \label{sec:packages_and_their_parts}
+
+#+latex: \setcounter{footnote}{0} \setcounter{sidenote}{0}
 
 #+latex: \def\src{\mathtt{src}\,}
 #+latex: \def\tgt{\mathtt{tgt}\,}
@@ -2471,11 +2569,13 @@ as the formal definition of a /package/.
 A *signature*
 #+begin_margin :width "0.45\\textwidth"
 A signatures is also known as a /vocabulary/.
+
 #+latex: \newline\vspace{1em}
 /Unary Signatures/ are those with only one source sort for each function symbol
 ---i.e., the length of $\src f$ is always 1--- and so are just graphs.  Hence,
 /signatures generalise graphical sketches/.
 
+#+latex: \newline\vspace{1em}
 The slogan *Signatures ≈ Graphs* is captured by the following
 correspondence, (re)interpretation of signature components:
 + Sorts ≈ “dots on a page”; Vertices
@@ -2493,7 +2593,7 @@ correspondence, (re)interpretation of signature components:
 #+end_margin
 citet:JacobsCLTT,LogicHandbookVol5 is a tuple /(𝒮, ℱ, src, tgt)/ consisting of
 + a
-  #+latex: set\footnote{
+  #+latex: set\ignore{\footnote{
   In programming language communities \cite{10.5555/114891}, a signature is also
   known as /a programming language/ ---since our (non-generalised) signatures do
   not admit function types, they are not equivalent to $λ^{×,→}$, /a pure lambda/
@@ -2501,10 +2601,9 @@ citet:JacobsCLTT,LogicHandbookVol5 is a tuple /(𝒮, ℱ, src, tgt)/ consisting
   operations ℱ/.  Moreover, sorts are also known as /base types/, /type symbols/, or
   /type constants/ ---in constrast to ‘type constructors’, which are type-yielding
   functions.
-  #+latex: }
+  #+latex: }}
   𝒮 of /sorts/ ---the names of types---,
-+ a
-  #+latex: set\footnote{
++ a set ℱ of /(function) symbols/,@@latex:\footnote{
   Sometimes signatures are presented with dedicated sets of ‘function symbols’
   and ‘predicate, relation, symbols’. The chosen presentation avoids such a
   route since we want to use Agda, which does not distinguish between the two.
@@ -2512,31 +2611,33 @@ citet:JacobsCLTT,LogicHandbookVol5 is a tuple /(𝒮, ℱ, src, tgt)/ consisting
   symbols/ and /there are no proof terms, only terms/.  We may /simulate/ predicate
   symbols by declaring that a sort, say, ‘𝔹’ in 𝒮 models the Booleans, the
   truth-values ---then, for instance, a ‘proof term’ is a term of type 𝔹.
-  #+latex: }
-   ℱ of /(function) symbols/, and
+  }@@
+   and
 + two
-  #+latex:  mappings\footnote{
+  #+latex:  mappings\ignore{\footnote{
   Computing generally requires more sorts in comparison to traditional algebras
   in classical mathematics and so giving a signature's symbols with numbers for
   their arities is not as helpful as giving each symbol a list of its source
   sorts ---whose length then determines its arity.  For a traditional
   mathematical flavour, consult [[https://www.math.uwaterloo.ca/~snburris/htdocs/UALG/univ-algebra.pdf][/A Course in Universal Algebra/]]
   \cite{DBLP:books/daglib/0067494}.
-  #+latex: }
+  #+latex: }}
   $\src : ℱ → \List 𝒮$ and $\tgt : ℱ → 𝒮$ that associate a
   list[fn:20] of /source sorts/ and a /target sort/ with a given function symbol.
 
-*Typing* the symbols of a signature as follows
+*Typing* the symbols of a signature as follows@@latex: \iffalse@@
 #+begin_margin :width "0.45\\textwidth"
 The wedge symbol ‘∧’ is read “and”; e.g., $p ∧ q$ is read /“statements $p$ and
 $q$ are both true”/.  The symbol ‘≡’ is read “equivales”, “exactly when”, or “if
 and only if”; e.g., $p ≡ q$ is read /“p holds exactly when q holds”/.
 #+end_margin
+@@latex: \fi{}@@
 lets us treat signatures
 as general forms of ‘type theories’ since we may speak of ‘typed terms’.
 \[
 f : s₁ × ⋯ × sₙ → t \qquad≡\quad \src f = [s₁, …, sₙ] \;∧\; \tgt f = t
 \]
+@@latex: \clearpage@@
 Moreover, we regain the /typing judgements/ of the previous section by introducing
 a grammar for /terms/.
 Given a set 𝒱 of *variables*, we may define *terms*
@@ -3546,20 +3647,21 @@ judgement with these new relationships; i.e., we need to show:
 The first is just the {\sc Type-in-Type} rule, the second
 is a mixture of the {\sc Abbreviation} and {\sc Π-Formation} rules; the third
 one is the most involved, so we verify it as an example derivation.
+(We abbreviate  {\sc Declaration, Abbreviation, Weakening} by  {\sc Decl, Abv, Weak}, respectively.
+Incidentally, this \emph{practical} issue is why proof trees are seldom used for “real” work; instead
+one uses a composition of constructors of an algebraic data type ---to be fleshed out later.)
 #+end_export
 # a mixture of the {\sc Π-Formation}, {\sc Base Symbol Introduction}, and {\sc Π-Elimination} rules.
-# +latex: \maxsizebox{.9\textwidth}{\textheight}{% MAKE THE TREE FIT!
 #+begin_tree
 + Π-Intro :: ⊢ (Π a : A • B\, a) : \Type
   - Π-Elim :: a : A ⊢ B\, a : \Type
-    - Abbrev :: a : A ⊢ B : (Π a : A • \Type)
+    - Abv :: a : A ⊢ B : (Π a : A • \Type)
       - Weak :: a : A ⊢ B : A → \Type
-        - Declaration :: ⊢ B : A → \Type
+        - Decl :: ⊢ B : A → \Type
           -
     - Vars :: a : A ⊢ a : A
       -
 #+end_tree
-# +latex: }
 
 :Cute_calc:
 Moreover, notice that   =it a=  is a valid term /provided/ =a ∶ A= as shown in the
@@ -4893,7 +4995,7 @@ use⁴ (MkIt C x)
 
 # Motivating the problem ---Examples from the Wild
 
-#+latex: \setcounter{footnote}{1} \setcounter{sidenote}{1}
+#+latex: \setcounter{footnote}{0} \setcounter{sidenote}{0}
 
   #+latex_header: \newunicodechar{∥}{\ensuremath{\mid\mid}}
 
@@ -6897,7 +6999,7 @@ end
 
 <<sec:research_problem_statement>>
 # +latex: \label{sec:research_problem_statement}
-#+latex: \setcounter{footnote}{1} \setcounter{sidenote}{1}
+#+latex: \setcounter{footnote}{0} \setcounter{sidenote}{0}
 
 With the necessary background covered in Chapter
 \ref{sec:packages_and_their_parts} and motivating examples discussed in Chapter
@@ -7097,7 +7199,7 @@ contributions.
 
 <<sec:Pi-Sigma-W>>
 # +latex: \label{sec:Pi-Sigma-W}
-#+latex: \setcounter{footnote}{1} \setcounter{sidenote}{1}
+#+latex: \setcounter{footnote}{0} \setcounter{sidenote}{0}
 
 #+latex: \def\LET{\,\mathsf{let}\,}
 #+latex: \def\IN{\,\mathsf{in}\,}
@@ -9170,7 +9272,7 @@ $𝒬⟦\_{}⟧$.
 <<sec:metaprogramming_module_meta_primitives>>
 #+latex: \label{sec:metaprogramming_module_meta_primitives}
 
-#+latex: \setcounter{footnote}{1} \setcounter{sidenote}{1}
+#+latex: \setcounter{footnote}{0} \setcounter{sidenote}{0}
 
 # The Second Choice: =PackageFormer=
 
@@ -13780,7 +13882,7 @@ of /editor extension/ to /language library/.
 
 <<sec:contexts>>
 # +latex: \label{sec:contexts}
-#+latex: \setcounter{footnote}{1} \setcounter{sidenote}{1}
+#+latex: \setcounter{footnote}{0} \setcounter{sidenote}{0}
 
   # Similar to \framebox and \fbox, we get \dbox and \dashbox[width][pos]{text}
   # Also get \lbox[#layers]{text} for layered boxes and \dlbox[layers]{text} for
@@ -18816,7 +18918,7 @@ macro
 
 <<sec:conclusion>>
 # +latex: \label{sec:conclusion}
-#+latex: \setcounter{footnote}{1} \setcounter{sidenote}{1}
+#+latex: \setcounter{footnote}{0} \setcounter{sidenote}{0}
 
 ** Intro :ignore:
   The initial goal of this work was to explore how investigations into
@@ -19206,18 +19308,18 @@ dependently-typed programming with Agda.
 
 [fn:48] A variation of this problem is discussed in
         #+latex: section \ref{sec:packages_and_their_parts:sigma_pi}.
-        #+latex: \newline\vspace{1em}
-        The purpose of this section is to demonstrate
-        the related, yet different, ideas below.
-                #+latex: \newline
+        #+latex: \\[0.2ex]
+        The purpose of this section is to demonstrate the related, yet different, ideas below.
+        #+latex: \\[0.6ex]
         (1) Isomorphism is not indistinguishable from equality.
-              #+latex: \newline
+        #+latex: \\[0.3ex]
         (2) Propositional equality is not equal to definitional equality.
-              #+latex: \newline
+        #+latex: \\[0.3ex]
         (3) Equivalent presentations are not equivalent in different, real usage scenarios.
-              #+latex: \newline\vspace{1em}
-        The first two subsections here are concrete instances of the more general
-        situation and reader familiar with DTLs is encouraged to skip ahead to section
+        #+latex: \\[0.7ex]
+        The first two subsections here are concrete instances of the more
+        general situation
+        and readers familiar with DTLs are encouraged to skip ahead to section
         #+latex:        \ref{sec:examples:IsX}.
 
 
