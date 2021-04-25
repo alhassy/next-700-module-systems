@@ -9,9 +9,6 @@ open import Data.Bool
 open import Data.List using (List; _∷_; []; foldr)
 import Relation.Binary.PropositionalEquality as ≡; open ≡ using (_≡_)
 
-{- Let's ensure content of User Manual part I actually type checkes -}
-{- Feel free to comment this line out. -}
-import package-former-user-manual-i
 
 {-
 0. There are a number of common use-cases.
@@ -116,7 +113,7 @@ Monoid-test = MonoidP ⟴ test "positional arg₁" "positional arg₂" :keyword 
 𝒱-record₀ = :kind record :alter-elements (λ es → (--map (map-qualifier (λ _ → "field") it) es))
 -}
 
-{-700
+{-
 M-Set-Record = M-Set record₀
 -}
 
@@ -147,72 +144,72 @@ M-Set-Record = M-Set record₀
 Monoid-Record-derived = MonoidP record₁
 -}
 
-{-700
+{-
 Monoid-Record-field = MonoidP record₁ :discard-equations t
 -}
 
-{-700
+{-
 Monoid-Record-derived-again  = MonoidP record
 Monoid-Record-derived-again2 = MonoidP record :and-names t
 Monoid-Record-field-again    = MonoidP record :discard-equations t
 Monoid-Record-no-equationals = MonoidP record :discard-equations t :and-names t
 -}
 
-{-700
+{-
 𝒱-typeclass-attempt = record ⟴ :waist 2
 -}
 
-{-700
+{-
 M-Set-TypeClass = M-Set typeclass-attempt
 -}
 
-{-700
+{-
 𝒱-typeclass₂ = record ⟴ :waist 2 :level dec
 MonoidT₂      = MonoidP typeclass₂
 -}
 
-{-700
+{-
 MonoidT₃         = MonoidP record ⟴ :waist 3 :level dec
 -- MonoidT₃-again   = MonoidP ⟴ record ⟴ unbundling 3
 M-Set-Typeclass₂ = M-Set record ⟴ typeclass₂
 -}
 
-{-700
+{-
 -- Ill-formed in Agda: A defintion is not a parameter!
 MonoidP-Typeclass₅ = MonoidP :waist 5
 -}
 
-{-700
+{-
 MonoidT₅ = MonoidP ⟴ unbundling 5 ⟴ record
 -}
 
-{-700
+{-
 -- Intentionally erroenous attempt.
 𝒱-primed-attempt = :alter-elements (λ es → (--map (map-name (λ n → (rename-mixfix (λ np → (concat np "′")) n)) it) es))
 
 -- M-Set′-attempt = M-Set record ⟴ primed-attempt
 -}
 
-{-700
+{-
 M-Set′-attempt-raw = M-Set primed-attempt
 -}
 
-{-700
+{-
 𝒱-typeclass height (level 'dec) = record ⟴ :waist height :level level
 M-Set2-Typeclass₃ = M-Set typeclass 3 :level 'inc
 M-Set0-Typeclass₃ = M-Set typeclass 3
 -}
 
-{-700
+{-
 MR𝕏    = M-Set record ⟴ map (λ e → (map-name (λ n → (rename-mixfix (λ x → (concat x "𝕏")) n)) e))
 -}
 
-{-700
+{-
 MR𝕪    = M-Set-Record rename (λ n → (concat n "𝕪"))
 MR-oh  = M-Set-Record rename (λ n → (pcase n ("Scalar" "S") ("𝟙" "ε") (else else)))
 -}
 
-{-700
+{-
 -- MR₁₂   = M-Set-Record decorated "₁" ⟴ decorated "₂" :adjoin-retract nil
 the-MR = M-Set-Record co-decorated "the-"
 -- MR₃₄   = M-Set-Record subscripted₃ ⟴ subscripted₄ :adjoin-retract nil
@@ -220,7 +217,7 @@ MRₜₒ   = M-Set-Record renaming "Scalar to S; Vector to V; · to nice"
 NearMonoid = M-Set-Record renaming "Scalar to Carrier; Vector to Carrier; · to ×"
 -}
 
-{-700
+{-
 NearMonoid¹ = M-Set-Record single-sorted "Carrier"
 -}
 
@@ -228,46 +225,46 @@ NearMonoid¹ = M-Set-Record single-sorted "Carrier"
 ScalarTerm = M-Set data "Scalar"
 -}
 
-{-700
+{-
 M-Set-Sorts = M-Set record ⟴ sorts
 -}
 
-{-700
+{-
 MonoidSignature = M-Set-Record generated (λ e → (and (s-contains? "Scalar" (element-type e)) (not (s-contains? "Vector" (element-type e)))))
 -}
 
-{-700
+{-
 MonSig = M-Set-Record signature
 -}
 
-{-700
+{-
 𝒱-empty-module = :kind module :level none :waist 999
 Neato = M-Set empty-module
 -}
 
 {- A module where the elements are all parameters -}
-open Neato using ()
+-- open Neato using ()
 
-{-700
+{-
 M-Set-R = M-Set record
 M-Set-R₁ = M-Set-R ⟴ open (λ x → (concat x "₁"))
 -}
 
-{-700
+{-
 M-Set-R-SV = M-Set-R opening "Scalar to S; Vector to V"
 -}
 
-{-700
+{-
 Algebra  = M-Set record
 Algebra′ = Algebra open-with-decoration "′"
 Hom  = Algebra hom
 Hom² = Algebra hom ⟴ renaming "map₁ to scalar; pres-𝟙 to unity" :adjoin-retract nil
 -}
 
-_ : {Src Tgt : Algebra} → Hom² Src Tgt → Algebra.Scalar Src → Algebra.Scalar Tgt
-_ = Hom².scalar
+-- _ : {Src Tgt : Algebra} → Hom² Src Tgt → Algebra.Scalar Src → Algebra.Scalar Tgt
+-- _ = Hom².scalar
 
-{-700
+{-
 -- regular expression test --
 
 crazy-name-[]-+-\-^-*-? = M-Set extended-by "_+_ : Scalar; _*_ : Vector; ^ : Set; [_] : Set" :adjoin-retract nil ⟴ record
@@ -286,6 +283,6 @@ crazy-name-test  = Pointed map (λ e → (map-name (λ n → (concat n "/crazy-n
 crazy-name-test2 = crazy-name-test map (λ e → (map-name (λ n → (concat n "+2")) e)) ⟴ record
 -}
 
-{-700
+{-
 M-Set-R′ = M-Set-R open-with-decoration "′"
 -}

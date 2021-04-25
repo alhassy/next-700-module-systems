@@ -306,9 +306,7 @@ Tedium is for machines; interesting problems are for people.
 <li><a href="#Work">10. <span class="done Future">Future</span> &amp; Related Work</a>
 <ul>
 <li><a href="#Features-Wish-list">10.1. Features Wish-list</a></li>
-<li><a href="#Equality--From---to---to---">10.2. Equality: From ≡ to ≈ to ≈′</a></li>
-<li><a href="#PackageFormers-with-variational-parameters">10.3. PackageFormers with variational parameters</a></li>
-<li><a href="#Related-Work">10.4. Related Work</a></li>
+<li><a href="#Related-Work">10.2. Related Work</a></li>
 </ul>
 </li>
 <li><a href="#Works-to-look-into">11. <span class="todo TODO">TODO</span> Works to look into</a></li>
@@ -10782,85 +10780,9 @@ via our 5 meta-primitives: preamble, kind, waist, waist-strings, level, alter-el
 </div>
 
 <div id="outline-container-orge4204c0" class="outline-3">
-<h3 id="Equality--From---to---to---"><span class="section-number-3">10.2</span> Equality: From ≡ to ≈ to ≈′</h3>
-<div class="outline-text-3" id="text-Equality--From---to---to---">
-<p>
-One may start from a basic ≡-equality, then <b>mechanically</b> move to a setoid one
-by including congruence laws.
-</p>
-<ul class="org-ul">
-<li>Interestingly, sometimes such constructions are invariant under equivalent equalities.
-<ul class="org-ul">
-<li><a href="http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Props.Lattice.html#2531">http://www.cse.chalmers.se/~nad/listings/lib/Algebra.Props.Lattice.html#2531</a></li>
-</ul></li>
-</ul>
-</div>
-</div>
-
-<div id="outline-container-org34b9593" class="outline-3">
-<h3 id="PackageFormers-with-variational-parameters"><span class="section-number-3">10.3</span> PackageFormers with variational <a href="#org2611dd5">parameters</a></h3>
-<div class="outline-text-3" id="text-PackageFormers-with-variational-parameters">
-<ul class="org-ul">
-<li class="off"><code>[&#xa0;]</code> For now, PackageFormer's have no other <a href="#org2611dd5">parameters</a> besides the variation symbol &#x2014;not even that atm.</li>
-</ul>
-
-<p>
-Allow package formers to have explicit <code>Variation</code> <a href="#org2611dd5">parameters</a>; but
-      how do we then deal with nested invocations? What are the uses of
-      having differing invocations?
-</p>
-
-<p>
-For example,
-</p>
-<div class="org-src-container">
-<pre class="src src-agda"><span style="color: #ba2f59; font-weight: bold;">PackageFormer LawfullyPointed</span> (<span style="color: #0000cd;">v</span> :<span style="color: #ba2f59; font-weight: bold;"> Variation</span>) : <span style="color: #3a81c3; font-weight: bold;">Set</span> <span style="color: #3a81c3; font-weight: bold;">where</span>
-   <span style="color: #0000cd;">point</span> :<span style="color: #ba2f59; font-weight: bold;"> LawfullyPointed</span> <span style="color: #0000cd;">v</span>
-   <span style="color: #0000cd;">law</span>   :<span style="color: #ba2f59; font-weight: bold;"> LawfullyPointed FOL</span> <span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Concrete variation -}</span>
-
-</pre>
-</div>
-<p>
-Would elaborate to something like:
-</p>
-<div class="org-src-container">
-<pre class="src src-agda">       <span style="color: #3a81c3; font-weight: bold;">data</span><span style="color: #ba2f59; font-weight: bold;"> LP-Term (Vars</span> : <span style="color: #3a81c3; font-weight: bold;">Set</span>) : <span style="color: #3a81c3; font-weight: bold;">Set</span> <span style="color: #3a81c3; font-weight: bold;">where</span>
-        <span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Abstract fields from constituents of packageformer -}</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">        Point    : LP-Term</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">        </span><span style="color: #2aa1ae; background-color: #ecf3ec;">{-</span><span style="color: #ba2f59; font-weight: bold;"> Fragment</span> <span style="color: #0000cd;">of</span> <span style="color: #0000cd;">first</span> <span style="color: #0000cd;">order</span> <span style="color: #0000cd;">logic</span> <span style="color: #0000cd;">term</span> <span style="color: #0000cd;">formation</span> -}
-        _&#8242;       :<span style="color: #ba2f59; font-weight: bold;"> Vars</span> &#8594;<span style="color: #ba2f59; font-weight: bold;"> LP-Term</span> <span style="color: #2aa1ae; background-color: #ecf3ec;">{- </span><span style="color: #2aa1ae; background-color: #ecf3ec;">Injection of vars as terms -}</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">        _&#8776;_      : LP-Term &#8594; LP-Term &#8594; LP-Term</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">        &#8704;&#8242; &#8707;&#8242;    : (Vars &#8594; LP-Term) &#8594; LP-Term</span>
-
-<span style="color: #2aa1ae; background-color: #ecf3ec;">       record LP : Set&#8321; where</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">     constructor _,_,_</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">     field</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">        Carrier : Set</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">        point   : Carrier</span>
-<span style="color: #2aa1ae; background-color: #ecf3ec;">        law     : LP-Term Carrier</span>
-</pre>
-</div>
-
-<p>
-With the following example uses.
-</p>
-<div class="org-src-container">
-<pre class="src src-agda">     <span style="color: #ba2f59; font-weight: bold;"> Contractable</span> :<span style="color: #ba2f59; font-weight: bold;"> (A</span> : <span style="color: #3a81c3; font-weight: bold;">Set</span>) (<span style="color: #0000cd;">a</span> :<span style="color: #ba2f59; font-weight: bold;"> A</span>) &#8594;<span style="color: #ba2f59; font-weight: bold;"> LP</span>
-     <span style="color: #ba2f59; font-weight: bold;"> Contractable A</span> <span style="color: #0000cd;">a</span> <span style="color: #3a81c3; font-weight: bold;">=</span> <span style="color: #ba2f59; font-weight: bold;"> A</span> , <span style="color: #0000cd;">a</span> , &#8704;&#8242; (<span style="color: #3a81c3; font-weight: bold;">&#955;</span> <span style="color: #0000cd;">x</span> &#8594; <span style="color: #0000cd;">x</span> &#8776; <span style="color: #0000cd;">a</span> &#8242;)
-
-     <span style="color: #ba2f59; font-weight: bold;"> Indistinguishable</span> :<span style="color: #ba2f59; font-weight: bold;"> (A</span> : <span style="color: #3a81c3; font-weight: bold;">Set</span>)  &#8594; <span style="color: #ba2f59; font-weight: bold;"> LP</span> <span style="color: #3a81c3; font-weight: bold;">hiding</span> <span style="color: #0000cd;">point</span>
-     <span style="color: #ba2f59; font-weight: bold;"> Indistinguishable A</span> <span style="color: #0000cd;">a</span> <span style="color: #3a81c3; font-weight: bold;">=</span> <span style="color: #ba2f59; font-weight: bold;"> A</span> , &#8704;&#8242; (<span style="color: #3a81c3; font-weight: bold;">&#955;</span> <span style="color: #0000cd;">x</span> &#8594; &#8704;&#8242; (<span style="color: #3a81c3; font-weight: bold;">&#955;</span> <span style="color: #0000cd;">y</span> &#8594; <span style="color: #0000cd;">x</span> &#8776; <span style="color: #0000cd;">y</span>))
-</pre>
-</div>
-<p>
-Where <code>PF hiding c</code> is the largest sub-PackageFormer of <code>PF</code> with constituent <code>c</code>
-removed &#x2014;in particular, constituents that depend on <code>c</code> would also be dropped.
-</p>
-</div>
-</div>
 
 <div id="outline-container-org0e90f41" class="outline-3">
-<h3 id="Related-Work"><span class="section-number-3">10.4</span> Related Work</h3>
+<h3 id="Related-Work"><span class="section-number-3">10.2</span> Related Work</h3>
 <div class="outline-text-3" id="text-Related-Work">
 <ul class="org-ul">
 <li><p>
@@ -10915,105 +10837,6 @@ between logics.
 </div>
 <p>
 
-<h1 class='org-ref-bib-h1'>Bibliography</h1>
-<ul class='org-ref-bib'><li><a id="agda_overview">[agda_overview]</a> Ana Bove, Peter Dybjer & Ulf Norell, A Brief Overview of Agda -- A Functional Language  with Dependent Types, 73-78, in in: Theorem Proving in Higher Order Logics, 22nd
-                  International Conference, TPHOLs 2009, Munich,
-                  Germany, August 17-20, 2009. Proceedings, edited by (2009)<br> </li>
-<li><a id="tpc">[tpc]</a> .<br> </li>
-<li><a id="little_theories">[little_theories]</a> Farmer, , Guttman, & Javier Thayer, Little theories, 567-581, in in: Automated Deduction--CADE-11, edited by Kapur, Springer Berlin Heidelberg (1992)<br> </li>
-<li><a id="mathscheme">[mathscheme]</a>
- Jacques Carette AND William M. Farmer AND Filip
-                  Jeremic AND Vincent Maccio AND Russell O'Connor AND
-                  Quang M. Tran,
- The MathScheme Library: Some Preliminary
-                  Experiments,
- 2011,
- arXiv,
- 1106.1862v1,
- cs.MS
-<br> </li>
-</ul>
-</p>
-<div id="outline-container-org792b17f" class="outline-2">
-<h2 id="Works-to-look-into"><span class="section-number-2">11</span> <span class="todo TODO">TODO</span> Works to look into</h2>
-<div class="outline-text-2" id="text-Works-to-look-into">
-<ul class="org-ul">
-<li class="off"><code>[&#xa0;]</code> Bart Jacobs' book <i>Categorical Logic and Type Theory</i>.
-<ul class="org-ul">
-<li><b>Display maps</b></li>
-<li>Chapter 10, section 10.4</li>
-</ul></li>
 
-<li class="off"><code>[&#xa0;]</code> <p>
-Mei — A Module System for Mechanized Mathematics Systems
-</p>
-<ol class="org-ol">
-<li>Xu</li>
-</ol>
-<p>
-In: J. Carette and F. Wiedijk, eds., Proceedings of Programming Languages for Mechanized Mathematics (PLMMS 2007), 17 pp., Hagenburg, Austria, June 29-30, 2007.
-</p></li>
-
-<li class="off"><code>[&#xa0;]</code> <p>
-Formalizing mathematical knowledge as a biform theory graph: A case study Abstract PDF
-</p>
-<ol class="org-ol">
-<li>Carette and W. M. Farmer</li>
-</ol>
-<p>
-In: H. Geuvers, M. England, O. Hasan, F. Rabe, and O. Teschke, eds., Intelligent Computer Mathematics (CICM 2017), Lecture Notes in Computer Science (LNCS), 10383:9–24, 2017 (without appendices). Preprint with appendices: arXiv: 1704.02253 (43 pp.), 2017.
-</p></li>
-
-<li class="off"><code>[&#xa0;]</code> J. Carette and W. M. Farmer. High-level theories. In A. Autexier et al., editor,
-Intelligent Computer Mathematics, volume 5144 of Lecture Notes in Computer
-Science, pages 232–245. Springer-Verlag, 2008.</li>
-
-<li class="off"><code>[&#xa0;]</code> CoFI (The Common Framework Initiative). Casl Reference Manual. LNCS Vol.
-2960 (IFIP Series). Springer-Verlag, 2004.</li>
-
-<li class="off"><code>[&#xa0;]</code> W. M. Farmer. Biform theories in Chiron. In M. Kauers, M. Kerber, R. R.
-Miner, and W. Windsteiger, editors, Towards Mechanized Mathematical Assistants,
-volume 4573 of Lecture Notes in Computer Science, pages 66–79. Springer-Verlag,
-<ol class="org-ol">
-<li></li>
-</ol></li>
-
-<li class="off"><code>[&#xa0;]</code> HetsCasl Online Tool: <a href="http://rest.hets.eu/">http://rest.hets.eu/</a></li>
-
-<li class="off"><code>[&#xa0;]</code> W. M. Farmer, J. D. Guttman, and F. J. Thayer. IMPS: An Interactive Mathematical Proof System. Journal of Automated Reasoning, 11:213–248, 1993.</li>
-
-<li class="off"><code>[&#xa0;]</code> <p>
-Meaning formulas for syntax-based mathematical algorithms PDF
-</p>
-<ol class="org-ol">
-<li>M. Farmer</li>
-</ol>
-<p>
-In: T. Kutsia and A. Voronkov, eds., SCSS 2014 (6th International Symposium on Symbolic Computation in Software Science), EasyChair Proceedings in Computing (EPiC), 30:10–11, 2014.
-Extended Abstract.
-</p></li>
-
-<li class="off"><code>[&#xa0;]</code> Richard D. Jenks and Robert S. Sutor. AXIOM: The Scientific Computation
-System. Springer-Verlag, 1992.</li>
-
-<li class="off"><code>[&#xa0;]</code> Douglas R. Smith. Constructing specification morphisms. Journal of Symbolic
-Computation, 15:5–6, 1993.</li>
-
-<li class="off"><code>[&#xa0;]</code> <p>
-Douglas R. Smith. Mechanizing the development of software. In M. Broy and
-</p>
-<ol class="org-ol">
-<li>Steinbrueggen, editors, Calculational System Design, Proceedings of the NATO</li>
-</ol>
-<p>
-Advanced Study Institute, pages 251–292. IOS Press, Amsterdam, 1999.
-</p></li>
-
-<li class="off"><code>[&#xa0;]</code> Wikipedia “List of algebraic structures”.
-<a href="http://en.wikipedia.org/wiki/List%20of%20algebraic%20structures">http://en.wikipedia.org/wiki/List%20of%20algebraic%20structures</a>.</li>
-</ul>
-</div>
-</div>
-</div>
 </body>
 </html>
