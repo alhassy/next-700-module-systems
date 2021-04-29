@@ -3,7 +3,7 @@
 # (progn (org-beamer-export-to-pdf) (switch-to-buffer "phd-defense.pdf"))
 # M-x org-beamer-export-to-pdf
 #+TITLE: Do-it-yourself Module Systems
-#+subtitle: Extending Dependently-Typed Languages to Implement \newline Module System Features In The Core Language \newline\vspace{1em} *PhD Defence*
+#+subtitle: Extending Dependently-Typed Languages to Implement \newline Module System Features In The Core Language \newline\newline\alert{PhD Defence}
 #+AUTHOR: Musa Al-hassy
 #+date: April 28, 2021
 #+OPTIONS: H:2 toc:nil d:nil
@@ -13,7 +13,8 @@
 # ("" "titletoc" nil) ⇒ causes problems!
 # (pop org-latex-default-packages-alist)
 
-
+# Super simple self-contained “Beamer with notes”: https://gist.github.com/andrejbauer/ac361549ac2186be0cdb
+#
 #+latex_header_extra: % These slides also contain speaker notes. You can print just the slides,
 #+latex_header_extra: % just the notes, or both, depending on the setting below. Comment out the want
 #+latex_header_extra: % you want.
@@ -21,6 +22,35 @@
 #+latex_header_extra: %\setbeameroption{hide notes} % Only slides
 #+latex_header_extra: %\setbeameroption{show only notes} % Only notes
 # +latex_header_extra: \setbeameroption{show notes on second screen=right} % Both
+
+
+# [Ch5] the prototype ---even though it is useful by itself--- acts as a guide
+# for features that would be ideal to implement in a DTL capable of supporting
+# them as a library.
+
+:Ch8_nice:
+  The initial goal of this work was to explore how investigations into
+  packaging-up-data ---and language extension in general--- could benefit from
+  mechanising tedious patterns, thereby reinvigorating the position of universal
+  algebra within computing. Towards that goal, we have decided to create an
+  editor extension that can be used, for instance, to quickly introduce
+  universal algebra constructions for the purposes of “getting things done” in a
+  way that does not force users of an interface to depend on features they do
+  not care about ---the so-called Interface Segregation Principle.  Moreover, we
+  have repositioned the prototype from being an auxiliary editor extension to
+  instead being an in-language library and have presented its key insights so
+  that it can be implemented in other dependently-typed settings besides Agda.
+
+  [...]
+
+   In dependently-typed settings (DTS), it is common practice to operate on
+ packages ---by renaming them, hiding parts, adding new parts, etc.--- and the
+ frameworks presented in this thesis show that it is indeed possible to treat
+ packages nearly as first-class citizens “after the fact” even when a language
+ does not assign them such a status. The techniques presented show that this
+ approach is feasible as an in-language library for DTS as well as for any
+ highly customisable and extensible text editor.
+:end:
 
 * Beamer Setup                                                       :ignore:
 # +BEAMER_THEME: Rochester
@@ -103,7 +133,7 @@
 #+latex_header: % U+27F4: RIGHT ARROW WITH CIRCLED PLUS
 
 * What is the problem?
-** COMMENT Overview
+** Overview
 
 With a bit of reflection, we can obtain
 
@@ -123,17 +153,19 @@ With a bit of reflection, we can obtain
    | actions        | infinite streams            |
    #+latex: \end{small}
 
+:Nope:
 #+begin_export latex
 \setlength{\unitlength}{1cm}
 \begin{picture}(0,0)(0,0)
 
 \pause
 \put(.5,5){\colorbox{yellow}{\Large The combinators presented in the thesis were guided}}
-\put(.5,4.4){\colorbox{yellow}{\Large \emph{not} by theortetial concerns on the algebraic nature}}
+\put(.5,4.4){\colorbox{yellow}{\Large \emph{not} by theoretically concerns on the algebraic nature}}
 \put(.5,3.8){\colorbox{yellow}{\Large of containers but rather on the}}
 \put(.5,3.2){\colorbox{yellow}{\Large \textbf{practical needs of actual users working in DTLs}}}
 \end{picture}
 #+end_export
+:End:
 
 ** COMMENT Research Question
 :PROPERTIES:
@@ -214,6 +246,26 @@ e, τ ::= α          -- base types and constants
 :End:
 
 # (progn (org-beamer-export-to-pdf) (switch-to-buffer "committee.pdf"))
+** What does a “module, package, context” look like?
+
+#+latex:  \note[item]{Notice that the keyword “field” is “going down” the ‘waist’ each time.}
+
+#+begin_src agda :tangle yes
+record Monoid₂
+         (Carrier : Set)
+         (_⨾_     :  Carrier → Carrier → Carrier) : Set where
+  field
+         Id      :  Carrier
+         lid     : ∀ {x} →   Id ⨾ x  ≡  x
+         rid     : ∀ {x} →   x ⨾ Id  ≡  x
+         assoc   : ∀ {x y z} →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+#+end_src
+
+\vspace{1em}
+
+Monoids model /unityped composition/: Sticking words on a page,
+sequencing programs, following instructions.
+
 ** What is /in a/ monoid?
 
 People work with monoids at various levels of *exposure* …
@@ -371,13 +423,15 @@ record Monoid₃
 #+latex:  \note[item]{These coercions can be derived \textbf{mechanically}}
 
 # \pause
-#+latex:  \note[item]{What about other \emph{natural constructions} on mathematical theories (and the  associated relationships)?}
-+ Extensions?
-  #+latex:  \note[item]{Extensions  ---“A group is a monoid with an extra…” }
-+ Exclusions?
-  #+latex:  \note[item]{Exclusions  ---“A semigroup is a \emph{non}-unital monoid.” }
+# +latex:  \note[item]{What about other \emph{natural constructions} on mathematical theories (and the  associated relationships)?}
+#+latex:  \note[item]{Different levels of unbundling are “natural” in constructions in universal algebra.}
 + Termtypes?
   #+latex:  \note[item]{Termtypes   ---“Lists are just the free \emph{monoid over} a given type.” }
+  #+latex:  \note[item]{But what is a monoid?}
++ Extensions?
+  #+latex:  \note[item]{Extensions  ---“A monoid is a semigroup \emph{with} an identity” }
++ Exclusions?
+  #+latex:  \note[item]{Exclusions  ---“A semigroup is a \emph{non}-unital monoid.” }
 + Pushouts: Name-relevant unions?
   #+latex:  \note[item]{Pushouts ---“A monoid is an unital magma along with a semigroup \emph{such that} they \textbf{share} the same carrier and operation.”}
 
@@ -499,7 +553,7 @@ Monoid-record-with-extensions-as-fields     =  MonoidP record₁ :discard-equati
 #+begin_src haskell
   PackageFormer MonoidP : Set₁ where
     Carrier : Set
-    _⨾_       : Carrier → Carrier → Carrier
+    _⨾_     : Carrier → Carrier → Carrier
     Id      : Carrier
     assoc   : ∀ {x y z} →   (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
     leftId  : ∀ {x} →   Id ⨾ x  ≡  x
@@ -615,13 +669,14 @@ record = :kind record
 # +ATTR_LATEX: :height 0.75\paperheight
 # [[file:~/thesis-proposal/pushouts.png]]
 
-#+latex:  \note[item]{Besides the meta-primitives, we also have this 𝒱 DSL that allows users to extend the framework using the entirety of common lisp!}
+#+latex:  \note[item]{Besides the meta-primitives, we also have this 𝒱 DSL that allows users to extend the framework using Lisp!}
 #+latex:  \note[item]{“union” is another example from the user manual}
-#+latex:  \note[item]{In fact, to show that the meta-primitives are deserving of their name, the user manual contains numerous dervied package transformers...}
+#+latex:  \note[item]{In fact, to show that the meta-primitives are deserving of their name, the user manual contains numerous derived package transformers...}
 
-#+LaTeX: \setminted[common-lisp]{fontsize=\tiny, breaklines}
+#+LaTeX: \setminted[common-lisp]{fontsize=\small, breaklines}
 #+BEGIN_SRC emacs-lisp
-(𝒱 union pf (renaming₁ "") (renaming₂ "") (adjoin-retract₁ t) (adjoin-retract₂ t)
+(𝒱 union pf (renaming₁ "") (renaming₂ "")
+            (adjoin-retract₁ t) (adjoin-retract₂ t)
  = :alter-elements (λ es →
      (let* ((p (symbol-name 'pf))
             (es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
@@ -634,14 +689,14 @@ record = :kind record
 #+END_SRC
 #+LaTeX: \setminted[common-lisp]{fontsize=\footnotesize, breaklines}
 
-#+latex: \centerline{\alert{Combinators are motivated from existing, real-world, DTL libraries!}}
+#+latex: \vspace{.3em}\centerline{\alert{Combinators are motivated from existing, real-world, DTL libraries!}}
 
 ** Generated 200+ theories using the Lisp metaprogramming framework ---the MathScheme library
 
 # +ATTR_LATEX: :width 0.75\paperwidth :height 0.75\paperheight
 # [[file:~/thesis-proposal/200+specs.png]]
 
-#+latex:  \note[item]{Here are 200 tese, readable, specficiations that \emph{we want to write}}
+#+latex:  \note[item]{Here are 200 terse, readable, specficiations that \emph{we want to write}}
 #+latex:  \note[item]{They elaborate into 1500 lines of typechecked Agda that \emph{we want to use}}
 #+latex:  \note[item]{It's a useful engineering result, to say the least}
 
@@ -1110,13 +1165,13 @@ Monoid :waist 1  =  λ C : Set • Σ _⨾_ : C → C → C • Σ Id : C • �
 \pause
 #+latex:  \note[item]{With *two* parameters, we have a /‘solution’/ to the additive-or-multiplicative-monoid-problem!}
    #+begin_src haskell :tangle no
-Monoid :waist 2  :  Π C : Set) • Π _⨾_ : C → C → C • Set
+Monoid :waist 2  :  Π C : Set • Π _⨾_ : C → C → C • Set
 Monoid :waist 2  =  λ C : Set • λ _⨾_ : C → C → C • Σ Id : C • …
 #+end_src
 
 ** Example Instance ---Additive Naturals
 
-#+latex:  \note[item]{Nice formations and introduction rules for contexts}
+#+latex:  \note[item]{Nice formation and introduction rules for contexts}
 
 #+begin_src haskell
                           ℕ₊  : (Monoid ℓ₀ :waist 1) ℕ
@@ -1306,11 +1361,11 @@ limitations of the host language.
  newtype Any = Any { getAny :: Bool } -- for ~Monoid~ instance based on disjunction
  \end{code}
 
-* GADTs are Contexts too!
+* Datatypes for ASTs are also Contexts too!
 
-** From Contexts to GADTS
+** From Contexts to Syntax Definitions
 
-#+latex:  \note[item]{With a but of massaging, the monoid context can be transformed into a fixedpoint of a type constructor, which is an algebraic data type}
+#+latex:  \note[item]{With a bit of massaging, the monoid context can be transformed into a fixedpoint of a type constructor, which is an algebraic data type}
 #+latex:  \note[item]{We can wrap up this massaging into an Agda macro}
 #+latex:  \note[item]{Let's see it in action...}
 
@@ -1614,7 +1669,7 @@ pattern  ∅
     = μ (inj₂ (inj₁ tt))
 #+end_src
 
-** Summary: Contexts ↦ {Records, ADTs}
+** Summary: Contexts ↦ {Records, Syntax}
 
 #+latex: \centering
 
@@ -1776,6 +1831,11 @@ data 𝔻 : Set where s : 𝔻; n : 𝔻 → 𝔻
 
 # +end_scriptsize
 ** Contributions
+
+#+latex:  \note[item]{Contexts ≈ Generalised ML Types}
+#+latex:  \note[item]{waist : Module Type → Module Type}
+#+latex:  \note[item]{termtype : Module Type → An implementation of that module type}
+
 0. [@0] Identify the \alert{module design patterns} used by DTL practitioners
 
 1. Demonstrate that there is an expressive yet minimal set of
