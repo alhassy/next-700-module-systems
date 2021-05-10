@@ -29,6 +29,7 @@ A super simple description of this work, for the layman, can be found [here](htt
 <h2> Prototype and a Preprint </h2>
 
 ◈ [Prototype](./prototype/package-former.html)
+◈ [MathScheme: 200+ Math Theories in (Clickable) Agda](./prototype/html/math-scheme-generated.html)
 ◈ [A Language Feature to Unbundle Data at Will](./papers/gpce19_a_language_feature_to_unbundle_data_at_will.pdf)
 ◈ [Slides](https://alhassy.github.io/next-700-module-systems/papers/GPCE2019_unbundle_slides.pdf)
 ◈ [Youtube](https://youtu.be/xLHgN0dOZ6E)
@@ -37,7 +38,7 @@ A super simple description of this work, for the layman, can be found [here](htt
 ![](./papers/gpce19-mousing-over.png)
 
 <h2> The Context Library ---An Agda Counterpart of the PackageFormer Prototype </h2>
-◈ [PhD Thesis](./thesis.pdf)
+◈ [PhD Thesis](./thesis.pdf) ; [Youtube](https://youtu.be/hTQG2QbBPhA)
 ◈ [Slides](./phd-defence.pdf)
 ◈ AIM 2020: [Youtube](https://youtu.be/lSIFM5lhnWc); [Slides](./diy/agda-implementors-meeting-2020.html)
 
