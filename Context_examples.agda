@@ -244,3 +244,30 @@ module termtype[Collection]≅List where
   from∘to : ∀ {E} (e : ℂ E) → from (to e) ≡ e
   from∘to (e :: es) = cong (e ::_) (from∘to es)
   from∘to ∅         = refl
+
+-- 0: The useful structure
+Action  : Context ℓ₁
+Action  = do Value    ← Set
+             Program  ← Set
+             run      ← (Program → Value → Value)
+             End {ℓ₀}
+
+-- 1: Its termtype and syntactic sugar
+𝔸𝕔𝕥𝕚𝕠𝕟 : Set → Set
+𝔸𝕔𝕥𝕚𝕠𝕟 X = termtype ((Action :waist 2) X)
+
+pattern _·_ head tail = μ (inj₁ (tail , head , tt))
+
+-- 2: Notice that it's just streams
+record Stream (X : Set) : Set   where
+  coinductive {- Streams are characterised extensionally -}
+  field
+    hd : X
+    tl : Stream X
+
+open Stream
+
+-- Here's one direction
+view : ∀ {I} → 𝔸𝕔𝕥𝕚𝕠𝕟 I → Stream I
+hd (view (t · h)) = t
+tl (view (t · h)) = view h

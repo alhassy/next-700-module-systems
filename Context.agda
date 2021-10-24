@@ -1,13 +1,12 @@
--- 
--- The Next 700 Module Systems (•̀ᴗ•́)و Musa Al-hassy ⟨2021-01-22 Friday 16:25:19⟩
--- 
+--
+-- The Next 700 Module Systems (•̀ᴗ•́)و Musa Al-hassy ⟨2021-04-27 Tuesday 18:00:12⟩
 -- This file was mechanically generated from a literate program.
 -- Namely, my PhD thesis on ‘do-it-yourself module systems for Agda’.
--- 
+--
 -- https://alhassy.github.io/next-700-module-systems/thesis.pdf
--- 
+--
 -- There are “[[backward][references]]” to the corresponding expository text.
--- 
+--
 -- Agda version 2.6.1.2; Standard library version 1.2
 
 open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc; zero to ℓ₀)

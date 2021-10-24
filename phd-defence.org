@@ -1,0 +1,1964 @@
+# C-c C- e l O
+
+# (progn (org-beamer-export-to-pdf) (switch-to-buffer "phd-defense.pdf"))
+# M-x org-beamer-export-to-pdf
+#+TITLE: Do-it-yourself Module Systems
+#+subtitle: Extending Dependently-Typed Languages to Implement \newline Module System Features In The Core Language \newline\newline\alert{PhD Defence}
+#+AUTHOR: Musa Al-hassy
+#+date: April 28, 2021
+#+OPTIONS: H:2 toc:nil d:nil
+# +ATTR_LATEX: :width 0.9\paperwidth :height 0.85\paperheight
+#
+
+# ("" "titletoc" nil) ⇒ causes problems!
+# (pop org-latex-default-packages-alist)
+
+# Super simple self-contained “Beamer with notes”: https://gist.github.com/andrejbauer/ac361549ac2186be0cdb
+#
+#+latex_header_extra: % These slides also contain speaker notes. You can print just the slides,
+#+latex_header_extra: % just the notes, or both, depending on the setting below. Comment out the want
+#+latex_header_extra: % you want.
+#+latex_header_extra:
+#+latex_header_extra: %\setbeameroption{hide notes} % Only slides
+#+latex_header_extra: %\setbeameroption{show only notes} % Only notes
+# +latex_header_extra: \setbeameroption{show notes on second screen=right} % Both
+
+
+# [Ch5] the prototype ---even though it is useful by itself--- acts as a guide
+# for features that would be ideal to implement in a DTL capable of supporting
+# them as a library.
+
+:Ch8_nice:
+  The initial goal of this work was to explore how investigations into
+  packaging-up-data ---and language extension in general--- could benefit from
+  mechanising tedious patterns, thereby reinvigorating the position of universal
+  algebra within computing. Towards that goal, we have decided to create an
+  editor extension that can be used, for instance, to quickly introduce
+  universal algebra constructions for the purposes of “getting things done” in a
+  way that does not force users of an interface to depend on features they do
+  not care about ---the so-called Interface Segregation Principle.  Moreover, we
+  have repositioned the prototype from being an auxiliary editor extension to
+  instead being an in-language library and have presented its key insights so
+  that it can be implemented in other dependently-typed settings besides Agda.
+
+  [...]
+
+   In dependently-typed settings (DTS), it is common practice to operate on
+ packages ---by renaming them, hiding parts, adding new parts, etc.--- and the
+ frameworks presented in this thesis show that it is indeed possible to treat
+ packages nearly as first-class citizens “after the fact” even when a language
+ does not assign them such a status. The techniques presented show that this
+ approach is feasible as an in-language library for DTS as well as for any
+ highly customisable and extensible text editor.
+:end:
+
+* Beamer Setup                                                       :ignore:
+# +BEAMER_THEME: Rochester
+# +BEAMER_THEME: Copenhagen
+# +BEAMER_THEME: default
+# +BEAMER_THEME: metropolis [numbering=fraction, progressbar=frametitle, titleformat=smallcaps]
+#+BEAMER_THEME: metropolis
+
+#+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col)
+
+
+#+latex_header: \institute{\vspace{2em}McMaster University,
+#+latex_header: %1280 Main St. West,
+#+latex_header: Hamilton, Ontario, Canada
+#+latex_header: % L8S 4K1,
+#+latex_header: \\
+#+latex_header: \textsf{alhassy@gmail.com}
+#+latex_header: }
+#+latex_header:
+
+#+BEAMER_COLOR_THEME: structure[RGB={87,83,170}]
+#+LATEX_HEADER: \hypersetup{colorlinks, linkcolor=black, urlcolor=blue}
+#+LATEX: \AtBeginSection{\frame{\sectionpage}}
+#+LATEX_HEADER: \setbeamersize{text margin left=3mm,text margin right=3mm}
+#+LaTeX: \setminted[haskell]{fontsize=\footnotesize, breaklines}
+#+latex_header: \usepackage{picture,xcolor,multicol}
+
+# Needs to be before \begin{document}, hence in a latex-header.  Add numbers to
+# slides.
+#
+#+LATEX_HEADER: \setbeamertemplate {footline}{\color{gray}\hspace{49.7em}\insertframenumber\strut\quad}
+# LATEX_HEADER: \setbeamertemplate{footline}[frame number]
+
+# HACK: minted, like other verbatim, environments is ``fragile'' wrt to beamer.
+# Hence all frames with code may behave erracticly if not marked fragile.
+#
+# \begin{frame}[fragile]{titleHere}
+#
+#+LATEX_HEADER: \usepackage{minted}
+# https://armkeh.github.io/unicode-sty/
+#+LATEX_HEADER: \usepackage{\string~"/unicode-sty/unicode"}
+#+latex_header: \usepackage{newunicodechar}
+#+latex_header: \newunicodechar{′}{'}
+#+latex_header: \newunicodechar{⨾}{\ensuremath{\fatsemi}}
+#+latex_header: \newunicodechar{⇌}{\ensuremath{\rightleftharpoons}}
+
+# Removing the red box that appears in "minted" when using unicode.
+# Src: https://tex.stackexchange.com/questions/343494/minted-red-box-around-greek-characters
+#
+#+LATEX_HEADER: \makeatletter
+#+LATEX_HEADER: \AtBeginEnvironment{minted}{\dontdofcolorbox}
+#+LATEX_HEADER: \def\dontdofcolorbox{\renewcommand\fcolorbox[4][]{##4}}
+#+LATEX_HEADER: \makeatother
+
+# to use super tiny fonts, or large ones; e.g., \scalebox{.2}{supertiny}
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \usepackage{listings}
+#+LATEX_HEADER: \usepackage{lipsum}
+#+BEGIN_EXPORT latex
+\newcommand\Wider[2][3em]{%
+\makebox[\linewidth][c]{%
+  \begin{minipage}{\dimexpr\textwidth+#1\relax}
+  \raggedright#2
+  \end{minipage}%
+  }%
+}
+#+END_EXPORT
+
+
+#+latex_header: \usepackage{color}
+#+latex_header: \definecolor{DarkGreen}{rgb}{0,0.6,0}
+#+latex_header: \definecolor{DarkRed}{rgb}{0.6,0,0}
+#+latex_header: \definecolor{DarkBlue}{rgb}{0,0,0.6}
+#+latex_header: \definecolor{grey}{rgb}{0.5,0.5,0.5}
+#+latex_header: \definecolor{DarkGrey}{rgb}{0.4,0.4,0.4}
+#+latex_header: \definecolor{DGreen}{rgb}{0,0.4,0.2}
+
+
+#+latex_header: \newunicodechar{⟴}{\ensuremath{\kern0.28em\oplus\kern-1.53em\longrightarrow}}
+#+latex_header: % U+27F4: RIGHT ARROW WITH CIRCLED PLUS
+
+* What is the problem?
+** Overview
+
+With a bit of reflection, we can obtain
+
+#+ATTR_REVEAL: :frag (appear)
+1. a uniform, and *practical*, syntax for both /records/ (semantics) and /termtypes/ (syntax)
+2. on-the-fly unbundling; and,
+3. *mechanically* obtain data structures from theories
+   \pause
+   #+latex: \begin{small}
+   | ‘theory’ τ     | ‘data structure’ ~termtype τ~ |
+   |----------------+-----------------------------|
+   | pointed set    | 𝟙                           |
+   | dynamic system | ℕ                           |
+   | monoid         | tree skeletons              |
+   | collections    | lists                       |
+   | graphs         | (homogeneous) pairs         |
+   | actions        | infinite streams            |
+   #+latex: \end{small}
+
+:Nope:
+#+begin_export latex
+\setlength{\unitlength}{1cm}
+\begin{picture}(0,0)(0,0)
+
+\pause
+\put(.5,5){\colorbox{yellow}{\Large The combinators presented in the thesis were guided}}
+\put(.5,4.4){\colorbox{yellow}{\Large \emph{not} by theoretically concerns on the algebraic nature}}
+\put(.5,3.8){\colorbox{yellow}{\Large of containers but rather on the}}
+\put(.5,3.2){\colorbox{yellow}{\Large \textbf{practical needs of actual users working in DTLs}}}
+\end{picture}
+#+end_export
+:End:
+
+** COMMENT Research Question
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+
+#+begin_center
+*Use a dependently-typed language (DTL) to implement the ‘missing’ module system
+features directly inside the language*
+#+end_center
+
+\pause
+-----
+#+LaTeX: \setminted[haskell]{fontsize=\scriptsize, breaklines}
+#+begin_src haskell +n 0
+-- Terms: Expressions and Types
+e, τ ::= α          -- base types and constants
+    | Typeᵢ       -- “type of types”; Universe of types at level i : ℕ
+    | ℕ             -- “Levels” for the type hierarchy
+    | Π x : τ • τ   -- “Pi”, dependent-function type
+    | Σ x : τ • τ   -- “Sigma”, dependent-sum type
+    | x             -- Variable
+    | e e           -- Application; Π-elimination
+    | λ x : τ • e   -- Abstraction; Π-introduction
+    | (e , e)       -- Pairing; Σ-introduction
+    | fst e | snd e -- Projections; Σ-elimination
+    | Fix 𝑭         -- Fixpoints for 𝑭 : Typeᵢ → Typeᵢ
+
+-- Abbreviation: Provided β does not refer to variable ‘_’,
+(α → β) :=  (Π _ : α • β)
+ #+end_src
+#+latex: \vspace{-1em}
+| DTL Syntax   |
+#+LaTeX: \setminted[haskell]{fontsize=\footnotesize, breaklines}
+** COMMENT Ubiquitous *mechanical* module constructions are *out of reach* of DTL module systems...
+
+   # [[file:~/thesis-proposal/patterns.png]]
+
+#+latex_header: \usepackage{smartdiagram}
+#+latex: \vspace{-2em}
+#+begin_export latex
+\begin{center}
+\smartdiagram[constellation diagram]{
+ {\footnotesize Monoids}
+,{\footnotesize Monoids \emph{with} carrier \texttt{C}}
+,{\footnotesize Homomorphisms, products, duals}
+,{\footnotesize Signature (Tree skeletons)}
+,{\footnotesize Pointed Magma} % (“Exclusion”)
+,{\footnotesize Terms} %  (Trees with variables)
+,{\footnotesize Monoids \emph{over} a setoid}
+%,Universal Algebra constructions
+,{\scriptsize Monoids \emph{with} carrier \texttt{C} and operation $\oplus$}
+% %
+% Build a program,Set up,Run,Analyze,Modify~/\\ Add,Check
+}
+
+\end{center}
+#+end_export
+
+:Hide:
+
+\begin{figure}
+\centering
+ \makebox[\textwidth]{\includegraphics[width=.9\paperwidth, height=.75\paperheight]{~/thesis-proposal/images/patterns.png}}
+\end{figure}
+
+\pause
+#+begin_export latex
+  % X-axis to the right and Y-axis upwards
+  \setlength{\unitlength}{1cm}
+  \begin{picture}(0,0)(0,0)
+   \put(8.5,8.5){\underline{\textbf{\emph{PL Research is about}}}}
+   \put(8.5,8.0){\underline{\textbf{\emph{getting free stuff:}}}}
+   \put(8.5,7.5){\underline{\textbf{\emph{We can get a lot!}}}}
+\end{picture}
+#+end_export
+
+:End:
+
+# (progn (org-beamer-export-to-pdf) (switch-to-buffer "committee.pdf"))
+** What does a “module, package, context” look like?
+
+#+latex:  \note[item]{Notice that the keyword “field” is “going down” the ‘waist’ each time.}
+
+#+begin_src agda :tangle yes
+record Monoid₂
+         (Carrier : Set)
+         (_⨾_     :  Carrier → Carrier → Carrier) : Set where
+  field
+         Id      :  Carrier
+         lid     : ∀ {x} →   Id ⨾ x  ≡  x
+         rid     : ∀ {x} →   x ⨾ Id  ≡  x
+         assoc   : ∀ {x y z} →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+#+end_src
+
+\vspace{1em}
+
+Monoids model /unityped composition/: Sticking words on a page,
+sequencing programs, following instructions.
+
+** What is /in a/ monoid?
+
+People work with monoids at various levels of *exposure* …
+
+\pause
+
++ “Let 𝑴 be a *monoid*, …”
+  \vspace{1em}\pause
++ “Given a *monoid over* ℕ, …”
+    \vspace{1em}\pause
++ “Consider */the/ monoid* (ℕ, +), …”
+  - (Unique viz proof irrelevance.)
+    \vspace{1em}\pause
++ “Consider */the/ monoid* (ℕ, +, 0), …”
+
+ #+begin_src agda :tangle yes :exports none
+open import Relation.Binary.PropositionalEquality
+#+end_src
+
+** “A monoid consists of a collection ~Carrier~, an operation, …”?
+   :PROPERTIES:
+   :BEAMER_OPT: fragile
+   :END:
+
+#+begin_src agda :tangle yes
+record Monoid₀  : Set₁  where
+  field  Carrier : Set
+         _⨾_     :  Carrier → Carrier → Carrier
+         Id      :  Carrier
+         lid     : ∀ {x} →   Id ⨾ x  ≡  x
+         rid     : ∀ {x} →   x ⨾ Id  ≡  x
+         assoc   : ∀ {x y z} →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+#+end_src
+
+| Use-case: The category of monoids. |
+
+** “A monoid over a given collection ~Carrier~ and operation ~_⨾_~ is given by ensuring there is a selected point ...”?
+   :PROPERTIES:
+   :BEAMER_OPT: fragile
+   :END:
+
+#+begin_src agda :tangle yes
+record Monoid₁
+         (Carrier : Set)   : Set  where
+  field -- ⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵ Change here
+         _⨾_     :  Carrier → Carrier → Carrier
+         Id      :  Carrier
+         lid     : ∀ {x} →   Id ⨾ x  ≡  x
+         rid     : ∀ {x} →   x ⨾ Id  ≡  x
+         assoc   : ∀ {x y z} →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+#+end_src
+
+| Use-case: Sharing the carrier type |
+
+** Or … ?
+
+#+latex:  \note[item]{Notice that the keyword “field” is “going down” the ‘waist’ each time.}
+
+#+begin_src agda :tangle yes
+record Monoid₂
+         (Carrier : Set)
+         (_⨾_     :  Carrier → Carrier → Carrier) : Set where
+  field -- ⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵ Change here
+         Id      :  Carrier
+         lid     : ∀ {x} →   Id ⨾ x  ≡  x
+         rid     : ∀ {x} →   x ⨾ Id  ≡  x
+         assoc   : ∀ {x y z} →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+#+end_src
+
+| Use-case: The additive monoid on the ℕatural numbers |
+
+** Or … ?
+
+#+latex:  \note[item]{Notice that we have a quadratic effort: \# lines = \# declarations × \# variations }
+
+#+begin_src agda :tangle yes
+record Monoid₃
+         (Carrier : Set)
+         (_⨾_     :  Carrier → Carrier → Carrier)
+         (Id      :  Carrier)      : Set  where
+  field -- ⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵⟵ Change here
+         lid     : ∀ {x} →   Id ⨾ x  ≡  x
+         rid     : ∀ {x} →   x ⨾ Id  ≡  x
+         assoc   : ∀ {x y z} →  (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+ #+end_src
+
+# \vspace{1em}
+# //
+
+** Tom Hales ---Kepler Conjecture / Flyspeck
+
+#+latex:  \note[item]{The problem we're solving is that...}
+#+latex:  \note[item]{There are structures that we'd like to use from different perspectives ---in a practical and efficient fashion.}
+
+ #+begin_quote
+ Structures are meaninglessly parameterized from a mathematical perspective.
+ […]  That is, what is bundled cannot be later opened up as a parameter. [...]
+ This means that library designers are forced to take a conservative approach
+ and expose as a parameter anything that any user might reasonably want exposed,
+ because once it is bundled, it is not coming back.
+
+     \hfill ---[[https://jiggerwit.wordpress.com/2018/09/18/a-review-of-the-lean-theorem-prover/][A Review of the Lean Theorem Prover]], *2018-09-18*
+ #+end_quote
+
+#+begin_export latex
+\setlength{\unitlength}{1cm}
+\begin{picture}(0,0)(0,0)
+
+\pause
+\put(2,5.5){\colorbox{yellow}{\Large ⇒ This is a problem we are solving!}}
+
+% \pause
+% \put(2,3){\colorbox{yellow}{\Large ⇒ A \emph{recent} problem}}
+
+\pause
+\put(2,-.5){\colorbox{yellow}{\Large ⇒ \emph{\textbf{\alert{“The Unbundling Problem”}}}}}
+
+\end{picture}
+#+end_export
+
+** Where does this /actually/ happen?
+
+# \pause
+# +latex: \centerline{\alert{\large Yes!}}
+
+# \pause
+# Examples:
++ Agda's Standard Library,
++ RATH-Agda,
++ agda-categories
++ Haskell's Standard Library
+
+# It's not just dependently-typed languages...
+# \pause
+# + Arend
+
+** What are the adjacent problems?
+
+\alert{Maintenance of relationships} …
+# when we “bring down the waist” ---the position of the src_emacs-lisp[:exports
+# code]{field} keyword.
+
+\pause
+
+#+begin_src haskell
+                       Monoid₀  ≅  Σ C : Set • Monoid₁ C
+#+end_src
+#+latex:  \note[item]{Monoid₀ is just Monoid₁ with its parameter bundled away}
+\pause
+#+begin_src haskell
+              Monoid₁ C  ≅  Σ 𝑴 : Monoid₀ • Monoid₀.Carrier 𝑴 ≡ C
+#+end_src
+#+latex:  \note[item]{Conversely, Monoid₁ is just Monoid₀ with an identity constraint}
+\pause
+#+latex:  \note[item]{These coercions can be derived \textbf{mechanically}}
+
+# \pause
+# +latex:  \note[item]{What about other \emph{natural constructions} on mathematical theories (and the  associated relationships)?}
+#+latex:  \note[item]{Different levels of unbundling are “natural” in constructions in universal algebra.}
++ Termtypes?
+  #+latex:  \note[item]{Termtypes   ---“Lists are just the free \emph{monoid over} a given type.” }
+  #+latex:  \note[item]{But what is a monoid?}
++ Extensions?
+  #+latex:  \note[item]{Extensions  ---“A monoid is a semigroup \emph{with} an identity” }
++ Exclusions?
+  #+latex:  \note[item]{Exclusions  ---“A semigroup is a \emph{non}-unital monoid.” }
++ Pushouts: Name-relevant unions?
+  #+latex:  \note[item]{Pushouts ---“A monoid is an unital magma along with a semigroup \emph{such that} they \textbf{share} the same carrier and operation.”}
+
+
+# + Numerous other constructions from Category Theory
+
+** COMMENT Which items should be fields, which parameters?
+
+ + The src_haskell[:exports code]{Monoidᵢ} family showed some
+   combinations of items selected as parameters.  \pause
+
+ + There are other combinations of what is to be exposed and hidden, for
+   applications that we might never think of. \pause
+
+ + Providing always the most-general parameterisation produces *awkward* library
+   interfaces!
+
+\pause
+
+_Proposed Solution_:
+
+ + Commit to no particular formulation and allow on-the-fly ``unbundling''
+   - This is the /converse/ of instantiation
+
+     \pause
+ + The “Emacs editor tactic” src_emacs-lisp[:exports code]{PackageFormer}
+ + The “Agda library” src_haskell[:exports code]{Context}
+
+** Roadmap ---“PackageFormer ≈ Context ≈ JSON-Object”
+
+#+latex:  \note[item]{What's exposed or hidden is dictated on a case-by-case basis; so we suggest no specific view and allow “on the fly” unbundling.}
+
+   1. The src_emacs-lisp[:exports code]{PackageFormer} Prototype: A useful experimentation tool
+   2. The src_haskell[:exports code]{Context} Library: Unbundling in Agda
+   3. Algebraic data types as a semantics for contexts
+
+#+latex:  \note[item]{JavaScript objects are a nice position of reference since they are key-value pairs that are (1) very malleable, (2) used as record types via prototyping, and (3) are constantly being serialised between applications. }
+
+* The src_emacs-lisp[:exports code]{PackageFormer} Prototype: A useful experimentation tool
+
+** Evidence that the theory ‘actually works’
+
+#+begin_center
+*Prototype* with an editor extension /then/ incorporate *lessons learned* into a DTL
+library!
+#+end_center
+
+#+latex:  \note[item]{The framework tries hard to be a pleasant experience}
+#+latex:  \note[item]{⇒ Highlight new syntax}
+#+latex:  \note[item]{⇒ Fold away 700-blocks ---the new syntax annotations}
+#+latex:  \note[item]{⇒ Menus and tooltips}
+#+latex:  \note[item]{⇒ Error-reporting and in-tool documentation}
+#+latex:  \note[item]{It's the “bees knees” ;-) }
+
+#+begin_export latex
+\begin{figure}
+\centering
+ \makebox[\textwidth]{\includegraphics[width=.5\paperwidth, height=.4\paperheight]{~/thesis-proposal/images/Paper0_MousingOverLarge.png}}
+\end{figure}
+#+end_export
+
+|Generated code displayed on hover|
+
+** /A Language Feature to Unbundle Data at Will/ (GPCE '19)
+
+#+latex:  \note[item]{It was so nice, we wrote a paper about it}
+#+latex:  \note[item]{Which then influenced Agda's Standard library}
+#+latex:  \note[item]{Notice that we have the various monoid variations on the left}
+#+latex:  \note[item]{PackageFormer has a unique definition of monoids on the right, let's look at that a bit more}
+
+ #+ATTR_LATEX: :width 0.75\paperwidth :height 0.75\paperheight
+ [[file:~/thesis-proposal/images/gpce19.png]]
+
+** COMMENT Prototype ⇒ *Lisp Metaprogramming*, ASTs, Untyped, String Manipulation, Agda Generation, Macro DSL
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+
+# +ATTR_LATEX: :height 0.75\paperheight
+# [[file:~/thesis-proposal/lisp.png]]
+#+latex: \centering
+#+LaTeX: \setminted[common-lisp]{fontsize=\tiny, breaklines}
+#+latex: \begin{minipage}[t]{0.95\linewidth}
+#+BEGIN_SRC emacs-lisp
+{-lisp
+(𝒱 record₁ (discard-equations nil)
+ = "Reify a variational as an Agda “record”.
+    Elements with equations are construed as
+    derivatives of fields  ---the elements
+    without any equations--- by default, unless
+    DISCARD-EQUATIONS is provided with a non-nil value."
+  :kind record
+  :alter-elements
+    (λ es →
+      (thread-last es
+      ;; Keep or drop eqns depending on “discard-equations”
+      (--map
+        (if discard-equations
+            (map-equations (λ _ → nil) it)
+            it))
+      ;; Unless there's equations, mark elements as fields.
+      (--map (map-qualifier
+        (λ _ → (unless (element-equations it)
+               "field")) it)))))
+-}
+
+{-700
+Monoid-record-with-definitional-extensions  =  MonoidP record₁
+Monoid-record-with-extensions-as-fields     =  MonoidP record₁ :discard-equations t
+-}
+#+END_SRC
+#+LaTeX: \setminted[common-lisp]{fontsize=\footnotesize, breaklines}
+#+latex:   \end{minipage}
+
+** *The* Definition of a Monoid
+
+#+latex:  \note[item]{This is essentially the same definition of monoid we saw before, but no “field” keyword and it starts with “PackageFormer” instead of “record”}
+
+#+begin_src haskell
+  PackageFormer MonoidP : Set₁ where
+    Carrier : Set
+    _⨾_     : Carrier → Carrier → Carrier
+    Id      : Carrier
+    assoc   : ∀ {x y z} →   (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+    leftId  : ∀ {x} →   Id ⨾ x  ≡  x
+    rightId : ∀ {x} →   x ⨾ Id  ≡  x
+#+end_src
+
+\pause
+#+latex:  \note[item]{We regain the various forms of monoid by requesting them...}
+
+#+begin_parallel :bar t
+
+ #+ATTR_LATEX: :options fontsize=\tiny
+#+begin_src haskell
+Monoid₀  = MonoidP record
+Monoid₁  = Monoid₀ :waist 1
+Monoid₂  = Monoid₀ :waist 2
+Monoid₃  = Monoid₀ :waist 3
+Monoid₃' = MonoidP record ⟴ unbundled 3
+#+end_src
+
+#+latex:  \note[item]{The “record” makes it into a legitimate Agda recognised record}
+#+latex:  \note[item]{Whereas the “waist” is the position of the “field” keyword}
+
+#+latex:  \note[item]{\ldots and we can do more: Monoid Syntax!}
+#+latex:  \note[item]{For when you need to describe, optimise, or meta-program with monoid terms}
+
+#+columnbreak:
+
+\pause
+ #+ATTR_LATEX: :options fontsize=\tiny
+#+begin_src haskell
+  Tree = MonoidP termtype-with-variables "Carrier"
+≅
+  data Tree (Var : Set) : Set where
+    inj : Var → Tree Var
+    _⨾_   : Tree Var → Tree Var → Tree Var
+    Id  : Tree Var
+#+end_src
+
+#+end_parallel
+
+\pause
+#+latex:  \note[item]{Linear: The total number of lines written is now \# declarations + \# variations}
+| *_Linear_* effort in number of variations                      |
+
+\pause
+#+latex:  \note[item]{But what is “record”? It's an example package transformer from the framework's user manual.
+#+latex:  The framework is built around 5 meta-primitives; such as “:kind, :waist, :alter-elements, and ⟴”; let's take a closer look}
+
+#+begin_src haskell
+record : PackageFormer → PackageFormer
+#+end_src
+#+LaTeX: \setminted[common-lisp]{fontsize=\scriptsize, breaklines} \vspace{-0.5em}
+#+begin_src emacs-lisp
+record = :kind record
+         :alter-elements (λ es → (--map (map-qualifier (-const "field") it) es))
+#+end_src
+#+LaTeX: \setminted[common-lisp]{fontsize=\footnotesize, breaklines}
+
+
+** COMMENT *Pushout* unions, intersections, extensions, views, … :full:
+
+# +ATTR_LATEX: :height 0.75\paperheight
+# [[file:~/thesis-proposal/pushouts.png]]
+
+#+LaTeX: \setminted[common-lisp]{fontsize=\tiny, breaklines}
+#+BEGIN_SRC emacs-lisp
+(𝒱 union pf (renaming₁ "") (renaming₂ "") (adjoin-retract₁ t) (adjoin-retract₂ t)
+ = "Union the elements of the parent PackageFormer with those of
+    the provided PF symbolic name, then adorn the result with two views:
+    One to the parent and one to the provided PF.
+
+    If an identifer is shared but has different types, then crash."
+   :alter-elements (λ es →
+     (let* ((p (symbol-name 'pf))
+            (es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
+            (es₂ (alter-elements ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) renaming renaming₂ :adjoin-retract nil))
+            (es′ (-concat es₁ es₂)))
+
+      ;; Ensure no name clashes!
+      (loop for n in (find-duplicates (mapcar #'element-name es′))
+            for e = (--filter (equal n (element-name it)) es′)
+            unless (--all-p (equal (car e) it) e)
+            do (-let [debug-on-error nil]
+              (error "%s = %s union %s \n\n\t\t ➩ Error: Elements “%s” conflict!\n\n\t\t\t%s"
+                     $𝑛𝑎𝑚𝑒 $𝑝𝑎𝑟𝑒𝑛𝑡 p (element-name (car e)) (s-join "\n\t\t\t" (mapcar #'show-element e)))))
+
+   ;; return value
+   (-concat
+       es′
+       (when adjoin-retract₁ (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es₁ :name adjoin-retract₁)))
+       (when adjoin-retract₂ (list (element-retract p     ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) :new es₂ :name adjoin-retract₂)))))))
+#+END_SRC
+#+LaTeX: \setminted[common-lisp]{fontsize=\footnotesize, breaklines}
+
+#+latex: \centerline{\alert{Combinators are motivated from existing, real-world, DTL libraries!}}
+
+#+begin_export latex
+\setlength{\unitlength}{1cm}
+\begin{picture}(0,0)(0,0)
+
+\pause
+\put(.5,6){\colorbox{yellow}{\Large Framework built around \textbf{5 metaprimitives}}}
+\put(.5,5.4){\colorbox{yellow}{\Large ↦ Lisp Metaprogramming, untyped string manipulation, }}
+\put(.5,4.8){\colorbox{yellow}{\Large ↦ Macro DSL, Agda generation }}
+
+\pause
+\put(.5,2.8){\colorbox{yellow}{\Large ⇒ The rest are “user-defined” with a bit of Lisp}}
+\end{picture}
+#+end_export
+** *Pushout* unions, intersections, extensions, views, …
+
+# +ATTR_LATEX: :height 0.75\paperheight
+# [[file:~/thesis-proposal/pushouts.png]]
+
+#+latex:  \note[item]{Besides the meta-primitives, we also have this 𝒱 DSL that allows users to extend the framework using Lisp!}
+#+latex:  \note[item]{“union” is another example from the user manual}
+#+latex:  \note[item]{In fact, to show that the meta-primitives are deserving of their name, the user manual contains numerous derived package transformers...}
+
+#+LaTeX: \setminted[common-lisp]{fontsize=\small, breaklines}
+#+BEGIN_SRC emacs-lisp
+(𝒱 union pf (renaming₁ "") (renaming₂ "")
+            (adjoin-retract₁ t) (adjoin-retract₂ t)
+ = :alter-elements (λ es →
+     (let* ((p (symbol-name 'pf))
+            (es₁ (alter-elements es renaming renaming₁ :adjoin-retract nil))
+            (es₂ (alter-elements ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) renaming renaming₂ :adjoin-retract nil))
+            (es′ (-concat es₁ es₂)))
+   (-concat    ;; return value
+       es′
+       (when adjoin-retract₁ (list (element-retract $𝑝𝑎𝑟𝑒𝑛𝑡 es :new es₁ :name adjoin-retract₁)))
+       (when adjoin-retract₂ (list (element-retract p     ($𝑒𝑙𝑒𝑚𝑒𝑛𝑡𝑠-𝑜𝑓 p) :new es₂ :name adjoin-retract₂)))))))
+#+END_SRC
+#+LaTeX: \setminted[common-lisp]{fontsize=\footnotesize, breaklines}
+
+#+latex: \vspace{.3em}\centerline{\alert{Combinators are motivated from existing, real-world, DTL libraries!}}
+
+** Generated 200+ theories using the Lisp metaprogramming framework ---the MathScheme library
+
+# +ATTR_LATEX: :width 0.75\paperwidth :height 0.75\paperheight
+# [[file:~/thesis-proposal/200+specs.png]]
+
+#+latex:  \note[item]{Here are 200 terse, readable, specficiations that \emph{we want to write}}
+#+latex:  \note[item]{They elaborate into 1500 lines of typechecked Agda that \emph{we want to use}}
+#+latex:  \note[item]{It's a useful engineering result, to say the least}
+
+#+LaTeX: \setminted[haskell]{fontsize=\tiny, breaklines}
+#+BEGIN_SRC haskell
+AdditiveMagma            = Magma renaming′ "_*_ to _+_"
+LeftDivisionMagma        = Magma renaming′ "_*_ to _╲_"
+RightDivisionMagma       = Magma renaming′ "_*_ to _╱_"
+LeftOperation            = MultiCarrier extended-by′ "_⟫_ : U → S → S"
+RightOperation           = MultiCarrier extended-by′ "_⟪_ : S → U → S"
+IdempotentMagma          = Magma extended-by′ "*-idempotent : ∀ (x : U) → (x * x) ≡ x"
+IdempotentAdditiveMagma  = IdempotentMagma renaming′ "_*_ to _+_"
+SelectiveMagma           = Magma extended-by′ "*-selective : ∀ (x y : U) → (x * y ≡ x) ⊎ (x * y ≡ y)"
+SelectiveAdditiveMagma   = SelectiveMagma renaming′ "_*_ to _+_"
+PointedMagma             = Magma union′ PointedCarrier
+Pointed𝟘Magma            = PointedMagma renaming′ "e to 𝟘"
+AdditivePointed1Magma    = PointedMagma renaming′ "_*_ to _+_; e to 𝟙"
+LeftPointAction          = PointedMagma extended-by "pointactLeft  :  U → U; pointactLeft x = e * x"
+RightPointAction         = PointedMagma extended-by "pointactRight  :  U → U; pointactRight x = x * e"
+CommutativeMagma         = Magma extended-by′ "*-commutative  :  ∀ (x y : U) →  (x * y) ≡ (y * x)"
+CommutativeAdditiveMagma = CommutativeMagma renaming′ "_*_ to _+_"
+PointedCommutativeMagma  = PointedMagma union′ CommutativeMagma ⟴ :remark "over Magma"
+AntiAbsorbent            = Magma extended-by′ "*-anti-self-absorbent  : ∀ (x y : U) → (x * (x * y)) ≡ y"
+SteinerMagma             = CommutativeMagma union′ AntiAbsorbent ⟴ :remark "over Magma"
+Squag                    = SteinerMagma union′ IdempotentMagma ⟴ :remark "over Magma"
+PointedSteinerMagma      = PointedMagma union′ SteinerMagma ⟴ :remark "over Magma"
+UnipotentPointedMagma    = PointedMagma extended-by′ "unipotent  : ∀ (x : U) →  (x * x) ≡ e"
+Sloop                    = PointedSteinerMagma union′ UnipotentPointedMagma
+#+END_SRC
+#+LaTeX: \setminted[haskell]{fontsize=\footnotesize, breaklines}
+
+:Nope:
+#+begin_export latex
+\setlength{\unitlength}{1cm}
+\begin{picture}(0,0)(0,0)
+
+\pause
+\put(2,6){\colorbox{yellow}{\Large Terse, readable, specifications}}
+\put(2,5.4){\colorbox{yellow}{\Large ↦ Useful, typecheckable, dauntingly large code }}
+
+\pause
+\put(2,4){\colorbox{yellow}{\Large 200+ \textbf{one-line} specs}}
+\put(2,3.4){\colorbox{yellow}{\Large \hspace{1em} ↦ 1500+ lines of typechecked Agda}}
+\pause
+\put(2,2.8){\colorbox{yellow}{\Large ⇒ 750\% efficiency savings}}
+
+\put(2,1.4){\colorbox{yellow}{\Large Useful engineering result}}
+\end{picture}
+#+end_export
+:End:
+
+** Primary Lessons Learned
+
+   1. Waist
+
+      #+latex:  \note[item]{ Waist: The difference between *field* and *parameter* is an illusion ---as is that of *input*
+      #+latex:   and *output* when one considers relations rather than deterministic functions (as in Prolog).}
+
+   2. Termtypes
+
+      #+latex:  \note[item]{Termtypes ::   Record types (Σ), type classes (Π¹Σ), and algebraic data types
+      #+latex: (𝒲) are all valid *semantics of contexts* ---which are “name : type =
+      #+latex: optional-definition” tuples.}
+
+   3. Pragmatic
+
+      #+latex:  \note[item]{Pragmatic :: We have an extendable, expressive, and efficient
+      #+latex: interface based on a small kernel, that is immediately usable,
+      #+latex: as an editor extension. Can we make it into an in-language (DTL) library?}
+
+:ignore:
+
+-----
+
+User-defined variational: /Drop definitions when lifting fields into parameters./
+# [[file:~/thesis-proposal/waist.png]]
+#+LaTeX: \setminted[common-lisp]{fontsize=\tiny, breaklines}
+#+BEGIN_SRC emacs-lisp
+(𝒱 unbundling n
+ = "Turn the first N elements into parameters to the PackageFormer.
+
+    Any elements above the waist line have their equations dropped."
+   :waist n
+   :alter-elements (λ es →
+     (-let [i 0]
+       (--graph-map (progn (incf i) (<= i n))
+                    (map-equations (-const nil) it)
+                    es))))
+#+END_SRC
+#+LaTeX: \setminted[common-lisp]{fontsize=\footnotesize, breaklines}
+:end:
+
+** COMMENT How Does This Work?
+
+ + Currently implemented  as an “editor tactic” meta-program
+ + Using the “default IDE” of Agda Emacs
+ + Implementation is an *extensible* library built on top of 5 meta-primitives
+ + Generated Agda file is automatically imported into the current file
+ + Special-purpose IDE support
+ +  Menus, highlighting new syntax, fold away 700-blocks, discard annotations.
+
+** COMMENT The Language of Variationals
+
+   $$\mathsf{Variational} \quad ≅ \quad (\mathsf{PackageFormer} → \mathsf{PackageFormer})$$
+
+ \begin{code}
+   id                       :  Variational
+   _⟴_                      :  Variational → Variational → Variational
+   record                   :  Variational
+   termtype                 :  String → Variational
+   termtype-with-variables  :  String → Variational
+   unbundled                :  ℕ → Variational
+   exposing                 :  List Name → Variational
+ \end{code}
+
+** COMMENT Library Design
+
+ + Goals:
+   + Reusability
+   + Generality
+   + (Mathematical) “Naturality”
+
+ + Result: *Conflict of Interests:*
+
+    For a record type bundling up items that “naturally” belong together:
+    + Which parts of that record should be red:parameters?
+    + Which parts should be green:fields?
+
+* The Unbundling Problem ---in Agda
+
+# The *Context* Library: Solving the unbundling problem
+** COMMENT Monoid ---“Untyped Composition”
+
+- We have things, called src_haskell[:exports code]{Carrier},
+- … and we want to ‘combine’ them via some operation src_haskell[:exports code]{_⨾_}
+- … which has a ‘do nothing’ value src_haskell[:exports code]{Id}.
+
+** COMMENT Typeclass approach, as in Haskell
+
+#+begin_src haskell
+record MonoidOn (Carrier : Set) : Set
+ where
+  field
+    _⨾_ : Carrier → Carrier → Carrier
+    Id  : Carrier
+    leftId : ∀ x → Id ⨾ x ≡ x
+    rightId : ∀ x → x ⨾ Id ≡ x
+    assoc   : ∀ x y z →  (x ⨾ y) ⨾ z
+                       ≡  x ⨾ (y ⨾ z)
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src haskell
+open MonoidOn {{...}}
+#+end_src
+
+** COMMENT Examples
+#+ATTR_REVEAL: :frag (appear)
+- Programs and sequential (or parallel) composition
+- *Numbers and addition (or multiplication)*
+- Writing words on a page ---i.e., lists and catenation
+
+** What is “the” monoid on the natural numbers?
+
+#+latex:  \note[item]{Haskell's solution is to make *two isomorphic copies* of numbers since typeclass instance search relies on /unique/ instances for the typeclass parameters.}
+
+#+begin_quote
+Some types can be viewed as a monoid in more than one way, e.g. both addition
+and multiplication on numbers. In such cases we often define newtypes and make
+those instances of Monoid, e.g. Sum and Product.
+---[[https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-Monoid.html#t:Monoid][Hackage Data.Monoid]]
+#+end_quote
+
+#+begin_center
+#+begin_src haskell
+                       Sum α ≅ α  {- and -} Product α ≅ α
+#+end_src
+#+end_center
+
+#+latex:  \note[item]{These two have different monoid instances.}
+
+** COMMENT Additive?
+#+begin_src haskell
+instance
+  ℕ₊ : MonoidOn ℕ
+  ℕ₊ = record { _⨾_     = _+_
+              ; Id      = 0
+              ; leftId  = +-identityˡ
+              ; rightId = +-identityʳ
+              ;  assoc  = +-assoc }
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src haskell
+ex : ∀ (m n : ℕ) → m ⨾ n  ≡  n ⨾ m
+ex = +-comm
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+ src_haskell[:exports code]{__⨾__} is determined to be src_haskell[:exports
+code]{_+_}by *instance search* $\star$
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src haskell
+likewise : ∀ (m : ℕ) → m ⨾ Id ≡ m
+likewise = rightId
+#+end_src
+
+** COMMENT … or Multiplicative?
+#+begin_src haskell
+instance
+  ℕₓ : MonoidOn ℕ
+  ℕₓ = record { _⨾_     = _*_
+              ; Id      = 1
+              ; leftId  = *-identityˡ
+              ; rightId = *-identityʳ
+              ; assoc   = *-assoc }
+#+end_src
+
+
+#+begin_src haskell
+whoops : ∀ {m : ℕ} → m ⨾ Id ≡ m
+whoops = {!!}
+#+end_src
+
+
+$\star$ ℕ₊ and ℕₓ are both candidates! *No unique solution!* $\star$
+
+** Alternate Solution to Multiple Monoid Instance Problem
+
+*Start* with /fully bundled/ src_haskell[:exports code]{Monoid} *then* /expose fields as parameters/ *on the fly*.
+
+# \pause
+#+begin_center
+# +latex: {\Large How?}
+
+\pause
+*Reflection!*
+#+end_center
+# \pause
+- Unfortunately, current mechanism cannot touch
+  src_haskell[:exports code]{record}-s /directly/.
+- But every record is a Σ-type...
+
+** Records as ΠʷΣ-types  ---Partitioned Contexts
+
+- Instead of the nice /syntactic sugar/
+  #+begin_src haskell :tangle no
+record R (ε¹ : τ¹) ⋯ (εʷ : τʷ) : Set
+  where
+    field
+      εʷ⁺¹ : τʷ⁺¹
+      ⋮
+      εʷ⁺ᵏ : τʷ⁺ᵏ
+#+end_src
+
+\pause
+- Use a rawer form  ---/eek!/
+  #+begin_src haskell :tangle no
+R  : Π ε¹   : τ¹  • ⋯ • Π εʷ   : τʷ • Set
+R  ≅  λ ε¹  : τ¹  • ⋯ • λ εʷ   : τʷ
+    • Σ εʷ⁺¹ : τʷ⁺¹ • ⋯ • Σ εʷ⁺ᵏ : τʷ⁺ᵏ
+    • 𝟙
+#+end_src
+
+# #+begin_export latex
+# \setlength{\unitlength}{1cm}
+# \begin{picture}(0,0)(0,0)
+# % \pause
+# % \put(8.3,1.8){\colorbox{yellow}{\Large ⇐ “parameters”}}
+# % \pause
+# % \put(8.3,1.3){\colorbox{yellow}{\Large ⇐ “fields”}}
+# \pause
+# \put(2.5,0){\colorbox{yellow}{\Large We say $w$ is the \textbf{“waist”}}}
+# \end{picture}
+# #+end_export
+#
+# E.g., src_haskell[:exports code]{MonoidOn} is a Π¹Σ type
+
+** COMMENT Shucks, the Unbundling Problem Strikes Again
+
+If we encode a record as a ΠʷΣ type, what if we want
+to /instantiate, fix,/ a field ---instead of a parameter?
+
+#+ATTR_REVEAL: :frag (appear)
+We thus need a way to *lift parameters to fields*!
+#+ATTR_REVEAL: :frag (appear)
+( Teaser: src_haskell[:exports code]{Π→λ} ! )
+
+** A *Pragmatic* Notation ---Contexts
+
+ #+begin_src haskell
+Monoid : Context ℓ₁
+Monoid = do Carrier ← Set
+            _⨾_     ← (Carrier → Carrier → Carrier)
+            Id      ← Carrier
+            leftId  ← ∀ (x : Carrier) → x ⨾ Id ≡ x
+            rightId ← ∀ (x : Carrier) → Id ⨾ x ≡ x
+            assoc   ← ∀ (x y z) → (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+            End {ℓ}
+#+end_src
+
+** What is src_haskell[:exports code]{Context}?
+
+#+begin_src haskell :exports none
+open import Level renaming (_⊔_ to _⊍_; suc to ℓsuc; zero to ℓ₀)
+open import Data.Product
+open import Context -- Gives us Σ∶•, Π∶•, >>=, ⟨⋯⟩
+#+end_src
+
+#+ATTR_REVEAL: :frag (appear)
+0. “Contexts” are exposure-indexed types
+   #+begin_src haskell :tangle no
+Context = λ ℓ → (waist : ℕ) → Set ℓ
+#+end_src
+   # \pause
+1. The “empty context” is the unit type
+   #+begin_src haskell :tangle no
+End : ∀ {ℓ} → Context ℓ
+End {ℓ} = λ _ → 𝟙 {ℓ}
+#+end_src
+
+   # \pause
+2. src_haskell[:exports code]{do}-notation!
+   #+begin_src haskell :tangle no
+_>>=_ : ∀ {a b}
+      → (Γ : Context a)
+      → (∀ {n} → Γ n → Context b)
+      → Context (a ⊍ b)
+(Γ >>= f) zero    = Σ γ ∶ Γ 0 • f γ 0
+(Γ >>= f) (suc n) = Π γ ∶ Γ n • f γ n
+#+end_src
+
+#+latex:  \note[item]{The *“DIY”* lies at >>=, permitting Σ, Π, 𝒲, let, … !}
+
+** COMMENT =Context= Agda Library ⇒ *Pragmatic Interface*
+
+   # [[file:~/thesis-proposal/pragmattic.png]]
+
+#+latex: \centering
+#+latex: \begin{minipage}[t]{0.95\linewidth}
+#+begin_src haskell
+Monoid : ∀ ℓ → Context (ℓsuc ℓ)
+Monoid ℓ = do Carrier ← Set ℓ
+              _⊕_    ← (Carrier → Carrier → Carrier)
+              Id      ← Carrier
+              leftId  ← ∀ {x : Carrier} → x ⊕ Id ≡ x
+              rightId ← ∀ {x : Carrier} → Id ⊕ x ≡ x
+              assoc   ← ∀ {x y z} → (x ⊕ y) ⊕ z  ≡  x ⊕ (y ⊕ z)
+              End {ℓ}
+#+end_src
+#+latex:   \end{minipage}
+
+\pause \vspace{1em}
+- Ideas: /Weak/ *Agda Reflection*, No fresh names, Monads, Termination,
+  ‘Reification’ Π→λ
+
+#  \pause  \vspace{1em}
+
+** *Using* Contexts ---@@latex:\emph{re\"{\i}fication}@@
+
+#+latex:  \note[item]{If “C : Context ℓ” then “C w” has the type “Πʷ x • τ” ---consisting of $w$-many Π's--- but we want to \emph{apply} “C w” to $w$-many \emph{parameters}...}
+
+#+begin_src haskell :tangle no
+Monoid : Context
+Monoid = do C ← Set; _⨾_ : C → C → C; Id ← C; …
+#+end_src
+
+#+begin_tree
++ TypeError :: \pause \texttt{Monoid 1 ℕ : Set}
+  - Application :: \texttt{Monoid 1 : Set}
+    * \texttt{Monoid : Context} \pause
+#+end_tree
+
+   \vspace{1em} \pause
+#+latex:  \note[item]{So we need a combinator...}
+  #+begin_center
+    #+begin_src haskell
+ Π→λ  “Πʷ x • τ”   =   “λʷ x • τ”
+#+end_src
+  #+end_center
+
+#+latex:  \note[item]{Π→λ transforms “a type of functions” into “a function on types”!}
+
+\vspace{1em}\pause
+#+latex:  \note[item]{... with an infix form for contexts in particular ... }
+  #+begin_center
+  #+begin_src haskell
+C :waist w   =   Π→λ (C w)
+#+end_src
+  #+end_center
+
+#+latex:  \note[item]{Some examples may make this clearer...}
+
+** COMMENT Characterising =:waist= as Π→λ :Maybe_delete:
+
+ #+BEGIN_SRC haskell
+                      Π→λ (Π a : A • τ)  =  (λ a : A • τ)
+                           C :waist w    =   Π→λ (C w)
+ #+END_SRC
+
+ \pause
+ -----
+ \vspace{0.5em}
+
+ #+begin_parallel 2
+ #+begin_src haskell
+id₀ : Set₁
+id₀ = Π X ∶ Set • Π e ∶ X • X
+ #+end_src
+
+ \pause\vspace{.5em}
+
+ #+begin_src haskell
+id₁ : Π X ∶ Set • Set
+id₁ = λ (X : Set) → Π e ∶ X • X
+
+  #+end_src
+
+ \pause\vspace{.5em}
+ #+begin_src haskell
+id₂ : Π X ∶ Set • Π e ∶ X • Set
+id₂ = λ (X : Set) (e : X) → X
+ #+end_src
+
+ #+latex: \columnbreak
+
+ \pause
+ + ~idᵢ₊₁ ≈ Π→λ idᵢ~
+ + ~id₀~ is a /type of functions/
+ + ~id₁~ is a /function on types/
+
+ #+end_parallel
+
+ :Details:
+ We shall refer to the latter change
+ as @@latex: \emph{re\"{\i}fication}@@ since the result is more concrete: It can
+ be applied. This transformation will be
+ denoted by ~Π→λ~. To clarify this subtlety, consider the following forms of the
+ polymorphic identity function. Notice that $\mathsf{id}ᵢ$ /exposes/ =i=-many details at the
+ type level to indicate the sort of data it consists of. However, notice that ~id₀~ is
+ a type of functions whereas $\mathsf{id}₁$ is a function on types. Indeed, the latter
+ :End:
+
+** Monoidᵢ
+
+#+begin_src haskell :tangle no
+Monoid : Context
+Monoid = do C ← Set; _⨾_ : C → C → C; Id ← C; …
+#+end_src
+
+\pause
+#+latex:  \note[item]{With no parameters, we have a Π⁰Σ-type (a *record*)}
+#+begin_src haskell :tangle no
+Monoid :waist 0  : Set₁
+Monoid :waist 0  ≡  Σ C : Set • Σ _⨾_ : C → C → C • Σ Id : C • …
+#+end_src
+
+\pause
+#+latex:  \note[item]{With *one* parameter, we have a *typeclass*}
+#+begin_src haskell :tangle no
+Monoid :waist 1  :  Π C : Set • Set
+Monoid :waist 1  =  λ C : Set • Σ _⨾_ : C → C → C • Σ Id : C • …
+#+end_src
+
+\pause
+#+latex:  \note[item]{With *two* parameters, we have a /‘solution’/ to the additive-or-multiplicative-monoid-problem!}
+   #+begin_src haskell :tangle no
+Monoid :waist 2  :  Π C : Set • Π _⨾_ : C → C → C • Set
+Monoid :waist 2  =  λ C : Set • λ _⨾_ : C → C → C • Σ Id : C • …
+#+end_src
+
+** Example Instance ---Additive Naturals
+
+#+latex:  \note[item]{Nice formation and introduction rules for contexts}
+
+#+begin_src haskell
+                          ℕ₊  : (Monoid ℓ₀ :waist 1) ℕ
+                          ℕ₊  = ⟨ _+_           -- _⨾_
+                                , 0             -- Id
+                                , +-identityˡ
+                                , +-identityʳ
+                                , +-assoc
+                                ⟩
+#+end_src
+
+#+latex:  \note[item]{We have a typeclass that we instantiate at ℕ, and form a value as a familar tuple}
+
+** COMMENT Relationships between various forms
+
+#+begin_src haskell :tangle no
+Monoid : Context -- i.e., (w : ℕ) → Set
+
+Monoid :waist 𝓌   :  Πʷ ⋯ • Set
+Monoid :waist 𝓌   =  λʷ “parameters” • “fields”
+#+end_src
+
+** COMMENT 11 Line Implementation ---thanks Ulf!
+
+*** The Core _Syntactic_ Transformation
+
+ #+begin_src haskell :tangle no
+--  Π a : A • B a   ↦   λ a : A • B a
+
+Π→λ-helper : Term → Term
+
+Π→λ-helper (pi a (abs x b))
+  = lam visible (abs x (Π→λ-helper b))
+
+Π→λ-helper x
+  = x
+ #+end_src
+
+*** Keeping Track of Types
+
+ src_haskell[:exports code]{Term} denotes untyped λ-terms,
+ so let's keep track of the types when we convert Πs to λs.
+
+ #+begin_src haskell :tangle no
+Π→λ-type : Term → Term
+
+Π→λ-type (pi a (abs x b))
+ = pi a  (abs x (Π→λ-type b))
+
+Π→λ-type x
+ = unknown
+ #+end_src
+
+*** Putting them together
+
+ #+html:<small>
+ #+begin_src haskell :tangle no
+macro
+  Π→λ : Term → Term → TC Unit.⊤
+  Π→λ τ goal
+   =  normalise τ
+       >>=ₜₑᵣₘ λ τ′ → checkType goal (Π→λ-type τ′)
+       >>=ₜₑᵣₘ λ _ →  unify goal (Π→λ-helper τ′)
+ #+end_src
+ #+html:</small>
+
+** Summary: Solve the unbundling problem
+
+    ‘Unbundle’ module fields as if they were parameters ‘on the fly’
+
+\pause
+\vspace{-1.2em}
+-----
+#+begin_parallel 2
+# +ATTR_LATEX: :width 0.45\paperwidth :height 0.5\paperheight
+#+begin_src haskell
+DynamicSystem : Context ℓ₁
+DynamicSystem
+    = do State ← Set
+         start ← State
+         next  ← (State → State)
+         End
+#+end_src
+# [[file:~/thesis-proposal/unbundling-DS-0.png]]
+
+\pause
+# \columnbreak
+# +ATTR_LATEX: :width 0.45\paperwidth :height 0.5\paperheight
+# [[file:~/thesis-proposal/unbundling-DS-1.png]]
+
+#+BEGIN_SRC haskell
+𝒩⁰ : DynamicSystem :waist 0
+𝒩⁰ = ⟨ ℕ , 0 , suc ⟩
+
+𝒩¹ : (DynamicSystem :waist 1) ℕ
+𝒩¹ = ⟨ 0 , suc ⟩
+
+𝒩² : (DynamicSystem :waist 2) ℕ 0
+𝒩² = ⟨ suc ⟩
+
+𝒩³ : (DynamicSystem :waist 3) ℕ 0 suc
+𝒩³ = ⟨⟩
+#+END_SRC
+#+end_parallel
+
+*Without redefining src_haskell[:exports code]{DynamicSystem}*, we are able to *fix*
+some of its /fields/ by making them into /parameters/!
+
+#+latex:  \note[item]{It remains to form descriptions, termtypes, from contexts...}
+
+*** COMMENT more
+\pause
+#+begin_export latex
+  % X-axis to the right and Y-axis upwards
+  \setlength{\unitlength}{1cm}
+  \begin{picture}(0,0)(0,0)
+   \put(0,2.5){\textbf{Without redefining \texttt{DynamicSystem}},}
+   \put(0,2.0){we are able to \textbf{fix} some of its fields}
+   \put(0,1.5){by making them into parameters!}
+\end{picture}
+#+end_export
+
+\pause
+\vspace{-3em}
+-----
+\vspace{-0.5em}
+#+begin_footnotesize org
+# Using ~:waist 𝒾~ we may fix the first ~𝒾~-parameters ahead of time.
+# \vspace{-1em}
+# + =(DynamicSystem :waist 1) ℕ= is /the type of dynamic systems over carrier ℕ/
+# \vspace{-1em}
+
+The type of dynamic systems *over* carrier ℕ and start state 0
+\newline is =(DynamicSystem :waist 2) ℕ 0=.
+#+end_footnotesize
+
+# (progn (org-beamer-export-to-pdf) (switch-to-buffer "committee.pdf"))
+
+:Examples_in_the_wild:
+
+Examples of the need for such on-the-fly unbundling can be found in numerous
+places in the Haskell standard library. For instance, the standard libraries cite:data_monoid
+have two isomorphic copies of the integers, called ~Sum~ and ~Product~, whose reason
+for being is to distinguish two common monoids: The former is for /integers with
+addition/ whereas the latter is for /integers with multiplication/.
+
+:End:
+** COMMENT Lessons Learned
+
+On-the-fly unbundling can be implemented as an in-language library in a
+dependently-typed language with sufficient reflection capabilities :-)
+
+\[\star\; \star\; \star\]
+
+The src_haskell[:exports code]{Context} approach /inherits/ the strengths and
+limitations of the host language.
+
+** COMMENT Comparing =PackageFormer= and =Context=
+   # [[file:~/thesis-proposal/PF-Context-comparision.png]]
+
+  |                          | PackageFormer      | Contexts             |
+  |--------------------------+--------------------+----------------------|
+  | Type of Entity           | Preprocessing Tool | Language Library     |
+  | Specification Language   | Lisp + Agda        | Agda                 |
+  | Well-formedness Checking | ❌               | ✓                    |
+  | Termination Checking     | ✓                  | ✓                    |
+  | Elaboration Tooltips     | ✓                  | ❌                 |
+  | Rapid Prototyping        | ✓                  | ✓ (Slower)           |
+  | Usability Barrier        | None               | None                 |
+  | Extensibility Barrier    | Lisp               | Weak Metaprogramming |
+** COMMENT Related Problem: Control over Parameter Instantiation
+
+ Instances of Haskell typeclasses
+ + are indexed by \textbf{types} only
+ + so that there can be only one ~Monoid~ instance for ~Bool~
+
+ Crude solution: Isomorphic copies with different type \textbf{name}:
+ \begin{code}
+ data Bool   = False | True
+ \end{code}
+
+ \begin{code}
+ newtype All = All { getAll :: Bool } -- for ~Monoid~ instance based on conjunction
+ \end{code}
+
+ \begin{code}
+ newtype Any = Any { getAny :: Bool } -- for ~Monoid~ instance based on disjunction
+ \end{code}
+
+* Datatypes for ASTs are also Contexts too!
+
+** From Contexts to Syntax Definitions
+
+#+latex:  \note[item]{With a bit of massaging, the monoid context can be transformed into a fixedpoint of a type constructor, which is an algebraic data type}
+#+latex:  \note[item]{We can wrap up this massaging into an Agda macro}
+#+latex:  \note[item]{Let's see it in action...}
+
+src_haskell[:exports code]{Monoid}
+   # \pause@@html: <small>@@ definition@@html: </small>@@
+
+⟿
+# +latex: \pause ⟿ % \hfill {\small (definition)}
+#+begin_src haskell
+do C ← Set; _⨾_ : C → C → C; Id : C; …
+#+end_src
+   # \pause@@html: <small>@@ go to waist 1 to get a parameterised record@@html:
+   # </small>@@
+
+⟿
+# +latex: \pause ⟿ % \hfill {\small (:waist 1)}
+#+begin_src haskell
+λ C : Set • Σ _⨾_ : C → C → C • Σ Id : C • …
+#+end_src
+
+   # \pause@@html: <small>@@ Termtype constructors all target the same type, say ~C~, so drop all others@@html: </small>@@
+
+⟿
+# +latex: \pause ⟿ % \hfill {\small (Drop all non-C valued ops)}
+#+begin_src haskell
+λ C : Set • Σ _⨾_ : C → C → C • Σ Id : C • 𝟙
+#+end_src
+   # \pause@@html: <small>@@ Termtype are sums of products@@html: </small>@@
+
+⟿
+# +latex: \pause ⟿ % \hfill {\small (Sums of products)}
+#+begin_src haskell
+λ C : Set •       C × C    ⊍         C ⊍ 𝟙
+#+end_src
+   # \pause@@html: <small>@@ Termtypes are fixpoints of type constructors@@html: </small>@@
+
+⟿
+# +latex: \pause ⟿ % \hfill {\small (Fixpoints)}
+#+begin_src haskell
+μ C : Set •       C × C    ⊍         C ⊍ 𝟙
+#+end_src
+
+\pause
+#+begin_export latex
+\setlength{\unitlength}{1cm}
+\begin{picture}(0,0)(0,0)
+
+% \pause
+% \put(2,5){\colorbox{yellow}{\Large As a macro...}}
+% \pause
+\put(2,7.8){\colorbox{yellow}{\Large \texttt{termtype : UnaryFunctor → Type}}}
+\put(2,7.2){\colorbox{yellow}{\Large \texttt{termtype τ = Fix (Σ→⊎ (sources τ))}}}
+\end{picture}
+#+end_export
+
+** Monoids give rise to tree skeletons / Context
+
+#+latex:  \note[item]{Recall our beloved monoid context...}
+
+#+begin_src haskell :tangle no
+Monoid : ∀ ℓ → Context (ℓsuc ℓ)
+Monoid ℓ = do Carrier ← Set ℓ
+              _⨾_     ← (Carrier → Carrier → Carrier)
+              Id      ← Carrier
+              leftId  ← ∀ {x : Carrier} → Id ⨾ x ≡ x
+              rightId ← ∀ {x : Carrier} → x ⨾ Id ≡ x
+              assoc   ← ∀ {x y z} → (x ⨾ y) ⨾ z  ≡  x ⨾ (y ⨾ z)
+              End {ℓ}
+#+end_src
+
+** Monoids give rise to tree skeletons / Termtype
+
+#+latex:  \note[item]{We turn it into a type constructor by using “waist 1”}
+#+latex:  \note[item]{Then make an ADT by keeping only the sources of the symbols that target the carrier argument}
+#+latex:  \note[item]{Fixedpoints can be daunting to work with, so let's make some prettifications...}
+#+begin_src haskell
+  𝕄 : Set
+  𝕄 = termtype (Monoid ℓ₀ :waist 1)
+#+end_src
+
+#+begin_src haskell
+  that-is : 𝕄
+          ≡ Fix (λ X →
+                -- _⊕_, branch
+                X × X × 𝟙
+                -- Id, nil leaf
+              ⊎ 𝟙
+                -- invariant leftId
+              ⊎ 𝟘
+                -- invariant rightId
+              ⊎ 𝟘
+                -- invariant assoc
+              ⊎ 𝟘
+                --  the “End {ℓ}”
+              ⊎ 𝟘)
+  that-is = refl
+            #+end_src
+
+** Monoids give rise to tree skeletons / Readability
+
+#+latex:  \note[item]{With well-chosen names...}
+# Pattern synonyms for more compact presentation
+            #+begin_src haskell
+-- : 𝕄
+pattern emptyM
+    = μ (inj₂ (inj₁ tt))
+#+end_src
+
+#+begin_src haskell
+-- : 𝕄 → 𝕄 → 𝕄
+pattern branchM l r
+    = μ (inj₁ (l , r , tt))
+#+end_src
+
+#+begin_src haskell
+-- absurd 𝟘-values
+pattern absurdM a
+    = μ (inj₂ (inj₂ (inj₂ (inj₂ a))))
+#+end_src
+
+** Monoids give rise to tree skeletons / ~termtype Monoid ≅ TreeSkeleton~
+
+#+latex:  \note[item]{We can easily “see” monoid's termtype is rather familiar...}
+#+latex:  \note[item]{And we can prove it so by “doing nothing”}
+
+#+ATTR_REVEAL: :frag (appear)
+#+begin_src haskell
+  data TreeSkeleton : Set where
+    empty  : TreeSkeleton
+    branch : TreeSkeleton → TreeSkeleton → TreeSkeleton
+#+end_src
+
+
+#+ATTR_REVEAL: :frag (appear)
+- “doing nothing”
+   #+begin_src haskell
+  to : 𝕄 → TreeSkeleton
+  to emptyM        = empty
+  to (branchM l r) = branch (to l) (to r)
+  to (absurdM (inj₁ ()))
+  to (absurdM (inj₂ ()))
+#+end_src
+
+
+#+ATTR_REVEAL: :frag (appear)
+- “doing nothing”
+   #+begin_src haskell
+  from : TreeSkeleton → 𝕄
+  from empty        = emptyM
+  from (branch l r) = branchM (from l) (from r)
+#+end_src
+
+** COMMENT Dynamical Systems give rise to ℕ
+** COMMENT Context
+
+#+begin_src haskell
+DynamicSystem : Context ℓ₁
+DynamicSystem = do State ← Set
+                   start ← State
+                   next  ← (State → State)
+                   End {ℓ₀}
+                       #+end_src
+
+** COMMENT Termtype
+                           #+begin_src haskell
+𝔻 = termtype (DynamicSystem :waist 1)
+#+end_src
+Pattern synonyms for more compact presentation
+#+begin_src haskell
+-- : 𝔻
+pattern startD
+    = μ (inj₁ tt)
+
+-- : 𝔻 → 𝔻
+pattern nextD e = μ (inj₂ (inj₁ e))
+#+end_src
+
+** COMMENT ~termtype 𝔻 ≅ ℕ~
+#+begin_src haskell
+    to : 𝔻 → ℕ
+    to startD    = 0
+    to (nextD x) = suc (to x)
+
+    from : ℕ → 𝔻
+    from zero    = startD
+    from (suc n) = nextD (from n)
+#+end_src
+
+** COMMENT Pointed Sets give rise to terminal types
+
+#+begin_src haskell
+PSet  : Context (ℓsuc ℓ₀)
+PSet  = do Carrier ← Set ℓ₀
+           point  ← Carrier
+           End {ℓ₀}
+#+end_src
+
+#+ATTR_REVEAL: :frag appear
+#+begin_src haskell
+ℙ𝕊𝕖𝕥 : Set
+ℙ𝕊𝕖𝕥 = termtype (PSet :waist 1)
+#+end_src
+
+#+ATTR_REVEAL: :frag appear
+#+begin_src haskell
+to : ℙ𝕊𝕖𝕥 → 𝟙 {ℓ₀}
+to emptyM = tt
+
+from : 𝟙 {ℓ₀} → ℙ𝕊𝕖𝕥
+from _ = μ (inj₁ tt)
+#+end_src
+
+** COMMENT (Simple) Graphs give rise to pairs
+
+
+#+begin_src haskell
+Graph  : Context (ℓsuc ℓ₀)
+Graph = do Node ← Set
+           Edge ← Set
+           adjacency ← (Node → Node → Edge)
+           End {ℓ₀}
+#+end_src
+
+#+ATTR_REVEAL: :frag appear
+#+begin_src haskell
+𝔾𝕣𝕒𝕡𝕙 : Set → Set
+𝔾𝕣𝕒𝕡𝕙 X = termtype ((Graph :waist 2) X)
+#+end_src
+
+#+ATTR_REVEAL: :frag appear
+#+begin_src haskell
+pattern _⇌_ x y = μ (inj₁ (x , y , tt))
+
+view : ∀ {X} → 𝔾𝕣𝕒𝕡𝕙 X → X × X
+view (x ⇌ y) = x , y
+#+end_src
+
+** COMMENT Indexed unary algebras (“actions”) give rise to streams
+
+** COMMENT Context
+#+begin_src haskell
+Action  : Context ℓ₁
+Action  = do Value    ← Set
+             Program  ← Set
+             run      ← (Program → Value → Value)
+             End {ℓ₀}
+#+end_src
+** COMMENT Termtype
+#+begin_src haskell
+𝔸𝕔𝕥𝕚𝕠𝕟 : Set → Set
+𝔸𝕔𝕥𝕚𝕠𝕟 X = termtype ((Action :waist 2) X)
+#+end_src
+
+#+begin_src haskell
+-- : X → 𝔸𝕔𝕥𝕚𝕠𝕟 X → 𝔸𝕔𝕥𝕚𝕠𝕟 X
+pattern _∷_ head tail
+         = μ (inj₁ (tail , head , tt))
+#+end_src
+
+** COMMENT … to stream
+#+begin_src haskell
+record Stream (X : Set) : Set   where
+  coinductive
+  field
+    hd : X
+    tl : Stream X
+
+open Stream
+#+end_src
+#+ATTR_REVEAL: :frag appear
+#+begin_src haskell
+view : ∀ {I} → 𝔸𝕔𝕥𝕚𝕠𝕟 I → Stream I
+hd (view (h ∷ t)) = h
+tl (view (h ∷ t)) = view t
+#+end_src
+
+** COMMENT Collection theories give rise to lists
+
+#+begin_src haskell
+Collection : ∀ ℓ → Context (ℓsuc ℓ)
+Collection ℓ = do Elem      ← Set ℓ
+                  Container ← Set ℓ
+                  insert    ← (Elem → Container → Container)
+                  ∅         ← Container
+                  End {ℓ}
+#+end_src
+
+#+ATTR_REVEAL: :frag appear
+#+begin_src haskell
+ℂ : Set → Set
+ℂ Elem = termtype ((Collection ℓ₀ :waist 2) Elem)
+#+end_src
+#+ATTR_REVEAL: :frag appear
+#+begin_src haskell
+-- : X → ℂ X → ℂ X
+pattern _::_ x xs
+         = μ (inj₁ (x , xs , tt))
+
+-- : ℂ X
+pattern  ∅
+    = μ (inj₂ (inj₁ tt))
+#+end_src
+
+** Summary: Contexts ↦ {Records, Syntax}
+
+#+latex: \centering
+
+Bring \alert{algebraic data types} under the umbrella of grouping mechanisms:
+#    - In particular, both an ADT and a record can be obtained *practically* from
+#     a *single* context declaration.
+
+#   An ADT is just a context whose symbols target the ADT ‘carrier’ and
+#   are not otherwise interpreted.
+
+\pause
+
+\vspace{-0.5em}
+#+begin_parallel 2
+
+# +ATTR_LATEX: :width 0.45\paperwidth :height 0.35\paperheight
+#+begin_src haskell
+DynamicSystem : Context ℓ₁
+DynamicSystem
+    = do State ← Set
+         start ← State
+         next  ← (State → State)
+         End
+#+end_src
+# [[file:~/thesis-proposal/unbundling-DS-0.png]]
+
+#+latex: \columnbreak
+
+\pause
+# +ATTR_LATEX: :width 0.2\paperwidth :height 0.2\paperheight
+# [[file:~/thesis-proposal/DS-data.png]]
+
+#+begin_src haskell
+data 𝔻 : Set where
+    startD : 𝔻
+    nextD  : 𝔻 → 𝔻
+#+end_src
+
+#+end_parallel
+
+\pause
+\vspace{-1.3em}
+-----
+\vspace{-2em}
+#+latex: \begin{minipage}[t]{0.85\linewidth}
+#+begin_src haskell
+𝔻 = termtype (DynamicSystem :waist 1)
+
+-- Pattern synonyms for more compact presentation
+pattern startD  = μ (inj₁ tt)       -- : 𝔻
+pattern nextD e = μ (inj₂ (inj₁ e)) -- : 𝔻 → 𝔻
+trivial : 𝔻 ≅ ℕ
+#+end_src
+#+latex: \end{minipage}
+
+# +latex: \setlength{\unitlength}{1cm} \begin{picture}(0,0)(0,0)
+# +latex: \put(6,-1.55){
+# +ATTR_LATEX: :width 0.45\paperwidth :height 0.4\paperheight
+# [[file:~/thesis-proposal/DS-termtype.png]]
+# +latex: }
+# +latex: \end{picture}
+** COMMENT Collections ⇒ Lists
+:PROPERTIES:
+:BEAMER_OPT: fragile
+:END:
+
+6. [@6] Show that common data-structures are \alert{mechanically the (free) termtypes} of
+   common modules.
+
+#+LaTeX: \setminted[haskell]{fontsize=\scriptsize, breaklines}
+#+begin_src haskell
+Collection : ∀ ℓ → Context (ℓsuc ℓ)
+Collection ℓ = do Elem    ← Set ℓ
+                  Carrier ← Set ℓ
+                  insert  ← (Elem → Carrier → Carrier)
+                  ∅       ← Carrier
+                  End {ℓ}
+
+List : Set → Set
+List ElemType = termtype ((Collection ℓ₀ :waist 2) ElemType)
+
+pattern _::_ x xs = μ (inj₁ (x , xs , tt))
+pattern  ∅        = μ (inj₂ (inj₁ tt))
+#+end_src
+#+LaTeX: \setminted[haskell]{fontsize=\footnotesize, breaklines}
+
+# (progn (org-beamer-export-to-pdf) (switch-to-buffer "committee.pdf"))
+
+** Summary: Common data-structures as *free* termtypes
+
+| ‘theory’ τ     | ‘data structure’ ~termtype τ~ |
+|----------------+-----------------------------|
+| pointed set    | 𝟙                           |
+| dynamic system | ℕ                           |
+| monoid         | tree skeletons              |
+| collections    | lists                       |
+| graphs         | (homogeneous) pairs         |
+| actions        | infinite streams            |
+
+#+begin_quote
+/Many more theories τ to explore and see what data structures arise!/
+#+end_quote
+* Conclusions
+
+** *“All”* module constructions are born from =Context=
+# [[file:~/thesis-proposal/everything-is-a-context.png]]
+
+# +begin_scriptsize org
+    \pause \vspace{0.5em}
++ Context: “name-type pairs”
+  #+BEGIN_SRC haskell
+do S ← Set; s ← S; n ← (S → S); End
+#+END_SRC
+
+    #+latex:  \note{From this “single source of truth”, we can freely, \emph{mechanically}, obtain the following related ideas}
+
+    #+latex: \pause {\textbf \Large \color{DarkGreen} $\Downarrow$ \hspace{2em} $\Downarrow$ \hspace{2em} $\Downarrow$
+    #+latex: \hspace{2em} $\Downarrow$ \hspace{2em} $\Downarrow$} \vspace{0.5em}
+
++ Record Type: “bundled-up data”
+   #+BEGIN_SRC haskell
+Σ S ∶ Set • Σ s ∶ S • Σ n ∶ S → S • 𝟙
+#+END_SRC
+     \vspace{0.5em}
+     #+latex:  \note[item]{Record: “DynamicSystem :waist 0”}
+
++ Function Type: “a type of functions”
+   #+BEGIN_SRC haskell
+Π S • Σ s ∶ S • Σ n ∶ S → S • 𝟙
+#+END_SRC
+     \vspace{0.5em}
+     #+latex:  \note[item]{Function Type: “DynamicSystem 1”}
+
++ Type constructor: “a function on types”
+   #+BEGIN_SRC haskell
+λ S • Σ s ∶ S • Σ n ∶ S → S • 𝟙
+#+END_SRC
+     \vspace{0.5em}
+     #+latex:  \note[item]{Type constructor: “DynamicSystem :waist 1”}
+
++ Algebraic datatype: “a descriptive syntax”
+   #+BEGIN_SRC haskell
+data 𝔻 : Set where s : 𝔻; n : 𝔻 → 𝔻
+#+END_SRC
+     #+latex:  \note[item]{𝔻: “termtype (DynamicSystem :waist 1)”}
+
+:Nope:
+#+begin_export latex
+\setlength{\unitlength}{1cm}
+\begin{picture}(0,0)(0,0)
+
+\pause
+\put(8,4){\colorbox{yellow}{\Large ⇒ Thank-you}}
+\put(8,3.4){\colorbox{yellow}{\Large \hspace{1.7em} for \hspace{2.4em}{\color{yellow}.}}}
+\put(8,2.8){\colorbox{yellow}{\Large your time! ⇐}}
+\end{picture}
+#+end_export
+:End:
+
+# +end_scriptsize
+** Contributions
+
+#+latex:  \note[item]{Contexts ≈ Generalised ML Types}
+#+latex:  \note[item]{waist : Module Type → Module Type}
+#+latex:  \note[item]{termtype : Module Type → An implementation of that module type}
+
+0. [@0] Identify the \alert{module design patterns} used by DTL practitioners
+
+1. Demonstrate that there is an expressive yet minimal set of
+   primitives which allow common module constructions to be defined
+
+2. Bring \alert{algebraic data types} under the umbrella of grouping mechanisms
+   # An ADT is just a context whose symbols target the ADT ‘carrier’ and
+   # are not otherwise interpreted.
+   # - In particular, both an ADT and a record can be obtained *practically* from
+   #  a *single* context declaration.
+
+3. The ability to ‘unbundle’ module fields as if they were parameters ‘on
+   the fly’
+
+4. Show that common data-structures are \alert{mechanically the (free) termtypes} of
+   common modules
+
+5. Demonstrate that there is a \alert{practical implementation} of such a framework
+
+   # - [X] The =Context= framework is implemented in Agda and we've seen practical examples of
+   #  its use.
+
+6. Finally, the resulting framework is /mostly/ \alert{type-theory agnostic}.
+   # The target setting is DTLs but we only assume the barebones; if users drop
+   # parts of that theory, then /only/ some parts of the framework will no
+   # longer apply.
+
+   # - [X] There are various forms of semantics presented in the thesis: Abstract
+   #   semantics via signatures, concrete semantics via Agda functions,
+   #   denotational semantics via ΠΣ𝒲, as well as a guide for forming the
+   #   src_haskell[:exports code]{Context} library in other languages.
+
+# - For instance, in DTLs without a fixed-point functor the framework still
+#   ‘applies’, but can no longer be used to provide arbitrary algebraic data
+#   types from contexts.
+
+#+begin_export latex
+\setlength{\unitlength}{1cm}
+\begin{picture}(0,0)(0,0)
+\pause
+\put(2,0){\colorbox{yellow}{\Large ⇒ Thank-you for your time! ⇐}}
+\end{picture}
+#+end_export
+
+** COMMENT Future Work
+
+ + Explicit (elaboration) semantics for \textsf{PackageFormer}s and
+   \textsf{Variational}s within a minimal type theory
+
+   - Refactor meta-primitives from LISP flavour to Agda flavour
+   - Integrate with a reflection interface for Agda
+
+ + Explore multiple default definitions
+
+ + Explore inheritance, coercion, and transport along canonical isomorphisms
+
+ + Generate mutually-recursive definitions for certain instances of
+   many-sorted \textsf{PackageFormer}s?
+
+** COMMENT Conclusion ---Prototype
++ Naming, terminology, concrete syntax, combinator interfaces
+  are all still in flux!
+
++ The present system already allows to replace hand-written
+  instances of structuring schemes
+  with invocations of (generative) library methods
+
++ Our resulting system has turned hand-written instances of structuring schemes from a design
+  pattern into full-fledged library methods
+
++ We already influenced the naming conventions of the Agda ``standard library''
+
++ Our approach based on \textsf{PackageFormer}s and
+  \textsf{Variational}s makes it possible
+  - \large to codify, name, and document ``design patterns'' of
+       uses of structuring mechanisms
+  - \large to enable and encourage re-use at a high level of abstraction
+  - \large to drastically reduce the interface size of ``interface libraries''
+
+  and therewith has the potential to *drastically* change how we provide and use
+  structures via libraries
+
+** COMMENT /Thank-you for your time!/
+
+ # \pause
+ # \vspace{1em}
+ # /Thank-you for your time!/
+
+ \vspace{1em}
+ \centerline{Questions?}
+* COMMENT Misc Summary
+
+  Common, mechanical, patterns for module construction are just out
+  of reach of the module systems of dependently-typed languages.
+  Such languages permit a rich number of possible formulations for
+  a module, such as by having some of its constituents exposed
+  at the type level as parameters, others as fields, and others
+  as definitional extensions.
+
+  Library designers are generally conservative; they provide a predicate
+  formulation consisting of a set of proof obligations that constrain the
+  functional symbols provided as parameters in the type level. This formulation
+  is then usually accompanied by a fully “bundled up” variation that has no
+  parameters and all relevant data is rendered as fields.
+
+  However, trouble arises when library users wish to fix only one field ahead of
+  time ---this is the “unbundling problem” and it is akin to function uncurrying
+  but for modules.
+
+  Moreover, library designers for dependently-typed languages generally only
+  provide a handful of formulations for a single module. Other formulations
+  must be written out by hand by users, which must then form coercions
+  between the new forms and those used in the library, so as to make use
+  of the library's utilities.
+
+  I have produced an editor extension for Agda's de-facto IDE, Emacs,
+  which reduces the boilerplate for new formulations of modules to
+  simple, usually one-line, specifications. The tool is run in the background
+  and works on ordinary Agda files by looking at special comments.
+  The specifications are expanded into typechecked Agda code.
+
+  Moreover, using the lessons learned from the editor extension, an Agda library
+  has been implemented to achieve similar goals within Agda itself.  Due to
+  Agda's current metaprogramming limitations, such as the inability to produce
+  fresh names, development with the library is slower than with the editor
+  extension.
