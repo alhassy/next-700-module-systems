@@ -24,7 +24,7 @@
 ;;; Commentary:
 
 ;; Agda uses a number of editor tactics, such as C-c C-c, to perform case
-;; analysis or to extract inner definitions to the toplevel. We add a new
+;; analysis or to extract inner definitions to the toplevel.  We add a new
 ;; tactic.
 ;;
 ;; Select an Agda record, then press M-x agda-editor-tactics-as-Σ:nested,
@@ -54,15 +54,7 @@
 ;;;###autoload
 (define-minor-mode agda-editor-tactics-mode
     "An Emacs editor tactic to produce Σ-types from Agda records."
-  nil nil nil
-  (if agda-editor-tactics-mode
-      (progn
-        ;; Give users interactive access to this function at the top level.
-        (agda-editor-tactics-regonify agda-editor-tactics-as-Σ-nested
-                                      (agda-editor-tactics-record-info it))
-      ) ;; Must be on a new line; I'm using noweb-refs
-    
-    )) ;; Must be on a new line; I'm using noweb-refs
+    nil nil nil)
 
 ;; The tactic prodcues a Σ-type, what should its name be?
 (defvar agda-editor-tactics-format-Σ-naming "%s′"
@@ -178,51 +170,6 @@ For now,
 
     ;; ⟨7⟩ Yield the record as a Lisp plist.
     plist))
-
-(cl-defmacro agda-editor-tactics-regonify
-    (f &optional
-       (from-string 'it)
-       (on-region `(progn
-                     (kill-new it)
-                     (message "Result of %s is now in your %s"
-                              (quote ,f)
-                              "clipboard -- press C-y to paste it (•̀ᴗ•́)و"))))
-"Given an unary function F, extend it to work interactively on regions.
-
-Override the existing function F to be interactive and to work on
-selected regions.  When F is called in Lisp code, it will act as the
-orginal function.  When F is called interactively on a selected region
-of text, we use the function-body FROM-STRING to prepare the selected
-text as appropriate intoput to F, then we act on the region using
-the function body ON-REGION.
-
-FROM-STRING is an expression that transforms ‘it’, the input string,
-into the approriate datatype required by F.
-
-ON-REGION is an expression involving ‘it’, the output of F,
-as well as ‘start’ and ‘end’, the boundaries of the region.
-
-Below is a full example, where the output is pasted over a region.
-
-   (defun myupcase (s)
-     \"Shout the string S.\"
-     (upcase s))
-
-   (regonify myupcase it (progn (delete-region start end) (insert it)))
-
-Moreover, evaluating a ‘regonify’ sexp multiple times results
-“works fine”; i.e., this is an idempotent operation (mostly).
-[Each invocation increases the documentation; and more.]"
-  `(defun ,f (x &optional start end)
-     ,(concat (documentation f)
-             "\nWhen invoked interactively, works on the selected region.")
-     (interactive (list nil (region-beginning) (region-end)))
-     (let* ((input  (or x (funcall (lambda (it) ,from-string)
-                                   (buffer-substring-no-properties start end))))
-            (output (funcall ,(symbol-function f) input)))
-       (if x ;; i.e., not working on a region
-           output
-         (funcall (lambda (it) ,on-region) output)))))
 
 (defun agda-editor-tactics-as-Σ-nested (r)
   "Transform an Agda record R, as a plist, into an Agda Σ-type."
